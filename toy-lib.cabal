@@ -6,14 +6,13 @@ cabal-version: 1.12
 
 name:           toy-lib
 version:        0.1.0.0
-description:    Please see README on GitHub at <https://github.com/toyboot4e/toy-lib>
-homepage:       https://github.com/toyboot4e/toy-lib
+description:    Please see the README on GitHub at <https://github.com/toyboot4e/toy-lib>
+homepage:       https://github.com/toyboot4e/toy-lib#readme
 bug-reports:    https://github.com/toyboot4e/toy-lib/issues
 author:         toyboot4e
-maintainer:     toyboot4e@gmai.com
+maintainer:     toyboot4e@gmail.com
 copyright:      2023 toyboot4e
 license:        MIT
-license-file:   LICENSE-MIT
 build-type:     Simple
 extra-source-files:
     README.md
@@ -21,7 +20,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/toy-lib
+  location: https://github.com/toyboot4e/toy-lib
 
 library
   exposed-modules:
@@ -44,7 +43,11 @@ executable toy-lib-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , toy-lib
+    , directory
+    , haskell-src-exts
+    , process
+    , template-haskell
+    , temporary
   default-language: Haskell2010
 
 test-suite toy-lib-test
