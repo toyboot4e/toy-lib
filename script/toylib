@@ -10,7 +10,7 @@ acc='npx acc'
 # --------------------------------------------------------------------------------------------------
 
 # $1: file name
-_fmt() {
+_format() {
     ormolu --mode inplace "$1"
 }
 
@@ -52,9 +52,9 @@ _dispatch_sub_command() {
     shift 1
 
     case "$cmd" in
-        'f' | 'fmt')
+        'f' | 'fmt' | 'format')
             echo "formatting $file"
-            _fmt "$file" "$@" ;;
+            _format "$file" "$@" ;;
 
         'r' | 'run')
             echo "running $file with cabal"

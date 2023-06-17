@@ -20,7 +20,20 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/toyboot4e/toy-lib>
 
 dependencies:
+- array
 - base >= 4.7 && < 5
+- bytestring
+- containers
+- extra
+- hashable
+- heaps
+- utility-ht
+- primitive
+- transformers
+- unordered-containers
+- vector
+- vector-algorithms
+- vector-th-unbox
 
 ghc-options:
 - -Wall
@@ -45,7 +58,11 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - toy-lib
+      - directory
+      - haskell-src-exts
+      - process
+      - template-haskell
+      - temporary
 
 tests:
   toy-lib-test:

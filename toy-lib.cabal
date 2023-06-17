@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Template
       ToyLib
   other-modules:
       Paths_toy_lib
@@ -31,7 +32,20 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , extra
+    , hashable
+    , heaps
+    , primitive
+    , transformers
+    , unordered-containers
+    , utility-ht
+    , vector
+    , vector-algorithms
+    , vector-th-unbox
   default-language: Haskell2010
 
 executable toy-lib-exe
@@ -42,12 +56,25 @@ executable toy-lib-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
+    , bytestring
+    , containers
     , directory
+    , extra
+    , hashable
     , haskell-src-exts
+    , heaps
+    , primitive
     , process
     , template-haskell
     , temporary
+    , transformers
+    , unordered-containers
+    , utility-ht
+    , vector
+    , vector-algorithms
+    , vector-th-unbox
   default-language: Haskell2010
 
 test-suite toy-lib-test
@@ -59,6 +86,19 @@ test-suite toy-lib-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , extra
+    , hashable
+    , heaps
+    , primitive
     , toy-lib
+    , transformers
+    , unordered-containers
+    , utility-ht
+    , vector
+    , vector-algorithms
+    , vector-th-unbox
   default-language: Haskell2010
