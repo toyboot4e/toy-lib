@@ -24,8 +24,35 @@ source-repository head
 
 library
   exposed-modules:
-      Template
+      Algorithm.BinarySearch
+      Algorithm.Imos
+      Data.BinaryLifting
+      Data.Graph
+      Data.Graph.Digraph
+      Data.Graph.FloydWarshall
+      Data.Graph.MaxFlow
+      Data.Graph.Scc
+      Data.ModInt
+      Data.MultiSet
+      Data.RollingHash
+      Data.SegmentTree.Lazy
+      Data.SegmentTree.Strict
+      Data.SemigroupAction
+      Data.Tree.Fold
+      Data.Tree.Lca
+      Data.UnionFind.Mutable
+      Data.UnionFind.Sparse
+      Data.Vector.Compress
+      Data.Vector.DictOrder
+      Data.Vector.InvNum
+      Math.Bits
+      Math.Digits
+      Math.Matrix
+      Math.PowMod
+      Math.Primes
       ToyLib
+      ToyLib.Macro
+      ToyLib.Prelude
   other-modules:
       Paths_toy_lib
   hs-source-dirs:
