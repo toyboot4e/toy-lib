@@ -2,6 +2,8 @@
 
 ToyLib is a private Haskell library for solving AtCoder problems.
 
+[Documentation](https://toyboot4e.github.io/toy-lib/)
+
 ## Features (CLI)
 
 `toy-lib-exe` is the source file bunlder. It has the following features.
