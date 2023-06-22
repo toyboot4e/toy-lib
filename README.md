@@ -1,6 +1,6 @@
 # ToyLib
 
-ToyLib is a private Haskell library for solving AtCoder problems.
+ToyLib is my Haskell library for solving AtCoder problems.
 
 [Documentation](https://toyboot4e.github.io/toy-lib/)
 
