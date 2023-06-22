@@ -20,33 +20,33 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- | A mutable segment tree backed by a complete binary tree.
 --
--- # Overview
+-- = Overview
 --
 -- A segment tree is a cache of a folding function.
 -- Each node corresponds to a folding range and the node contains the folding result.
 --
 -- A segment tree has a constant size and never be resized.
 --
--- # Operations
+-- = Operations
 --
--- Modification takes $O(log N)$, so creation takes $N(log N)$.
--- Lookup takes $O(log N)$.
+-- Modification takes \(O(log N)\), so creation takes \(N(log N)\).
+-- Lookup takes \(O(log N)\).
 --
--- # (Internal) Indices
+-- = (Internal) Indices
 --
--- The complete binary tree has `2 ^ depth - 1` elements.
+-- The complete binary tree has @2 ^ depth - 1@ elements.
 --
--- - Child elements of a parent node `i` has index `2 * i + 1` and `2 * i + 2`.
--- - The leaf indices start with `length / 2 - 1`.
+-- - Child elements of a parent node @i@ has index @2 * i + 1@ and @2 * i + 2@.
+-- - The leaf indices start with @length / 2 - 1@.
 --
 -- Example:
 --
--- ```
+-- @
 --            0
 --      1           2
 --   3     4     5     6
 -- 07 08 09 10 11 12 13 14
--- ```
+-- @
 data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 
 -- TODO: Can I UNPACK? the funciton?

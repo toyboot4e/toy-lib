@@ -26,29 +26,28 @@ import ToyLib.Prelude (forMS_, rangeMS, rangeMSR)
 
 -- | Lazy segment tree.
 --
--- # Indices
+-- = Indices
 --
 -- Use 1-based indices for super handy index hacks:
 --
--- ```txt
+-- @
 --            1             |
 --      2           3       | height = 4
 --   4     5     6     7    |
 -- 08 09 10 11 12 13 14 15  v
 -- ^
--- +-- nVerts `div` 2
+-- +-- nVerts / 2
 --
 -- 0  1  2  3  4  5  6  7   -- iLeaf is given by user and uses zero-based indices.
 --
--- - parentVertex = vertex `div` 2 = shiftR vertex 1
+-- - parentVertex = vertex / 2 = shiftR vertex 1
 -- - leftChild = vertex * 2 = shiftR vertex 1
 -- - rightChild = vertex * 2 + 1 = shiftR vertex 1 + 1 = (shiftR vertex 1) .|. 1
+-- @
 --
--- ```
+-- = Invariant
 --
--- # Invariant
---
--- - New operators always come from right: `oldOp <> newOp`
+-- - New operators always come from right: @oldOp <> newOp@
 data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(VUM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.

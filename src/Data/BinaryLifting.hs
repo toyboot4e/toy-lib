@@ -5,7 +5,7 @@
 -- constant time, or applying them to their semigroup action target.
 --
 -- The i-th element of the underlying vector of `BinaryLifting` stores \(s^{2^i}\), with which we
--- can construct any of \(s^i\) (\(0 <= i < 2^63\)) in a big (\(63\)) constant time.
+-- can construct any of \(s^i\) (\(0 <= i < 2^63\)) in a big (63) constant time.
 module Data.BinaryLifting where
 
 import Data.Bits

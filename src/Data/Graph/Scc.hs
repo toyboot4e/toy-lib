@@ -16,7 +16,7 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- | Topological sort implemented with postorder DFS.
 --
--- # Implementation note
+-- = Implementation note
 -- Topological sort is for DAG, but internally it's used for `scc` where cyclic graph input can
 -- come.
 topSort :: Array Int [Int] -> [Int]

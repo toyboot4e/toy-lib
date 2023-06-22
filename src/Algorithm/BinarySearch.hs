@@ -36,8 +36,6 @@ import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Unboxed as VU
 import ToyLib.Prelude
 
--- {{{ Binary search
-
 -- TODO: Use typeclass for getting middle and detecting end
 
 -- | Pure binary search.
@@ -131,11 +129,10 @@ bsearchF64L !a !b !c = fst $ bsearchF64 a b c
 bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
 bsearchF64R !a !b !c = fst $ bsearchF64 a b c
 
--- 1D index compression: xs -> (nubSorted, indices)
-compressIndex :: [Int] -> (VU.Vector Int, [Int])
-compressIndex xs = (indices, map (fromJust . fst . f) xs)
+-- One dimensional index compression: xs -> (nubSorted, indices)
+compressList :: [Int] -> (VU.Vector Int, [Int])
+compressList xs = (indices, map (fromJust . fst . f) xs)
   where
     !indices = VU.fromList $ nubSort xs
     f !x = bsearch (0, pred $ vLength indices) $ \i -> indices VU.! i <= x
 
--- }}}

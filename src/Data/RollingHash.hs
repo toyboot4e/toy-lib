@@ -48,13 +48,13 @@ instance TypeInt HashInt where
 
 -- | Creates a rolling hash of given string.
 newRH :: forall p. TypeInt p => String -> RollingHash HashInt p
-newRH !source = RollingHash n bn hashSum
+newRH !source = RollingHash n bn hashSum_
   where
     !p = typeInt (Proxy @p)
     !b = typeInt (Proxy @HashInt)
     !n = length source
     !bn = VU.iterateN (succ n) (\lastB -> b * lastB `mod` p) (1 :: Int)
-    !hashSum = evalState (VU.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ VU.fromList source) (0 :: Int)
+    !hashSum_ = evalState (VU.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ VU.fromList source) (0 :: Int)
       where
         f :: Char -> Int -> (Int, Int)
         f !ch !lastX = dupe $ (lastX * b + ord ch) `mod` p
@@ -72,7 +72,7 @@ data HashSlice p = HashSlice
   deriving (Show, Eq)
 
 -- | Slices a rolling hash string.
-sliceRH :: forall b p. (TypeInt b, TypeInt p) => RollingHash b p -> Int -> Int -> HashSlice p
+sliceRH :: forall b p. (TypeInt p) => RollingHash b p -> Int -> Int -> HashSlice p
 sliceRH (RollingHash !_ !bn !s) !i0 !i1
   -- TODO: add debug assertion
   | i0 > i1 = emptyHS
@@ -86,7 +86,7 @@ sliceRH (RollingHash !_ !bn !s) !i0 !i1
     !p = typeInt (Proxy @p)
 
 -- | Cons two rolling hash slices.
-consHS :: forall b p. (TypeInt b, TypeInt p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
+consHS :: forall b p. (TypeInt p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
 consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSlice value len
   where
     !p = typeInt (Proxy @p)
@@ -94,11 +94,11 @@ consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSli
     !len = l0 + l1
 
 -- | Creates an empty rolling hash slice.
-emptyHS :: (TypeInt p) => HashSlice p
+emptyHS :: HashSlice p
 emptyHS = HashSlice 0 0
 
 -- | Concatanates two rolling hash slices.
-concatHS :: forall b p t. (TypeInt b, TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
+concatHS :: forall b p t. (TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
 concatHS !rhash !slices = foldl' (consHS rhash) emptyHS slices
 
 -- }}}

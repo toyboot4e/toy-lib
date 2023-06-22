@@ -17,28 +17,28 @@ log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 
 -- | Ceiling of log base 2 of an `Int`.
 --
--- # Example
+-- = Example
 --
--- ```hs
+-- @
 -- > log2 3
 -- 1
 -- > log2CeilInt 3
 -- 2
--- ```
+-- @
 log2CeilInt :: Int -> Int
 log2CeilInt !x = msb + ceiling_
   where
     !msb = log2 x
     !ceiling_ = if clearBit x msb > 0 then 1 else 0
 
--- | Calculates the smallest integral power of two that is not smaller than `x`.
+-- | Calculates the smallest integral power of two that is not smaller than @x@.
 --
--- # Example
+-- = Example
 --
--- ```hs
+-- @
 -- > bitCeil 3
 -- 4
--- ```
+-- @
 bitCeil :: Int -> Int
 bitCeil = bit . log2CeilInt
 

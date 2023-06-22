@@ -42,14 +42,14 @@ invModF !d !modulus = invModFC modulus (powModCache d modulus)
 divModF :: Int -> Int -> Int -> Int
 divModF !x !d !modulus = divModFC x (powModCache d modulus) `rem` modulus
 
--- | Cache of base^i for iterative square method.
+-- | Cache of \(base^i\) for iterative square method.
 powModCache :: Int -> Int -> (Int, VU.Vector Int)
 powModCache !base !modulo = (modulo, doubling)
   where
     -- doubling = VU.scanl' (\ !x _ -> x * x `rem` modulo) base $ rangeVG (1 :: Int) 62
     doubling = newDoubling base (\x -> x * x `rem` modulo)
 
--- | Calculates base^i (mod p) from a cache.
+-- | Calculates \(base^i\) (mod p) from a cache.
 powByCache :: Int -> (Int, VU.Vector Int) -> Int
 -- TODO: test if it works as expeted
 -- powByCache !power (!modulo, !cache) = applyDoubling cache 1 (\acc x -> acc * x `rem` modulo) power
