@@ -1,2 +1,7 @@
+import Test.DocTest
+
+-- | `stack test` where we run `doctest`.
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+  -- Run `doctest` over all the source files:
+  doctest ["-isrc", "src/"]
