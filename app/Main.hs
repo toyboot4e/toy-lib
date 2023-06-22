@@ -1,23 +1,58 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 
 module Main (main) where
 
+import Control.Monad
+import Data.Either
 import qualified Data.List as L
+import Data.Maybe
 import qualified Language.Haskell.Exts as H
 import Language.Haskell.TH (runIO)
-import System.Directory (getCurrentDirectory)
+import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Environment (getArgs)
+import System.Exit (exitFailure)
 import System.IO.Temp (withTempDirectory)
 import System.Process (rawSystem)
 
--- NOTE: On NixOS, purity is disabled as in `stack.yaml` so that we can find `stack` in user path.
+-- TODO: Refactor
 
 main :: IO ()
 main = do
-  (name : opts) <- getArgs
-  let path = modulePath name
-  code <- readFile path
+  -- (name : opts) <- getArgs
+  let srcDir = installPath ++ "/src"
+  files <- collectSourceFiles srcDir
+  (failures, successes) <- partResults <$> mapM (\f -> (f,) <$> minifyAsOneline f) files
+  if (not . null) failures
+    then do
+      forM_ failures print
+      exitFailure
+    else do
+      forM_ successes $ \(path, result) -> do
+        putStrLn $ "-- " ++ modulePath path
+        putStrLn result
+  where
+    partResults :: [(a, Either l r)] -> ([(a, l)], [(a, r)])
+    partResults = foldr step ([], [])
+      where
+        step :: (a, Either l r) -> ([(a, l)], [(a, r)]) -> ([(a, l)], [(a, r)])
+        step (f, Left l) (accL, accR) = ((f, l) : accL, accR)
+        step (f, Right r) (accL, accR) = (accL, (f, r) : accR)
+
+-- | Recursively collects @.hs@ files.
+collectSourceFiles :: FilePath -> IO [FilePath]
+collectSourceFiles dir = do
+  contents <- map ((dir ++ "/") ++) . filter (`notElem` [".", ".."]) <$> getDirectoryContents dir
+  let sourceFiles = filter (".hs" `L.isSuffixOf`) contents
+  subDirs <- filterM doesDirectoryExist contents
+  L.foldl' (++) sourceFiles <$> mapM collectSourceFiles subDirs
+
+-- | Collects declaratrions from a Haskell source file and minify them into one line.
+minifyAsOneline :: String -> IO (Either String String)
+minifyAsOneline absPath = do
+  let name = fromJust $ L.stripPrefix (installPath ++ "/") absPath
+  code <- readFile absPath
 
   -- Pre-processing CPP:
   -- TODO: why removing macros?
@@ -37,26 +72,27 @@ main = do
 
   let parseOption =
         H.defaultParseMode
-          { H.parseFilename = path,
+          { H.parseFilename = absPath,
             H.extensions = extensions
           }
 
-  case H.parseModuleWithMode parseOption processed of
-    H.ParseOk ast -> case opts of
-      [] -> putStrLn $ generate name extensions ast
-      [dst] -> do
-        appendFile dst $ generate name extensions ast
-      _ -> pure ()
-    failed -> print failed
+  return $ case H.parseModuleWithMode parseOption processed of
+    H.ParseOk ast -> Right $ generate name extensions ast
+    failed -> Left $ show failed
 
+helpCommand :: IO ()
+helpCommand = putStrLn "Available commands: oneline"
+
+-- | Returns the root directory.
 installPath :: FilePath
 installPath = $(do dir <- runIO getCurrentDirectory; [e|dir|])
 
+-- | Converts module name to source file path.
 modulePath :: String -> FilePath
-modulePath name = concat [installPath, "/src/", map convert name, ".hs"]
+modulePath name = concat [installPath, "/src/", map tr name, ".hs"]
   where
-    convert '.' = '/'
-    convert c = c
+    tr '.' = '/'
+    tr c = c
 
 lineWidth :: Int
 lineWidth = 100
@@ -68,8 +104,8 @@ removeMacros :: String -> String
 removeMacros = unlines . filter (not . L.isPrefixOf "#") . lines
 
 generate :: String -> [H.Extension] -> H.Module l -> String
-generate name extensions ast =
-  unlines [scriptHeader, "-- -*- vimish-evil-mode -*-", "-- {{{ Template", "{- ORMOLU_DISABLE -}", extensionLine, minify ast, "{- ORMOLU_ENABLE -}", "-- }}}"]
+generate name extensions ast = minify ast
+  -- unlines [scriptHeader, extensionLine, "-- {{{ Template", "{- ORMOLU_DISABLE -}", minify ast, "{- ORMOLU_ENABLE -}", "-- }}}"]
   where
     extensionLine :: String
     extensionLine = "{-# LANGUAGE " ++ exts ++ " #-}"
@@ -83,9 +119,9 @@ generate name extensions ast =
     minify :: H.Module l -> String
     minify (H.Module _ _ _ imports decls) =
       L.intercalate
-        " ; "
-        [ L.intercalate " ; " (map (H.prettyPrintWithMode pphsMode) imports),
-          L.intercalate " ; " (map (H.prettyPrintWithMode pphsMode) decls)
+        ";"
+        [ L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports),
+          L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
         ]
     minify _ = ""
 
