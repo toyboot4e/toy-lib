@@ -1,6 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | Calculates every shortest path between two vertices (Floyd-Warshall algorithm).
+--
+-- - NOTE: It's slow. Prefer Dijkstra when possible.
+-- - TODO: Faster, general implementation.
+
 module Data.Graph.FloydWarshall where
 
 import Control.Monad
@@ -9,8 +14,6 @@ import Data.Graph (Graph, Vertex)
 import Data.Ix
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude

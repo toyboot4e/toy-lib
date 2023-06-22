@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | Multi set backed by `IntMap`.
+
 module Data.MultiSet where
 
 import Data.List (foldl')
@@ -19,12 +21,14 @@ singletonMS !x = (1, IM.singleton x 1)
 fromListMS :: [Int] -> MultiSet
 fromListMS = foldl' (flip incMS) emptyMS
 
+-- | Increments key.
 incMS :: Int -> MultiSet -> MultiSet
 incMS !k (!n, !im) =
   if IM.member k im
     then (n, IM.insertWith (+) k 1 im)
     else (n + 1, IM.insert k 1 im)
 
+-- | Decrements key. Key with count zero are removed.
 decMS :: Int -> MultiSet -> MultiSet
 decMS !k (!n, !im) =
   case IM.lookup k im of
@@ -43,6 +47,7 @@ deleteFindMinMS ms@(!n, !im) =
   let !key = fst $ IM.findMin im
    in (key, decMS key ms)
 
+-- | Unwraps `MultiSet` into the underlying `IntMap`.
 innerMS :: MultiSet -> IM.IntMap Int
 innerMS (!_, !im) = im
 

@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
+-- | Maximum flow calculation (Ford-Fulkerson algorithm).
 module Data.Graph.MaxFlow where
 
 import Control.Monad
@@ -41,7 +42,8 @@ derivingUnbox
   [|\(RNEdge !x1 !x2 !x3) -> (x1, x2, x3)|]
   [|\(!x1, !x2, !x3) -> RNEdge x1 x2 x3|]
 
--- | `Vertex` -> `[RNEdge]`
+-- | @Vertex -> [RNEdge]@.
+--
 -- TODO: For the sub containers, use `Sequence` or something better
 type ResidualNetwork = VM.IOVector (IM.IntMap RNEdge)
 
@@ -72,6 +74,7 @@ buildRN !nVerts !edges = do
     mergeEdge :: RNEdge -> RNEdge -> RNEdge
     mergeEdge (RNEdge !to_ !flow !cap_) (RNEdge !_ !flow' !_) = RNEdge to_ (flow + flow') cap_
 
+-- | Calculates max flow.
 {-# INLINE maxFlowRN #-}
 maxFlowRN :: Int -> ResidualNetwork -> Int -> Int -> IO Int
 maxFlowRN !nVerts !rn !v0 !ve = do
@@ -86,7 +89,7 @@ maxFlowRN !nVerts !rn !v0 !ve = do
         Just (!flow, !path) -> do
           updateFlow rn flow path
           VM.set vis False
-          (flow +) <$!> inner vis
+          (flow +) <$> inner vis
 
 -- | Find a flow augment path between two vertices.
 {-# INLINE augumentPath #-}
@@ -125,13 +128,13 @@ addFlowRNEdge !rn !v1 !v2 !flow = do
   -- TODO: consider using `VM.modify`
   -- TODO: consider using `lens`, `snd2` (or not)
   -- TODO: replace `dupe` with function applicative?
-  (!edges1, !edge12) <- second (IM.! v2) . dupe <$!> VM.read rn v1
-  (!edges2, !edge21) <- second (IM.! v1) . dupe <$!> VM.read rn v2
+  (!edges1, !edge12) <- second (IM.! v2) . dupe <$> VM.read rn v1
+  (!edges2, !edge21) <- second (IM.! v1) . dupe <$> VM.read rn v2
   -- let !_ = traceShow ("edge", "v1:", v1, edge12, "v2:", v2, edge21, flow) ()
 
   -- TODO: debugAssert
   -- when (cap edge12 < flow) $ error "invariant broken"
-  VM.write rn v1 $! IM.insert v2 (RNEdge (to edge12) (cap edge12 - flow) (rev edge12)) edges1
-  VM.write rn v2 $! IM.insert v1 (RNEdge (to edge21) (cap edge21 + flow) (rev edge21)) edges2
+  VM.write rn v1 $ IM.insert v2 (RNEdge (to edge12) (cap edge12 - flow) (rev edge12)) edges1
+  VM.write rn v2 $ IM.insert v1 (RNEdge (to edge21) (cap edge21 + flow) (rev edge21)) edges2
 
 -- }}}

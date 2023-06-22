@@ -154,17 +154,38 @@ compress (x : xs) = x : compress (dropWhile (== x) xs)
 times :: Int -> (a -> a) -> a -> a
 times !n !f !s0 = snd $ until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 
--- | Returns combinations of the list taking n values.
--- | For example, binary combinations are got by `combination 2 [0..8]`.
--- | REMARK: This is slow. Prefer list comprehension like `x <- [1 .. n], y <- [x + 1 .. n]m ..]`.
-combinations :: Int -> [a] -> [[a]]
-combinations !len !elements = comb len (length elements) elements
+-- -- | Returns combinations of the list taking n values.
+-- -- | For example, binary combinations are got by `combination 2 [0..8]`.
+-- -- | REMARK: This is slow. Prefer list comprehension like `x <- [1 .. n], y <- [x + 1 .. n]m ..]`.
+-- combinations :: Int -> [a] -> [[a]]
+-- combinations !len !elements = comb len (length elements) elements
+--   where
+--     comb 0 _ _ = [[]]
+--     comb !r !n a@(x : xs)
+--       | n == r = [a]
+--       | otherwise = map (x :) (comb (r - 1) (n - 1) xs) ++ comb r (n - 1) xs
+--     comb _ _ _ = error "unreachable"
+
+-- | Combinations.
+-- - <https://stackoverflow.com/a/58511843>
+-- - <https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c>
+combs :: Int -> [a] -> [[a]]
+combs k as@(x : xs)
+  | k == 0 = [[]]
+  | k == 1 = map pure as
+  | k == l = pure as
+  | k > l = []
+  | otherwise = run (l - 1) (k - 1) as $ combs (k - 1) xs
   where
-    comb 0 _ _ = [[]]
-    comb !r !n a@(x : xs)
-      | n == r = [a]
-      | otherwise = map (x :) (comb (r - 1) (n - 1) xs) ++ comb r (n - 1) xs
-    comb _ _ _ = error "unreachable"
+    l = length as
+
+    run :: Int -> Int -> [a] -> [[a]] -> [[a]]
+    run n k ys cs
+      | n == k = map (ys ++) cs
+      | otherwise = map (q :) cs ++ run (n - 1) k qs (drop dc cs)
+      where
+        (q : qs) = take (n - k + 1) ys
+        dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
 
 -- | Returns inclusive ranges that satisfy the given `check`.
 -- TODO: cheaper implementation

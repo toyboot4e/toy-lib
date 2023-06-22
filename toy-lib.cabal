@@ -50,7 +50,6 @@ library
       Math.Matrix
       Math.PowMod
       Math.Primes
-      ToyLib
       ToyLib.Macro
       ToyLib.Prelude
   other-modules:

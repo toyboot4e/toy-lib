@@ -2,6 +2,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | Tree folding.
+
 module Data.Tree.Fold where
 
 import Control.Monad
@@ -43,14 +45,15 @@ scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
   where
     !nVerts = rangeSize $ bounds tree
 
+-- | Type-restricted `scanTreeVG`.
 scanTreeVU :: VU.Unbox a => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> VU.Vector a
 scanTreeVU = scanTreeVG
 
+-- | Type-restricted `scanTreeVG`.
 scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
 scanTreeV = scanTreeVG
 
--- | Folds a tree for every vertex as a root using the rerooting technique.
--- Also known as tree DP with rerooting.
+-- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
 -- REMARK: `mempty` is used for initial operator value.
 foldTreeAll :: (VU.Unbox a, VU.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> VU.Vector a
 foldTreeAll !tree !acc0At !toM =

@@ -3,6 +3,29 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | \(O(log N)\) binary search for sorted items in an inclusive range (from left to right only).
+--
+-- `bsearch` returns an @(ok, ng)@ index pair at the boundary. `bsearchL` and `bsearchR` returns
+-- one of the pair. `bsearchM` is a monadic variant of `bsearch`.
+--
+-- = Example
+--
+-- With an OK predicate @(<= 5)@, list @[0..9]@ can be seen as:
+--
+-- > [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+-- >  <-------------->  <-------->
+-- >         ok             ng
+--
+-- In the following example, `bsearch` returns the @(ok, ng)@ = @(Just 5, Just 6)@ pair at the boundary:
+--
+-- >>> :{
+-- let xs = [0 :: Int .. 9]
+--  in bsearch (0 :: Int, 9 :: Int) (\i -> xs !! i <= 5)
+-- :}
+-- (Just 5,Just 6)
+--
+-- `bsearchL` returns @Just 5@ and `bsearchR` returns @Just 6@.
+
 module Algorithm.BinarySearch where
 
 import Data.Functor.Identity
@@ -17,7 +40,7 @@ import ToyLib.Prelude
 
 -- TODO: Use typeclass for getting middle and detecting end
 
--- | Pure variant of `bsearchM`.
+-- | Pure binary search.
 {-# INLINE bsearch #-}
 bsearch :: (Int, Int) -> (Int -> Bool) -> (Maybe Int, Maybe Int)
 bsearch !rng = runIdentity . bsearchM rng . (return .)
@@ -32,22 +55,7 @@ bsearchL !a !b = fst $ bsearch a b
 bsearchR :: (Int, Int) -> (Int -> Bool) -> Maybe Int
 bsearchR !a !b = snd $ bsearch a b
 
--- | Monadic binary search for sorted items in an inclusive range (from left to right only).
---
--- It returns an @(ok, ng)@ index pair at the boundary.
---
--- # Example
---
--- With an OK predicate @(<= 5)@, list @[0..9]@ can be seen as:
---
--- > [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
--- >  <-------------->  <-------->
--- >         ok             ng
---
--- In this case `bsearch` returns the @(ok, ng)@ = @(Just 5, Just 6)@ pair:
---
--- >>> bsearch (0, 9) (\i -> xs !! i <= 5) [0 .. 9]
--- (Just 5, Just 6)
+-- | Monadic binary search.
 {-# INLINE bsearchM #-}
 bsearchM :: forall m. (Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int, Maybe Int)
 bsearchM (!low, !high) !isOk = both wrap <$> inner (low - 1, high + 1)
@@ -68,11 +76,11 @@ bsearchM (!low, !high) !isOk = both wrap <$> inner (low - 1, high + 1)
       | otherwise = Nothing
 
 {-# INLINE bsearchML #-}
-bsearchML :: forall m. (Applicative m, Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int)
+bsearchML :: forall m. (Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int)
 bsearchML = fmap fst .: bsearchM
 
 {-# INLINE bsearchMR #-}
-bsearchMR :: forall m. (Applicative m, Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int)
+bsearchMR :: forall m. (Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int)
 bsearchMR = fmap snd .: bsearchM
 
 {-# INLINE bsearchF32 #-}

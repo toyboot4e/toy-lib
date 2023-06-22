@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | Digraph coloring.
+
 module Data.Graph.Digraph where
 
 import Data.Array.IArray
@@ -7,8 +9,6 @@ import Data.Bifunctor
 import Data.Graph (Graph, Vertex)
 import qualified Data.IntMap.Strict as IM
 import Data.List (foldl')
-
--- {{{ Digraph
 
 -- | Red | Green color
 type Color = Bool
@@ -41,4 +41,3 @@ colorize !graph !colors0 = dfs True (colors0, Just ([], []))
       | color = Just $ first (v :) acc
       | otherwise = Just $ second (v :) acc
 
--- }}}

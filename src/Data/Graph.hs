@@ -4,12 +4,13 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | I'm using @Array Int [Int]@ as a primary `Graph` data storage.
+
 module Data.Graph where
 
 import Control.Monad
 import Data.Array.IArray
 import Data.Array.IO
-import Data.Array.MArray
 import Data.Array.ST
 import Data.Array.Unboxed (UArray)
 import Data.Array.Unsafe
@@ -28,16 +29,14 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude (add2)
 
--- | Adjacency list representation of a graph with cost type parameter `a`.
+-- | Adjacency list representation of a graph with node type parameter `a`.
 type Graph a = Array Int [a]
 
--- TODO: Use `Vertex` aggressively
+-- | Vertex index. Starts with zero.
 type Vertex = Int
 
--- | Weighted `Graph` (Entry priority payload).
+-- | Weighted `Graph`. @Entry priority payload@.
 type WGraph a = Array Int [H.Entry a Vertex]
-
--- {{{ Graph search (V2)
 
 -- | Collects distances from one vertex to every other using BFS, returning a vector.
 bfsVec :: Graph Int -> Int -> VU.Vector Int
@@ -118,8 +117,8 @@ bfsGrid !grid !start = runSTUArray $ do
   !_ <- inner (0 :: Int) (IS.singleton $ ix start)
   return vis
 
--- 01-BFS: <https://atcoder.jp/contests/typical90/tasks/typical90_aq>
--- It's slow, but could be applied easily.
+-- | 01-BFS: <https://atcoder.jp/contests/typical90/tasks/typical90_aq>.
+-- It's slow, but could be applied easily in certain situation.
 bfsGrid01 :: (Int, Int) -> UArray (Int, Int) Bool -> UArray (Int, Int, Int) Int
 bfsGrid01 !start !isBlock = runSTUArray $ do
   -- dp ! (y, x, iDir). The third dimension is required!
@@ -195,18 +194,17 @@ dj !graph !start = inner (H.singleton $! H.Entry 0 start) IM.empty
         vs = map (merge entry) $! filter ((`IM.notMember` vis') . H.payload) $! graph ! v
         heap'' = foldl' (flip H.insert) heap' vs
 
--- | Runs dijkstra's algorithm over a reversed graph of given graph.
--- It calculates
+-- | Runs Dijkstra's algorithm over a reversed graph of given graph.
 revDj :: WGraph Int -> Int -> IM.IntMap Int
-revDj !graph !start =
-  let !graph' = revWGraph graph
-   in dj graph' start
+revDj !graph !start = dj (revWGraph graph) start
 
+-- | Creates a reverse weightened graph.
 revWGraph :: WGraph Int -> WGraph Int
 revWGraph !graph = accumArray @Array (flip (:)) [] (bounds graph) $ concatMap revF $ assocs graph
   where
     revF (!v1, !v2s) = map (\(H.Entry !priority !v2) -> (v2, H.Entry priority v1)) v2s
 
+-- | Dijkstra backed by a vector.
 djVec :: forall a. (Num a, Ord a, VU.Unbox a) => WGraph a -> Int -> a -> VU.Vector a
 djVec !graph !start !undef = VU.create $ do
   !vis <- VUM.replicate nVerts undef
@@ -229,3 +227,7 @@ djVec !graph !start !undef = VU.create $ do
 
     merge :: H.Entry a Int -> H.Entry a Int -> H.Entry a Int
     merge (H.Entry !cost1 !_v1) (H.Entry !cost2 !v2) = H.Entry (cost1 + cost2) v2
+
+-- | Runs Dijkstra's algorithm over a reversed graph of given graph.
+revDjVec :: WGraph Int -> Int -> VU.Vector Int
+revDjVec !graph !start = djVec (revWGraph graph) start (-1)

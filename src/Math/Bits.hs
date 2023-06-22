@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | Obsolute. TODO: Delete.
+
 module Math.Bits where
 
 import Data.Bits

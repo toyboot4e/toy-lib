@@ -8,11 +8,8 @@ module Data.SegmentTree.Lazy where
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
-import Data.BinaryLifting
 import Data.Bits
 import Data.SemigroupAction
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
@@ -217,7 +214,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (VGM.MVector v a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -248,7 +245,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
 _evalToRoot ::
-  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()

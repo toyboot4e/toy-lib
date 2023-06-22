@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+-- | TODO: Refactor in my way.
+
 module Math.Matrix where
 
 import Data.Array.IArray

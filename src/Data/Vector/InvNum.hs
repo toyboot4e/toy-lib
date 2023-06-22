@@ -11,6 +11,7 @@ import Data.SegmentTree.Strict
 import Data.Vector.Compress (compressVU)
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
+import ToyLib.Prelude (foldForMVG)
 
 -- {{{ Inveresion number (segment tree)
 
@@ -19,8 +20,7 @@ invNumVG :: Int -> (VG.Vector v Int) => v Int -> Int
 invNumVG xMax xs = runST $ do
   !stree <- newSTreeVU (+) (xMax + 1) (0 :: Int)
 
-  -- NOTE: foldM is better for performance
-  !ss <- VG.forM xs $ \x -> do
+  foldForMVG (0 :: Int) xs $ \acc x -> do
     -- count pre-inserted numbers bigger than this:
     -- let !_ = dbg (x, (succ x, xMax))
     !s <-
@@ -30,9 +30,7 @@ invNumVG xMax xs = runST $ do
 
     -- let !_ = traceShow (x, s, (succ x, pred n)) ()
     modifySTree stree succ x
-    return s
-
-  return $ VG.sum ss
+    return $ acc + s
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.

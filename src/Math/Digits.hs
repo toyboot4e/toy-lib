@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | Obsolute. TODO: Delete.
+
 module Math.Digits where
 
 import Data.List (genericTake, foldl')

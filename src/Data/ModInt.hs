@@ -7,6 +7,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
+-- | `Int` with automatic moudlo arithmetic performed. Depends on @Math.PowMod@.
+
 module Data.ModInt where
 
 import Data.Proxy
@@ -23,6 +25,7 @@ import Math.PowMod (invModF)
 class TypeInt a where
   typeInt :: Proxy a -> Int
 
+-- | `Int` with automatic moudlo arithmetic performed.
 newtype ModInt p = ModInt {toInt :: Int}
   deriving (Eq)
 

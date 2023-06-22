@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | Prime number enumeration and prime factorization.
+
 module Math.Primes where
 
 import Data.List (group)
@@ -45,11 +47,11 @@ primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tai
       where
         pairs ((x : xs) : ys : t) = (x : union xs ys) : pairs t
 
--- | Returns `[(prime, count)]`
--- TODO: reuse `primes`
+-- | Returns @[(prime, count)]@
 primeFactors :: Int -> [(Int, Int)]
 primeFactors !n_ = map (\ !xs -> (head xs, length xs)) . group $ inner n_ input
   where
+    -- TODO: reuse `primes`?
     input = 2 : 3 : [y | x <- [5, 11 ..], y <- [x, x + 2]]
     inner n pps@(p : ps)
       | n == 1 = []
