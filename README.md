@@ -2,31 +2,41 @@
 
 ToyLib is a private Haskell library for solving AtCoder problems.
 
-## Source file bundling
+## Features (CLI)
 
-AtCoder only accepts a single `Main.hs`. The library modules can be bundled into one `Main.hs` using `toy-lib-exe` (`stack run`).
+`toy-lib-exe` is the source file bunlder. It has the following features.
 
-### Available inputs
+### Source file bundling
 
-| Input           | Status                       |
-|-----------------|------------------------------|
-| Whole library   | :heavy_check_mark: Available |
-| One module      | :construction: In progress   |
-| One source file | :construction: In progress   |
+Bundle the whole / part of the ToyLib modules into one `Main.hs` with a specified format.
 
-### Available formats
+#### Available inputs
 
-| Format                              | Status                       |
-|-------------------------------------|------------------------------|
-| minify declarations                 | :heavy_check_mark: Available |
-| format each declaration in one line | :construction: In progress   |
-| just pick up declarations           | :construction: In progress   |
+| Input         | Status                       |
+|---------------|------------------------------|
+| Whole library | :heavy_check_mark: Available |
+| One module    | :construction: In progress   |
+| stdin         | :construction: In progress   |
+
+#### Available formats
+
+| Format                      | Status                       |
+|-----------------------------|------------------------------|
+| Minify all the declarations | :heavy_check_mark: Available |
+| Minify each declaration     | :construction: In progress   |
+| Pick up declarations        | :construction: In progress   |
+
+### Templates
+
+Embed `ToyLib` modules with specified formats.
+
+TODO
 
 ## Project setting notes
 
 ### `stack.yaml`
 
-For NixOS where Nix integration seems to be on by default:
+Disable Nix pureity for NixOS, where Nix integration seems to be enabled by default:
 
 ```yaml
 nix:
@@ -43,11 +53,24 @@ ghc-options:
 - -Wno-missing-export-lists
 ```
 
+### `hacddock`
+
+- Run `stack test` for running [`doctest`] over [`haddock`] doctests.
+- Run `stack haddock toy-lib:lib --fast "$@"` to build local library documentation. Add `--open` to it for opening it on your browser.
+  - TODO: Include it in `stack test` or project-specific command?
+
+[`doctest`]: https://github.com/sol/doctest
+[`haddock`]: https://haskell-haddock.readthedocs.io/en/latest/
+
 ### GHC version
 
-FIXME: It's not compatible with AtCoder GHC version!
+FIXME: It's not compatible with AtCoder GHC version.
+
+### Incremental builds?
+
+TODO
 
 ## Thanks
 
-- [cojna/iota](https://github.com/cojna/iota)
+[cojna/iota](https://github.com/cojna/iota)
 
