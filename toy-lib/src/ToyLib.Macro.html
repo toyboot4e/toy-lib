@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">ToyLib.Macro</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- When run as a stack script, `dbg` expands to `traceShow`.</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Otherwise it's an empty function.</span><span class="hs-cpp">
+#ifdef DEBUG
+</span><span class="hs-identifier">dbg</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Show</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-identifier">dbg</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">x</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">traceShow</span><span> </span><span class="hs-identifier">x</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-identifier">dbgAssert</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Bool</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-identifier">dbgAssert</span><span> </span><span class="hs-identifier">False</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">s</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">error</span><span> </span><span class="hs-operator">$</span><span> </span><span class="hs-string">&quot;assertion failed!: &quot;</span><span> </span><span class="hs-operator">++</span><span> </span><span class="hs-identifier">s</span><span>
+</span><span id="line-14"></span><span class="hs-identifier">dbgAssert</span><span> </span><span class="hs-identifier">True</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-cpp">
+
+#else
+</span><span id="local-6989586621679128827"><span class="annot"><a href="ToyLib.Macro.html#dbg"><span class="hs-identifier hs-type">dbg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679128827"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679128827"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-18"></span><span id="dbg"><span class="annot"><span class="annottext">dbg :: forall a. Show a =&gt; a -&gt; ()
+</span><a href="ToyLib.Macro.html#dbg"><span class="hs-identifier hs-var hs-var">dbg</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span id="local-6989586621679128825"><span class="annot"><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-type">dbgAssert</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679128825"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679128825"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-21"></span><span id="dbgAssert"><span class="annot"><span class="annottext">dbgAssert :: forall a. Bool -&gt; a -&gt; a
+</span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var hs-var">dbgAssert</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span class="hs-cpp">
+
+#endif
+</span><span>
+</span><span id="line-25"></span></pre></body></html>
