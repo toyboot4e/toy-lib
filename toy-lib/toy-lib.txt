@@ -13,8 +13,10 @@ module Data.Graph.Scc
 
 -- | Topological sort implemented with postorder DFS.
 --   
---   # Implementation note Topological sort is for DAG, but internally it's
---   used for <tt>scc</tt> where cyclic graph input can come.
+--   <h1>Implementation note</h1>
+--   
+--   Topological sort is for DAG, but internally it's used for <tt>scc</tt>
+--   where cyclic graph input can come.
 topSort :: Array Int [Int] -> [Int]
 
 -- | Partial running of <tt>scc</tt> over topologically sorted vertices,
@@ -63,31 +65,36 @@ module Data.SegmentTree.Strict
 
 -- | A mutable segment tree backed by a complete binary tree.
 --   
---   # Overview
+--   <h1>Overview</h1>
 --   
 --   A segment tree is a cache of a folding function. Each node corresponds
 --   to a folding range and the node contains the folding result.
 --   
 --   A segment tree has a constant size and never be resized.
 --   
---   # Operations
+--   <h1>Operations</h1>
 --   
---   Modification takes $O(log N)$, so creation takes $N(log N)$. Lookup
---   takes $O(log N)$.
+--   Modification takes &lt;math&gt;, so creation takes &lt;math&gt;.
+--   Lookup takes &lt;math&gt;.
 --   
---   # (Internal) Indices
+--   <h1>(Internal) Indices</h1>
 --   
---   The complete binary tree has `2 ^ depth - 1` elements.
+--   The complete binary tree has <tt>2 ^ depth - 1</tt> elements.
 --   
 --   <ul>
---   <li>Child elements of a parent node <tt>i</tt> has index `2 * i + 1`
---   and `2 * i + 2`.</li>
---   <li>The leaf indices start with `length / 2 - 1`.</li>
+--   <li>Child elements of a parent node <tt>i</tt> has index <tt>2 * i +
+--   1</tt> and <tt>2 * i + 2</tt>.</li>
+--   <li>The leaf indices start with <tt>length / 2 - 1</tt>.</li>
 --   </ul>
 --   
 --   Example:
 --   
---   ``` 0 1 2 3 4 5 6 07 08 09 10 11 12 13 14 ```
+--   <pre>
+--              0
+--        1           2
+--     3     4     5     6
+--   07 08 09 10 11 12 13 14
+--   </pre>
 data SegmentTree v s a
 SegmentTree :: (a -> a -> a) -> v s a -> SegmentTree v s a
 
@@ -182,17 +189,25 @@ log2 :: FiniteBits b => b -> Int
 
 -- | Ceiling of log base 2 of an <a>Int</a>.
 --   
---   # Example
+--   <h1>Example</h1>
 --   
---   ```hs &gt; log2 3 1 &gt; log2CeilInt 3 2 ```
+--   <pre>
+--   &gt; log2 3
+--   1
+--   &gt; log2CeilInt 3
+--   2
+--   </pre>
 log2CeilInt :: Int -> Int
 
 -- | Calculates the smallest integral power of two that is not smaller than
 --   <tt>x</tt>.
 --   
---   # Example
+--   <h1>Example</h1>
 --   
---   ```hs &gt; bitCeil 3 4 ```
+--   <pre>
+--   &gt; bitCeil 3
+--   4
+--   </pre>
 bitCeil :: Int -> Int
 
 
@@ -383,28 +398,30 @@ module Data.SegmentTree.Lazy
 
 -- | Lazy segment tree.
 --   
---   # Indices
+--   <h1>Indices</h1>
 --   
 --   Use 1-based indices for super handy index hacks:
 --   
---   ```txt 1 | 2 3 | height = 4 4 5 6 7 | 08 09 10 11 12 13 14 15 v ^ +--
---   nVerts <a>div</a> 2
+--   <pre>
+--              1             |
+--        2           3       | height = 4
+--     4     5     6     7    |
+--   08 09 10 11 12 13 14 15  v
+--   ^
+--   +-- nVerts / 2
 --   
---   0 1 2 3 4 5 6 7 -- iLeaf is given by user and uses zero-based indices.
+--   0  1  2  3  4  5  6  7   -- iLeaf is given by user and uses zero-based indices.
+--   
+--   - parentVertex = vertex / 2 = shiftR vertex 1
+--   - leftChild = vertex * 2 = shiftR vertex 1
+--   - rightChild = vertex * 2 + 1 = shiftR vertex 1 + 1 = (shiftR vertex 1) .|. 1
+--   </pre>
+--   
+--   <h1>Invariant</h1>
 --   
 --   <ul>
---   <li>parentVertex = vertex <a>div</a> 2 = shiftR vertex 1</li>
---   <li>leftChild = vertex * 2 = shiftR vertex 1</li>
---   <li>rightChild = vertex * 2 + 1 = shiftR vertex 1 + 1 = (shiftR vertex
---   1) .|. 1</li>
---   </ul>
---   
---   ```
---   
---   # Invariant
---   
---   <ul>
---   <li>New operators always come from right: `oldOp &lt;&gt; newOp`</li>
+--   <li>New operators always come from right: <tt>oldOp &lt;&gt;
+--   newOp</tt></li>
 --   </ul>
 data LazySegmentTree v a op s
 LazySegmentTree :: !v s a -> !MVector s op -> !Int -> LazySegmentTree v a op s
@@ -595,7 +612,7 @@ colorize :: Graph Int -> IntMap Color -> Vertex -> (IntMap Color, Maybe ColorInf
 --   
 --   The i-th element of the underlying vector of <a>BinaryLifting</a>
 --   stores &lt;math&gt;, with which we can construct any of &lt;math&gt;
---   ((0 &lt;= i &lt; 2^63)) in a big ((63)) constant time.
+--   ((0 &lt;= i &lt; 2^63)) in a big (63) constant time.
 module Data.BinaryLifting
 
 -- | Storage of &lt;math&gt;.
@@ -659,10 +676,10 @@ invModF :: Int -> Int -> Int
 -- | Calculates &lt;math&gt;, using Fermat's little theorem.
 divModF :: Int -> Int -> Int -> Int
 
--- | Cache of base^i for iterative square method.
+-- | Cache of &lt;math&gt; for iterative square method.
 powModCache :: Int -> Int -> (Int, Vector Int)
 
--- | Calculates base^i (mod p) from a cache.
+-- | Calculates &lt;math&gt; (mod p) from a cache.
 powByCache :: Int -> (Int, Vector Int) -> Int
 invModFC :: Int -> (Int, Vector Int) -> Int
 divModFC :: Int -> (Int, Vector Int) -> Int
@@ -750,16 +767,16 @@ HashSlice :: {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> HashSlice p
 [hashLength] :: HashSlice p -> {-# UNPACK #-} !Int
 
 -- | Slices a rolling hash string.
-sliceRH :: forall b p. (TypeInt b, TypeInt p) => RollingHash b p -> Int -> Int -> HashSlice p
+sliceRH :: forall b p. TypeInt p => RollingHash b p -> Int -> Int -> HashSlice p
 
 -- | Cons two rolling hash slices.
-consHS :: forall b p. (TypeInt b, TypeInt p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
+consHS :: forall b p. TypeInt p => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
 
 -- | Creates an empty rolling hash slice.
-emptyHS :: TypeInt p => HashSlice p
+emptyHS :: HashSlice p
 
 -- | Concatanates two rolling hash slices.
-concatHS :: forall b p t. (TypeInt b, TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
+concatHS :: forall b p t. (TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
 instance GHC.Classes.Eq (Data.RollingHash.RollingHash b p)
 instance GHC.Show.Show (Data.RollingHash.RollingHash b p)
 instance GHC.Classes.Eq (Data.RollingHash.HashSlice p)
@@ -829,7 +846,7 @@ bsearchF32R :: (Float, Float) -> Float -> (Float -> Bool) -> Maybe Float
 bsearchF64 :: (Double, Double) -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
 bsearchF64L :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
 bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
-compressIndex :: [Int] -> (Vector Int, [Int])
+compressList :: [Int] -> (Vector Int, [Int])
 
 module Data.Vector.Compress
 
