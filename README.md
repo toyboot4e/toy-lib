@@ -1,6 +1,26 @@
 # ToyLib
 
-ToyLib is a Haskell library for solving AtCoder problems. Library components can be bundled into one `Main.hs` using [./script/toylib](./script/toylib).
+ToyLib is a Haskell library for solving AtCoder problems.
+
+## Source file bundling
+
+AtCoder only accepts a single `Main.hs`. The library modules can be bundled into one `Main.hs` using `toy-lib-exe` (`stack run`).
+
+### Available inputs
+
+| Input           | Status                       |
+|-----------------|------------------------------|
+| Whole library   | :heavy_check_mark: Available |
+| One module      | :construction: In progress   |
+| One source file | :construction: In progress   |
+
+### Available formats
+
+| Format                              | Status                       |
+|-------------------------------------|------------------------------|
+| minify declarations                 | :heavy_check_mark: Available |
+| format each declaration in one line | :construction: In progress   |
+| just pick up declarations           | :construction: In progress   |
 
 ## Project setting notes
 
