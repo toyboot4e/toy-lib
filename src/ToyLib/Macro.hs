@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 
+-- Excluded on generation
+
 module ToyLib.Macro where
 
 -- When run as a stack script, `dbg` expands to `traceShow`.
