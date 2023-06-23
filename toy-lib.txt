@@ -229,7 +229,7 @@ digitsRev :: Integral n => n -> n -> [n]
 
 -- | Returns the digits of a positive integer as a list. REMARK: It's
 --   modified to return `[0]` when given zero.
-digits :: (Eq n, Integral n) => n -> n -> [n]
+digits :: Integral n => n -> n -> [n]
 
 -- | Takes a list of digits, and converts them back into a positive
 --   integer.
@@ -712,14 +712,14 @@ typeInt :: TypeInt a => Proxy a -> Int
 newtype ModInt p
 ModInt :: Int -> ModInt p
 [toInt] :: ModInt p -> Int
-instance Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
-instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
-instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
+instance GHC.Classes.Eq (Data.ModInt.ModInt p)
 instance GHC.Show.Show (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => GHC.Num.Num (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => GHC.Real.Fractional (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Data.Semigroup.Internal.Product (Data.ModInt.ModInt p)) (Data.ModInt.ModInt p)
-instance GHC.Classes.Eq (Data.ModInt.ModInt p)
+instance Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
+instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
+instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
 
 
 -- | The rolling hash algorithm lets you create fastly ((O(1))) comparable
@@ -812,7 +812,7 @@ imos2DRev :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, I
 --           ok             ng
 --   </pre>
 --   
---   In the following example, <a>bsearch</a> returns the <tt>(ok, ng)</tt>
+--   In the preceding example, <a>bsearch</a> returns the <tt>(ok, ng)</tt>
 --   = <tt>(Just 5, Just 6)</tt> pair at the boundary:
 --   
 --   <pre>
