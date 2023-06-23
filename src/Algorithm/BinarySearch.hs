@@ -16,7 +16,7 @@
 -- >  <-------------->  <-------->
 -- >         ok             ng
 --
--- In the following example, `bsearch` returns the @(ok, ng)@ = @(Just 5, Just 6)@ pair at the boundary:
+-- In the preceding example, `bsearch` returns the @(ok, ng)@ = @(Just 5, Just 6)@ pair at the boundary:
 --
 -- >>> :{
 -- let xs = [0 :: Int .. 9]

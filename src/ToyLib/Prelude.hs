@@ -10,7 +10,6 @@ import Control.Monad
 import Control.Monad.Primitive
 import Data.Array.IArray
 import Data.Array.MArray
-import Data.Array.Unboxed (UArray)
 import Data.Bifunctor
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
@@ -22,10 +21,7 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
 import Debug.Trace
 import System.IO (stdout)
 
@@ -170,7 +166,8 @@ times !n !f !s0 = snd $ until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 -- - <https://stackoverflow.com/a/58511843>
 -- - <https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c>
 combs :: Int -> [a] -> [[a]]
-combs k as@(x : xs)
+combs k [] = error "given empty list"
+combs k as@(!x : xs)
   | k == 0 = [[]]
   | k == 1 = map pure as
   | k == l = pure as
@@ -184,7 +181,7 @@ combs k as@(x : xs)
       | n == k = map (ys ++) cs
       | otherwise = map (q :) cs ++ run (n - 1) k qs (drop dc cs)
       where
-        (q : qs) = take (n - k + 1) ys
+        (!q : qs) = take (n - k + 1) ys
         dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
 
 -- | Returns inclusive ranges that satisfy the given `check`.
@@ -192,13 +189,13 @@ combs k as@(x : xs)
 twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
 twoPointers !n !check = inner (0, 0)
   where
-    inner (!l, !r) | l >= n = []
+    inner (!l, !_) | l >= n = []
     inner (!l, !r)
       | check (l, r) =
           let (!l', !r') = until (not . peekCheck) (second succ) (l, r)
            in (l', r') : inner (succ l', max l' r')
       | otherwise = inner (succ l, max (succ l) r)
-    peekCheck (!l, !r) | r == pred n = False
+    peekCheck (!_, !r) | r == pred n = False
     peekCheck (!l, !r) = check (l, succ r)
 
 -- }}}

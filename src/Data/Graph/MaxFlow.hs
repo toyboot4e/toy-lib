@@ -10,12 +10,11 @@ module Data.Graph.MaxFlow where
 
 import Control.Monad
 import Data.Bifunctor
-import Data.Graph (Graph, Vertex)
+import Data.Graph (Vertex)
 import qualified Data.IntMap.Strict as IM
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Mutable as VM
 import Data.Vector.Unboxed.Deriving (derivingUnbox)
-import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- {{{ Maximum flow (Ford-Fulkerson algorithm)
 

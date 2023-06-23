@@ -13,7 +13,6 @@ import Data.Array.IArray
 import Data.Array.IO
 import Data.Array.ST
 import Data.Array.Unboxed (UArray)
-import Data.Array.Unsafe
 import qualified Data.Heap as H
 import qualified Data.IntMap.Strict as IM
 import qualified Data.IntSet as IS
@@ -21,10 +20,6 @@ import Data.List (foldl')
 import Data.Maybe
 import qualified Data.Sequence as Seq
 import Data.Tuple.Extra (both)
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude (add2)
@@ -88,7 +83,7 @@ bfsVerts graph start = inner 0 IM.empty (IS.singleton start)
 bfsGrid :: UArray (Int, Int) Char -> (Int, Int) -> UArray (Int, Int) Int
 bfsGrid !grid !start = runSTUArray $ do
   let bounds_ = bounds grid
-  let (!h, !w) = both succ $ snd bounds_
+  let (!_, !w) = both succ $ snd bounds_
   let isBlock !yx = grid ! yx == '#'
 
   let ix = index bounds_

@@ -39,7 +39,7 @@ digitsRev !base = fromJust . mDigitsRev base
 
 -- | Returns the digits of a positive integer as a list.
 -- REMARK: It's modified to return `[0]` when given zero.
-digits :: (Eq n, Integral n) => n -> n -> [n]
+digits :: (Integral n) => n -> n -> [n]
 digits _ 0 = [0]
 digits !base !x = reverse $ digitsRev base x
 

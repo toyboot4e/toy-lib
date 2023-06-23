@@ -7,7 +7,6 @@
 
 module Data.SemigroupAction where
 
-import Data.Bits
 import Data.Monoid
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU

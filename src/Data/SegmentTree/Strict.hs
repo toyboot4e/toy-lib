@@ -5,9 +5,6 @@
 module Data.SegmentTree.Strict where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.Bits (shiftL, shiftR)
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
