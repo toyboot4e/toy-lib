@@ -34,11 +34,12 @@ main = do
   (extensions, parsed) <- parseFile template
 
   header <- readFile $ installPath ++ "/template/Header.hs"
-  footer <- readFile $ installPath ++ "/template/Footer.hs"
+  macros <- readFile $ installPath ++ "/template/Macros.hs"
+  body <- readFile $ installPath ++ "/template/Body.hs"
 
   case parsed of
     H.ParseOk templateAst -> do
-      putStr $ generate extensions templateAst (map snd successes) header footer
+      putStr $ generate extensions templateAst (map snd successes) header macros body
     failure -> do
       putStrLn $ "Failed to parse template:"
       print failure
@@ -123,25 +124,23 @@ minifyDeclarations extensions ast = minify ast
     pretty _ = ""
 
     minify :: H.Module l -> String
-    minify (H.Module _ _ _ imports decls) =
-      L.intercalate
-        ";"
-        [ L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports),
-          L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
-        ]
+    minify (H.Module _ _ _ _ decls) = L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
     minify _ = ""
 
-    pphsMode :: H.PPHsMode
-    pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
+pphsMode :: H.PPHsMode
+pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 
-generate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [String] -> String -> String -> String
-generate extensions (H.Module _ _ _ imports _) toylib header footer =
-  unlines [header, pre, disableFormat, exts, toylib', enableFormat, post, "", footer]
+generate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [String] -> String -> String -> String -> String
+generate extensions (H.Module _ _ _ imports _) toylib header macros body =
+  unlines [header, exts, "", pre, disableFormat, imports', "",macros, toylib', enableFormat, post, "", body]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"
       where
         es = L.intercalate ", " $ map H.prettyExtension extensions
+
+    imports' :: String
+    imports' = L.intercalate ";" [L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports)]
 
     pre = "-- {{{ toy-lib: <https://github.com/toyboot4e/toy-lib>"
     post = "-- }}}"
@@ -149,4 +148,4 @@ generate extensions (H.Module _ _ _ imports _) toylib header footer =
     disableFormat = "{- ORMOLU_DISABLE -}"
     enableFormat = "{- ORMOLU_ENABLE -}"
 
-    toylib' = concat toylib
+    toylib' = L.intercalate ";" toylib

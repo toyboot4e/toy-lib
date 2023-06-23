@@ -3,10 +3,3 @@ dbg :: Show a => a -> () ; dbg !x = let !_ = traceShow x () in () ; dbgAssert ::
 #else
 dbg :: Show a => a -> () ; dbg _ = () ; dbgAssert :: Bool -> a -> a ; dbgAssert = flip const ;
 #endif
-
-main :: IO ()
-main = do
-  [n] <- ints
-  !xs <- intsVU
-
-  putStrLn "TODO"

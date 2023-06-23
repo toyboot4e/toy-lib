@@ -1,10 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 
 -- | Obsolute. TODO: Delete.
-
 module Math.Digits where
 
-import Data.List (genericTake, foldl')
+import Data.List (foldl', genericTake)
 import Data.Maybe
 
 -- TODO: revive
@@ -53,4 +52,3 @@ convertBase :: Integral a => a -> a -> [a] -> [a]
 convertBase !from !to = digits to . unDigits from
 
 -- }}}
-
