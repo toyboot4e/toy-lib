@@ -237,6 +237,9 @@ concat2 ((!x, !y) : xys) = x : y : concat2 xys
 concatMap2 :: (a -> (b, b)) -> [a] -> [b]
 concatMap2 !f = concat2 . map f
 
+swapDupe :: (a, a) -> ((a, a), (a, a))
+swapDupe = second swap . dupe
+
 add2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 add2 (!y, !x) = bimap (y +) (x +)
 
