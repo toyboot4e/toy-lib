@@ -6,7 +6,7 @@ cabal-version: 1.12
 
 name:           toy-lib
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/toyboot4e/toy-lib>
+description:    For more info, see Github <https://github.com/toyboot4e/toy-lib>
 homepage:       https://github.com/toyboot4e/toy-lib#readme
 bug-reports:    https://github.com/toyboot4e/toy-lib/issues
 author:         toyboot4e
