@@ -165,6 +165,41 @@ components !graph !start = inner (IS.singleton start) start
         vs = filter (`IS.notMember` vis) $! graph ! v
         vis' = IS.union vis $! IS.fromList vs
 
+-- | Checks a Simple Sndirected Graph and returns markings of cycle vertices.
+-- TODO: Test if it works as expected.
+cyclesSUG :: Array Vertex [Vertex] -> VU.Vector Bool
+cyclesSUG !graph = VU.create $ do
+  !degs <- VUM.replicate nVerts (0 :: Int)
+
+  forM_ (assocs graph) $ \(!v1, !v2s) -> do
+    forM_ v2s $ \v2 -> do
+      VUM.modify degs succ v1
+      VUM.modify degs succ v2
+
+  !heap0 <- H.fromList <$> filterM (fmap (== 1) . VUM.read degs) [0 .. pred nVerts]
+  !isCycleVert <- VUM.replicate nVerts True
+
+  flip fix heap0 $ \loop !heap -> case H.uncons heap of
+    Nothing -> return ()
+    Just (!v1, !heap') -> do
+      VUM.write degs 0 v1
+      VUM.write isCycleVert v1 False
+      loop <=< foldForM heap' (graph ! v1) $ \heap'' v2 -> do
+        !deg <- VUM.read degs v2
+        if
+            | deg == 0 -> return heap''
+            | deg == 1 -> error "cycleSUD: degree 1 to degree 1?"
+            | deg == 2 -> do
+                VUM.modify degs pred v2
+                return $ H.insert v2 heap''
+            | otherwise -> do
+                VUM.modify degs pred v2
+                return heap''
+
+  return isCycleVert
+  where
+    !nVerts = rangeSize (bounds graph)
+
 -- | Dijkstra template that collects all the shortest distances from one vertex to every other.
 -- Works for weightened graphs with positive edge capacities only.
 --
