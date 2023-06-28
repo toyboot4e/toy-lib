@@ -9,6 +9,7 @@ module Math.Matrix where
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
 import ToyLib.Macro
+import Data.BinaryLifting
 
 -- {{{ Math
 
@@ -37,5 +38,19 @@ mulMatMod m a b =
     ((i0, j0), (ix, jx)) = bounds a
     ((j'0, k0), (j'x, kx)) = bounds b
     !_ = dbgAssert (jx - j0 == j'x - j'0)
+
+unitMat :: Int -> UArray (Int, Int) Int
+unitMat n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map ((,1) . dupe) [0 .. pred n]
+
+-- | `mulMatMod` wrapper for binary lifting.
+--
+-- > let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'
+-- > let !mn = newBinLiftV $ MulMatMod @MyModulus m1
+-- > let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
+newtype MulMatMod a = MulMatMod (UArray (Int, Int) Int)
+  deriving (Eq, Show)
+
+instance TypeInt p => Semigroup (MulMatMod p) where
+  (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (typeInt (Proxy @p)) m1 m2
 
 -- }}}
