@@ -13,20 +13,20 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 -- | Creates a 2D view to an immutable vector.
 {-# INLINE view2dVG #-}
 view2dVG :: (VG.Vector v a) => (Int, Int) -> v a -> V.Vector (v a)
-view2dVG (!h, !w) !vec = V.generate h (\i -> VG.slice (w * i) w vec)
+view2dVG (!h, !w) !view = V.generate h (\i -> VG.slice (w * i) w view)
 
 {-# INLINE withView2dVG #-}
 withView2dVG :: (VG.Vector v a) => (Int, Int) -> v a -> (v a, V.Vector (v a))
-withView2dVG !hw !vec = (vec, view2dVG hw vec)
+withView2dVG !hw !view = (view, view2dVG hw view)
 
 -- | Creates a 2D view to a mutable vector.
 {-# INLINE view2dVGM #-}
 view2dVGM :: (VGM.MVector v a) => (Int, Int) -> v s a -> V.Vector (v s a)
-view2dVGM (!h, !w) !vec = V.generate h (\i -> VGM.slice (w * i) w vec)
+view2dVGM (!h, !w) !view = V.generate h (\i -> VGM.slice (w * i) w view)
 
 {-# INLINE withView2dVGM #-}
 withView2dVGM :: (VGM.MVector v a) => (Int, Int) -> v s a -> (v s a, V.Vector (v s a))
-withView2dVGM !hw !vec = (vec, view2dVGM hw vec)
+withView2dVGM !hw !view = (view, view2dVGM hw view)
 
 -- | Creates a 2D mutable vector.
 {-# INLINE new2dVGM #-}
@@ -46,12 +46,16 @@ new2dVM = new2dVGM
 -- | 2D immutable vector indexing.
 {-# INLINE idx2d #-}
 idx2d :: (VG.Vector v a) => V.Vector (v a) -> (Int, Int) -> a
-idx2d !vecs (!y, !x) = vecs V.! y VG.! x
+idx2d view (!y, !x) = view V.! y VG.! x
 
 {-# INLINE read2d #-}
 read2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (Int, Int) -> m a
-read2d !vec (!y, !x) = VGM.read (vec V.! y) x
+read2d !view (!y, !x) = VGM.read (view V.! y) x
 
 {-# INLINE write2d #-}
 write2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (Int, Int) -> a -> m ()
-write2d !vec (!y, !x) = VGM.write (vec V.! y) x
+write2d !view (!y, !x) = VGM.write (view V.! y) x
+
+{-# INLINE modify2d #-}
+modify2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (a -> a) -> (Int, Int) -> a -> m ()
+modify2d !view !alter (!y, !x) = VGM.modify (view V.! y) alter x
