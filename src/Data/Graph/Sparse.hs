@@ -9,6 +9,7 @@ module Data.Graph.Sparse where
 import Control.Monad
 import Control.Monad.ST
 import Data.Graph (Vertex)
+import ToyLib.Macro (dbgAssert)
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 
@@ -38,19 +39,21 @@ data SparseGraph w = SparseGraph
 --
 -- TODO: Faster implementation
 {-# INLINE buildUSG #-}
-buildUSG :: Int -> Int -> [(Int, Int)] -> SparseGraph Int
+buildUSG :: Int -> Int -> [(Int, Int)] -> SparseGraph ()
 buildUSG nVertsSG nEdgesSG edges =
-  buildWSG nVertsSG nEdgesSG $ map (\(!v1, !v2) -> (v1, v2, 1)) edges
+  buildWSG nVertsSG nEdgesSG $ map (\(!v1, !v2) -> (v1, v2, ())) edges
 
 -- | Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
-buildWSG :: Int -> Int -> [(Int, Int, Int)] -> SparseGraph Int
+buildWSG :: VU.Unbox w => Int -> Int -> [(Int, Int, w)] -> SparseGraph w
 buildWSG nVertsSG nEdgesSG edges =
-  let !offsetsSG = (VU.prescanl' (+) 0) $ VU.create $ do
-        !outDegs <- VUM.replicate nEdgesSG (0 :: Int)
+  let !offsetsSG = (VU.scanl' (+) 0) $ VU.create $ do
+        !outDegs <- VUM.replicate nVertsSG (0 :: Int)
         forM_ edges $ \(!v1, !_, !_) -> do
           VUM.modify outDegs succ v1
         return outDegs
+
+      !_ = dbgAssert (VU.last offsetsSG == nEdgesSG)
 
       (!adjacentsSG, !edgeWeightsSG) = runST $ do
         !mOffsets <- VU.thaw offsetsSG
