@@ -64,3 +64,11 @@ write3d !view (!d, !y, !x) = VGM.write (view V.! d V.! y) x
 {-# INLINE modify3d #-}
 modify3d :: (PrimMonad m, VGM.MVector v a) => View3d (v (PrimState m) a) -> (a -> a) -> Index3d -> m ()
 modify3d !view !alter (!d, !y, !x) = VGM.modify (view V.! d V.! y) alter x
+
+{-# INLINE swap3d #-}
+swap3d :: (PrimMonad m, VGM.MVector v a) => View3d (v (PrimState m) a) -> Index3d -> Index3d -> m ()
+swap3d !view !ix1 !ix2 = do
+  !v1 <- read3d view ix1
+  !v2 <- read3d view ix2
+  write3d view ix1 v2
+  write3d view ix2 v1

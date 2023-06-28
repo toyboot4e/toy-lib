@@ -64,3 +64,11 @@ write2d !view (!y, !x) = VGM.write (view V.! y) x
 {-# INLINE modify2d #-}
 modify2d :: (PrimMonad m, VGM.MVector v a) => View2d (v (PrimState m) a) -> (a -> a) -> Index2d -> m ()
 modify2d !view !alter (!y, !x) = VGM.modify (view V.! y) alter x
+
+{-# INLINE swap2d #-}
+swap2d :: (PrimMonad m, VGM.MVector v a) => View2d (v (PrimState m) a) -> Index2d -> Index2d -> m ()
+swap2d !view !ix1 !ix2 = do
+  !v1 <- read2d view ix1
+  !v2 <- read2d view ix2
+  write2d view ix1 v2
+  write2d view ix2 v1
