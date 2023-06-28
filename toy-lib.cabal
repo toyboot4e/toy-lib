@@ -45,6 +45,7 @@ library
       Data.Vector.Compress
       Data.Vector.DictOrder
       Data.Vector.InvNum
+      Data.Vector.View
       Math.Bits
       Math.Digits
       Math.Matrix
