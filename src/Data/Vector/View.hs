@@ -57,5 +57,5 @@ write2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (In
 write2d !view (!y, !x) = VGM.write (view V.! y) x
 
 {-# INLINE modify2d #-}
-modify2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (a -> a) -> (Int, Int) -> a -> m ()
+modify2d :: (PrimMonad m, VGM.MVector v a) => V.Vector (v (PrimState m) a) -> (a -> a) -> (Int, Int) -> m ()
 modify2d !view !alter (!y, !x) = VGM.modify (view V.! y) alter x

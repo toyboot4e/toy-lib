@@ -1,15 +1,18 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | TODO: Refactor in my way.
-
 module Math.Matrix where
 
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
+import Data.ModInt (TypeInt, typeInt)
+import Data.Proxy
+import Data.Tuple.Extra (dupe)
 import ToyLib.Macro
-import Data.BinaryLifting
 
 -- {{{ Math
 
@@ -50,7 +53,7 @@ unitMat n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map (
 newtype MulMatMod a = MulMatMod (UArray (Int, Int) Int)
   deriving (Eq, Show)
 
-instance TypeInt p => Semigroup (MulMatMod p) where
+instance forall p. TypeInt p => Semigroup (MulMatMod p) where
   (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (typeInt (Proxy @p)) m1 m2
 
 -- }}}
