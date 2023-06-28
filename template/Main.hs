@@ -12,8 +12,8 @@
 {-# LANGUAGE BangPatterns, BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf #-}
 {-# LANGUAGE NumDecimals, NumericUnderscores, PatternGuards, TupleSections #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, InstanceSigs, MultiParamTypeClasses #-}
-{-# LANGUAGE QuantifiedConstraints, ScopedTypeVariables, StrictData, TypeApplications #-}
-{-# LANGUAGE TypeFamilies, RankNTypes #-}
+{-# LANGUAGE QuantifiedConstraints, RecordWildCards, ScopedTypeVariables, StrictData #-}
+{-# LANGUAGE TypeApplicationsm, TypeFamilies, RankNTypes #-}
 
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}
