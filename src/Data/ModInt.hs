@@ -44,7 +44,8 @@ instance TypeInt p => Num (ModInt p) where
   fromInteger = ModInt . fromInteger
 
 instance TypeInt p => Fractional (ModInt p) where
-  -- reciprocal of x (inverse of x)
+  -- | Reciprocal of x (inverse of x).
+  -- REMARK: This is TOO slow. Do cache when possible.
   recip (ModInt !x) = ModInt $ invModF x (typeInt (Proxy @p))
   fromRational !r = ModInt n / ModInt d
     where

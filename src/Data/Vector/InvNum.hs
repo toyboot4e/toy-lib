@@ -5,6 +5,8 @@
 
 module Data.Vector.InvNum where
 
+-- | Inversion number calculation with `SegmentTree`
+
 import Control.Monad.ST (runST)
 import Data.Maybe
 import Data.SegmentTree.Strict
@@ -12,8 +14,6 @@ import Data.Vector.Compress (compressVU)
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
 import ToyLib.Prelude (foldForMVG)
-
--- {{{ Inveresion number (segment tree)
 
 -- | Calculates the inversion number.
 invNumVG :: Int -> (VG.Vector v Int) => v Int -> Int
@@ -38,5 +38,3 @@ compressInvNumVG :: VU.Vector Int -> Int
 compressInvNumVG xs = invNumVG (pred (VU.length xs')) xs'
   where
     !xs' = snd $ compressVU xs
-
--- }}}

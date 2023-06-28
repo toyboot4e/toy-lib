@@ -41,6 +41,7 @@ square :: Num a => a -> a
 square !x = x * x
 
 -- | Returns chunks of size `n`.
+-- TODO: Just use `Data.List.Extra.chunksOf`.
 chunks :: Int -> [a] -> [[a]]
 chunks n = inner
   where

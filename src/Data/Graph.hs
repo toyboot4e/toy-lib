@@ -1,14 +1,15 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | I'm using @Array Int [Int]@ as a primary `Graph` data storage.
-
 module Data.Graph where
 
 import Control.Monad
+import Control.Monad.Fix
 import Data.Array.IArray
 import Data.Array.IO
 import Data.Array.ST
@@ -22,7 +23,7 @@ import qualified Data.Sequence as Seq
 import Data.Tuple.Extra (both)
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
-import ToyLib.Prelude (add2)
+import ToyLib.Prelude (add2, foldForM)
 
 -- | Adjacency list representation of a graph with node type parameter `a`.
 type Graph a = Array Int [a]
