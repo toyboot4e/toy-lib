@@ -2,7 +2,6 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | Strongly connected components and topological sort.
-
 module Data.Graph.Scc where
 
 import Control.Monad

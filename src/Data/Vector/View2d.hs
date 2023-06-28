@@ -2,6 +2,10 @@
 
 module Data.Vector.View2d where
 
+-- | 2D view to a vector
+--
+-- TODO: Container-based views (add/rotate/reflect etc.)
+
 import Control.Monad.Primitive
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG

@@ -2,6 +2,8 @@
 
 module Data.Vector.View3d where
 
+-- | 3D view to a vector
+
 import Control.Monad.Primitive
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
