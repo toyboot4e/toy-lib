@@ -62,11 +62,20 @@ chunks n = inner
 (.:.) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> (a1 -> a2 -> a3 -> c)
 (.:.) = (.) . (.) . (.)
 
+foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
+foldFor !s0 !xs !f = foldl' f s0 xs
+
+foldForVG :: (VG.Vector v a) => b -> v a -> (b -> a -> b) -> b
+foldForVG !s0 !xs !f = VG.foldl' f s0 xs
+
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForM !s0 !xs !m = foldM m s0 xs
 
 foldForMVG :: (PrimMonad m, VG.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
+
+foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
+foldForMMS !s0 !xs !f = MS.foldM f s0 xs
 
 -- }}}
 

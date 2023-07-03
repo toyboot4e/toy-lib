@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -187,15 +186,15 @@ cyclesSUG !graph = VU.create $ do
       VUM.write isCycleVert v1 False
       loop <=< foldForM heap' (graph ! v1) $ \heap'' v2 -> do
         !deg <- VUM.read degs v2
-        if
-            | deg == 0 -> return heap''
-            | deg == 1 -> error "cycleSUD: degree 1 to degree 1?"
-            | deg == 2 -> do
-                VUM.modify degs pred v2
-                return $ H.insert v2 heap''
-            | otherwise -> do
-                VUM.modify degs pred v2
-                return heap''
+        case deg of
+          0 -> return heap''
+          1 -> error "cycleSUD: degree 1 to degree 1?"
+          2 -> do
+            VUM.modify degs pred v2
+            return $ H.insert v2 heap''
+          _ -> do
+            VUM.modify degs pred v2
+            return heap''
 
   return isCycleVert
   where
