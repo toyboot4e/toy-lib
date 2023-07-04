@@ -41,7 +41,7 @@ library
       Data.SemigroupAction
       Data.Tree.Fold
       Data.Tree.Lca
-      Data.UnIndex
+      Data.Unindex
       Data.UnionFind.Mutable
       Data.UnionFind.Sparse
       Data.Vector.Compress

@@ -17,7 +17,7 @@ import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntSet as IS
 import Data.Ix
-import Data.UnIndex
+import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
@@ -52,7 +52,7 @@ data SparseGraph i w = SparseGraph
 --
 -- TODO: Faster implementation
 {-# INLINE buildUSG #-}
-buildUSG :: (UnIndex i) => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
+buildUSG :: (Unindex i) => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
 buildUSG boundsSG nEdgesSG edges =
   buildRawSG boundsSG nEdgesSG $ map (\(!i1, !i2) -> (ix i1, ix i2, ())) edges
   where
@@ -60,14 +60,14 @@ buildUSG boundsSG nEdgesSG edges =
 
 -- | Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
-buildWSG :: (UnIndex i, VUM.Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
+buildWSG :: (Unindex i, VUM.Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
 buildWSG boundsSG nEdgesSG edges =
   buildRawSG boundsSG nEdgesSG $ map (\(!i1, !i2, w) -> (ix i1, ix i2, w)) edges
   where
     ix = index boundsSG
 
 {-# INLINE buildRawSG #-}
-buildRawSG :: (UnIndex i, VUM.Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
+buildRawSG :: (Unindex i, VUM.Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
 buildRawSG boundsSG nEdgesSG edges =
   let !nVertsSG = rangeSize boundsSG
       !offsetsSG = (VU.scanl' (+) 0) $ VU.create $ do
@@ -94,7 +94,7 @@ buildRawSG boundsSG nEdgesSG edges =
 
 -- | Retrieves adjacent vertex indices.
 {-# INLINE adj #-}
-adj :: (UnIndex i) => SparseGraph i w -> i -> VU.Vector i
+adj :: (Unindex i) => SparseGraph i w -> i -> VU.Vector i
 adj gr i = VU.map (unindex (boundsSG gr)) $ adjRaw gr v
   where
     !v = index (boundsSG gr) i
@@ -109,7 +109,7 @@ adjRaw SparseGraph {..} v = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
 
 -- | Retrieves adjacent vertices with weights.
 {-# INLINE adjW #-}
-adjW :: (UnIndex i, VU.Unbox w) => SparseGraph i w -> i -> VU.Vector (i, w)
+adjW :: (Unindex i, VU.Unbox w) => SparseGraph i w -> i -> VU.Vector (i, w)
 adjW gr i = VU.map (first (unindex (boundsSG gr))) $ adjWRaw gr v
   where
     !v = index (boundsSG gr) i
@@ -125,7 +125,7 @@ adjWRaw SparseGraph {..} v = VU.zip vs ws
     !ws = VU.unsafeSlice o1 (o2 - o1) edgeWeightsSG
 
 -- TODO: Return IxVector
-dfsSG :: (UnIndex i) => SparseGraph i w -> i -> VU.Vector Int
+dfsSG :: (Unindex i) => SparseGraph i w -> i -> VU.Vector Int
 dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
@@ -140,7 +140,7 @@ dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   return dist
 
 -- TODO: Return IxVector
-bfsSG :: (UnIndex i) => SparseGraph i w -> i -> VU.Vector Int
+bfsSG :: (Unindex i) => SparseGraph i w -> i -> VU.Vector Int
 bfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
@@ -166,7 +166,7 @@ bfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   return dist
 
 -- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)\log {V})$
-djSG :: forall i w. (UnIndex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> i -> w -> VU.Vector w
+djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> i -> w -> VU.Vector w
 djSG !gr@SparseGraph {..} !startIx !undef = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
@@ -216,7 +216,7 @@ topScc1SG !gr' !vis !v0 = do
 
 -- | Creates a reverse graph.
 -- TODO: return weightned graph
-revSG :: (UnIndex i, VU.Unbox w) => SparseGraph i w -> SparseGraph i w
+revSG :: (Unindex i, VU.Unbox w) => SparseGraph i w -> SparseGraph i w
 revSG SparseGraph {..} = buildRawSG boundsSG nEdgesSG edges'
   where
     !vws = VU.zip adjacentsSG edgeWeightsSG
@@ -228,7 +228,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG nEdgesSG edges'
 
 -- | Collectes strongly connected components, topologically sorted.
 -- Upstream vertices come first, e.g., @(v1 - v2) -> v3 -> v4@.
-topSccSG :: (UnIndex i, VU.Unbox w) => SparseGraph i w -> [[Int]]
+topSccSG :: (Unindex i, VU.Unbox w) => SparseGraph i w -> [[Int]]
 topSccSG gr = collectSccPreorderSG $ topSortSG gr
   where
     !gr' = revSG gr
