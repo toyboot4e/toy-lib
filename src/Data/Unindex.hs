@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 -- | Handy, more restricted `Data.Ix` with reverse conversion, fast monadic iteration and unboxing.
@@ -34,14 +33,13 @@ instance Unindex Int where
   unindex _ !v = v
 
 instance Unindex (Int, Int) where
-  unindex ((!y0, !x0), (!y1, !x1)) !yx =
+  unindex ((!_, !x0), (!_, !x1)) !yx =
     let !w = x1 - x0
      in yx `quotRem` w
 
 instance Unindex (Int, Int, Int) where
-  unindex ((!z0, !y0, !x0), (!z1, !y1, !x1)) !zyx =
-    let !d = z1 - z0
-        !h = y1 - y0
+  unindex ((!_, !y0, !x0), (!_, !y1, !x1)) !zyx =
+    let !h = y1 - y0
         !w = x1 - x0
         (!z, !yx) = zyx `quotRem` (h * w)
         (!y, !x) = yx `quotRem` w

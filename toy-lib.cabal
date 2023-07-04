@@ -33,6 +33,7 @@ library
       Data.Graph.MaxFlow
       Data.Graph.Scc
       Data.Graph.Sparse
+      Data.IxVector
       Data.ModInt
       Data.MultiSet
       Data.RollingHash
