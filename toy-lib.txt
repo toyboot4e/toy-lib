@@ -2,8 +2,7 @@
 -- See Hoogle, http://www.haskell.org/hoogle/
 
 
--- | Please see the README on GitHub at
---   <a>https://github.com/toyboot4e/toy-lib</a>
+-- | For more info, see Github <a>https://github.com/toyboot4e/toy-lib</a>
 @package toy-lib
 @version 0.1.0.0
 
@@ -179,6 +178,66 @@ rootSUF :: SparseUnionFind -> Int -> (Int, Int)
 sameSUF :: SparseUnionFind -> Int -> Int -> Bool
 uniteSUF :: SparseUnionFind -> Int -> Int -> SparseUnionFind
 
+module Data.Vector.View2d
+type Index2d = (Int, Int)
+
+-- | @View2d (originalVector)
+type View2d = Vector
+
+-- | Creates a 2D view to an immutable vector.
+view2dVG :: Vector v a => Index2d -> v a -> View2d (v a)
+withView2dVG :: Vector v a => Index2d -> v a -> (v a, View2d (v a))
+
+-- | Creates a 2D view to a mutable vector.
+view2dVGM :: MVector v a => Index2d -> v s a -> View2d (v s a)
+withView2dVGM :: MVector v a => Index2d -> v s a -> (v s a, View2d (v s a))
+
+-- | Creates a 2D mutable vector.
+new2dVGM :: (PrimMonad m, MVector v a) => Index2d -> a -> m (v (PrimState m) a, View2d (v (PrimState m) a))
+
+-- | Creates a 2D unboxed mutable vector.
+new2dVUM :: (PrimMonad m, Unbox a) => Index2d -> a -> m (MVector (PrimState m) a, View2d (MVector (PrimState m) a))
+
+-- | Creates a 2D boxed mutable vector.
+new2dVM :: PrimMonad m => Index2d -> a -> m (MVector (PrimState m) a, View2d (MVector (PrimState m) a))
+
+-- | 2D immutable vector indexing.
+idx2d :: Vector v a => View2d (v a) -> Index2d -> a
+read2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> m a
+write2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> a -> m ()
+modify2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> (a -> a) -> Index2d -> m ()
+swap2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> Index2d -> m ()
+
+module Data.Vector.View3d
+type Index3d = (Int, Int, Int)
+
+-- | @View3d (originalVector)
+type View3d a = Vector (Vector a)
+
+-- | Creates a 3D view to an immutable vector.
+view3dVG :: Vector v a => Index3d -> v a -> View3d (v a)
+withView3dVG :: Vector v a => Index3d -> v a -> (v a, View3d (v a))
+
+-- | Creates a 3D view to a mutable vector.
+view3dVGM :: MVector v a => Index3d -> v s a -> View3d (v s a)
+withView3dVGM :: MVector v a => Index3d -> v s a -> (v s a, View3d (v s a))
+
+-- | Creates a 3D mutable vector.
+new3dVGM :: (PrimMonad m, MVector v a) => Index3d -> a -> m (v (PrimState m) a, View3d (v (PrimState m) a))
+
+-- | Creates a 3D unboxed mutable vector.
+new3dVUM :: (PrimMonad m, Unbox a) => Index3d -> a -> m (MVector (PrimState m) a, View3d (MVector (PrimState m) a))
+
+-- | Creates a 3D boxed mutable vector.
+new3dVM :: PrimMonad m => Index3d -> a -> m (MVector (PrimState m) a, View3d (MVector (PrimState m) a))
+
+-- | 3D immutable vector indexing.
+idx3d :: Vector v a => View3d (v a) -> Index3d -> a
+read3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> m a
+write3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> a -> m ()
+modify3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> (a -> a) -> Index3d -> m ()
+swap3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> Index3d -> m ()
+
 
 -- | Obsolute. TODO: Delete.
 module Math.Bits
@@ -256,11 +315,6 @@ dbg :: Show a => a -> ()
 dbgAssert :: Bool -> a -> a
 
 
-module Math.Matrix
-mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
-mulMatMod :: Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int
-
-
 -- | Semigroup action <tt>*</tt> is an operator where &lt;math&gt; holds.
 module Data.SemigroupAction
 
@@ -289,7 +343,7 @@ clamp :: Ord a => (a, a) -> a -> a
 flipOrder :: Ordering -> Ordering
 square :: Num a => a -> a
 
--- | Returns chunks of size <tt>n</tt>.
+-- | Returns chunks of size <tt>n</tt>. TODO: Just use <a>chunksOf</a>.
 chunks :: Int -> [a] -> [[a]]
 
 -- | Two-variable function compositon.
@@ -297,8 +351,11 @@ chunks :: Int -> [a] -> [[a]]
 
 -- | Three-variable function compositon.
 (.:.) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> a1 -> a2 -> a3 -> c
+foldFor :: Foldable t => b -> t a -> (b -> a -> b) -> b
+foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
+foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 vLength :: Vector v e => v e -> Int
 rangeVG :: Vector v Int => Int -> Int -> v Int
@@ -343,6 +400,7 @@ printYn :: Bool -> IO ()
 -- | <a>concat</a> two-item tuples
 concat2 :: [(a, a)] -> [a]
 concatMap2 :: (a -> (b, b)) -> [a] -> [b]
+swapDupe :: (a, a) -> ((a, a), (a, a))
 add2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 sub2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 mul2 :: Int -> (Int, Int) -> (Int, Int)
@@ -393,6 +451,20 @@ instance ToyLib.Prelude.ShowBSB GHC.Types.Int
 instance ToyLib.Prelude.ShowBSB GHC.Num.Integer.Integer
 instance ToyLib.Prelude.ShowBSB GHC.Types.Float
 instance ToyLib.Prelude.ShowBSB GHC.Types.Double
+
+
+-- | Handy, more restricted <a>Ix</a> with reverse conversion, fast monadic
+--   iteration and unboxing.
+module Data.Unindex
+class RangeMS a
+rangeMS2 :: (RangeMS a, Monad m) => (a, a) -> Stream m a
+class (Ix i, Unbox i) => Unindex i
+unindex :: Unindex i => (i, i) -> Int -> i
+instance Data.Unindex.Unindex GHC.Types.Int
+instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int)
+instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+instance Data.Unindex.RangeMS GHC.Types.Int
+instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
 
 module Data.SegmentTree.Lazy
 
@@ -493,6 +565,10 @@ bfsGrid01 :: (Int, Int) -> UArray (Int, Int) Bool -> UArray (Int, Int, Int) Int
 -- | DFS where all the reachable vertices from one vertex are collcetd.
 components :: Graph Int -> Int -> IntSet
 
+-- | Checks a Simple Sndirected Graph and returns markings of cycle
+--   vertices. TODO: Test if it works as expected.
+cyclesSUG :: Array Vertex [Vertex] -> Vector Bool
+
 -- | Dijkstra template that collects all the shortest distances from one
 --   vertex to every other. Works for weightened graphs with positive edge
 --   capacities only.
@@ -534,6 +610,100 @@ scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -
 --   rerooting technique. REMARK: <a>mempty</a> is used for initial
 --   operator value.
 foldTreeAll :: (Unbox a, Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> Vector a
+
+
+-- | <a>Ix</a>-based API over <tt>vector</tt>.
+module Data.IxVector
+
+-- | N-dimensional <tt>Vector</tt> or <tt>MVector</tt> with <a>Ix</a>.
+data IxVector v i
+IxVector :: !(i, i) -> !v -> IxVector v i
+[boundsIV] :: IxVector v i -> !(i, i)
+[vecIV] :: IxVector v i -> !v
+(.!) :: (Ix i, Vector v a) => IxVector (v a) i -> i -> a
+
+-- | Reads a value from <a>IxVector</a>.
+readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> m a
+
+-- | Writes a value to <a>IxVector</a>.
+writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> a -> m ()
+modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> (a -> a) -> i -> m ()
+swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> i -> m ()
+
+
+-- | <tt>vector</tt>-based sparse graph implementation (weightened or
+--   unweightened).
+--   
+--   Heavily inspired by <tt>cojna/iota</tt>.
+module Data.Graph.Sparse
+type Edge = (Vertex, Vertex)
+
+-- | Weightened edge
+type WEdgeWith w = (Vertex, Vertex, w)
+type EdgeId = Int
+
+-- | CSR (compressed sparse row) representation of a graph (weightened or
+--   unweightened)
+data SparseGraph i w
+SparseGraph :: !(i, i) -> !Int -> !Int -> !Vector Int -> !Vector Vertex -> !Vector w -> SparseGraph i w
+
+-- | Vertex index boundary.
+[boundsSG] :: SparseGraph i w -> !(i, i)
+
+-- | Number of vertices.
+[nVertsSG] :: SparseGraph i w -> !Int
+
+-- | Number of edges.
+[nEdgesSG] :: SparseGraph i w -> !Int
+
+-- | Maps <tt>Vector</tt> to the starting edge index.
+[offsetsSG] :: SparseGraph i w -> !Vector Int
+
+-- | Adjacent vertices sorted with starting vertex.
+[adjacentsSG] :: SparseGraph i w -> !Vector Vertex
+
+-- | Edge weight information.
+[edgeWeightsSG] :: SparseGraph i w -> !Vector w
+
+-- | Builds an unweightned <a>SparseGraph</a>.
+--   
+--   TODO: Faster implementation
+buildUSG :: Unindex i => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
+
+-- | Builds a weightned <a>SparseGraph</a>.
+buildWSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
+buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
+
+-- | Retrieves adjacent vertex indices.
+adj :: Unindex i => SparseGraph i w -> i -> Vector i
+
+-- | Retrieves adjacent vertices.
+adjRaw :: SparseGraph i w -> Vertex -> Vector Vertex
+
+-- | Retrieves adjacent vertices with weights.
+adjW :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
+
+-- | Retrieves adjacent vertex indices with weights.
+adjWRaw :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
+dfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
+bfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
+
+-- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)log {V})$
+djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> i -> w -> Vector w
+topSortSG :: SparseGraph i w -> [Vertex]
+
+-- | Partial running of <tt>scc</tt> over topologically sorted vertices,
+--   but for some connected components only.
+topScc1SG :: forall i w m. PrimMonad m => SparseGraph i w -> MVector (PrimState m) Bool -> Vertex -> m [Vertex]
+
+-- | Creates a reverse graph. TODO: return weightned graph
+revSG :: (Unindex i, Unbox w) => SparseGraph i w -> SparseGraph i w
+
+-- | Collectes strongly connected components, topologically sorted.
+--   Upstream vertices come first, e.g., <tt>(v1 - v2) -&gt; v3 -&gt;
+--   v4</tt>.
+topSccSG :: (Unindex i, Unbox w) => SparseGraph i w -> [[Int]]
+instance (GHC.Show.Show i, GHC.Show.Show w, Data.Vector.Unboxed.Base.Unbox w) => GHC.Show.Show (Data.Graph.Sparse.SparseGraph i w)
 
 
 -- | Maximum flow calculation (Ford-Fulkerson algorithm).
@@ -720,6 +890,25 @@ instance Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Data.Sem
 instance Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
 instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
 instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
+
+
+module Math.Matrix
+mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
+mulMatMod :: Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int
+unitMat :: Int -> UArray (Int, Int) Int
+
+-- | <a>mulMatMod</a> wrapper for binary lifting.
+--   
+--   <pre>
+--   let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'
+--   let !mn = newBinLiftV $ MulMatMod @MyModulus m1
+--   let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
+--   </pre>
+newtype MulMatMod a
+MulMatMod :: UArray (Int, Int) Int -> MulMatMod a
+instance GHC.Show.Show (Math.Matrix.MulMatMod a)
+instance GHC.Classes.Eq (Math.Matrix.MulMatMod a)
+instance Data.ModInt.TypeInt p => GHC.Base.Semigroup (Math.Matrix.MulMatMod p)
 
 
 -- | The rolling hash algorithm lets you create fastly ((O(1))) comparable
