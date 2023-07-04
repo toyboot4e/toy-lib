@@ -10,7 +10,7 @@
 
 {- ORMOLU_DISABLE -}
 {-# LANGUAGE BangPatterns, BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf #-}
-{-# LANGUAGE NumDecimals, NumericUnderscores, PatternGuards, TupleSections #-}
+{-# LANGUAGE NamedFieldPuns, NumDecimals, NumericUnderscores, PatternGuards, TupleSections #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, InstanceSigs, MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints, RecordWildCards, ScopedTypeVariables, StrictData #-}
 {-# LANGUAGE TypeApplications, TypeFamilies, RankNTypes #-}
