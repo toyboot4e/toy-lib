@@ -56,7 +56,7 @@ data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 newSTreeVG :: (VGM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
 newSTreeVG !f !n !zero = SegmentTree f <$> VGM.replicate n' zero
   where
-    !n' = until (>= n) (* 2) 2
+    !n' = until (>= 2 * n) (* 2) 2
 
 -- | Creates a boxed segment tree.
 {-# INLINE newSTreeV #-}
