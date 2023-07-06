@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -9,6 +10,7 @@
 -- TODO: rename adjRaw to adj, adj to adjIx
 module Data.Graph.Sparse where
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -18,12 +20,13 @@ import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntSet as IS
 import Data.Ix
+import Data.Maybe
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (foldForM, foldForMVG, foldForVG, rangeMS, rangeVU)
+import ToyLib.Prelude (foldForM, foldForMVG, foldForVG, rangeMS, rangeVU, unconsVG)
 
 type Edge = (Vertex, Vertex)
 
@@ -71,7 +74,7 @@ buildWSG boundsSG nEdgesSG edges =
 buildRawSG :: (Unindex i, VUM.Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
 buildRawSG boundsSG nEdgesSG edges =
   let !nVertsSG = rangeSize boundsSG
-      !offsetsSG = (VU.scanl' (+) 0) $ VU.create $ do
+      !offsetsSG = VU.scanl' (+) 0 $ VU.create $ do
         !outDegs <- VUM.replicate nVertsSG (0 :: Int)
         forM_ edges $ \(!v1, !_, !_) -> do
           VUM.modify outDegs succ v1
@@ -93,25 +96,18 @@ buildRawSG boundsSG nEdgesSG edges =
         (,) <$> VU.unsafeFreeze mAdjacents <*> VU.unsafeFreeze mWeights
    in SparseGraph {..}
 
--- | Retrieves adjacent vertex indices.
-{-# INLINE adj #-}
-adj :: (Unindex i) => SparseGraph i w -> i -> VU.Vector i
-adj gr i = VU.map (unindex (boundsSG gr)) $ adjRaw gr v
-  where
-    !v = index (boundsSG gr) i
-
 -- | Retrieves adjacent vertices.
-{-# INLINE adjRaw #-}
-adjRaw :: SparseGraph i w -> Vertex -> VU.Vector Vertex
-adjRaw SparseGraph {..} v = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
+{-# INLINE adj #-}
+adj :: SparseGraph i w -> Vertex -> VU.Vector Vertex
+adj SparseGraph {..} v = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
   where
     !o1 = VU.unsafeIndex offsetsSG v
     !o2 = VU.unsafeIndex offsetsSG (v + 1)
 
 -- | Returns `(EdgeId, Vertex)` paris. Hardly used.
-{-# INLINE eAdjRaw #-}
-eAdjRaw :: SparseGraph i w -> Vertex -> VU.Vector (EdgeId, Vertex)
-eAdjRaw SparseGraph {..} v = VU.imap ((,) . (+ o1)) vs
+{-# INLINE eAdj #-}
+eAdj :: SparseGraph i w -> Vertex -> VU.Vector (EdgeId, Vertex)
+eAdj SparseGraph {..} v = VU.imap ((,) . (+ o1)) vs
   where
     -- eAdjRaw SparseGraph {..} v = VU.imap (\e v -> (e + o1, v)) vs
 
@@ -119,22 +115,29 @@ eAdjRaw SparseGraph {..} v = VU.imap ((,) . (+ o1)) vs
     !o2 = VU.unsafeIndex offsetsSG (v + 1)
     !vs = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
 
--- | Retrieves adjacent vertex indices with weights.
-{-# INLINE adjW #-}
-adjW :: (Unindex i, VU.Unbox w) => SparseGraph i w -> i -> VU.Vector (i, w)
-adjW gr i = VU.map (first (unindex (boundsSG gr))) $ adjWRaw gr v
+-- | Retrieves adjacent vertex indices.
+{-# INLINE adjIx #-}
+adjIx :: (Unindex i) => SparseGraph i w -> i -> VU.Vector i
+adjIx gr i = VU.map (unindex (boundsSG gr)) $ adj gr v
   where
     !v = index (boundsSG gr) i
 
 -- | Retrieves adjacent vertices with weights.
-{-# INLINE adjWRaw #-}
-adjWRaw :: (VU.Unbox w) => SparseGraph i w -> Vertex -> VU.Vector (Vertex, w)
-adjWRaw SparseGraph {..} v = VU.zip vs ws
+{-# INLINE adjW #-}
+adjW :: (VU.Unbox w) => SparseGraph i w -> Vertex -> VU.Vector (Vertex, w)
+adjW SparseGraph {..} v = VU.zip vs ws
   where
     !o1 = VU.unsafeIndex offsetsSG v
     !o2 = VU.unsafeIndex offsetsSG (v + 1)
     !vs = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
     !ws = VU.unsafeSlice o1 (o2 - o1) edgeWeightsSG
+
+-- | Retrieves adjacent vertex indices with weights.
+{-# INLINE adjWIx #-}
+adjWIx :: (Unindex i, VU.Unbox w) => SparseGraph i w -> i -> VU.Vector (i, w)
+adjWIx gr i = VU.map (first (unindex (boundsSG gr))) $ adjW gr v
+  where
+    !v = index (boundsSG gr) i
 
 -- TODO: Return IxVector
 dfsSG :: (Unindex i) => SparseGraph i w -> i -> VU.Vector Int
@@ -143,7 +146,7 @@ dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
   flip fix (0 :: Int, index boundsSG startIx) $ \loop (!depth, !v1) -> do
-    VU.forM_ (gr `adjRaw` v1) $ \v2 -> do
+    VU.forM_ (gr `adj` v1) $ \v2 -> do
       !d <- VUM.read dist v2
       when (d /= undef) $ do
         VUM.write dist v2 depth
@@ -166,7 +169,7 @@ bfsSG gr@SparseGraph {..} !startIx = VU.create $ do
 
             -- FIXME: Easier iteration?
             !vs2 <- foldForM [] vs1' $ \acc v1 -> do
-              foldForMVG acc (gr `adjRaw` v1) $ \acc' v2 -> do
+              foldForMVG acc (gr `adj` v1) $ \acc' v2 -> do
                 !d <- VUM.unsafeRead dist v2
                 if d == undef
                   then return (v2 : acc')
@@ -179,7 +182,7 @@ bfsSG gr@SparseGraph {..} !startIx = VU.create $ do
 
 -- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)\log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> i -> w -> VU.Vector w
-djSG !gr@SparseGraph {..} !startIx !undef = VU.create $ do
+djSG gr@SparseGraph {..} !startIx !undef = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
   let !heap0 = H.singleton $ H.Entry 0 (index boundsSG startIx)
@@ -190,7 +193,7 @@ djSG !gr@SparseGraph {..} !startIx !undef = VU.create $ do
         False -> loop heap'
         True -> do
           VUM.write dist v cost
-          !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjWRaw` v
+          !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjW` v
           loop $ VU.foldl' (\h (!v, !w) -> H.insert (merge entry $ H.Entry w v) h) heap' vws
 
   return dist
@@ -214,7 +217,7 @@ dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
         | lastD1 /= undef -> return Nothing
         | v1 == end -> return $ Just stack
         | otherwise -> do
-            flip fix (gr `adjRaw` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
                 (<|>) <$> loop (succ depth, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
@@ -231,7 +234,7 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
     if v1 == end
       then return $ Just stack
       else do
-        flip fix (VU.filter (/= parent) $ gr `adjRaw` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+        flip fix (VU.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
           Nothing -> return Nothing
           Just (!v2, !v2s') -> do
             (<|>) <$> loop (succ depth, v1, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
@@ -240,7 +243,7 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
     !end = index boundsSG endIx
 
 topSortSG :: SparseGraph i w -> [Vertex]
-topSortSG !gr@SparseGraph {..} = runST $ do
+topSortSG gr@SparseGraph {..} = runST $ do
   !vis <- VUM.replicate nVertsSG False
 
   let dfsM !acc !v = do
@@ -248,7 +251,7 @@ topSortSG !gr@SparseGraph {..} = runST $ do
           True -> return acc
           False -> do
             VUM.unsafeWrite vis v True
-            !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr `adjRaw` v
+            !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr `adj` v
             -- Create postorder output:
             (v :) <$> VU.foldM dfsM acc vs
 
@@ -263,7 +266,7 @@ topScc1SG !gr' !vis !v0 = do
       False -> return acc
       True -> do
         VUM.unsafeWrite vis v True
-        !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr' `adjRaw` v
+        !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr' `adj` v
         -- Create preorder output:
         (v :) <$> VU.foldM (curry loop) acc vs
 
@@ -290,4 +293,3 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
     collectSccPreorderSG !topVerts = runST $ do
       !vis <- VUM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
-
