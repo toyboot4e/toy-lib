@@ -33,7 +33,6 @@ library
       Data.Graph.MaxFlow
       Data.Graph.Scc
       Data.Graph.Sparse
-      Data.IxVector
       Data.ModInt
       Data.MultiSet
       Data.RollingHash
@@ -48,6 +47,7 @@ library
       Data.Vector.Compress
       Data.Vector.DictOrder
       Data.Vector.InvNum
+      Data.Vector.IxVector
       Data.Vector.View2d
       Data.Vector.View3d
       Math.Bits
