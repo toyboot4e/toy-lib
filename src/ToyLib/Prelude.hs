@@ -77,6 +77,13 @@ foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM f s0 xs
 
+{-# INLINE unconsVG #-}
+unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)
+unconsVG v =
+  if VG.null v
+    then Nothing
+    else Just (VG.unsafeHead v, VG.unsafeTail v)
+
 -- }}}
 
 -- {{{ Libary complements
@@ -87,6 +94,7 @@ modifyArray !ary !f !i = do
   !v <- f <$> readArray ary i
   writeArray ary i v
 
+-- TODO: Remove on language update
 {-# INLINE vLength #-}
 vLength :: (VG.Vector v e) => v e -> Int
 vLength = VFB.length . VG.stream
