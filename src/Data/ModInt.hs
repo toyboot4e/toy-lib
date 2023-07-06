@@ -52,6 +52,10 @@ instance TypeInt p => Fractional (ModInt p) where
       n = fromInteger $ Ratio.numerator r
       d = fromInteger $ Ratio.denominator r
 
+instance (TypeInt p) => Enum (ModInt p) where
+  toEnum = ModInt . (`mod` typeInt (Proxy @p))
+  fromEnum = coerce
+
 instance TypeInt p => SemigroupAction (Product (ModInt p)) (ModInt p) where
   sact (Product !x1) !x2 = x1 * x2
 
