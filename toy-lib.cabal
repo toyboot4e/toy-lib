@@ -48,8 +48,6 @@ library
       Data.Vector.DictOrder
       Data.Vector.InvNum
       Data.Vector.IxVector
-      Data.Vector.View2d
-      Data.Vector.View3d
       Math.Bits
       Math.Digits
       Math.Matrix
