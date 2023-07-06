@@ -2,18 +2,12 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | `Ix`-based API over `vector`.
-module Data.IxVector where
+module Data.Vector.IxVector where
 
-import Control.Monad
 import Control.Monad.Primitive
-import Control.Monad.ST
-import Data.Graph (Vertex)
 import Data.Ix
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
-import ToyLib.Macro (dbgAssert)
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
