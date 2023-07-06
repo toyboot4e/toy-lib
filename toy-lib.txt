@@ -178,65 +178,24 @@ rootSUF :: SparseUnionFind -> Int -> (Int, Int)
 sameSUF :: SparseUnionFind -> Int -> Int -> Bool
 uniteSUF :: SparseUnionFind -> Int -> Int -> SparseUnionFind
 
-module Data.Vector.View2d
-type Index2d = (Int, Int)
 
--- | @View2d (originalVector)
-type View2d = Vector
+-- | <a>Ix</a>-based API over <tt>vector</tt>.
+module Data.Vector.IxVector
 
--- | Creates a 2D view to an immutable vector.
-view2dVG :: Vector v a => Index2d -> v a -> View2d (v a)
-withView2dVG :: Vector v a => Index2d -> v a -> (v a, View2d (v a))
+-- | N-dimensional <tt>Vector</tt> or <tt>MVector</tt> with <a>Ix</a>.
+data IxVector i v
+IxVector :: !(i, i) -> !v -> IxVector i v
+[boundsIV] :: IxVector i v -> !(i, i)
+[vecIV] :: IxVector i v -> !v
+(.!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
 
--- | Creates a 2D view to a mutable vector.
-view2dVGM :: MVector v a => Index2d -> v s a -> View2d (v s a)
-withView2dVGM :: MVector v a => Index2d -> v s a -> (v s a, View2d (v s a))
+-- | Reads a value from <a>IxVector</a>.
+readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 
--- | Creates a 2D mutable vector.
-new2dVGM :: (PrimMonad m, MVector v a) => Index2d -> a -> m (v (PrimState m) a, View2d (v (PrimState m) a))
-
--- | Creates a 2D unboxed mutable vector.
-new2dVUM :: (PrimMonad m, Unbox a) => Index2d -> a -> m (MVector (PrimState m) a, View2d (MVector (PrimState m) a))
-
--- | Creates a 2D boxed mutable vector.
-new2dVM :: PrimMonad m => Index2d -> a -> m (MVector (PrimState m) a, View2d (MVector (PrimState m) a))
-
--- | 2D immutable vector indexing.
-idx2d :: Vector v a => View2d (v a) -> Index2d -> a
-read2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> m a
-write2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> a -> m ()
-modify2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> (a -> a) -> Index2d -> m ()
-swap2d :: (PrimMonad m, MVector v a) => View2d (v (PrimState m) a) -> Index2d -> Index2d -> m ()
-
-module Data.Vector.View3d
-type Index3d = (Int, Int, Int)
-
--- | @View3d (originalVector)
-type View3d a = Vector (Vector a)
-
--- | Creates a 3D view to an immutable vector.
-view3dVG :: Vector v a => Index3d -> v a -> View3d (v a)
-withView3dVG :: Vector v a => Index3d -> v a -> (v a, View3d (v a))
-
--- | Creates a 3D view to a mutable vector.
-view3dVGM :: MVector v a => Index3d -> v s a -> View3d (v s a)
-withView3dVGM :: MVector v a => Index3d -> v s a -> (v s a, View3d (v s a))
-
--- | Creates a 3D mutable vector.
-new3dVGM :: (PrimMonad m, MVector v a) => Index3d -> a -> m (v (PrimState m) a, View3d (v (PrimState m) a))
-
--- | Creates a 3D unboxed mutable vector.
-new3dVUM :: (PrimMonad m, Unbox a) => Index3d -> a -> m (MVector (PrimState m) a, View3d (MVector (PrimState m) a))
-
--- | Creates a 3D boxed mutable vector.
-new3dVM :: PrimMonad m => Index3d -> a -> m (MVector (PrimState m) a, View3d (MVector (PrimState m) a))
-
--- | 3D immutable vector indexing.
-idx3d :: Vector v a => View3d (v a) -> Index3d -> a
-read3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> m a
-write3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> a -> m ()
-modify3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> (a -> a) -> Index3d -> m ()
-swap3d :: (PrimMonad m, MVector v a) => View3d (v (PrimState m) a) -> Index3d -> Index3d -> m ()
+-- | Writes a value to <a>IxVector</a>.
+writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
 
 
 -- | Obsolute. TODO: Delete.
@@ -356,6 +315,7 @@ foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
+unconsVG :: Vector v a => v a -> Maybe (a, v a)
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 vLength :: Vector v e => v e -> Int
 rangeVG :: Vector v Int => Int -> Int -> v Int
@@ -612,29 +572,11 @@ scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -
 foldTreeAll :: (Unbox a, Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> Vector a
 
 
--- | <a>Ix</a>-based API over <tt>vector</tt>.
-module Data.IxVector
-
--- | N-dimensional <tt>Vector</tt> or <tt>MVector</tt> with <a>Ix</a>.
-data IxVector v i
-IxVector :: !(i, i) -> !v -> IxVector v i
-[boundsIV] :: IxVector v i -> !(i, i)
-[vecIV] :: IxVector v i -> !v
-(.!) :: (Ix i, Vector v a) => IxVector (v a) i -> i -> a
-
--- | Reads a value from <a>IxVector</a>.
-readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> m a
-
--- | Writes a value to <a>IxVector</a>.
-writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> a -> m ()
-modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> (a -> a) -> i -> m ()
-swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector (v (PrimState m) a) i -> i -> i -> m ()
-
-
 -- | <tt>vector</tt>-based sparse graph implementation (weightened or
 --   unweightened).
 --   
---   Heavily inspired by <tt>cojna/iota</tt>.
+--   Heavily inspired by <tt>cojna/iota</tt>. TODO: rename adjRaw to adj,
+--   adj to adjIx
 module Data.Graph.Sparse
 type Edge = (Vertex, Vertex)
 
@@ -674,22 +616,33 @@ buildUSG :: Unindex i => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
 buildWSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
 buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
 
--- | Retrieves adjacent vertex indices.
-adj :: Unindex i => SparseGraph i w -> i -> Vector i
-
 -- | Retrieves adjacent vertices.
-adjRaw :: SparseGraph i w -> Vertex -> Vector Vertex
+adj :: SparseGraph i w -> Vertex -> Vector Vertex
+
+-- | Returns `(EdgeId, Vertex)` paris. Hardly used.
+eAdj :: SparseGraph i w -> Vertex -> Vector (EdgeId, Vertex)
+
+-- | Retrieves adjacent vertex indices.
+adjIx :: Unindex i => SparseGraph i w -> i -> Vector i
 
 -- | Retrieves adjacent vertices with weights.
-adjW :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
+adjW :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
 
 -- | Retrieves adjacent vertex indices with weights.
-adjWRaw :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
+adjWIx :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
 dfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
 bfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
 
 -- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> i -> w -> Vector w
+
+-- | Returns a list of a route in reverse order (a route from end to
+--   start).
+dfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> Maybe [Edge]
+
+-- | Returns a list of a route in reverse order (a route from end to
+--   start).
+treeDfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> [Edge]
 topSortSG :: SparseGraph i w -> [Vertex]
 
 -- | Partial running of <tt>scc</tt> over topologically sorted vertices,
@@ -886,6 +839,7 @@ instance GHC.Classes.Eq (Data.ModInt.ModInt p)
 instance GHC.Show.Show (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => GHC.Num.Num (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => GHC.Real.Fractional (Data.ModInt.ModInt p)
+instance Data.ModInt.TypeInt p => GHC.Enum.Enum (Data.ModInt.ModInt p)
 instance Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Data.Semigroup.Internal.Product (Data.ModInt.ModInt p)) (Data.ModInt.ModInt p)
 instance Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
 instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)

@@ -12,17 +12,17 @@
 </span><span id="line-12"></span><span>
 </span><span id="line-13"></span><span class="hs-comment">-- | Log base of two or bit floor.</span><span>
 </span><span id="line-14"></span><span class="hs-comment">-- &lt;https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-Bits.html#v:countLeadingZeros&gt;</span><span>
-</span><span id="line-15"></span><span id="local-6989586621679137525"><span class="annot"><a href="Math.Bits.html#log2"><span class="hs-identifier hs-type">log2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FiniteBits</span></span><span> </span><span class="annot"><a href="#local-6989586621679137525"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679137525"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-15"></span><span id="local-6989586621679138360"><span class="annot"><a href="Math.Bits.html#log2"><span class="hs-identifier hs-type">log2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FiniteBits</span></span><span> </span><span class="annot"><a href="#local-6989586621679138360"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679138360"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
 </span><span id="line-16"></span><span id="log2"><span class="annot"><span class="annottext">log2 :: forall b. FiniteBits b =&gt; b -&gt; Int
-</span><a href="Math.Bits.html#log2"><span class="hs-identifier hs-var hs-var">log2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679137505"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679137505"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall b. FiniteBits b =&gt; b -&gt; Int
+</span><a href="Math.Bits.html#log2"><span class="hs-identifier hs-var hs-var">log2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679138340"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679138340"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall b. FiniteBits b =&gt; b -&gt; Int
 </span><span class="hs-identifier hs-var">finiteBitSize</span></span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679137505"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679138340"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">forall b. FiniteBits b =&gt; b -&gt; Int
 </span><span class="hs-identifier hs-var">countLeadingZeros</span></span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621679137505"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><a href="#local-6989586621679138340"><span class="hs-identifier hs-var">x</span></a></span><span>
 </span><span id="line-17"></span><span>
 </span><span id="line-18"></span><span class="hs-comment">-- | Ceiling of log base 2 of an `Int`.</span><span>
 </span><span id="line-19"></span><span class="hs-comment">--</span><span>
@@ -36,21 +36,21 @@
 </span><span id="line-27"></span><span class="hs-comment">-- @</span><span>
 </span><span id="line-28"></span><span class="annot"><a href="Math.Bits.html#log2CeilInt"><span class="hs-identifier hs-type">log2CeilInt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-29"></span><span id="log2CeilInt"><span class="annot"><span class="annottext">log2CeilInt :: Int -&gt; Int
-</span><a href="Math.Bits.html#log2CeilInt"><span class="hs-identifier hs-var hs-var">log2CeilInt</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679137501"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137501"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137500"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="Math.Bits.html#log2CeilInt"><span class="hs-identifier hs-var hs-var">log2CeilInt</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679138336"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679138336"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679138335"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137498"><span class="hs-identifier hs-var">ceiling_</span></a></span><span>
+</span><a href="#local-6989586621679138333"><span class="hs-identifier hs-var">ceiling_</span></a></span><span>
 </span><span id="line-30"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-31"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679137500"><span class="annot"><span class="annottext">msb :: Int
-</span><a href="#local-6989586621679137500"><span class="hs-identifier hs-var hs-var">msb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span id="line-31"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679138335"><span class="annot"><span class="annottext">msb :: Int
+</span><a href="#local-6989586621679138335"><span class="hs-identifier hs-var hs-var">msb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall b. FiniteBits b =&gt; b -&gt; Int
 </span><a href="Math.Bits.html#log2"><span class="hs-identifier hs-var">log2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137501"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-32"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679137498"><span class="annot"><span class="annottext">ceiling_ :: Int
-</span><a href="#local-6989586621679137498"><span class="hs-identifier hs-var hs-var">ceiling_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><a href="#local-6989586621679138336"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679138333"><span class="annot"><span class="annottext">ceiling_ :: Int
+</span><a href="#local-6989586621679138333"><span class="hs-identifier hs-var hs-var">ceiling_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">forall a. Bits a =&gt; a -&gt; Int -&gt; a
 </span><span class="hs-identifier hs-var">clearBit</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137501"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679137500"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679138336"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679138335"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Int

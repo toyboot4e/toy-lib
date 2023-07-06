@@ -14,7 +14,7 @@
 </span><span id="line-14"></span><span>
 </span><span id="line-15"></span><span class="hs-comment">-- {{{ Dictionary orders</span><span>
 </span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span id="local-6989586621679142890"><span id="local-6989586621679142891"><span class="annot"><a href="Data.Vector.DictOrder.html#prevPermutationVec"><span class="hs-identifier hs-type">prevPermutationVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679142891"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679142890"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679142891"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679142890"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Down</span></span><span> </span><span class="annot"><a href="#local-6989586621679142891"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679142890"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679142891"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679142890"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679142891"><span class="hs-identifier hs-type">e</span></a></span></span></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679143755"><span id="local-6989586621679143756"><span class="annot"><a href="Data.Vector.DictOrder.html#prevPermutationVec"><span class="hs-identifier hs-type">prevPermutationVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679143756"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679143755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679143756"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679143755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Down</span></span><span> </span><span class="annot"><a href="#local-6989586621679143756"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679143755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679143756"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679143755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679143756"><span class="hs-identifier hs-type">e</span></a></span></span></span><span>
 </span><span id="line-18"></span><span id="prevPermutationVec"><span class="annot"><span class="annottext">prevPermutationVec :: forall e (v :: * -&gt; *).
 (Ord e, Vector v e, Vector v (Down e)) =&gt;
 v e -&gt; v e
@@ -22,9 +22,9 @@ v e -&gt; v e
 </span><span id="line-19"></span><span>  </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a b.
 (Vector v a, Vector v b) =&gt;
 (a -&gt; b) -&gt; v a -&gt; v b
-</span><span class="hs-identifier hs-var">VG.map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Down</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142800"><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679142800"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679142800"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span class="hs-identifier hs-var">VG.map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Down</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143665"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679143665"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679143665"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-20"></span><span>    </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a.
 Vector v a =&gt;
@@ -45,33 +45,33 @@ v (PrimState m) e -&gt; m Bool
 </span><span id="line-22"></span><span>
 </span><span id="line-23"></span><span class="hs-comment">-- | Returns 1-based dictionary order for the given array.</span><span>
 </span><span id="line-24"></span><span class="hs-comment">-- WARNING: Use 0-based indices for the input.</span><span>
-</span><span id="line-25"></span><span id="local-6989586621679142857"><span class="annot"><a href="Data.Vector.DictOrder.html#dictOrderModuloVec"><span class="hs-identifier hs-type">dictOrderModuloVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679142857"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679142857"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-25"></span><span id="local-6989586621679143722"><span class="annot"><a href="Data.Vector.DictOrder.html#dictOrderModuloVec"><span class="hs-identifier hs-type">dictOrderModuloVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679143722"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679143722"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
 </span><span id="line-26"></span><span id="dictOrderModuloVec"><span class="annot"><span class="annottext">dictOrderModuloVec :: forall (v :: * -&gt; *). Vector v Int =&gt; v Int -&gt; Int -&gt; Int
-</span><a href="Data.Vector.DictOrder.html#dictOrderModuloVec"><span class="hs-identifier hs-var hs-var">dictOrderModuloVec</span></a></span></span><span> </span><span id="local-6989586621679142786"><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142786"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679142785"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142785"><span class="hs-identifier hs-var">modulus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. (forall s. ST s a) -&gt; a
+</span><a href="Data.Vector.DictOrder.html#dictOrderModuloVec"><span class="hs-identifier hs-var hs-var">dictOrderModuloVec</span></a></span></span><span> </span><span id="local-6989586621679143651"><span class="annot"><span class="annottext">v Int
+</span><a href="#local-6989586621679143651"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679143650"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143650"><span class="hs-identifier hs-var">modulus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. (forall s. ST s a) -&gt; a
 </span><span class="hs-identifier hs-var">runST</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-27"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679142751"><span class="annot"><span class="annottext">SegmentTree MVector s Int
-</span><a href="#local-6989586621679142751"><span class="hs-identifier hs-var">stree</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a (m :: * -&gt; *).
+</span><span id="line-27"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679143616"><span class="annot"><span class="annottext">SegmentTree MVector s Int
+</span><a href="#local-6989586621679143616"><span class="hs-identifier hs-var">stree</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a (m :: * -&gt; *).
 (Unbox a, PrimMonad m) =&gt;
 (a -&gt; a -&gt; a)
 -&gt; Int -&gt; a -&gt; m (SegmentTree MVector (PrimState m) a)
 </span><a href="Data.SegmentTree.Strict.html#newSTreeVU"><span class="hs-identifier hs-var">newSTreeVU</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
 </span><span class="hs-identifier hs-var">VG.length</span></span><span> </span><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142786"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143651"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span>  </span><span class="hs-comment">-- Pre-calculate factorial numbers:</span><span>
-</span><span id="line-30"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142746"><span class="annot"><span class="annottext">facts :: Vector Int
-</span><a href="#local-6989586621679142746"><span class="hs-identifier hs-var hs-var">facts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Vector Int
+</span><span id="line-30"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143611"><span class="annot"><span class="annottext">facts :: Vector Int
+</span><a href="#local-6989586621679143611"><span class="hs-identifier hs-var hs-var">facts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Vector Int
 </span><a href="Math.PowMod.html#factMods"><span class="hs-identifier hs-var">factMods</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
 </span><span class="hs-identifier hs-var">VG.length</span></span><span> </span><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142786"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142785"><span class="hs-identifier hs-var">modulus</span></a></span><span>
+</span><a href="#local-6989586621679143651"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143650"><span class="hs-identifier hs-var">modulus</span></a></span><span>
 </span><span id="line-31"></span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-comment">-- The calculation is very similar to that of inversion number. For example,</span><span>
 </span><span id="line-33"></span><span>  </span><span class="hs-comment">-- ```</span><span>
@@ -84,76 +84,76 @@ v (PrimState m) e -&gt; m Bool
 </span><span id="line-40"></span><span>  </span><span class="hs-comment">--     +-- 2 * 4!</span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-comment">-- ```</span><span>
 </span><span id="line-42"></span><span>  </span><span class="hs-comment">-- So each expression is given as `(the number of unused numbers smaller than this) * factMod`.</span><span>
-</span><span id="line-43"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679142745"><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142745"><span class="hs-identifier hs-var">counts</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span id="line-43"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679143610"><span class="annot"><span class="annottext">v Int
+</span><a href="#local-6989586621679143610"><span class="hs-identifier hs-var">counts</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) (v :: * -&gt; *) a b.
 (Monad m, Vector v a, Vector v b) =&gt;
 (Int -&gt; a -&gt; m b) -&gt; v a -&gt; m (v b)
 </span><span class="hs-identifier hs-var">VG.imapM</span></span><span> </span><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142786"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679142742"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142742"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679142741"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142741"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-44"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679142740"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142740"><span class="hs-identifier hs-var">nUsed</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. HasCallStack =&gt; Maybe a -&gt; a
+</span><a href="#local-6989586621679143651"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679143607"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143607"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679143606"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143606"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679143605"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143605"><span class="hs-identifier hs-var">nUsed</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. HasCallStack =&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromJust</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; * -&gt; *) a (m :: * -&gt; *).
 (MVector v a, PrimMonad m) =&gt;
 SegmentTree v (PrimState m) a -&gt; (Int, Int) -&gt; m (Maybe a)
 </span><a href="Data.SegmentTree.Strict.html#querySTree"><span class="hs-identifier hs-var">querySTree</span></a></span><span> </span><span class="annot"><span class="annottext">SegmentTree MVector s Int
-</span><a href="#local-6989586621679142751"><span class="hs-identifier hs-var">stree</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143616"><span class="hs-identifier hs-var">stree</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142741"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-45"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142735"><span class="annot"><span class="annottext">nUnused :: Int
-</span><a href="#local-6989586621679142735"><span class="hs-identifier hs-var hs-var">nUnused</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142741"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143606"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143600"><span class="annot"><span class="annottext">nUnused :: Int
+</span><a href="#local-6989586621679143600"><span class="hs-identifier hs-var hs-var">nUnused</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143606"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142740"><span class="hs-identifier hs-var">nUsed</span></a></span><span>
-</span><span id="line-46"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142728"><span class="annot"><span class="annottext">factMod :: Int
-</span><a href="#local-6989586621679142728"><span class="hs-identifier hs-var hs-var">factMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679142746"><span class="hs-identifier hs-var">facts</span></a></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; a
+</span><a href="#local-6989586621679143605"><span class="hs-identifier hs-var">nUsed</span></a></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143593"><span class="annot"><span class="annottext">factMod :: Int
+</span><a href="#local-6989586621679143593"><span class="hs-identifier hs-var hs-var">factMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679143611"><span class="hs-identifier hs-var">facts</span></a></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">VG.!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
 </span><span class="hs-identifier hs-var">VG.length</span></span><span> </span><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142786"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143651"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142742"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143607"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-47"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142724"><span class="annot"><span class="annottext">inc :: Int
-</span><a href="#local-6989586621679142724"><span class="hs-identifier hs-var hs-var">inc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142735"><span class="hs-identifier hs-var">nUnused</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span id="line-47"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143589"><span class="annot"><span class="annottext">inc :: Int
+</span><a href="#local-6989586621679143589"><span class="hs-identifier hs-var hs-var">inc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143600"><span class="hs-identifier hs-var">nUnused</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142728"><span class="hs-identifier hs-var">factMod</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143593"><span class="hs-identifier hs-var">factMod</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">`rem`</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142785"><span class="hs-identifier hs-var">modulus</span></a></span><span>
+</span><a href="#local-6989586621679143650"><span class="hs-identifier hs-var">modulus</span></a></span><span>
 </span><span id="line-48"></span><span>
 </span><span id="line-49"></span><span>    </span><span class="hs-comment">-- mark it as used</span><span>
 </span><span id="line-50"></span><span>    </span><span class="annot"><span class="annottext">forall (v :: * -&gt; * -&gt; *) a (m :: * -&gt; *).
 (MVector v a, PrimMonad m) =&gt;
 SegmentTree v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><a href="Data.SegmentTree.Strict.html#insertSTree"><span class="hs-identifier hs-var">insertSTree</span></a></span><span> </span><span class="annot"><span class="annottext">SegmentTree MVector s Int
-</span><a href="#local-6989586621679142751"><span class="hs-identifier hs-var">stree</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142741"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143616"><span class="hs-identifier hs-var">stree</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143606"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
 </span><span id="line-51"></span><span>
 </span><span id="line-52"></span><span>    </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142724"><span class="hs-identifier hs-var">inc</span></a></span><span>
+</span><a href="#local-6989586621679143589"><span class="hs-identifier hs-var">inc</span></a></span><span>
 </span><span id="line-53"></span><span>
 </span><span id="line-54"></span><span>  </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; (a -&gt; a -&gt; a) -&gt; v a -&gt; a
-</span><span class="hs-identifier hs-var">VG.foldl1'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679142718"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142718"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span id="local-6989586621679142717"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142717"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142718"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">VG.foldl1'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679143583"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143583"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span id="local-6989586621679143582"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143582"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679143583"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142717"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679143582"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">`rem`</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679142785"><span class="hs-identifier hs-var">modulus</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">v Int
-</span><a href="#local-6989586621679142745"><span class="hs-identifier hs-var">counts</span></a></span><span>
+</span><a href="#local-6989586621679143650"><span class="hs-identifier hs-var">modulus</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">v Int
+</span><a href="#local-6989586621679143610"><span class="hs-identifier hs-var">counts</span></a></span><span>
 </span><span id="line-55"></span><span>
 </span><span id="line-56"></span><span class="hs-comment">-- }}}</span><span>
 </span><span id="line-57"></span></pre></body></html>
