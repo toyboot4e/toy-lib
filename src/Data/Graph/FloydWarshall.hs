@@ -10,10 +10,8 @@ module Data.Graph.FloydWarshall where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.Graph (Graph, Vertex)
+import Data.Graph (Vertex)
 import Data.Ix
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude

@@ -19,7 +19,7 @@ import Data.SemigroupAction
 import Data.Vector.Generic as VG
 import Data.Vector.Generic.Mutable as VGM
 import Data.Vector.Unboxed as VU
-import Data.Vector.Unboxed.Deriving (derivingUnbox)
+-- import Data.Vector.Unboxed.Deriving (derivingUnbox)
 import Data.Vector.Unboxed.Mutable as VUM
 import Math.PowMod (invModF)
 

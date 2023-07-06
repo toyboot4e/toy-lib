@@ -9,7 +9,7 @@ module Data.Tree.Fold where
 import Control.Monad
 import Control.Monad.Fix
 import Data.Array.IArray
-import Data.Graph (Graph, Vertex)
+import Data.Graph (Vertex)
 import Data.List (foldl')
 import Data.SemigroupAction
 import qualified Data.Vector as V
