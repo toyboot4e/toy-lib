@@ -6,6 +6,7 @@
 -- | `vector`-based sparse graph implementation (weightened or unweightened).
 --
 -- Heavily inspired by @cojna/iota@.
+-- TODO: rename adjRaw to adj, adj to adjIx
 module Data.Graph.Sparse where
 
 import Control.Monad
@@ -107,14 +108,25 @@ adjRaw SparseGraph {..} v = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
     !o1 = VU.unsafeIndex offsetsSG v
     !o2 = VU.unsafeIndex offsetsSG (v + 1)
 
--- | Retrieves adjacent vertices with weights.
+-- | Returns `(EdgeId, Vertex)` paris. Hardly used.
+{-# INLINE eAdjRaw #-}
+eAdjRaw :: SparseGraph i w -> Vertex -> VU.Vector (EdgeId, Vertex)
+eAdjRaw SparseGraph {..} v = VU.imap ((,) . (+ o1)) vs
+  where
+    -- eAdjRaw SparseGraph {..} v = VU.imap (\e v -> (e + o1, v)) vs
+
+    !o1 = VU.unsafeIndex offsetsSG v
+    !o2 = VU.unsafeIndex offsetsSG (v + 1)
+    !vs = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
+
+-- | Retrieves adjacent vertex indices with weights.
 {-# INLINE adjW #-}
 adjW :: (Unindex i, VU.Unbox w) => SparseGraph i w -> i -> VU.Vector (i, w)
 adjW gr i = VU.map (first (unindex (boundsSG gr))) $ adjWRaw gr v
   where
     !v = index (boundsSG gr) i
 
--- | Retrieves adjacent vertex indices with weights.
+-- | Retrieves adjacent vertices with weights.
 {-# INLINE adjWRaw #-}
 adjWRaw :: (VU.Unbox w) => SparseGraph i w -> Vertex -> VU.Vector (Vertex, w)
 adjWRaw SparseGraph {..} v = VU.zip vs ws
@@ -130,7 +142,7 @@ dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
 
-  flip fix (0 :: Int, index boundsSG startIx) $ \loop (depth, v1) -> do
+  flip fix (0 :: Int, index boundsSG startIx) $ \loop (!depth, !v1) -> do
     VU.forM_ (gr `adjRaw` v1) $ \v2 -> do
       !d <- VUM.read dist v2
       when (d /= undef) $ do
@@ -186,6 +198,47 @@ djSG !gr@SparseGraph {..} !startIx !undef = VU.create $ do
     merge :: H.Entry w Vertex -> H.Entry w Vertex -> H.Entry w Vertex
     merge (H.Entry !cost1 !_v1) (H.Entry !cost2 !v2) = H.Entry (cost1 + cost2) v2
 
+-- TODO: BFS with path (route?) restoration
+
+-- | Returns a list of a route in reverse order (a route from end to start).
+dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Edge]
+dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
+  let !undef = -1 :: Int
+  !dist <- VUM.replicate nVertsSG undef
+
+  flip fix (0 :: Int, start, []) $ \loop (!depth, !v1, !stack) -> do
+    !lastD1 <- VUM.read dist v1
+    when (lastD1 == undef) $ do
+      VUM.write dist v1 depth
+    if
+        | lastD1 /= undef -> return Nothing
+        | v1 == end -> return $ Just stack
+        | otherwise -> do
+            flip fix (gr `adjRaw` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+              Nothing -> return Nothing
+              Just (!v2, !v2s') -> do
+                (<|>) <$> loop (succ depth, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
+  where
+    !start = index boundsSG startIx
+    !end = index boundsSG endIx
+
+-- | Returns a list of a route in reverse order (a route from end to start).
+treeDfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> [Edge]
+treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
+  let !undef = -1 :: Int
+
+  flip fix (0 :: Int, undef, start, []) $ \loop (!depth, !parent, !v1, !stack) -> do
+    if v1 == end
+      then return $ Just stack
+      else do
+        flip fix (VU.filter (/= parent) $ gr `adjRaw` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+          Nothing -> return Nothing
+          Just (!v2, !v2s') -> do
+            (<|>) <$> loop (succ depth, v1, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
+  where
+    !start = index boundsSG startIx
+    !end = index boundsSG endIx
+
 topSortSG :: SparseGraph i w -> [Vertex]
 topSortSG !gr@SparseGraph {..} = runST $ do
   !vis <- VUM.replicate nVertsSG False
@@ -237,3 +290,4 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
     collectSccPreorderSG !topVerts = runST $ do
       !vis <- VUM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
+
