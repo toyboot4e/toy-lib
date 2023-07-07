@@ -48,7 +48,7 @@ unitMat n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map (
 -- | `mulMatMod` wrapper for binary lifting.
 --
 -- > let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'
--- > let !mn = newBinLiftV $ MulMatMod @MyModulus m1
+-- > let !mn = newBinLiftV $ MulMatMod @MyModulo m1
 -- > let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
 newtype MulMatMod a = MulMatMod (UArray (Int, Int) Int)
   deriving (Eq, Show)

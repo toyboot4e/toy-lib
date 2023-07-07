@@ -23,11 +23,11 @@ prevPermutationVec =
 -- | Returns 1-based dictionary order for the given array.
 -- WARNING: Use 0-based indices for the input.
 dictOrderModuloVec :: (VG.Vector v Int) => v Int -> Int -> Int
-dictOrderModuloVec xs modulus = runST $ do
+dictOrderModuloVec xs modulo = runST $ do
   !stree <- newSTreeVU (+) (VG.length xs + 1) (0 :: Int)
 
   -- Pre-calculate factorial numbers:
-  let !facts = factMods (VG.length xs) modulus
+  let !facts = factMods (VG.length xs) modulo
 
   -- The calculation is very similar to that of inversion number. For example,
   -- ```
@@ -44,13 +44,13 @@ dictOrderModuloVec xs modulus = runST $ do
     !nUsed <- fromJust <$> querySTree stree (0, x)
     let !nUnused = x - nUsed
     let !factMod = facts VG.! (VG.length xs - (i + 1))
-    let !inc = nUnused * factMod `rem` modulus
+    let !inc = nUnused * factMod `rem` modulo
 
     -- mark it as used
     insertSTree stree x 1
 
     return inc
 
-  return $ succ $ VG.foldl1' (\ !acc x -> (acc + x) `rem` modulus) counts
+  return $ succ $ VG.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts
 
 -- }}}

@@ -12,12 +12,12 @@ import qualified Data.Vector.Unboxed as VU
 -- {{{ Modulo arithmetic
 
 -- TODO: refactor
--- TODO: consider taking `modulus` as the first argument
+-- TODO: consider taking `modulo` as the first argument
 
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
-addMod !x !a !modulus = (x + a) `mod` modulus
-subMod !x !s !modulus = (x - s) `mod` modulus
-mulMod !b !p !modulus = (b * p) `mod` modulus
+addMod !x !a !modulo = (x + a) `mod` modulo
+subMod !x !s !modulo = (x - s) `mod` modulo
+mulMod !b !p !modulo = (b * p) `mod` modulo
 
 -- | n! `mod` m
 factMod :: Int -> Int -> Int
@@ -34,13 +34,13 @@ powModConst !base !power !modulo = powByCache power (powModCache base modulo)
 -- | One-shot calcaulation of \(x / d mod p\), using Fermat's little theorem.
 --
 -- \(1/d = d^{p-2} (\mod p) \equiv d^p = d (\mod p)\)
---   where the modulus is a prime number and `x` is not a mulitple of `p`.
+--   where the modulo is a prime number and `x` is not a mulitple of `p`.
 invModF :: Int -> Int -> Int
-invModF !d !modulus = invModFC modulus (powModCache d modulus)
+invModF !d !modulo = invModFC modulo (powModCache d modulo)
 
 -- | Calculates \(x / d mod p\), using Fermat's little theorem.
 divModF :: Int -> Int -> Int -> Int
-divModF !x !d !modulus = divModFC x (powModCache d modulus) `rem` modulus
+divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
 
 -- | Cache of \(base^i\) for iterative square method.
 powModCache :: Int -> Int -> (Int, VU.Vector Int)
@@ -61,24 +61,24 @@ powByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
         else acc
 
 -- \(1/d = d^{p-2} (\mod p) \equiv d^p = d (\mod p)\)
---   where the modulus is a prime number and `x` is not a mulitple of `p`.
+--   where the modulo is a prime number and `x` is not a mulitple of `p`.
 --
 -- and \(x^{p-2}\) is calculated with cache.
 invModFC :: Int -> (Int, VU.Vector Int) -> Int
-invModFC !primeModulus = powByCache (primeModulus - 2)
+invModFC !primeModulo = powByCache (primeModulo - 2)
 
 divModFC :: Int -> (Int, VU.Vector Int) -> Int
-divModFC !x context@(!modulus, !_) = x * invModFC modulus context `rem` modulus
+divModFC !x context@(!modulo, !_) = x * invModFC modulo context `rem` modulo
 
 -- | Cache of \(n! \mod m\) up to `n`.
 factMods :: Int -> Int -> VU.Vector Int
-factMods !n !modulus =
-  VU.scanl' (\ !x !y -> x * y `rem` modulus) (1 :: Int) $ VU.fromList [(1 :: Int) .. n]
+factMods !n !modulo =
+  VU.scanl' (\ !x !y -> x * y `rem` modulo) (1 :: Int) $ VU.fromList [(1 :: Int) .. n]
 
 -- | nCr `mod` m (binominal cofficient).
 bcMod :: Int -> Int -> Int -> Int
-bcMod !n !r !modulus = foldl' (\ !x !y -> divModF x y modulus) (facts VU.! n) [facts VU.! r, facts VU.! (n - r)]
+bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts VU.! n) [facts VU.! r, facts VU.! (n - r)]
   where
-    facts = factMods n modulus
+    facts = factMods n modulo
 
 -- }}}
