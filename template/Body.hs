@@ -1,13 +1,13 @@
-data MyModulus = MyModulus
+data MyModulo = MyModulo
 
-instance TypeInt MyModulus where
+instance TypeInt MyModulo where
   -- typeInt _ = 1_000_000_007
   typeInt _ = 998244353
 
-type MyModInt = ModInt MyModulus
+type MyModInt = ModInt MyModulo
 
 modInt :: Int -> MyModInt
-modInt = ModInt . (`mod` typeInt (Proxy @MyModulus))
+modInt = ModInt . (`mod` typeInt (Proxy @MyModulo))
 
 undef :: Int
 undef = -1

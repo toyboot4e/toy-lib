@@ -133,22 +133,22 @@ import qualified Data.HashSet as HS
 
 -- {{ Adhoc
 
-data MyModulus = MyModulus
+data MyModulo = MyModulo
 
-instance TypeInt MyModulus where
+instance TypeInt MyModulo where
   -- typeInt _ = 1_000_000_007
   typeInt _ = 998244353
 
 derivingUnbox
   "HashSlice"
-  [t|HashSlice MyModulus -> (Int, Int)|]
+  [t|HashSlice MyModulo -> (Int, Int)|]
   [|\(HashSlice v l) -> (v, l)|]
   [|\(!v, !l) -> HashSlice v l|]
 
-type MyModInt = ModInt MyModulus
+type MyModInt = ModInt MyModulo
 
 modInt :: Int -> MyModInt
-modInt = ModInt . (`rem` typeInt (Proxy @MyModulus))
+modInt = ModInt . (`rem` typeInt (Proxy @MyModulo))
 
 undef :: Int
 undef = -1
