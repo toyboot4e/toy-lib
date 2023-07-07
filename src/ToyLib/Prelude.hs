@@ -75,7 +75,7 @@ foldForMVG :: (PrimMonad m, VG.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
-foldForMMS !s0 !xs !f = MS.foldM f s0 xs
+foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 {-# INLINE unconsVG #-}
 unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)

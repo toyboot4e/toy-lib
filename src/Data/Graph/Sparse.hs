@@ -253,9 +253,9 @@ topSortSG gr@SparseGraph {..} = runST $ do
             VUM.unsafeWrite vis v True
             !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr `adj` v
             -- Create postorder output:
-            (v :) <$> VU.foldM dfsM acc vs
+            (v :) <$> VU.foldM' dfsM acc vs
 
-  MS.foldM dfsM [] (rangeMS 0 (pred nVertsSG))
+  MS.foldM' dfsM [] (rangeMS 0 (pred nVertsSG))
 
 -- | Partial running of `scc` over topologically sorted vertices, but for some connected components
 -- only.
@@ -268,7 +268,7 @@ topScc1SG !gr' !vis !v0 = do
         VUM.unsafeWrite vis v True
         !vs <- VU.filterM (fmap not . VUM.unsafeRead vis) $ gr' `adj` v
         -- Create preorder output:
-        (v :) <$> VU.foldM (curry loop) acc vs
+        (v :) <$> VU.foldM' (curry loop) acc vs
 
 -- | Creates a reverse graph.
 -- TODO: return weightned graph

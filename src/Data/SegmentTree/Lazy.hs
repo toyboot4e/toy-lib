@@ -256,8 +256,8 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- mact <$> (VUM.read ops $ childL vertex) <*> (VGM.read as $ childL vertex)
-    !aR' <- mact <$> (VUM.read ops $ childR vertex) <*> (VGM.read as $ childR vertex)
+    !aL' <- mact <$> VUM.read ops (childL vertex) <*> VGM.read as (childL vertex)
+    !aR' <- mact <$> VUM.read ops (childR vertex) <*> VGM.read as (childR vertex)
     VGM.write as vertex $ aL' <> aR'
   where
     !nVerts = VGM.length as
