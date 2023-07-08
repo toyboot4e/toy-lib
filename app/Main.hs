@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
@@ -5,8 +6,13 @@
 module Main (main) where
 
 import Control.Monad
+import Data.Graph.Sparse
 import qualified Data.List as L
+import Data.List.Extra (stripSuffix)
+import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ord
+import Debug.Trace
 import qualified Language.Haskell.Exts as H
 import qualified Language.Haskell.Exts.Parser as H
 import qualified Language.Haskell.Exts.Syntax as H
@@ -18,18 +24,24 @@ import System.IO.Temp (withTempDirectory)
 import System.Process (rawSystem)
 
 -- TODO: Refactor
+-- TODO: Filter dependencies and do topological sort
 
 main :: IO ()
 main = do
   -- (name : opts) <- getArgs
   let srcDir = installPath ++ "/src"
   files <- collectSourceFiles srcDir
-  (failures, successes) <- partitionResults <$> mapM (\f -> (f,) <$> minifyAsOneline f) files
+
+  -- parse source files
+  parsedFiles <- forM files $ \path -> do
+    (path,) <$> parseFile path
+  let (failures, successes) = partitionParseResults parsedFiles
 
   when ((not . null) failures) $ do
     forM_ failures print
     exitFailure
 
+  -- parse template
   let template = installPath ++ "/template/Main.hs"
   (extensions, parsed) <- parseFile template
 
@@ -39,17 +51,17 @@ main = do
 
   case parsed of
     H.ParseOk templateAst -> do
-      putStr $ generate extensions templateAst (map snd successes) header macros body
+      let toylib = generateLibrary successes
+      putStr $ generateTemplate extensions templateAst toylib header macros body
     failure -> do
-      putStrLn $ "Failed to parse template:"
+      putStrLn "Failed to parse template:"
       print failure
   where
-    partitionResults :: [(a, Either l r)] -> ([(a, l)], [(a, r)])
-    partitionResults = foldr step ([], [])
+    partitionParseResults :: [(a, ([H.Extension], H.ParseResult b))] -> ([(a, [H.Extension], (H.SrcLoc, String))], [(a, [H.Extension], b)])
+    partitionParseResults = foldr step ([], [])
       where
-        step :: (a, Either l r) -> ([(a, l)], [(a, r)]) -> ([(a, l)], [(a, r)])
-        step (f, Left l) (accL, accR) = ((f, l) : accL, accR)
-        step (f, Right r) (accL, accR) = (accL, (f, r) : accR)
+        step (f, (exts, H.ParseFailed loc s)) (accL, accR) = ((f, exts, (loc, s)) : accL, accR)
+        step (f, (exts, H.ParseOk l)) (accL, accR) = (accL, (f, exts, l) : accR)
 
 -- | Recursively collects @.hs@ files.
 collectSourceFiles :: FilePath -> IO [FilePath]
@@ -91,14 +103,6 @@ parseFile absPath = do
 
   return (extensions, H.parseModuleWithMode parseOption processed)
 
--- | Collects declaratrions from a Haskell source file and minify them into one line.
-minifyAsOneline :: String -> IO (Either String String)
-minifyAsOneline absPath = do
-  (extensions, result) <- parseFile absPath
-  return $ case result of
-    H.ParseOk ast -> Right $ minifyDeclarations extensions ast
-    failed -> Left $ show failed
-
 -- | Returns the root directory.
 installPath :: FilePath
 installPath = $(do dir <- runIO getCurrentDirectory; [e|dir|])
@@ -110,42 +114,73 @@ modulePath name = concat [installPath, "/src/", map tr name, ".hs"]
     tr '.' = '/'
     tr c = c
 
+-- | Converts source file path to module name
+moduleName :: FilePath -> Maybe String
+moduleName name = do
+  name1 <- L.stripPrefix (installPath ++ "/src/") name
+  name2 <- stripSuffix ".hs" name1
+  return $ map (\c -> if c == '/' then '.' else c) name2
+
 removeDefineMacros :: String -> String
 removeDefineMacros = unlines . filter (not . L.isPrefixOf "#define") . lines
 
 removeMacros :: String -> String
 removeMacros = unlines . filter (not . L.isPrefixOf "#") . lines
 
-minifyDeclarations :: [H.Extension] -> H.Module l -> String
-minifyDeclarations extensions ast = minify ast
+-- | Geneartes `toy-lib` in one line.
+generateLibrary :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
+generateLibrary parsedFiles =
+  let files = topSortSourceFiles parsedFiles
+   in map (\(path, exts, module_) -> (path, minifyDeclarations exts module_)) files
   where
-    pretty :: H.Module l -> String
-    pretty (H.Module _ _ _ _ decls) = unlines $ map (H.prettyPrintWithMode pphsMode) decls
-    pretty _ = ""
+    topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
+    topSortSourceFiles input =
+      let edges = concatMap (\(!path, _, module_) -> edgesOf path module_) input
+          gr = buildUSG (0, pred (length input)) (length edges) edges
+          vs = topSortSG gr
+       in map (input !!) vs
+      where
+        moduleNameToVert :: M.Map String Int
+        !moduleNameToVert = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ moduleName path) input) [0 :: Int ..]
 
-    minify :: H.Module l -> String
-    minify (H.Module _ _ _ _ decls) = L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
-    minify _ = ""
+        -- edge from depended vertex to dependent vertex
+        edgesOf :: FilePath -> H.Module a -> [(Int, Int)]
+        edgesOf path (H.Module _ _ _ !imports _) =
+          let !v1 = moduleNameToVert M.! fromJust (moduleName path)
+              !v2s = mapMaybe ((moduleNameToVert M.!?) . (\(H.ModuleName _ s) -> s) . H.importModule) imports
+           in map (,v1) v2s
+        edgesOf _ _ = error "unexpected module data"
+
+    minifyDeclarations :: [H.Extension] -> H.Module l -> String
+    minifyDeclarations _ ast = minify ast
+      where
+        pretty :: H.Module l -> String
+        pretty (H.Module _ _ _ _ !decls) = unlines $ map (H.prettyPrintWithMode pphsMode) decls
+        pretty _ = ""
+
+        minify :: H.Module l -> String
+        minify (H.Module _ _ _ _ !decls) = L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
+        minify _ = ""
 
 pphsMode :: H.PPHsMode
 pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 
-generate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [String] -> String -> String -> String -> String
-generate extensions (H.Module _ _ _ imports _) toylib header macros body =
-  unlines [header, exts, "", pre, disableFormat, imports', "",macros, toylib', enableFormat, post, "", body]
+generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [(FilePath, String)] -> String -> String -> String -> String
+generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body =
+  unlines [header, pre, disableFormat, exts, imports', "", macros, toylib', enableFormat, post, "", body]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"
       where
-        es = L.intercalate ", " $ map H.prettyExtension extensions
+        es = L.intercalate ", " . L.sort $ map H.prettyExtension extensions
 
     imports' :: String
     imports' = L.intercalate ";" [L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports)]
 
-    pre = "-- {{{ toy-lib: <https://github.com/toyboot4e/toy-lib>"
+    pre = "-- {{{ toy-lib: https://github.com/toyboot4e/toy-lib"
     post = "-- }}}"
 
     disableFormat = "{- ORMOLU_DISABLE -}"
     enableFormat = "{- ORMOLU_ENABLE -}"
 
-    toylib' = L.intercalate ";" toylib
+    toylib' = L.intercalate ";" (map snd toylib)

@@ -65,6 +65,7 @@ executables:
       - process
       - template-haskell
       - temporary
+      - toy-lib
 
 tests:
   toy-lib-test:

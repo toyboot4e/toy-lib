@@ -98,6 +98,7 @@ executable toy-lib-exe
     , process
     , template-haskell
     , temporary
+    , toy-lib
     , transformers
     , unordered-containers
     , utility-ht
