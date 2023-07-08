@@ -145,10 +145,10 @@ dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
   flip fix (0 :: Int, index boundsSG startIx) $ \loop (!depth, !v1) -> do
+    VUM.write dist v1 depth
     VU.forM_ (gr `adj` v1) $ \v2 -> do
       !d <- VUM.read dist v2
-      when (d /= undef) $ do
-        VUM.write dist v2 depth
+      when (d == undef) $ do
         loop (succ depth, v2)
 
   return dist
