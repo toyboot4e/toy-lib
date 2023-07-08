@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -213,10 +212,14 @@ dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
     !lastD1 <- VUM.read dist v1
     when (lastD1 == undef) $ do
       VUM.write dist v1 depth
-    if
-        | lastD1 /= undef -> return Nothing
-        | v1 == end -> return $ Just stack
-        | otherwise -> do
+
+    -- TODO: allow multi-way if with `toy-lib` bundler
+    if lastD1 /= undef
+      then return Nothing
+      else
+        if v1 == end
+          then return $ Just stack
+          else do
             flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
