@@ -21,6 +21,7 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
+import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import Debug.Trace
 import System.IO (stdout)
@@ -184,7 +185,7 @@ times !n !f !s0 = snd $ until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 -- - <https://stackoverflow.com/a/58511843>
 -- - <https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c>
 combs :: Int -> [a] -> [[a]]
-combs k [] = error "given empty list"
+combs _ [] = error "given empty list"
 combs k as@(!x : xs)
   | k == 0 = [[]]
   | k == 1 = map pure as
@@ -313,6 +314,17 @@ intsV = intsVG
 
 intsVU :: IO (VU.Vector Int)
 intsVU = intsVG
+
+-- | FIXME: Faster implementation
+intsN :: Int -> IO [Int]
+intsN n = concat <$> replicateM n ints
+
+-- | FIXME: Faster implementation
+intsNVU :: Int -> IO (VU.Vector Int)
+intsNVU n = VU.fromList . concat <$> replicateM n ints
+
+intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
+intsGrid h w = IxVector ((0, 0), (h - 1, w - 1)) <$> intsNVU h
 
 -- | Creates a graph from 1-based vertices
 getGraph :: Int -> Int -> IO (Array Int [Int])
