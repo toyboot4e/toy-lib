@@ -28,8 +28,9 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 -- F: Fermet, FC: Fermet by cache
 
 -- | One-shot calculation of $base ^ power `mod` modulo$ in a constant time
+-- REMARK: It uses @base `mod` modulo@ in order to avoid overflow.
 powModConst :: Int -> Int -> Int -> Int
-powModConst !base !power !modulo = powByCache power (powModCache base modulo)
+powModConst !base !power !modulo = powModByCache power (powModCache (base `mod` modulo) modulo)
 
 -- | One-shot calcaulation of \(x / d mod p\), using Fermat's little theorem.
 --
@@ -49,11 +50,9 @@ powModCache !base !modulo = (modulo, doubling)
     -- doubling = VU.scanl' (\ !x _ -> x * x `rem` modulo) base $ rangeVG (1 :: Int) 62
     doubling = newDoubling base (\x -> x * x `rem` modulo)
 
--- | Calculates \(base^i\) (mod p) from a cache.
-powByCache :: Int -> (Int, VU.Vector Int) -> Int
--- TODO: test if it works as expeted
--- powByCache !power (!modulo, !cache) = applyDoubling cache 1 (\acc x -> acc * x `rem` modulo) power
-powByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
+-- | Calculates \(base^power\) (mod p) from a cache.
+powModByCache :: Int -> (Int, VU.Vector Int) -> Int
+powModByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
   where
     step !acc !nBit =
       if testBit power nBit
@@ -65,7 +64,7 @@ powByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
 --
 -- and \(x^{p-2}\) is calculated with cache.
 invModFC :: Int -> (Int, VU.Vector Int) -> Int
-invModFC !primeModulo = powByCache (primeModulo - 2)
+invModFC !primeModulo = powModByCache (primeModulo - 2)
 
 divModFC :: Int -> (Int, VU.Vector Int) -> Int
 divModFC !x context@(!modulo, !_) = x * invModFC modulo context `rem` modulo
