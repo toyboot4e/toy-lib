@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | I'm using @Array Int [Int]@ as a primary `Graph` data storage.
@@ -112,8 +113,42 @@ bfsGrid !grid !start = runSTUArray $ do
   !_ <- inner (0 :: Int) (IS.singleton $ ix start)
   return vis
 
--- | 01-BFS: <https://atcoder.jp/contests/typical90/tasks/typical90_aq>.
--- It's slow, but could be applied easily in certain situation.
+-- | Easy 01-BFS (ABC 172 D): <https://atcoder.jp/contests/abc176/tasks/abc176_d>
+solve01BFS :: (Int, Int) -> UArray (Int, Int) Char -> UArray (Int, Int) Int
+solve01BFS !start !grid = runSTUArray $ do
+  !dp <- newArray (bounds grid) undef
+
+  let popLoop Seq.Empty = return ()
+      popLoop ((!v1, !d1) Seq.:<| seq0) = do
+        !lastD <- readArray dp v1
+        if lastD /= undef
+          then popLoop seq0
+          else do
+            writeArray dp v1 d1
+            popLoop <=< foldForM seq0 (grid `adjW` v1) $ \seq (!v2, !w2) -> do
+              !d2 <- readArray dp v2
+              if d2 /= undef
+                then return seq
+                else do
+                  if w2 == 0
+                    then return ((v2, d1) Seq.<| seq)
+                    else return (seq Seq.|> (v2, succ d1))
+
+  popLoop $ Seq.singleton (start, 0 :: Int)
+  return dp
+  where
+    !undef = -1 :: Int
+    adjW :: UArray (Int, Int) Char -> (Int, Int) -> [((Int, Int), Int)]
+    adjW grid yx0 =
+      let !adjs1 = map (,0 :: Int) $ filter ((&&) <$> inRange (bounds grid) <*> ((== '.') . (grid !))) $ map (add2 yx0) dir4
+          !adjs2 = map (,1 :: Int) $ filter ((&&) <$> inRange (bounds grid) <*> ((== '.') . (grid !))) $ map (add2 yx0) bombs
+       in adjs1 ++ adjs2
+      where
+        !dir4 = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        !bombs = [(y, x) | y <- [-2 .. 2], x <- [-2 .. 2], abs x + abs y >= 2]
+
+-- | Direction-based 01-BFS: <https://atcoder.jp/contests/typical90/tasks/typical90_aq>.
+-- It's slow, but could be applied easily in certain situations.
 bfsGrid01 :: (Int, Int) -> UArray (Int, Int) Bool -> UArray (Int, Int, Int) Int
 bfsGrid01 !start !isBlock = runSTUArray $ do
   -- dp ! (y, x, iDir). The third dimension is required!
