@@ -11,6 +11,7 @@ import qualified Data.Vector.Generic.Mutable as VGM
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
+  deriving (Show, Eq)
 
 (.!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
 (.!) IxVector {..} i = vecIV VG.! (index boundsIV i)
