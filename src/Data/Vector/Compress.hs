@@ -8,9 +8,9 @@ import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
 import ToyLib.Prelude (vLength)
 
--- | One dimensional index compression: xs -> (indices, xs')
+-- | One dimensional index compression: xs -> (indexer, xs')
 compressVU :: VU.Vector Int -> (VU.Vector Int, VU.Vector Int)
-compressVU xs = (indices, VU.map (fromJust . fst . f) xs)
+compressVU xs = (indexer, VU.map (fromJust . fst . f) xs)
   where
-    !indices = VU.fromList $ nubSort $ VU.toList xs
-    f !x = bsearch (0, pred $ vLength indices) $ \i -> indices VU.! i <= x
+    !indexer = VU.fromList $ nubSort $ VU.toList xs
+    f !x = bsearch (0, pred $ vLength indexer) $ \i -> indexer VU.! i <= x
