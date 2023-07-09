@@ -50,6 +50,7 @@ library
       Data.Vector.IxVector
       Math.Bits
       Math.Digits
+      Math.Manhattan
       Math.Matrix
       Math.PowMod
       Math.Primes
