@@ -22,6 +22,7 @@ import Data.Ix
 import Data.Maybe
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
+import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Macro (dbgAssert)
@@ -138,9 +139,8 @@ adjWIx gr i = VU.map (first (unindex (boundsSG gr))) $ adjW gr v
   where
     !v = index (boundsSG gr) i
 
--- TODO: Return IxVector
-dfsSG :: (Unindex i) => SparseGraph i w -> i -> VU.Vector Int
-dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
+dfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
+dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
 
@@ -153,9 +153,25 @@ dfsSG gr@SparseGraph {..} !startIx = VU.create $ do
 
   return dist
 
--- TODO: Return IxVector
-bfsSG :: (Unindex i) => SparseGraph i w -> i -> VU.Vector Int
-bfsSG gr@SparseGraph {..} !startIx = VU.create $ do
+-- | Also consider using union-find tree.
+componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (VU.Vector Bool)
+componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
+  !vis <- VUM.replicate nVertsSG False
+
+  flip fix start $ \loop v1 -> do
+    VUM.write vis v1 True
+    let !v2s = gr `adj` v1
+    VU.forM_ v2s $ \v2 -> do
+      !visited <- VUM.read vis v2
+      when (not visited) $ do
+        loop v2
+
+  return vis
+  where
+    !start = index boundsSG startIx :: Vertex
+
+bfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
+bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
 
