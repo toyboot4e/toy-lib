@@ -36,4 +36,7 @@ instance Semigroup Replacement where
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
 
+instance SemigroupAction Replacement Int where
+  sact (Replacement !vec) !i = vec VU.! i
+
 -- }}}
