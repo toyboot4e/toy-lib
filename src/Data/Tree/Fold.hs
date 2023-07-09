@@ -55,6 +55,9 @@ scanTreeV = scanTreeVG
 
 -- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
 -- REMARK: `mempty` is used for initial operator value.
+--
+-- = Typical problems
+-- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
 foldTreeAll :: (VU.Unbox a, VU.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> VU.Vector a
 foldTreeAll !tree !acc0At !toM =
   -- Calculate tree DP for one root vertex

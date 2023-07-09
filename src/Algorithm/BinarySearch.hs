@@ -129,10 +129,13 @@ bsearchF64L !a !b !c = fst $ bsearchF64 a b c
 bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
 bsearchF64R !a !b !c = fst $ bsearchF64 a b c
 
--- One dimensional index compression: xs -> (nubSorted, indices)
+-- | One dimensional index compression: xs -> (nubSorted, indices)
 compressList :: [Int] -> (VU.Vector Int, [Int])
 compressList xs = (indices, map (fromJust . fst . f) xs)
   where
     !indices = VU.fromList $ nubSort xs
     f !x = bsearch (0, pred $ vLength indices) $ \i -> indices VU.! i <= x
 
+-- | Retrieves square root of an `Int`.
+isqrtSlow :: Int -> Int
+isqrtSlow n = fromJust $ bsearchR (0, n) ((< n) . (^ 2))

@@ -159,7 +159,7 @@ foldViaLca (!cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
    in a1 <> a2
   where
     -- Folds up the monoid value on going upwards:
-    -- TODO: use `ReplacementWithMonoid` to outsource the folding method
+    -- TODO: use `PermutationWithMonoid` to outsource the folding method
     foldParentN :: Vertex -> Int -> m
     foldParentN !v0 !nthParent = snd $ V.foldl' step (v0, mempty) input
       where

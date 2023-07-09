@@ -422,10 +422,7 @@ traceSubMat2D !mat ((!y0, !x0), (!yEnd, !xEnd)) =
 
 -- }}}
 
--- {{{ Integer
-
--- | CAUTION: Be aware of the accuracy. Prefer binary search when possible
+-- | Inaccurate, but fast `Int` square root.
+-- TODO: Fast and accurate implementation
 isqrt :: Int -> Int
 isqrt = round @Double . sqrt . fromIntegral
-
--- }}}

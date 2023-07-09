@@ -3,6 +3,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | Lazy segment tree, where we can perform operation over range.
+--
+-- = Typical problems
+-- - [Typical 029 - Long Bricks (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ac)
+
 module Data.SegmentTree.Lazy where
 
 import Control.Monad

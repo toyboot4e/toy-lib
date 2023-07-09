@@ -1,6 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 
 -- | Digraph coloring.
+--
+-- = Typical problems
+-- - [Typical 026 - Independent Set on a Tree (★ 4)](https://atcoder.jp/contests/typical90/tasks/typical90_z)
 
 module Data.Graph.Digraph where
 

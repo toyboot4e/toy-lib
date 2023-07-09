@@ -28,15 +28,19 @@ class (SemigroupAction m a, Monoid m) => MonoidAction m a where
 instance SemigroupAction (Product Int) Int where
   sact (Product !x1) !x2 = x1 * x2
 
-newtype Replacement = Replacement (VU.Vector Int)
+-- | Permutation of N sequence.
+--
+-- = Typical problems
+-- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
+newtype Permutation = Permutation (VU.Vector Int)
   deriving (Show, Eq)
 
-instance Semigroup Replacement where
-  (Replacement vec1) <> (Replacement vec2) = Replacement $ VU.map (vec1 VU.!) vec2
+instance Semigroup Permutation where
+  (Permutation vec1) <> (Permutation vec2) = Permutation $ VU.map (vec1 VU.!) vec2
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
 
-instance SemigroupAction Replacement Int where
-  sact (Replacement !vec) !i = vec VU.! i
+instance SemigroupAction Permutation Int where
+  sact (Permutation !vec) !i = vec VU.! i
 
 -- }}}

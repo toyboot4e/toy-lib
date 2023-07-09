@@ -113,7 +113,10 @@ bfsGrid !grid !start = runSTUArray $ do
   !_ <- inner (0 :: Int) (IS.singleton $ ix start)
   return vis
 
--- | Easy 01-BFS (ABC 172 D): <https://atcoder.jp/contests/abc176/tasks/abc176_d>
+-- | Easy 01-BFS
+--
+-- = Typical problems
+-- - [ABC 176 D](https://atcoder.jp/contests/abc176/tasks/abc176_d)
 solve01BFS :: (Int, Int) -> UArray (Int, Int) Char -> UArray (Int, Int) Int
 solve01BFS !start !grid = runSTUArray $ do
   !dp <- newArray (bounds grid) undef
@@ -149,6 +152,9 @@ solve01BFS !start !grid = runSTUArray $ do
 
 -- | Direction-based 01-BFS: <https://atcoder.jp/contests/typical90/tasks/typical90_aq>.
 -- It's slow, but could be applied easily in certain situations.
+--
+-- = Typical problems
+-- - [Typoical 043 - Maze Challenge with Lack of Sleep (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_aq)
 bfsGrid01 :: (Int, Int) -> UArray (Int, Int) Bool -> UArray (Int, Int, Int) Int
 bfsGrid01 !start !isBlock = runSTUArray $ do
   -- dp ! (y, x, iDir). The third dimension is required!

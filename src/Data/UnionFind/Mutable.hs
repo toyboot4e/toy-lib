@@ -4,6 +4,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
+-- | Union-find tree
+--
+-- = Typical problems
+-- - [Typical 012 - Red Painting (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_l)
+
 module Data.UnionFind.Mutable where
 
 import Control.Monad
