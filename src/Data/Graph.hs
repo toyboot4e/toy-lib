@@ -10,6 +10,7 @@ module Data.Graph where
 
 import Control.Monad
 import Control.Monad.Fix
+import Control.Monad.ST
 import Data.Array.IArray
 import Data.Array.IO
 import Data.Array.ST
@@ -205,6 +206,31 @@ components !graph !start = inner (IS.singleton start) start
       where
         vs = filter (`IS.notMember` vis) $! graph ! v
         vis' = IS.union vis $! IS.fromList vs
+
+-- | DFS for every path, specially for
+-- [Typical 072](https://atcoder.jp/contests/typical90/tasks/typical90_bt>).
+dfsEveryPathT072 :: UArray (Int, Int) Char -> (Int, Int) -> Int
+dfsEveryPathT072 !gr !start
+  | gr ! start == '#' = 0
+dfsEveryPathT072 !gr !start = runST $ do
+  !vis <- newArray (bounds gr) False :: ST s (STUArray s (Int, Int) Bool)
+
+  let nexts v =
+        filterM (fmap not . readArray vis)
+          . filter ((&&) <$> inRange (bounds gr) <*> ((/= '#') . (gr !)))
+          $ map (add2 v) [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+  flip fix (0 :: Int, start) $ \loop (!d1, !v1) -> do
+    -- start without marking `start` and visited:
+    when (v1 /= start) $ do
+      writeArray vis v1 True
+    !v2s <- nexts v1
+    !maxDistance <- fmap (foldl' max (0 :: Int)) . forM v2s $ \v2 -> do
+      if v2 == start
+        then return (succ d1)
+        else loop (succ d1, v2)
+    writeArray vis v1 False
+    return maxDistance
 
 -- | Checks a Simple Sndirected Graph and returns markings of cycle vertices.
 -- TODO: Test if it works as expected.
