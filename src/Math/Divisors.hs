@@ -9,7 +9,16 @@
 -- = Typical problems
 -- - [Typical 085 - Multiplication (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_cg)
 -- - [ABC 300 D - AABBC (Difficulty 908)](https://atcoder.jp/contests/abc300/tasks/abc300_d)
+--
+-- = Prime factors
+-- - [Typical 030 - K Factors (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ad)
+--   Numbers with i >= k prime factors can be enumerated very fastly.
+--
+-- = Other problems
+-- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)
 module Math.Divisors where
+
+import Data.List
 
 -- \(O(log N)\) divisor enumeration (sorted).
 divisorsOf :: Int -> [Int]
