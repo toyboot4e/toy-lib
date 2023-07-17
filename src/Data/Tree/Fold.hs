@@ -68,21 +68,21 @@ foldTreeAll !tree !acc0At !toM =
         flip fix (-1, op0, root0) $ \runRootDp (!parent, !parentOp, !v1) -> do
           let !children = VU.fromList . filter (/= parent) $ tree ! v1
           let !opL = VU.scanl' (\op v2 -> (op <>) . toM $ treeDp VU.! v2) op0 children
-          let !opR = VU.scanr (\v2 op -> (<> op) . toM $ treeDp VU.! v2) op0 children
+          let !opR = VU.scanr' (\v2 op -> (<> op) . toM $ treeDp VU.! v2) op0 children
 
           -- save
-          let !x1 = (parentOp <> (VU.last opL)) `mact` (acc0At v1)
+          let !x1 = (parentOp <> VU.last opL) `mact` acc0At v1
           VUM.write dp v1 x1
 
           flip VU.imapM_ children $ \ !i2 !v2 -> do
             let !lrOp = (opL VU.! i2) <> (opR VU.! succ i2)
-            let !v1Acc = (parentOp <> lrOp) `mact` (acc0At v2)
+            let !v1Acc = (parentOp <> lrOp) `mact` acc0At v2
             runRootDp (v1, toM v1Acc, v2)
 
         return dp
    in rootDp
   where
-    !nVerts = rangeSize $ (bounds tree)
+    !nVerts = rangeSize $ bounds tree
     !root0 = 0 :: Int
     !op0 = mempty
 
