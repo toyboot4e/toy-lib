@@ -14,6 +14,9 @@
 -- - [Typical 030 - K Factors (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ad)
 --   Numbers with i >= k prime factors can be enumerated very fastly.
 --
+-- = Split and list / meet in the middle
+-- - [Typical 051 - Typical Shop (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ay)
+--
 -- = Other problems
 -- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)
 module Math.Divisors where

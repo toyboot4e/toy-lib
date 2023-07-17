@@ -41,6 +41,7 @@ import Data.Char
 import Data.Coerce
 import Data.Either
 import Data.Foldable
+import Data.Function (on)
 import Data.Functor
 import Data.Functor.Identity
 import Data.IORef
