@@ -13,7 +13,7 @@ import Data.Array.MArray
 import Data.Bifunctor
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
-import Data.Char (isSpace)
+import Data.Char (digitToInt, isSpace)
 import qualified Data.Heap as H
 import Data.List
 import Data.Tuple.Extra hiding (first, second)
@@ -80,10 +80,28 @@ foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 {-# INLINE unconsVG #-}
 unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)
-unconsVG v =
-  if VG.null v
-    then Nothing
-    else Just (VG.unsafeHead v, VG.unsafeTail v)
+unconsVG v
+  | VG.null v = Nothing
+  | otherwise = Just (VG.unsafeHead v, VG.unsafeTail v)
+
+-- | TODO: Remove on 2023 langauge update.
+-- @since 0.13.0.1
+{-# INLINE groupByVG #-}
+groupByVG :: (VG.Vector v a) => (a -> a -> Bool) -> v a -> [v a]
+groupByVG _ !v | VG.null v = []
+groupByVG !f !v =
+  let !h = VG.unsafeHead v
+      !tl = VG.unsafeTail v
+   in case VG.findIndex (not . f h) tl of
+        Nothing -> [v]
+        Just !n -> VG.unsafeTake (n + 1) v : groupByVG f (VG.unsafeDrop (n + 1) v)
+
+-- | TODO: Remove on 2023 langauge update.
+-- /O(n)/ Split a vector into a list of slices.
+-- @since 0.13.0.1
+{-# INLINE groupVG #-}
+groupVG :: (VG.Vector v a, Eq a) => v a -> [v a]
+groupVG = groupByVG (==)
 
 -- }}}
 
@@ -300,9 +318,11 @@ fth4 (!_, !_, !_, !d) = d
 
 -- {{{ Input
 
+-- | Reads one line as an integer.
 int :: IO Int
 int = readLn
 
+-- | Reads one line as a list of integers.
 ints :: IO [Int]
 ints = unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
@@ -312,8 +332,13 @@ intsVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 intsV :: IO (V.Vector Int)
 intsV = intsVG
 
+-- | Reads one line as a vector of integers.
 intsVU :: IO (VU.Vector Int)
 intsVU = intsVG
+
+-- | Reads one line as a vector of digits.
+digitsVU :: IO (VU.Vector Int)
+digitsVU = VU.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
 -- | FIXME: Faster implementation
 intsN :: Int -> IO [Int]
@@ -393,7 +418,7 @@ printBSB = putBSB . showBSB
 
 -- | See `unwordsBSB` as example.
 concatBSB :: (VG.Vector v a) => (a -> BSB.Builder) -> v a -> BSB.Builder
-concatBSB f = VG.foldr ((<>) . f) mempty
+concatBSB f = VG.foldr' ((<>) . f) mempty
 
 -- FIXME: unnecessary whitespace at the end?
 unwordsBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
