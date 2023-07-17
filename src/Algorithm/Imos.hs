@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
--- | The Ioms's algorithm template for 2D grids.
+-- | The Imos's algorithm template for 2D grids.
 
 module Algorithm.Imos where
 
@@ -13,7 +13,7 @@ import ToyLib.Prelude
 
 -- {{{ imos 2D
 
--- | WARNING: Can you really allocate/run O(HW) algorithm?
+-- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2D :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 imos2D !bounds_ !seeds = runSTUArray $ do
   arr <- newArray bounds_ (0 :: Int)
@@ -34,7 +34,7 @@ imos2D !bounds_ !seeds = runSTUArray $ do
 
   return arr
 
--- | WARNING: Can you really allocate/run O(HW) algorithm?
+-- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2DRev :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 imos2DRev !bounds_ !seeds = runSTUArray $ do
   arr <- newArray bounds_ (0 :: Int)
