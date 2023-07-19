@@ -169,6 +169,22 @@ rangeMSR !l !r = MS.Stream step r
 forMS_ :: (Monad m) => MS.Stream m Int -> (Int -> m ()) -> m ()
 forMS_ = flip MS.mapM_
 
+{-# INLINE repM_ #-}
+repM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+repM_ !l !r !act = inner l
+  where
+    inner !i
+      | i > r = return ()
+      | otherwise = act i >> inner (succ i)
+
+{-# INLINE repRM_ #-}
+repRM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+repRM_ !l !r !act = inner r
+  where
+    inner !i
+      | i < l = return ()
+      | otherwise = act i >> inner (pred i)
+
 -- }}}
 
 -- {{{ cheatsheet
