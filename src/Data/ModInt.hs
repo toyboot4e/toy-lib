@@ -36,8 +36,8 @@ instance Show (ModInt p) where
   show = show . toInt
 
 instance TypeInt p => Num (ModInt p) where
-  (ModInt !x1) + (ModInt !x2) = ModInt $ (x1 + x2) `mod` typeInt (Proxy @p)
-  (ModInt !x1) * (ModInt !x2) = ModInt $ (x1 * x2) `mod` typeInt (Proxy @p)
+  (ModInt !x1) + (ModInt !x2) = ModInt $! (x1 + x2) `mod` typeInt (Proxy @p)
+  (ModInt !x1) * (ModInt !x2) = ModInt $! (x1 * x2) `mod` typeInt (Proxy @p)
   negate (ModInt !v) = ModInt $ (-v) `mod` typeInt (Proxy @p)
   abs = id
   signum _ = 1
@@ -46,11 +46,11 @@ instance TypeInt p => Num (ModInt p) where
 instance TypeInt p => Fractional (ModInt p) where
   -- | Reciprocal of x (inverse of x).
   -- REMARK: This is TOO slow. Do cache when possible.
-  recip (ModInt !x) = ModInt $ invModF x (typeInt (Proxy @p))
+  recip (ModInt !x) = ModInt $! invModF x (typeInt (Proxy @p))
   fromRational !r = ModInt n / ModInt d
     where
-      n = fromInteger $ Ratio.numerator r
-      d = fromInteger $ Ratio.denominator r
+      n = fromInteger $! Ratio.numerator r
+      d = fromInteger $! Ratio.denominator r
 
 instance (TypeInt p) => Enum (ModInt p) where
   toEnum = ModInt . (`mod` typeInt (Proxy @p))

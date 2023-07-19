@@ -22,4 +22,4 @@ powerset :: (Bits a, Num a) => a -> [a]
 powerset !a = a : unfoldr f a
   where
     f 0 = Nothing
-    f !x = Just . dupe $ a .&. (x - 1)
+    f !x = Just . dupe $! a .&. (x - 1)

@@ -4,6 +4,7 @@
 
 module Data.Vector.DictOrder where
 
+import Control.Monad (void)
 import Control.Monad.ST (runST)
 import Data.Maybe
 import Data.SegmentTree.Strict
@@ -17,7 +18,7 @@ import Math.PowMod (factMods)
 prevPermutationVec :: (Ord e, VG.Vector v e, VG.Vector v (Down e)) => v e -> v e
 prevPermutationVec =
   VG.map (\case Down !x -> x)
-    . VG.modify ((>> return ()) . VGM.nextPermutation)
+    . VG.modify (void . VGM.nextPermutation)
     . VG.map Down
 
 -- | Returns 1-based dictionary order for the given array.
@@ -51,6 +52,6 @@ dictOrderModuloVec xs modulo = runST $ do
 
     return inc
 
-  return $ succ $ VG.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts
+  return $! succ $! VG.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts
 
 -- }}}

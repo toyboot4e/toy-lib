@@ -1,12 +1,14 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 -- | Lazy segment tree, where we can perform operation over range.
 --
 -- = Typical problems
 -- - [Typical 029 - Long Bricks (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ac)
+-- - [EDPC W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
+--
+-- TODO: Add `set` / `get`, as in [ac-library](https://github.com/atcoder/ac-library/blob/master/atcoder/lazysegtree.hpp)
 
 module Data.SegmentTree.Lazy where
 
@@ -103,7 +105,7 @@ generateLazySTree !n !f = do
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
     !nLeaves = n2 `div` 2
     childL !vertex = shiftL vertex 1
-    childR !vertex = (shiftL vertex 1) .|. 1
+    childR !vertex = shiftL vertex 1 .|. 1
 
 generateLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
 generateLazySTreeV = generateLazySTree
@@ -116,7 +118,7 @@ generateLazySTreeVU = generateLazySTree
 updateLazySTree ::
   forall v a op m.
   (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
-  (LazySegmentTree v a op (PrimState m)) ->
+  LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
   op ->
@@ -193,21 +195,21 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
     -- It's much like using some glitch in a platformer game:
     glitchLoopQuery :: Int -> Int -> a -> a -> m a
     glitchLoopQuery !l !r !lAcc !rAcc
-      | l > r = return $ lAcc <> rAcc
+      | l > r = return $! lAcc <> rAcc
       | otherwise = do
           (!l', !lAcc') <-
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                !la' <- mact <$> (VUM.read ops l) <*> (VGM.read as l)
-                return $ (succ l, lAcc <> la')
+                !la' <- mact <$!> VUM.read ops l <*> VGM.read as l
+                return (succ l, lAcc <> la')
               else return (l, lAcc)
 
           (!r', !rAcc') <-
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                !ra' <- mact <$> (VUM.read ops r) <*> (VGM.read as r)
+                !ra' <- mact <$!> VUM.read ops r <*> VGM.read as r
                 return (pred r, ra' <> rAcc)
               else return (r, rAcc)
 
@@ -234,8 +236,8 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
     when (op /= mempty) $ do
       -- Propagate the operator monoid to the children:
       -- REMARK: The propagated operator always comes from the right.
-      VUM.modify ops (<> op) $ childL vertex
-      VUM.modify ops (<> op) $ childR vertex
+      VUM.modify ops (<> op) $! childL vertex
+      VUM.modify ops (<> op) $! childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
       VGM.modify as (mact op) vertex
@@ -244,7 +246,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
     !nVerts = VGM.length as
     nthParent !leafVertex !nth = shiftR leafVertex nth
     childL !vertex = shiftL vertex 1
-    childR !vertex = (shiftL vertex 1) .|. 1
+    childR !vertex = shiftL vertex 1 .|. 1
 
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
@@ -263,11 +265,11 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     -- Evaluate this parent node by appending the child nodes:
     !aL' <- mact <$> VUM.read ops (childL vertex) <*> VGM.read as (childL vertex)
     !aR' <- mact <$> VUM.read ops (childR vertex) <*> VGM.read as (childR vertex)
-    VGM.write as vertex $ aL' <> aR'
+    VGM.write as vertex $! aL' <> aR'
   where
     !nVerts = VGM.length as
     nthParent !leafVertex !nth = shiftR leafVertex nth
     childL !vertex = shiftL vertex 1
-    childR !vertex = (shiftL vertex 1) .|. 1
+    childR !vertex = shiftL vertex 1 .|. 1
 
 -- }}}

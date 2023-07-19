@@ -119,7 +119,7 @@ foldLcaCache !nVerts !graph !root !edgeValueOf = (cache, foldCache)
   where
     !cache@(!parents, !_, BinaryLifting !parents') = lcaCache nVerts graph root
     foldCache :: V.Vector (VU.Vector m)
-    !foldCache = V.map snd $ newDoubling toParent appendArray
+    !foldCache = V.map snd $! newDoubling toParent appendArray
       where
         -- Monoid value when going up one parent vertex:
         !toParent = (0, VU.map f (rangeVG 0 (pred nVerts)))
@@ -132,7 +132,7 @@ foldLcaCache !nVerts !graph !root !edgeValueOf = (cache, foldCache)
         appendArray (!iBit, !ops) = (succ iBit, VU.imap f ops)
           where
             f !v0 !op =
-              case ((parents' V.! iBit) `sact` v0) of
+              case (parents' V.! iBit) `sact` v0 of
                 (-1) -> op
                 p -> op <> (ops VU.! p)
 
@@ -145,11 +145,11 @@ foldLcaCache2 !tree !toMonoid = foldLcaCache nVerts adj root getValue
     adj = map fst . (tree !)
     -- FIXME: This is too slow.
     -- TODO: Do not iterate E^2 times.
-    getValue v p = toMonoid . snd . fromJust . find ((== p) . fst) $ tree ! v
+    getValue !v !p = toMonoid . snd . fromJust . find ((== p) . fst) $ tree ! v
 
 -- | Calculates the folding value of the path between two vertices in a tree.
 foldViaLca :: forall m. (Monoid m, VU.Unbox m) => FoldLcaCache m -> Int -> Int -> m
-foldViaLca (!cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
+foldViaLca (cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
       -- !_ = dbg ((v1, d1), (v2, d2), (v, d), a1, a2, a1 <> a2)
       !d1 = depths VU.! v1

@@ -66,12 +66,14 @@ chunks n = inner
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
 foldFor !s0 !xs !f = foldl' f s0 xs
 
+-- | TODO: Remove on 2023 if not faster
 foldForVG :: (VG.Vector v a) => b -> v a -> (b -> a -> b) -> b
 foldForVG !s0 !xs !f = VG.foldl' f s0 xs
 
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForM !s0 !xs !m = foldM m s0 xs
 
+-- | TODO: Remove on 2023 if not faster
 foldForMVG :: (PrimMonad m, VG.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 
@@ -201,7 +203,7 @@ compress (x : xs) = x : compress (dropWhile (== x) xs)
 -- | Runs the given function `n` times.
 {-# INLINE times #-}
 times :: Int -> (a -> a) -> a -> a
-times !n !f !s0 = snd $ until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
+times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 
 -- -- | Returns combinations of the list taking n values.
 -- -- | For example, binary combinations are got by `combination 2 [0..8]`.
@@ -238,7 +240,7 @@ combs k as@(!x : xs)
         dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
 
 -- | Returns inclusive ranges that satisfy the given `check`.
--- TODO: cheaper implementation
+-- FIXME: Use a simpler, cheaper implementation
 twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
 twoPointers !n !check = inner (0, 0)
   where
@@ -438,7 +440,7 @@ concatBSB f = VG.foldr' ((<>) . f) mempty
 
 -- FIXME: unnecessary whitespace at the end?
 unwordsBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
-unwordsBSB = concatBSB ((<> (BSB.string7 " ")) . showBSB)
+unwordsBSB = concatBSB ((<> BSB.string7 " ") . showBSB)
 
 unlinesBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
 unlinesBSB = concatBSB showLnBSB

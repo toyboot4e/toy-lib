@@ -17,7 +17,7 @@ import ToyLib.Macro
 -- {{{ Math
 
 mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
-mulMat a b =
+mulMat !a !b =
   listArray @UArray
     ((i0, k0), (ix, kx))
     [ sum [a ! (i, j) * b ! (j', k) | (j, j') <- zip (range (j0, jx)) (range (j'0, j'x))]
@@ -25,8 +25,8 @@ mulMat a b =
         k <- range (k0, kx)
     ]
   where
-    ((i0, j0), (ix, jx)) = bounds a
-    ((j'0, k0), (j'x, kx)) = bounds b
+    ((!i0, !j0), (!ix, !jx)) = bounds a
+    ((!j'0, !k0), (!j'x, !kx)) = bounds b
     !_ = dbgAssert (jx - j0 == j'x - j'0)
 
 mulMatMod :: Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int
@@ -38,12 +38,12 @@ mulMatMod m a b =
         k <- range (k0, kx)
     ]
   where
-    ((i0, j0), (ix, jx)) = bounds a
-    ((j'0, k0), (j'x, kx)) = bounds b
+    ((!i0, !j0), (!ix, !jx)) = bounds a
+    ((!j'0, !k0), (!j'x, !kx)) = bounds b
     !_ = dbgAssert (jx - j0 == j'x - j'0)
 
 unitMat :: Int -> UArray (Int, Int) Int
-unitMat n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map ((,1) . dupe) [0 .. pred n]
+unitMat !n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map ((,1) . dupe) [0 .. pred n]
 
 -- | `mulMatMod` wrapper for binary lifting.
 --

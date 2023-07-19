@@ -27,7 +27,7 @@ foldTree !tree !root !sact !acc0At !toM = inner (-1) root
     inner :: Vertex -> Vertex -> a
     inner !parent !v1 =
       let !v2s = filter (/= parent) $ tree ! v1
-       in foldl' (\acc v2 -> (toM $ inner v1 v2) `sact` acc) (acc0At v1) v2s
+       in foldl' (\acc v2 -> (toM $! inner v1 v2) `sact` acc) (acc0At v1) v2s
 
 -- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
@@ -36,14 +36,14 @@ scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
   !dp <- VGM.unsafeNew nVerts
 
   !_ <- flip fix (-1, root) $ \runTreeDp (!parent, !v1) -> do
-    let !v2s = filter (/= parent) $ tree ! v1
+    let !v2s = filter (/= parent) $! tree ! v1
     !x1 <- foldM (\acc v2 -> (`sact` acc) . toM <$> runTreeDp (v1, v2)) (acc0At v1) v2s
     VGM.write dp v1 x1
     return x1
 
   return dp
   where
-    !nVerts = rangeSize $ bounds tree
+    !nVerts = rangeSize $! bounds tree
 
 -- | Type-restricted `scanTreeVG`.
 scanTreeVU :: VU.Unbox a => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> VU.Vector a
@@ -66,9 +66,9 @@ foldTreeAll !tree !acc0At !toM =
         -- Calculate tree DP for every vertex as a root:
         !dp <- VUM.unsafeNew nVerts
         flip fix (-1, op0, root0) $ \runRootDp (!parent, !parentOp, !v1) -> do
-          let !children = VU.fromList . filter (/= parent) $ tree ! v1
-          let !opL = VU.scanl' (\op v2 -> (op <>) . toM $ treeDp VU.! v2) op0 children
-          let !opR = VU.scanr' (\v2 op -> (<> op) . toM $ treeDp VU.! v2) op0 children
+          let !children = VU.fromList . filter (/= parent) $! tree ! v1
+          let !opL = VU.scanl' (\op v2 -> (op <>) . toM $! treeDp VU.! v2) op0 children
+          let !opR = VU.scanr' (\v2 op -> (<> op) . toM $! treeDp VU.! v2) op0 children
 
           -- save
           let !x1 = (parentOp <> VU.last opL) `mact` acc0At v1

@@ -25,7 +25,7 @@ newtype BinaryLifting v m = BinaryLifting (v m)
 newBinLift :: (VG.Vector v s, Semigroup s) => s -> BinaryLifting v s
 newBinLift !op0 = BinaryLifting ops
   where
-    !ops = VG.iterateN (pred 63) (\op -> op <> op) op0
+    !ops = VG.iterateN (pred 63) (\ !op -> op <> op) op0
 
 -- | Calculates `BinaryLifting` of the given semigroup
 newBinLiftV :: Semigroup s => s -> BinaryLifting V.Vector s
@@ -63,7 +63,7 @@ mactBL = sactBL
 
 -- | Old binary lifting implementation without typeclasses. TODO: Remove
 newDoubling :: (VG.Vector v a, VG.Vector v Int) => a -> (a -> a) -> v a
-newDoubling !oper0 !squareCompositeF = VG.scanl' step oper0 $ VG.enumFromN (1 :: Int) 62
+newDoubling !oper0 !squareCompositeF = VG.scanl' step oper0 $! VG.enumFromN (1 :: Int) 62
   where
     step !oper !_ = squareCompositeF oper
 

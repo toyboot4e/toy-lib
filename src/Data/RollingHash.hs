@@ -57,7 +57,7 @@ newRH !source = RollingHash n bn hashSum_
     !hashSum_ = evalState (VU.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ VU.fromList source) (0 :: Int)
       where
         f :: Char -> Int -> (Int, Int)
-        f !ch !lastX = dupe $ (lastX * b + ord ch) `mod` p
+        f !ch !lastX = dupe $! (lastX * b + ord ch) `mod` p
 
 -- | Retrieves the original length of the `RollingHash` string.
 lengthRH :: RollingHash b p -> Int

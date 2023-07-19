@@ -110,9 +110,9 @@ _updateElement tree@(SegmentTree !f !vec) !i !value = do
     -- TODO: This case never happens, right?
     (-1) -> return ()
     !iParent -> do
-      !c1 <- VGM.unsafeRead vec (iParent * 2 + 1)
-      !c2 <- VGM.unsafeRead vec (iParent * 2 + 2)
-      _updateElement tree iParent (f c1 c2)
+      !c1 <- VGM.unsafeRead vec $! iParent * 2 + 1
+      !c2 <- VGM.unsafeRead vec $! iParent * 2 + 2
+      _updateElement tree iParent $! f c1 c2
 
 -- | Retrieves the folding result over the inclusive range `[l, r]` from `SegmentTree`.
 {-# INLINE querySTree #-}

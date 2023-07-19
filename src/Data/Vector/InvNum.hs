@@ -30,7 +30,7 @@ invNumVG xMax xs = runST $ do
 
     -- let !_ = traceShow (x, s, (succ x, pred n)) ()
     modifySTree stree succ x
-    return $ acc + s
+    return $! acc + s
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.

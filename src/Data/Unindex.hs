@@ -20,8 +20,8 @@ instance RangeMS (Int, Int) where
     where
       {-# INLINE [0] step #-}
       step (!y, !x)
-        | x <= x1 = return $ MS.Yield (y, x) (y, x + 1)
-        | y <= y1 = return $ MS.Yield (y, x) (y + 1, x0)
+        | x <= x1 = return $! MS.Yield (y, x) (y, x + 1)
+        | y <= y1 = return $! MS.Yield (y, x) (y + 1, x0)
         | otherwise = return MS.Done
 
 class (Ix i, VU.Unbox i) => Unindex i where

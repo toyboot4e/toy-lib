@@ -48,10 +48,10 @@ bfsVec graph start = VU.create $ do
             forM_ vs' $ \v -> do
               VUM.unsafeWrite vis v depth
 
-            !vss <- forM vs' $ \v -> do
-              filterM (\v2 -> (== undef) <$> VUM.unsafeRead vis v2) $ graph ! v
+            !next <- fmap (IS.fromList . concat) $ forM vs' $ \v -> do
+              filterM (fmap (== undef) . VUM.unsafeRead vis) $ graph ! v
 
-            inner (succ depth) $ IS.fromList $ concat vss
+            inner (succ depth) next
 
   !_ <- inner (0 :: Int) (IS.singleton start)
   return vis
@@ -84,8 +84,8 @@ bfsVerts graph start = inner 0 IM.empty (IS.singleton start)
 -- | BFS over grid. Not generalized (yet).
 bfsGrid :: UArray (Int, Int) Char -> (Int, Int) -> UArray (Int, Int) Int
 bfsGrid !grid !start = runSTUArray $ do
-  let bounds_ = bounds grid
-  let (!_, !w) = both succ $ snd bounds_
+  let !bounds_ = bounds grid
+  let (!_, !w) = both succ $! snd bounds_
   let isBlock !yx = grid ! yx == '#'
 
   let ix = index bounds_
@@ -94,22 +94,22 @@ bfsGrid !grid !start = runSTUArray $ do
 
   !vis <- newArray bounds_ undef
 
-  let nexts !yx0 = filter (\yx -> inRange bounds_ yx && not (isBlock yx)) $ map (add2 yx0) dyxs
+  let nexts !yx0 = filter (\yx -> inRange bounds_ yx && not (isBlock yx)) $! map (add2 yx0) dyxs
         where
           dyxs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
   let inner !depth !vs
         | IS.null vs = return ()
         | otherwise = do
-            let yxs = map unIndex $ IS.toList vs
+            let yxs = map unIndex $! IS.toList vs
 
             forM_ yxs $ \yx -> do
               writeArray vis yx depth
 
             !vss <- forM yxs $ \yx -> do
-              filterM (\yx2 -> (== undef) <$> readArray vis yx2) $ nexts yx
+              filterM (fmap (== undef) . readArray vis) $ nexts yx
 
-            inner (succ depth) $ IS.fromList . map ix $ concat vss
+            inner (succ depth) $! IS.fromList . map ix $! concat vss
 
   !_ <- inner (0 :: Int) (IS.singleton $ ix start)
   return vis
@@ -143,7 +143,7 @@ solve01BFS !start !grid = runSTUArray $ do
   where
     !undef = -1 :: Int
     adjW :: UArray (Int, Int) Char -> (Int, Int) -> [((Int, Int), Int)]
-    adjW grid yx0 =
+    adjW !grid !yx0 =
       let !adjs1 = map (,0 :: Int) $ filter ((&&) <$> inRange (bounds grid) <*> ((== '.') . (grid !))) $ map (add2 yx0) dir4
           !adjs2 = map (,1 :: Int) $ filter ((&&) <$> inRange (bounds grid) <*> ((== '.') . (grid !))) $ map (add2 yx0) bombs
        in adjs1 ++ adjs2
@@ -193,8 +193,8 @@ bfsGrid01 !start !isBlock = runSTUArray $ do
   where
     !undef = -1 :: Int
     !bounds_ = bounds isBlock
-    (!h, !w) = both succ . snd $ bounds isBlock
-    !dyxs = VU.fromList $ [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    (!h, !w) = both succ . snd $! bounds isBlock
+    !dyxs = VU.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 -- | DFS where all the reachable vertices from one vertex are collcetd.
 components :: Graph Int -> Int -> IS.IntSet
@@ -218,7 +218,7 @@ dfsEveryPathT072 !gr !start = runST $ do
   let nexts v =
         filterM (fmap not . readArray vis)
           . filter ((&&) <$> inRange (bounds gr) <*> ((/= '#') . (gr !)))
-          $ map (add2 v) [(0, 1), (0, -1), (1, 0), (-1, 0)]
+          $! map (add2 v) [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
   flip fix (0 :: Int, start) $ \loop (!d1, !v1) -> do
     -- start without marking `start` and visited:
@@ -314,13 +314,13 @@ djVec !graph !start !undef = VU.create $ do
             then inner heap'
             else do
               VUM.write vis v cost
-              !vs <- map (merge entry) <$> (filterM (fmap (== undef) . VUM.read vis . H.payload) $ graph ! v)
-              inner $ foldl' (flip H.insert) heap' vs
+              !vs <- map (merge entry) <$> filterM (fmap (== undef) . VUM.read vis . H.payload) (graph ! v)
+              inner $! foldl' (flip H.insert) heap' vs
 
   inner (H.singleton $ H.Entry 0 start)
   return vis
   where
-    !nVerts = rangeSize $ bounds graph
+    !nVerts = rangeSize $! bounds graph
 
     merge :: H.Entry a Int -> H.Entry a Int -> H.Entry a Int
     merge (H.Entry !cost1 !_v1) (H.Entry !cost2 !v2) = H.Entry (cost1 + cost2) v2

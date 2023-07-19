@@ -36,7 +36,7 @@ newtype Permutation = Permutation (VU.Vector Int)
   deriving (Show, Eq)
 
 instance Semigroup Permutation where
-  (Permutation vec1) <> (Permutation vec2) = Permutation $ VU.map (vec1 VU.!) vec2
+  (Permutation vec1) <> (Permutation vec2) = Permutation $! VU.map (vec1 VU.!) vec2
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
 

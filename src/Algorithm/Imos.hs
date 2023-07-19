@@ -16,7 +16,7 @@ import ToyLib.Prelude
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2D :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 imos2D !bounds_ !seeds = runSTUArray $ do
-  arr <- newArray bounds_ (0 :: Int)
+  !arr <- newArray bounds_ (0 :: Int)
 
   let (!minY, !minX) = fst bounds_
 
@@ -24,20 +24,20 @@ imos2D !bounds_ !seeds = runSTUArray $ do
   forM_ (range bounds_) $ \(!y, !x) -> do
     !v <- if x == minX then return 0 else readArray arr (y, x - 1)
     let !diff = seeds ! (y, x)
-    writeArray arr (y, x) (v + diff)
+    writeArray arr (y, x) $! v + diff
 
   -- column scan
   forM_ (range bounds_) $ \(!x, !y) -> do
     !v <- if y == minY then return 0 else readArray arr (y - 1, x)
     !diff <- readArray arr (y, x)
-    writeArray arr (y, x) (v + diff)
+    writeArray arr (y, x) $! v + diff
 
   return arr
 
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2DRev :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 imos2DRev !bounds_ !seeds = runSTUArray $ do
-  arr <- newArray bounds_ (0 :: Int)
+  !arr <- newArray bounds_ (0 :: Int)
 
   let (!minY, !minX) = fst bounds_
   let (!maxY, !maxX) = snd bounds_
@@ -48,14 +48,14 @@ imos2DRev !bounds_ !seeds = runSTUArray $ do
     forMS_ (rangeMSR minY maxY) $ \y -> do
       !v <- if x == maxX then return 0 else readArray arr (y, x + 1)
       let !diff = seeds ! (y, x)
-      writeArray arr (y, x) (v + diff)
+      writeArray arr (y, x) $! v + diff
 
   -- column scan
   forMS_ (rangeMSR minX maxX) $ \x -> do
     forMS_ (rangeMSR minY maxY) $ \y -> do
       !v <- if y == maxY then return 0 else readArray arr (y + 1, x)
       !diff <- readArray arr (y, x)
-      writeArray arr (y, x) (v + diff)
+      writeArray arr (y, x) $! v + diff
 
   return arr
 

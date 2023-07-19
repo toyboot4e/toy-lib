@@ -86,7 +86,7 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
     -- NOTE(perf): union by rank (choose smaller one for root)
     let (!par, !chld) = if sx < sy then (px, py) else (py, px)
     VUM.unsafeWrite vec chld (MUFChild par)
-    VUM.unsafeWrite vec par (MUFRoot (sx + sy))
+    VUM.unsafeWrite vec par (MUFRoot $! sx + sy)
 
 -- | Returns the size of the root node, starting with `1`.
 {-# INLINE sizeMUF #-}

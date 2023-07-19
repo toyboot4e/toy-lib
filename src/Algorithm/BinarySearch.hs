@@ -25,7 +25,6 @@
 -- (Just 5,Just 6)
 --
 -- `bsearchL` returns @Just 5@ and `bsearchR` returns @Just 6@.
-
 module Algorithm.BinarySearch where
 
 import Data.Functor.Identity
@@ -46,12 +45,12 @@ bsearch !rng = runIdentity . bsearchM rng . (return .)
 -- | Also known as lower bound.
 {-# INLINE bsearchL #-}
 bsearchL :: (Int, Int) -> (Int -> Bool) -> Maybe Int
-bsearchL !a !b = fst $ bsearch a b
+bsearchL !a !b = fst $! bsearch a b
 
 -- | Also known as upper bound.
 {-# INLINE bsearchR #-}
 bsearchR :: (Int, Int) -> (Int -> Bool) -> Maybe Int
-bsearchR !a !b = snd $ bsearch a b
+bsearchR !a !b = snd $! bsearch a b
 
 -- | Monadic binary search.
 {-# INLINE bsearchM #-}
@@ -59,14 +58,13 @@ bsearchM :: forall m. (Monad m) => (Int, Int) -> (Int -> m Bool) -> m (Maybe Int
 bsearchM (!low, !high) !isOk = both wrap <$> inner (low - 1, high + 1)
   where
     inner :: (Int, Int) -> m (Int, Int)
-    inner (!ok, !ng)
-      | abs (ok - ng) == 1 = return (ok, ng)
-      | otherwise =
-          isOk m >>= \case
-            True -> inner (m, ng)
-            False -> inner (ok, m)
+    inner (!ok, !ng) | abs (ok - ng) == 1 = return (ok, ng)
+    inner (!ok, !ng) =
+      isOk m >>= \case
+        True -> inner (m, ng)
+        False -> inner (ok, m)
       where
-        m = (ok + ng) `div` 2
+        !m = (ok + ng) `div` 2
 
     wrap :: Int -> Maybe Int
     wrap !x
@@ -86,12 +84,12 @@ bsearchF32 :: (Float, Float) -> Float -> (Float -> Bool) -> (Maybe Float, Maybe 
 bsearchF32 (!low, !high) !diff !isOk = both wrap (inner (low - diff, high + diff))
   where
     inner :: (Float, Float) -> (Float, Float)
+    inner (!ok, !ng) | abs (ok - ng) <= diff = (ok, ng)
     inner (!ok, !ng)
-      | abs (ok - ng) <= diff = (ok, ng)
       | isOk m = inner (m, ng)
       | otherwise = inner (ok, m)
       where
-        m = (ok + ng) / 2
+        !m = (ok + ng) / 2
     wrap :: Float -> Maybe Float
     wrap !x
       | x == (low - diff) || x == (high + diff) = Nothing
@@ -99,23 +97,23 @@ bsearchF32 (!low, !high) !diff !isOk = both wrap (inner (low - diff, high + diff
 
 {-# INLINE bsearchF32L #-}
 bsearchF32L :: (Float, Float) -> Float -> (Float -> Bool) -> Maybe Float
-bsearchF32L !a !b !c = fst $ bsearchF32 a b c
+bsearchF32L !a !b !c = fst $! bsearchF32 a b c
 
 {-# INLINE bsearchF32R #-}
 bsearchF32R :: (Float, Float) -> Float -> (Float -> Bool) -> Maybe Float
-bsearchF32R !a !b !c = fst $ bsearchF32 a b c
+bsearchF32R !a !b !c = fst $! bsearchF32 a b c
 
 {-# INLINE bsearchF64 #-}
 bsearchF64 :: (Double, Double) -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
 bsearchF64 (!low, !high) !diff !isOk = both wrap (inner (low - diff, high + diff))
   where
     inner :: (Double, Double) -> (Double, Double)
+    inner (!ok, !ng) | abs (ok - ng) < diff = (ok, ng)
     inner (!ok, !ng)
-      | abs (ok - ng) < diff = (ok, ng)
       | isOk m = inner (m, ng)
       | otherwise = inner (ok, m)
       where
-        m = (ok + ng) / 2
+        !m = (ok + ng) / 2
     wrap :: Double -> Maybe Double
     wrap !x
       | x == (low - diff) || x == (high + diff) = Nothing
@@ -123,19 +121,19 @@ bsearchF64 (!low, !high) !diff !isOk = both wrap (inner (low - diff, high + diff
 
 {-# INLINE bsearchF64L #-}
 bsearchF64L :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
-bsearchF64L !a !b !c = fst $ bsearchF64 a b c
+bsearchF64L !a !b !c = fst $! bsearchF64 a b c
 
 {-# INLINE bsearchF64R #-}
 bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
-bsearchF64R !a !b !c = fst $ bsearchF64 a b c
+bsearchF64R !a !b !c = fst $! bsearchF64 a b c
 
 -- | One dimensional index compression: xs -> (nubSorted, indices)
 compressList :: [Int] -> (VU.Vector Int, [Int])
 compressList xs = (indices, map (fromJust . fst . f) xs)
   where
     !indices = VU.fromList $ nubSort xs
-    f !x = bsearch (0, pred $ vLength indices) $ \i -> indices VU.! i <= x
+    f !x = bsearch (0, pred (vLength indices)) $ \i -> indices VU.! i <= x
 
 -- | Retrieves square root of an `Int`.
 isqrtSlow :: Int -> Int
-isqrtSlow n = fromJust $ bsearchR (0, n) ((< n) . (^ 2))
+isqrtSlow n = fromJust $ bsearchR (0, n) ((< n) . (^ (2 :: Int)))
