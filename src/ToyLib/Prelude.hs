@@ -63,6 +63,12 @@ chunks n = inner
 (.:.) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> (a1 -> a2 -> a3 -> c)
 (.:.) = (.) . (.) . (.)
 
+-- | Strict funciton composition.
+{-# INLINE (.!) #-}
+(.!) :: (b -> c) -> (a -> b) -> a -> c
+(.!) = (.) . ($!)
+infixr 9 .!
+
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
 foldFor !s0 !xs !f = foldl' f s0 xs
 

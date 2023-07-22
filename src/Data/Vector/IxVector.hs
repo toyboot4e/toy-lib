@@ -16,8 +16,9 @@ import qualified Data.Vector.Unboxed as VU
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
   deriving (Show, Eq)
 
-(.!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
-(.!) IxVector {..} i = vecIV VG.! (index boundsIV i)
+-- | `IxVector` accessor
+(@!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
+(@!) IxVector {..} i = vecIV VG.! (index boundsIV i)
 
 -- | Reads a value from `IxVector`.
 {-# INLINE readIV #-}
