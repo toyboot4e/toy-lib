@@ -7,6 +7,16 @@
 @version 0.1.0.0
 
 
+-- | Bit set tricks
+module Data.BitSet
+
+-- | Originally by @yamate11
+powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
+
+-- | Originally by @yamate11
+powerset :: (Bits a, Num a) => a -> [a]
+
+
 -- | Strongly connected components and topological sort.
 module Data.Graph.Scc
 
@@ -133,6 +143,14 @@ _updateElement :: (MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a ->
 --   <a>SegmentTree</a>.
 querySTree :: forall v a m. (MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
 
+
+-- | Union-find tree
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 012 - Red Painting (★4)</a></li>
+--   </ul>
 module Data.UnionFind.Mutable
 
 -- | Dense, mutable union-find tree (originally by `@pel`)
@@ -187,7 +205,9 @@ data IxVector i v
 IxVector :: !(i, i) -> !v -> IxVector i v
 [boundsIV] :: IxVector i v -> !(i, i)
 [vecIV] :: IxVector i v -> !v
-(.!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
+
+-- | <a>IxVector</a> accessor
+(@!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
 
 -- | Reads a value from <a>IxVector</a>.
 readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
@@ -196,6 +216,11 @@ readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> 
 writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
 modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
 swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+
+-- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
+imos2DIV :: IxVector (Int, Int) (Vector Int) -> IxVector (Int, Int) (Vector Int)
+instance (GHC.Classes.Eq i, GHC.Classes.Eq v) => GHC.Classes.Eq (Data.Vector.IxVector.IxVector i v)
+instance (GHC.Show.Show i, GHC.Show.Show v) => GHC.Show.Show (Data.Vector.IxVector.IxVector i v)
 
 
 -- | Obsolute. TODO: Delete.
@@ -260,10 +285,77 @@ unDigits :: Integral n => n -> [n] -> n
 convertBase :: Integral a => a -> a -> [a] -> [a]
 
 
+-- | The number of divisor is smaller than &lt;math&gt;. See also:
+--   <a>https://scrapbox.io/magurofly/%E7%B4%84%E6%95%B0%E3%81%AE%E5%80%8B%E6%95%B0%E3%81%AE%E3%82%AA%E3%83%BC%E3%83%80%E3%83%BC</a>
+--   
+--   <h1>Tips</h1>
+--   
+--   <ul>
+--   <li>The last number could be decided with division, not
+--   enumeration.</li>
+--   </ul>
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 085 - Multiplication (★4)</a></li>
+--   <li><a>ABC 300 D - AABBC (Difficulty 908)</a></li>
+--   </ul>
+--   
+--   <h1>Prime factors</h1>
+--   
+--   <ul>
+--   <li><a>Typical 030 - K Factors (★5)</a> Numbers with i &gt;= k prime
+--   factors can be enumerated very fastly.</li>
+--   </ul>
+--   
+--   <h1>Split and list / meet in the middle</h1>
+--   
+--   <ul>
+--   <li><a>Typical 051 - Typical Shop (★5)</a></li>
+--   </ul>
+--   
+--   <h1>Other problems</h1>
+--   
+--   <ul>
+--   <li><a>ABC 254 D - Together Square (Difficulty 1191)</a></li>
+--   </ul>
+module Math.Divisors
+divisorsOf :: Int -> [Int]
+
+
+-- | Manhattan distance
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 036 - Max Manhattan Distance (★5)</a></li>
+--   <li><a>Typical 070 - Plant Planning (★4)</a></li>
+--   </ul>
+module Math.Manhattan
+
+-- | Rotates <tt>(x, y)</tt> pair in 45 degree and scales &lt;math&gt;.
+--   Note that <tt>x</tt> comes first in the pair.
+--   
+--   2D Manhattan distance is definned as &lt;math&gt;. After this
+--   transformation, it's calculated with &lt;math&gt;.
+--   
+--   This transformation applies &lt;math&gt;, but without the cofficient.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 036 - Max Manhattan Distance (★5)</a></li>
+--   </ul>
+rot45 :: (Int, Int) -> (Int, Int)
+
+
 -- | Prime number enumeration and prime factorization.
 module Math.Primes
 
 -- | @0xYusuke <a>https://zenn.dev/link/comments/1022553732563c</a>
+--   
+--   TODO: remove `union*` on 2023 update
 primes :: [Int]
 
 -- | Returns <tt>[(prime, count)]</tt>
@@ -288,11 +380,20 @@ class (SemigroupAction m a, Monoid m) => MonoidAction m a
 
 -- | Right monoid aciton
 mact :: MonoidAction m a => m -> a -> a
-newtype Replacement
-Replacement :: Vector Int -> Replacement
-instance GHC.Classes.Eq Data.SemigroupAction.Replacement
-instance GHC.Show.Show Data.SemigroupAction.Replacement
-instance GHC.Base.Semigroup Data.SemigroupAction.Replacement
+
+-- | Permutation of N sequence.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 058 - Original Calculator (★4)</a></li>
+--   </ul>
+newtype Permutation
+Permutation :: Vector Int -> Permutation
+instance GHC.Classes.Eq Data.SemigroupAction.Permutation
+instance GHC.Show.Show Data.SemigroupAction.Permutation
+instance GHC.Base.Semigroup Data.SemigroupAction.Permutation
+instance Data.SemigroupAction.SemigroupAction Data.SemigroupAction.Permutation GHC.Types.Int
 instance Data.SemigroupAction.SemigroupAction (Data.Semigroup.Internal.Product GHC.Types.Int) GHC.Types.Int
 
 module ToyLib.Prelude
@@ -310,12 +411,27 @@ chunks :: Int -> [a] -> [[a]]
 
 -- | Three-variable function compositon.
 (.:.) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> a1 -> a2 -> a3 -> c
+
+-- | Strict funciton composition.
+(.!) :: (b -> c) -> (a -> b) -> a -> c
+infixr 9 .!
 foldFor :: Foldable t => b -> t a -> (b -> a -> b) -> b
+
+-- | TODO: Remove on 2023 if not faster
 foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
+
+-- | TODO: Remove on 2023 if not faster
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
 unconsVG :: Vector v a => v a -> Maybe (a, v a)
+
+-- | TODO: Remove on 2023 langauge update. @since 0.13.0.1
+groupByVG :: Vector v a => (a -> a -> Bool) -> v a -> [v a]
+
+-- | TODO: Remove on 2023 langauge update. <i>O(n)</i> Split a vector into
+--   a list of slices. @since 0.13.0.1
+groupVG :: (Vector v a, Eq a) => v a -> [v a]
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 vLength :: Vector v e => v e -> Int
 rangeVG :: Vector v Int => Int -> Int -> v Int
@@ -336,6 +452,8 @@ rangeMSR :: Monad m => Int -> Int -> Stream m Int
 -- | <a>forM</a> over monadic stream in the vector package. | NOTE: This is
 --   for side effects only. I don't know how to use <a>mapM</a> yet.
 forMS_ :: Monad m => Stream m Int -> (Int -> m ()) -> m ()
+repM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+repRM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
 compress :: Eq a => [a] -> [a]
 
 -- | Runs the given function <tt>n</tt> times.
@@ -345,8 +463,8 @@ times :: Int -> (a -> a) -> a -> a
 --   <a>https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c</a>
 combs :: Int -> [a] -> [[a]]
 
--- | Returns inclusive ranges that satisfy the given <tt>check</tt>. TODO:
---   cheaper implementation
+-- | Returns inclusive ranges that satisfy the given <tt>check</tt>. FIXME:
+--   Use a simpler, cheaper implementation
 twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
 tuple2 :: [a] -> (a, a)
 tuple3 :: [a] -> (a, a, a)
@@ -373,11 +491,27 @@ fst4 :: (a, b, c, d) -> a
 snd4 :: (a, b, c, d) -> b
 thd4 :: (a, b, c, d) -> c
 fth4 :: (a, b, c, d) -> d
+
+-- | Reads one line as an integer.
 int :: IO Int
+
+-- | Reads one line as a list of integers.
 ints :: IO [Int]
 intsVG :: Vector v Int => IO (v Int)
 intsV :: IO (Vector Int)
+
+-- | Reads one line as a vector of integers.
 intsVU :: IO (Vector Int)
+
+-- | Reads one line as a vector of digits.
+digitsVU :: IO (Vector Int)
+
+-- | FIXME: Faster implementation
+intsN :: Int -> IO [Int]
+
+-- | FIXME: Faster implementation
+intsNVU :: Int -> IO (Vector Int)
+intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (Vector Int))
 
 -- | Creates a graph from 1-based vertices
 getGraph :: Int -> Int -> IO (Array Int [Int])
@@ -405,7 +539,8 @@ unlinesBSB :: (ShowBSB a, Vector v a) => v a -> Builder
 traceMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ()
 traceSubMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ((i, i), (i, i)) -> ()
 
--- | CAUTION: Be aware of the accuracy. Prefer binary search when possible
+-- | Inaccurate, but fast <a>Int</a> square root. TODO: Fast and accurate
+--   implementation
 isqrt :: Int -> Int
 instance ToyLib.Prelude.ShowBSB GHC.Types.Int
 instance ToyLib.Prelude.ShowBSB GHC.Num.Integer.Integer
@@ -426,6 +561,18 @@ instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
 instance Data.Unindex.RangeMS GHC.Types.Int
 instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
 
+
+-- | Lazy segment tree, where we can perform operation over range.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 029 - Long Bricks (★5)</a></li>
+--   <li><a>EDPC W - Intervals</a></li>
+--   </ul>
+--   
+--   TODO: Add <tt>set</tt> <i> <tt>get</tt>, as in
+--   [ac-library](https:</i><i>github.com</i>atcoder<i>ac-library</i>blob<i>master</i>atcoder/lazysegtree.hpp)
 module Data.SegmentTree.Lazy
 
 -- | Lazy segment tree.
@@ -517,15 +664,33 @@ bfsVerts :: Graph Int -> Int -> IntMap Int
 -- | BFS over grid. Not generalized (yet).
 bfsGrid :: UArray (Int, Int) Char -> (Int, Int) -> UArray (Int, Int) Int
 
--- | 01-BFS:
+-- | Easy 01-BFS
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>ABC 176 D</a></li>
+--   </ul>
+solve01BFS :: (Int, Int) -> UArray (Int, Int) Char -> UArray (Int, Int) Int
+
+-- | Direction-based 01-BFS:
 --   <a>https://atcoder.jp/contests/typical90/tasks/typical90_aq</a>. It's
---   slow, but could be applied easily in certain situation.
+--   slow, but could be applied easily in certain situations.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typoical 043 - Maze Challenge with Lack of Sleep (★4)</a></li>
+--   </ul>
 bfsGrid01 :: (Int, Int) -> UArray (Int, Int) Bool -> UArray (Int, Int, Int) Int
 
 -- | DFS where all the reachable vertices from one vertex are collcetd.
 components :: Graph Int -> Int -> IntSet
 
--- | Checks a Simple Sndirected Graph and returns markings of cycle
+-- | DFS for every path, specially for <a>Typical 072</a>.
+dfsEveryPathT072 :: UArray (Int, Int) Char -> (Int, Int) -> Int
+
+-- | Checks a Simple Undirected Graph and returns markings of cycle
 --   vertices. TODO: Test if it works as expected.
 cyclesSUG :: Array Vertex [Vertex] -> Vector Bool
 
@@ -569,6 +734,12 @@ scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -
 -- | &lt;math&gt;. Folds a tree for every vertex as a root using the
 --   rerooting technique. REMARK: <a>mempty</a> is used for initial
 --   operator value.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 039 - Tree Distance (★5)</a></li>
+--   </ul>
 foldTreeAll :: (Unbox a, Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> Vector a
 
 
@@ -610,11 +781,11 @@ SparseGraph :: !(i, i) -> !Int -> !Int -> !Vector Int -> !Vector Vertex -> !Vect
 -- | Builds an unweightned <a>SparseGraph</a>.
 --   
 --   TODO: Faster implementation
-buildUSG :: Unindex i => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
+buildUSG :: Unindex i => (i, i) -> Vector (i, i) -> SparseGraph i ()
 
 -- | Builds a weightned <a>SparseGraph</a>.
-buildWSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
-buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
+buildWSG :: (Unindex i, Unbox w) => (i, i) -> Vector (i, i, w) -> SparseGraph i w
+buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Vector (Vertex, Vertex, w) -> SparseGraph i w
 
 -- | Retrieves adjacent vertices.
 adj :: SparseGraph i w -> Vertex -> Vector Vertex
@@ -630,8 +801,11 @@ adjW :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
 
 -- | Retrieves adjacent vertex indices with weights.
 adjWIx :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
-dfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
-bfsSG :: Unindex i => SparseGraph i w -> i -> Vector Int
+dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
+
+-- | Also consider using union-find tree.
+componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
+bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 
 -- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> i -> w -> Vector w
@@ -717,6 +891,12 @@ runFW_ABC286E :: PrimMonad m => Int -> MVector (PrimState m) (Int, Int) -> m ()
 
 
 -- | Digraph coloring.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>Typical 026 - Independent Set on a Tree (★ 4)</a></li>
+--   </ul>
 module Data.Graph.Digraph
 
 -- | Red | Green color
@@ -787,12 +967,13 @@ mulMod :: Int -> Int -> Int -> Int
 factMod :: Int -> Int -> Int
 
 -- | One-shot calculation of $base ^ power <a>mod</a> modulo$ in a constant
---   time
+--   time REMARK: It uses <tt>base <a>mod</a> modulo</tt> in order to avoid
+--   overflow.
 powModConst :: Int -> Int -> Int -> Int
 
 -- | One-shot calcaulation of &lt;math&gt;, using Fermat's little theorem.
 --   
---   &lt;math&gt; where the modulus is a prime number and <tt>x</tt> is not
+--   &lt;math&gt; where the modulo is a prime number and <tt>x</tt> is not
 --   a mulitple of <tt>p</tt>.
 invModF :: Int -> Int -> Int
 
@@ -803,7 +984,7 @@ divModF :: Int -> Int -> Int -> Int
 powModCache :: Int -> Int -> (Int, Vector Int)
 
 -- | Calculates &lt;math&gt; (mod p) from a cache.
-powByCache :: Int -> (Int, Vector Int) -> Int
+powModByCache :: Int -> (Int, Vector Int) -> Int
 invModFC :: Int -> (Int, Vector Int) -> Int
 divModFC :: Int -> (Int, Vector Int) -> Int
 
@@ -855,7 +1036,7 @@ unitMat :: Int -> UArray (Int, Int) Int
 --   
 --   <pre>
 --   let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'
---   let !mn = newBinLiftV $ MulMatMod @MyModulus m1
+--   let !mn = newBinLiftV $ MulMatMod @MyModulo m1
 --   let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
 --   </pre>
 newtype MulMatMod a
@@ -927,13 +1108,13 @@ instance GHC.Show.Show (Data.RollingHash.HashSlice p)
 instance Data.ModInt.TypeInt Data.RollingHash.HashInt
 
 
--- | The Ioms's algorithm template for 2D grids.
+-- | The Imos's algorithm template for 2D grids.
 module Algorithm.Imos
 
--- | WARNING: Can you really allocate/run O(HW) algorithm?
+-- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
 imos2D :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 
--- | WARNING: Can you really allocate/run O(HW) algorithm?
+-- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
 imos2DRev :: ((Int, Int), (Int, Int)) -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 
 
@@ -989,11 +1170,16 @@ bsearchF32R :: (Float, Float) -> Float -> (Float -> Bool) -> Maybe Float
 bsearchF64 :: (Double, Double) -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
 bsearchF64L :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
 bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
+
+-- | One dimensional index compression: xs -&gt; (nubSorted, indices)
 compressList :: [Int] -> (Vector Int, [Int])
+
+-- | Retrieves square root of an <a>Int</a>.
+isqrtSlow :: Int -> Int
 
 module Data.Vector.Compress
 
--- | One dimensional index compression: xs -&gt; (indices, xs')
+-- | One dimensional index compression: xs -&gt; (indexer, xs')
 compressVU :: Vector Int -> (Vector Int, Vector Int)
 
 module Data.Vector.InvNum
