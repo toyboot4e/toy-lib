@@ -26,7 +26,7 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (foldForM, foldForMVG, foldForVG, rangeMS, rangeVU, unconsVG)
+import ToyLib.Prelude (foldForM, foldForMVG, rangeMS, rangeVU, unconsVG)
 
 type Edge = (Vertex, Vertex)
 
@@ -56,27 +56,28 @@ data SparseGraph i w = SparseGraph
 --
 -- TODO: Faster implementation
 {-# INLINE buildUSG #-}
-buildUSG :: (Unindex i) => (i, i) -> Int -> [(i, i)] -> SparseGraph i ()
-buildUSG boundsSG nEdgesSG edges =
-  buildRawSG boundsSG nEdgesSG $ map (\(!i1, !i2) -> (ix i1, ix i2, ())) edges
+buildUSG :: (Unindex i) => (i, i) -> VU.Vector (i, i) -> SparseGraph i ()
+buildUSG !boundsSG !edges =
+  buildRawSG boundsSG $ VU.map (\(!i1, !i2) -> (ix i1, ix i2, ())) edges
   where
     ix = index boundsSG
 
 -- | Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
-buildWSG :: (Unindex i, VUM.Unbox w) => (i, i) -> Int -> [(i, i, w)] -> SparseGraph i w
-buildWSG boundsSG nEdgesSG edges =
-  buildRawSG boundsSG nEdgesSG $ map (\(!i1, !i2, w) -> (ix i1, ix i2, w)) edges
+buildWSG :: (Unindex i, VUM.Unbox w) => (i, i) -> VU.Vector (i, i, w) -> SparseGraph i w
+buildWSG !boundsSG !edges =
+  buildRawSG boundsSG $ VU.map (\(!i1, !i2, !w) -> (ix i1, ix i2, w)) edges
   where
     ix = index boundsSG
 
 {-# INLINE buildRawSG #-}
-buildRawSG :: (Unindex i, VUM.Unbox w) => (i, i) -> Int -> [(Vertex, Vertex, w)] -> SparseGraph i w
-buildRawSG boundsSG nEdgesSG edges =
-  let !nVertsSG = rangeSize boundsSG
+buildRawSG :: (Unindex i, VUM.Unbox w) => (i, i) -> VU.Vector (Vertex, Vertex, w) -> SparseGraph i w
+buildRawSG !boundsSG !edges =
+  let !nEdgesSG = VU.length edges
+      !nVertsSG = rangeSize boundsSG
       !offsetsSG = VU.scanl' (+) 0 $ VU.create $ do
         !outDegs <- VUM.replicate nVertsSG (0 :: Int)
-        forM_ edges $ \(!v1, !_, !_) -> do
+        VU.forM_ edges $ \(!v1, !_, !_) -> do
           VUM.modify outDegs succ v1
         return outDegs
 
@@ -87,7 +88,7 @@ buildRawSG boundsSG nEdgesSG edges =
         !mAdjacents <- VUM.unsafeNew nEdgesSG
         !mWeights <- VUM.unsafeNew nEdgesSG
 
-        forM_ edges $ \(!v1, !v2, !w) -> do
+        VU.forM_ edges $ \(!v1, !v2, !w) -> do
           !iEdgeFlatten <- VUM.unsafeRead mOffsets v1
           VUM.unsafeWrite mOffsets v1 (iEdgeFlatten + 1)
           VUM.unsafeWrite mAdjacents iEdgeFlatten v2
@@ -209,7 +210,7 @@ djSG gr@SparseGraph {..} !startIx !undef = VU.create $ do
         True -> do
           VUM.write dist v cost
           !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjW` v
-          loop $ VU.foldl' (\h (!v, !w) -> H.insert (merge entry $ H.Entry w v) h) heap' vws
+          loop $ VU.foldl' (\h (!v, !w) -> H.insert (merge entry (H.Entry w v)) h) heap' vws
 
   return dist
   where
@@ -292,14 +293,15 @@ topScc1SG !gr' !vis !v0 = do
 -- | Creates a reverse graph.
 -- TODO: return weightned graph
 revSG :: (Unindex i, VU.Unbox w) => SparseGraph i w -> SparseGraph i w
-revSG SparseGraph {..} = buildRawSG boundsSG nEdgesSG edges'
+revSG SparseGraph {..} = buildRawSG boundsSG edges'
   where
     !vws = VU.zip adjacentsSG edgeWeightsSG
-    !edges' = foldForVG [] (rangeVU 0 (pred nVertsSG)) $ \acc v1 ->
+    -- TODO: Faster?
+    !edges' = flip VU.concatMap (rangeVU 0 (pred nVertsSG)) $ \v1 ->
       let !o1 = VU.unsafeIndex offsetsSG v1
           !o2 = VU.unsafeIndex offsetsSG (v1 + 1)
           !vw2s = VU.unsafeSlice o1 (o2 - o1) vws
-       in VU.foldl' (\acc' (v2, !w2) -> (v2, v1, w2) : acc') acc vw2s
+       in VU.map (\(v2, !w2) -> (v2, v1, w2)) vw2s
 
 -- | Collectes strongly connected components, topologically sorted.
 -- Upstream vertices come first, e.g., @(v1 - v2) -> v3 -> v4@.

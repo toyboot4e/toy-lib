@@ -232,7 +232,7 @@ dfsEveryPathT072 !gr !start = runST $ do
     writeArray vis v1 False
     return maxDistance
 
--- | Checks a Simple Sndirected Graph and returns markings of cycle vertices.
+-- | Checks a Simple Undirected Graph and returns markings of cycle vertices.
 -- TODO: Test if it works as expected.
 cyclesSUG :: Array Vertex [Vertex] -> VU.Vector Bool
 cyclesSUG !graph = VU.create $ do

@@ -12,6 +12,7 @@ import Data.List.Extra (stripSuffix)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ord
+import qualified Data.Vector.Unboxed as VU
 import Debug.Trace
 import qualified Language.Haskell.Exts as H
 import qualified Language.Haskell.Exts.Parser as H
@@ -135,8 +136,8 @@ generateLibrary parsedFiles =
   where
     topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
     topSortSourceFiles input =
-      let edges = concatMap (\(!path, _, module_) -> edgesOf path module_) input
-          gr = buildUSG (0, pred (length input)) (length edges) edges
+      let edges = VU.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
+          gr = buildUSG (0, pred (length input)) edges
           vs = topSortSG gr
        in map (input !!) vs
       where
