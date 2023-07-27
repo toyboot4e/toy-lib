@@ -141,7 +141,7 @@ rangeVU = rangeVG
 -- | `rangeVG` in reverse.
 {-# INLINE rangeVGR #-}
 rangeVGR :: (VG.Vector v Int) => Int -> Int -> v Int
-rangeVGR !i !j = VG.enumFromStepN i (-1) (succ j - i)
+rangeVGR !i !j = VG.enumFromStepN (pred j) (-1) (succ j - i)
 
 {-# INLINE rangeVR #-}
 rangeVR :: Int -> Int -> V.Vector Int
