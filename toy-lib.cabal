@@ -56,6 +56,7 @@ library
       Math.Matrix
       Math.PowMod
       Math.Primes
+      ToyLib.Debug
       ToyLib.Macro
       ToyLib.Prelude
   other-modules:
