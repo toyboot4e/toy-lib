@@ -432,6 +432,10 @@ groupByVG :: Vector v a => (a -> a -> Bool) -> v a -> [v a]
 -- | TODO: Remove on 2023 langauge update. <i>O(n)</i> Split a vector into
 --   a list of slices. @since 0.13.0.1
 groupVG :: (Vector v a, Eq a) => v a -> [v a]
+safeHead :: Unbox a => Vector a -> Maybe a
+safeLast :: Unbox a => Vector a -> Maybe a
+
+-- | TODO: Remove on 2023 langauge update (?)
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 vLength :: Vector v e => v e -> Int
 rangeVG :: Vector v Int => Int -> Int -> v Int
@@ -454,6 +458,9 @@ rangeMSR :: Monad m => Int -> Int -> Stream m Int
 forMS_ :: Monad m => Stream m Int -> (Int -> m ()) -> m ()
 repM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
 repRM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+
+-- | <tt>constructN</tt> with initial value for index zero.
+constructN0 :: Unbox a => a -> Int -> (Vector a -> a) -> Vector a
 compress :: Eq a => [a] -> [a]
 
 -- | Runs the given function <tt>n</tt> times.

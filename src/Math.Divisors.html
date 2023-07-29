@@ -26,56 +26,56 @@
 </span><span id="line-26"></span><span class="hs-comment">-- \(O(log N)\) divisor enumeration (sorted).</span><span>
 </span><span id="line-27"></span><span class="annot"><a href="Math.Divisors.html#divisorsOf"><span class="hs-identifier hs-type">divisorsOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
 </span><span id="line-28"></span><span id="divisorsOf"><span class="annot"><span class="annottext">divisorsOf :: Int -&gt; [Int]
-</span><a href="Math.Divisors.html#divisorsOf"><span class="hs-identifier hs-var hs-var">divisorsOf</span></a></span></span><span> </span><span id="local-6989586621679150362"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150362"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; [a] -&gt; [a]
+</span><a href="Math.Divisors.html#divisorsOf"><span class="hs-identifier hs-var hs-var">divisorsOf</span></a></span></span><span> </span><span id="local-6989586621679150962"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150962"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
-</span><a href="#local-6989586621679150360"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150960"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
 </span><span id="line-29"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-30"></span><span>    </span><span id="local-6989586621679150360"><span class="annot"><span class="annottext">inner :: Int -&gt; [Int]
-</span><a href="#local-6989586621679150360"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679150348"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span></span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621679150960"><span class="annot"><span class="annottext">inner :: Int -&gt; [Int]
+</span><a href="#local-6989586621679150960"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679150948"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span></span><span>
 </span><span id="line-31"></span><span>      </span><span class="hs-comment">-- no dependency to `Int` square root function</span><span>
 </span><span id="line-32"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150362"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679150962"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-33"></span><span>      </span><span class="hs-comment">-- no divisor duplication</span><span>
 </span><span id="line-34"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150362"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679150962"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-35"></span><span>      </span><span class="hs-comment">-- not sorted yet</span><span>
 </span><span id="line-36"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150345"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679150945"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150344"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679150944"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
-</span><a href="#local-6989586621679150360"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
+</span><a href="#local-6989586621679150960"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-37"></span><span>      </span><span class="hs-comment">-- ignore non divisors</span><span>
 </span><span id="line-38"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
-</span><a href="#local-6989586621679150360"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
+</span><a href="#local-6989586621679150960"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-39"></span><span>      </span><span class="hs-keyword">where</span><span>
 </span><span id="line-40"></span><span>        </span><span class="hs-comment">-- This strict evaluation and unboxing takes some effect, even though they're not always</span><span>
 </span><span id="line-41"></span><span>        </span><span class="hs-comment">-- used.</span><span>
-</span><span id="line-42"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679150344"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150344"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150345"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150345"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150362"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><span id="line-42"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679150944"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150944"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150945"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150945"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679150962"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
 </span><span class="hs-operator hs-var">`divMod`</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150348"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><a href="#local-6989586621679150948"><span class="hs-identifier hs-var">k</span></a></span><span>
 </span><span id="line-43"></span></pre></body></html>
