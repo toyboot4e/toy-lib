@@ -111,10 +111,17 @@ groupByVG !f !v =
 groupVG :: (VG.Vector v a, Eq a) => v a -> [v a]
 groupVG = groupByVG (==)
 
+safeHead :: (VU.Unbox a) => VU.Vector a -> Maybe a
+safeHead vec = if VU.null vec then Nothing else Just $! VU.head vec
+
+safeLast :: (VU.Unbox a) => VU.Vector a -> Maybe a
+safeLast vec = if VU.null vec then Nothing else Just $! VU.last vec
+
 -- }}}
 
 -- {{{ Libary complements
 
+-- | TODO: Remove on 2023 langauge update (?)
 {-# INLINE modifyArray #-}
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 modifyArray !ary !f !i = do
@@ -192,6 +199,13 @@ repRM_ !l !r !act = inner r
     inner !i
       | i < l = return ()
       | otherwise = act i >> inner (pred i)
+
+-- | @constructN@ with initial value for index zero.
+constructN0 :: (VU.Unbox a) => a -> Int -> (VU.Vector a -> a) -> VU.Vector a
+constructN0 !x0 !n !f = VU.constructN n $ \vec ->
+  if VU.null vec
+    then x0
+    else f vec
 
 -- }}}
 
