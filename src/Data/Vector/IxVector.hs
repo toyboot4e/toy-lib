@@ -16,9 +16,16 @@ import qualified Data.Vector.Unboxed as VU
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
   deriving (Show, Eq)
 
--- | `IxVector` accessor
+-- | Partial `IxVector` accessor
 (@!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
 (@!) IxVector {..} i = vecIV VG.! index boundsIV i
+
+-- | Total `IxVector` accessor
+(@!?) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(@!?) IxVector {..} i
+  -- NOTE: `index` panics on out of range
+  | inRange boundsIV i = Just (vecIV VG.! (index boundsIV i))
+  | otherwise = Nothing
 
 -- TODO: `createIx` where we freeze the `IxVector`
 -- createIx :: (VG.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
@@ -62,4 +69,3 @@ imos2DIV !seeds@IxVector {boundsIV} = IxVector boundsIV $ VU.create $ do
     modifyIV vec (+ v) (y, x)
 
   return $ vecIV vec
-
