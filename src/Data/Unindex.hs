@@ -34,13 +34,13 @@ instance Unindex Int where
 
 instance Unindex (Int, Int) where
   unindex ((!_, !x0), (!_, !x1)) !yx =
-    let !w = x1 - x0
+    let !w = x1 - x0 + 1
      in yx `quotRem` w
 
 instance Unindex (Int, Int, Int) where
   unindex ((!_, !y0, !x0), (!_, !y1, !x1)) !zyx =
-    let !h = y1 - y0
-        !w = x1 - x0
+    let !h = y1 - y0 + 1
+        !w = x1 - x0 + 1
         (!z, !yx) = zyx `quotRem` (h * w)
         (!y, !x) = yx `quotRem` w
      in (z, y, x)
