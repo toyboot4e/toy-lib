@@ -356,6 +356,8 @@ fth4 (!_, !_, !_, !d) = d
 
 -- {{{ Input
 
+-- TODO: Consider separating parser from reader
+
 -- | Reads one line as an integer.
 int :: IO Int
 int = readLn
@@ -388,6 +390,12 @@ intsNVU n = VU.fromList . concat <$> replicateM n ints
 
 intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
 intsGrid h w = IxVector ((0, 0), (h - 1, w - 1)) <$> intsNVU h
+
+intsRestVG :: VG.Vector v Int => IO (v Int)
+intsRestVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
+
+intsRestVU :: IO (VU.Vector Int)
+intsRestVU = intsRestVG
 
 -- | Creates a graph from 1-based vertices
 getGraph :: Int -> Int -> IO (Array Int [Int])
