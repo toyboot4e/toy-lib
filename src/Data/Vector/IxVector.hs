@@ -18,7 +18,13 @@ data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
 
 -- | `IxVector` accessor
 (@!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
-(@!) IxVector {..} i = vecIV VG.! (index boundsIV i)
+(@!) IxVector {..} i = vecIV VG.! index boundsIV i
+
+-- TODO: `createIx` where we freeze the `IxVector`
+-- createIx :: (VG.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
+-- createIx = runST
+
+-- replicateIVM
 
 -- | Reads a value from `IxVector`.
 {-# INLINE readIV #-}
