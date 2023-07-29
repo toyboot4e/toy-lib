@@ -28,6 +28,7 @@ library
       Algorithm.Imos
       Data.BinaryLifting
       Data.BitSet
+      Data.Buffer
       Data.Graph
       Data.Graph.Digraph
       Data.Graph.FloydWarshall
