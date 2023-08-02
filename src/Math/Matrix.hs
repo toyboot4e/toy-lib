@@ -16,6 +16,16 @@ import ToyLib.Macro
 
 -- {{{ Math
 
+-- | Multiplies HxW matrix to a Hx1 column vector.
+mulMatToCol :: (Num e, IArray UArray e) => UArray (Int, Int) e -> [e] -> [e]
+mulMatToCol !mat !col =
+  let !rows = chunksOf n (elems mat)
+   in map (sum . zipWith (*) col) rows
+  where
+    !n = length col
+    !_ = dbgAssert $ (== n) . succ . fst . snd $ bounds mat
+
+-- | Multiplies H1xK matrix to a KxW2 matrix.
 mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
 mulMat !a !b =
   listArray @UArray
@@ -29,6 +39,7 @@ mulMat !a !b =
     ((!j'0, !k0), (!j'x, !kx)) = bounds b
     !_ = dbgAssert (jx - j0 == j'x - j'0)
 
+-- | Multiplies H1xK matrix to a KxW2 matrix, getting mod of @m@.
 mulMatMod :: Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int
 mulMatMod m a b =
   listArray @UArray
@@ -42,6 +53,7 @@ mulMatMod m a b =
     ((!j'0, !k0), (!j'x, !kx)) = bounds b
     !_ = dbgAssert (jx - j0 == j'x - j'0)
 
+-- | Retruns NxN unit matrix.
 unitMat :: Int -> UArray (Int, Int) Int
 unitMat !n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map ((,1) . dupe) [0 .. pred n]
 
