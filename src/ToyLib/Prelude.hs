@@ -278,16 +278,24 @@ twoPointers !n !check = inner (0, 0)
 -- {{{ Tuples
 
 tuple2 :: [a] -> (a, a)
-tuple2 [!a, !b] = (a, b)
+tuple2 [!a1, !a2] = (a1, a2)
 tuple2 _ = error "not a two-item list"
 
 tuple3 :: [a] -> (a, a, a)
-tuple3 [!a, !b, !c] = (a, b, c)
+tuple3 [!a1, !a2, !a3] = (a1, a2, a3)
 tuple3 _ = error "not a three-item list"
 
 tuple4 :: [a] -> (a, a, a, a)
-tuple4 [!a, !b, !c, !d] = (a, b, c, d)
+tuple4 [!a1, !a2, !a3, !a4] = (a1, a2, a3, a4)
 tuple4 _ = error "not a four-item list"
+
+tuple5 :: [a] -> (a, a, a, a, a)
+tuple5 [!a1, !a2, !a3, !a4, !a5] = (a1, a2, a3, a4, a5)
+tuple5 _ = error "not a five-item list"
+
+tuple6 :: [a] -> (a, a, a, a, a, a)
+tuple6 [!a1, !a2, !a3, !a4, !a5, !a6] = (a1, a2, a3, a4, a5, a6)
+tuple6 _ = error "not a six-item list"
 
 ints2 :: IO (Int, Int)
 ints2 = tuple2 <$> ints
@@ -297,6 +305,12 @@ ints3 = tuple3 <$> ints
 
 ints4 :: IO (Int, Int, Int, Int)
 ints4 = tuple4 <$> ints
+
+ints5 :: IO (Int, Int, Int, Int, Int)
+ints5 = tuple5 <$> ints
+
+ints6 :: IO (Int, Int, Int, Int, Int, Int)
+ints6 = tuple6 <$> ints
 
 yn :: Bool -> String
 yn b = if b then "Yes" else "No"
