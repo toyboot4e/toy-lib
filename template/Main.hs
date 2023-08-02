@@ -29,6 +29,7 @@
 module Template () where
 
 import Control.Applicative
+import Control.Exception (assert)
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive
