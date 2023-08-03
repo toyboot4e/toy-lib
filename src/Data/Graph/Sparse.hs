@@ -196,9 +196,10 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
--- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)\log {V})$
-djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> i -> w -> VU.Vector w
-djSG gr@SparseGraph {..} !startIx !undef = VU.create $ do
+-- TODO: swap the last two parameters
+-- | Dijkstra: $O((E+V)\log {V})$
+djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> w -> i -> VU.Vector w
+djSG gr@SparseGraph {..} !undef !startIx = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
   let !heap0 = H.singleton $ H.Entry 0 (index boundsSG startIx)
