@@ -9,6 +9,7 @@ module Math.Matrix where
 
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
+import Data.List.Extra (chunksOf)
 import Data.ModInt (TypeInt, typeInt)
 import Data.Proxy
 import Data.Tuple.Extra (dupe)
