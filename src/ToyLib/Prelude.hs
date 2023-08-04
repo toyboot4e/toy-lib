@@ -72,20 +72,41 @@ infixr 9 .!
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
 foldFor !s0 !xs !f = foldl' f s0 xs
 
--- | TODO: Remove on 2023 if not faster
 foldForVG :: (VG.Vector v a) => b -> v a -> (b -> a -> b) -> b
 foldForVG !s0 !xs !f = VG.foldl' f s0 xs
 
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForM !s0 !xs !m = foldM m s0 xs
 
--- | TODO: Remove on 2023 if not faster
 foldForMVG :: (PrimMonad m, VG.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
+-- TODO: `minimumMay` from `mono-traversable`?
+-- or copy the `safe` packge: <https://hackage.haskell.org/package/safe-0.3.14/docs/Safe-Foldable.html>
+
+-- TODO: 2023 update
+-- minimumOr :: (Ord a, Foldable t) => a -> t a -> a
+-- minimumOr !orValue !xs =
+--   if null xs
+--     then orValue
+--     else minimum xs
+
+minimumOr :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> a
+minimumOr !orValue !xs =
+  if VU.null xs
+    then orValue
+    else VU.minimum xs
+
+maximumOr :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> a
+maximumOr !orValue !xs =
+  if VU.null xs
+    then orValue
+    else VU.maximum xs
+
+-- | TODO: Remove on 2023 update.
 {-# INLINE unconsVG #-}
 unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)
 unconsVG v
