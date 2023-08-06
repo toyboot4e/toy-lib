@@ -19,10 +19,57 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         For more info, see Github <https://github.com/toyboot4e/toy-lib>
 
-# REMARK: Because `haskell-src-exts` (the parser) does NOT understand `GHC2021`, we can't used the
-# fancy syntax such as `import X qualifieid as Y`, but we can omit default langauge extensions in
-# `GHC2021`.
-language: GHC2021
+# Because `haskell-src-exts` (the parser) does NOT understand `GHC2021`, we're using `Haskell2010`:
+language: Haskell2010
+
+# But allow `GHC2021` extensions as it's enabled on AtCoder:
+default-extensions:
+- BangPatterns
+- BinaryLiterals
+- ConstrainedClassMethods
+- ConstraintKinds
+- DeriveDataTypeable
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DeriveLift
+- DeriveTraversable
+- DoAndIfThenElse
+- EmptyCase
+- EmptyDataDecls
+- EmptyDataDeriving
+- ExistentialQuantification
+- ExplicitForAll
+- FieldSelectors
+- FlexibleContexts
+- FlexibleInstances
+- ForeignFunctionInterface
+- GADTSyntax
+- GeneralisedNewtypeDeriving
+- HexFloatLiterals
+- ImplicitPrelude
+- ImportQualifiedPost
+- InstanceSigs
+- KindSignatures
+- MonomorphismRestriction
+- MultiParamTypeClasses
+- NamedFieldPuns
+- NamedWildCards
+- NumericUnderscores
+- PatternGuards
+- PolyKinds
+- PostfixOperators
+- RankNTypes
+- RelaxedPolyRec
+- ScopedTypeVariables
+- StandaloneDeriving
+- StandaloneKindSignatures
+- StarIsType
+- TraditionalRecordSyntax
+- TupleSections
+- TypeApplications
+- TypeOperators
+- TypeSynonymInstances
 
 # On AtCoder:
 # optimization: 2
