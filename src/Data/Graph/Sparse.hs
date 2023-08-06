@@ -20,11 +20,12 @@ import Data.Ix
 import Data.Maybe
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
+import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (foldForM, foldForMVG, rangeMS, rangeVU, unconsVG)
+import ToyLib.Prelude (foldForM, foldForMVG, rangeMS, rangeVU)
 
 type Edge = (Vertex, Vertex)
 
@@ -194,7 +195,6 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
--- TODO: swap the last two parameters
 -- | Dijkstra: $O((E+V)\log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> w -> i -> VU.Vector w
 djSG gr@SparseGraph {..} !undef !startIx = VU.create $ do
@@ -236,7 +236,7 @@ dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
         if v1 == end
           then return $ Just stack
           else do
-            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case VG.uncons v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
                 (<|>) <$> loop (succ depth, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
@@ -253,7 +253,7 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
     if v1 == end
       then return $ Just stack
       else do
-        flip fix (VU.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case unconsVG v2s of
+        flip fix (VU.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case VG.uncons v2s of
           Nothing -> return Nothing
           Just (!v2, !v2s') -> do
             (<|>) <$> loop (succ depth, v1, v2, (v1, v2) : stack) <*> visitNeighbors v2s'

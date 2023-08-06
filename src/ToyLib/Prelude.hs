@@ -103,32 +103,6 @@ maximumOr !orValue !xs =
     then orValue
     else VU.maximum xs
 
--- | TODO: Remove on 2023 update.
-{-# INLINE unconsVG #-}
-unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)
-unconsVG v
-  | VG.null v = Nothing
-  | otherwise = Just (VG.unsafeHead v, VG.unsafeTail v)
-
--- | TODO: Remove on 2023 langauge update.
--- @since 0.13.0.1
-{-# INLINE groupByVG #-}
-groupByVG :: (VG.Vector v a) => (a -> a -> Bool) -> v a -> [v a]
-groupByVG _ !v | VG.null v = []
-groupByVG !f !v =
-  let !h = VG.unsafeHead v
-      !tl = VG.unsafeTail v
-   in case VG.findIndex (not . f h) tl of
-        Nothing -> [v]
-        Just !n -> VG.unsafeTake (n + 1) v : groupByVG f (VG.unsafeDrop (n + 1) v)
-
--- | TODO: Remove on 2023 langauge update.
--- /O(n)/ Split a vector into a list of slices.
--- @since 0.13.0.1
-{-# INLINE groupVG #-}
-groupVG :: (VG.Vector v a, Eq a) => v a -> [v a]
-groupVG = groupByVG (==)
-
 safeHead :: (VU.Unbox a) => VU.Vector a -> Maybe a
 safeHead vec = if VU.null vec then Nothing else Just $! VU.head vec
 
