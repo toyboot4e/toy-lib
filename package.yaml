@@ -19,9 +19,18 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         For more info, see Github <https://github.com/toyboot4e/toy-lib>
 
+# REMARK: Because `haskell-src-exts` (the parser) does NOT understand `GHC2021`, we can't used the
+# fancy syntax such as `import X qualifieid as Y`, but we can omit default langauge extensions in
+# `GHC2021`.
+language: GHC2021
+
+# On AtCoder:
+# optimization: 2
+
+# See also: <https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=J38>
 dependencies:
 - array
-- base >= 4.7 && < 5
+- base
 - bytestring
 - containers
 - extra
