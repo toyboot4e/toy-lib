@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
-{- stack script --resolver lts-16.31
+{- stack script --resolver lts-21.6
 --package array --package bytestring --package containers --package extra
 --package hashable --package unordered-containers --package heaps --package utility-ht
 --package vector --package vector-th-unbox --package vector-algorithms --package primitive
@@ -9,11 +9,8 @@
 -}
 
 {- ORMOLU_DISABLE -}
-{-# LANGUAGE BangPatterns, BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf #-}
-{-# LANGUAGE NamedFieldPuns, NumDecimals, NumericUnderscores, PatternGuards, TupleSections #-}
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, InstanceSigs, MultiParamTypeClasses #-}
-{-# LANGUAGE QuantifiedConstraints, RecordWildCards, ScopedTypeVariables, StrictData #-}
-{-# LANGUAGE TypeApplications, TypeFamilies, RankNTypes #-}
+{-# LANGUAGE BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf, NumDecimals #-}
+{-# LANGUAGE QuantifiedConstraints, RecordWildCards, StrictData, TypeFamilies #-}
 
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}

@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Digraph coloring.
 --
 -- = Typical problems

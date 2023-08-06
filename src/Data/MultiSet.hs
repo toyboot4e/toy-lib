@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Multi set backed by `IntMap`.
 
 module Data.MultiSet where

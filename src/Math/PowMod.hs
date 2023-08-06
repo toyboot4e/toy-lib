@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | TODO, Combine ModInt as Modulo module.
 
 module Math.PowMod where

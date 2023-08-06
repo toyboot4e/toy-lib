@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Prime number enumeration and prime factorization.
 
 module Math.Primes where

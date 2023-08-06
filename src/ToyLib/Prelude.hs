@@ -1,8 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
 
 module ToyLib.Prelude where
 
@@ -263,7 +260,7 @@ times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 -- - <https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c>
 combs :: Int -> [a] -> [[a]]
 combs _ [] = error "given empty list"
-combs k as@(!x : xs)
+combs k as@(!_ : xs)
   | k == 0 = [[]]
   | k == 1 = map pure as
   | k == l = pure as

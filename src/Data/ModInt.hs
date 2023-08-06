@@ -1,16 +1,9 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | `Int` with automatic moudlo arithmetic performed. Depends on @Math.PowMod@.
 module Data.ModInt where
 
-import Control.Monad
 import Data.Coerce
 import Data.Proxy
 import qualified Data.Ratio as Ratio

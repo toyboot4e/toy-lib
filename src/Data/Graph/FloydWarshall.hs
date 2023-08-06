@@ -1,6 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TypeApplications #-}
-
 -- | Calculates every shortest path between two vertices (Floyd-Warshall algorithm).
 --
 -- - NOTE: It's slow. Prefer Dijkstra when possible.

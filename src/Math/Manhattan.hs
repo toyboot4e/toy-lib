@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Manhattan distance
 --
 -- = Typical problems

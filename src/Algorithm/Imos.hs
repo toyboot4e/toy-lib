@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | The Imos's algorithm template for 2D grids.
 
 module Algorithm.Imos where
