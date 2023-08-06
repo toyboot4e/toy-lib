@@ -66,23 +66,23 @@ import Data.Array.Unsafe
 
 import qualified Data.Array as A
 
--- bytestring: https://www.stackage.org/lts-16.11/package/bytestring-0.10.10.0
+-- bytestring
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
 
--- extra: https://www.stackage.org/lts-16.11/package/extra-1.7.6
+-- extra
 import Control.Monad.Extra hiding (loop) -- foldM, ..
 import Data.IORef.Extra                  -- writeIORef'
 import Data.List.Extra hiding (merge)    -- nubSort, ..
 import Data.Tuple.Extra hiding (first, second)
 import Numeric.Extra       -- showDP, intToFloat, ..
 
--- utility-ht: https://www.stackage.org/lts-16.11/package/utility-ht-0.0.15
+-- utility-ht
 import Data.Bool.HT  -- if', ..
 import qualified Data.Ix.Enum as HT
 import qualified Data.List.HT as HT -- `groupBy`, but with adjacent elements
 
--- vector: https://www.stackage.org/lts-16.11/package/vector-0.12.1.2
+-- vector
 import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
@@ -97,14 +97,14 @@ import qualified Data.Vector.Fusion.Bundle.Monadic as MB
 import qualified Data.Vector.Fusion.Bundle.Size    as MB
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 
--- vector-algorithms: https://www.stackage.org/haddock/lts-16.31/vector-algorithms-0.8.0.3/Data-Vector-Algorithms-Intro.html
+-- vector-algorithms
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Algorithms.Search as VAS
 
--- vector-th-unbox: https://www.stackage.org/lts-16.11/package/vector-th-unbox-0.2.1.7
+-- vector-th-unbox
 import Data.Vector.Unboxed.Deriving (derivingUnbox)
 
--- containers: https://www.stackage.org/lts-16.11/package/containers-0.6.2.1
+-- containers
 import qualified Data.Graph as G
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map.Strict as M
@@ -112,13 +112,10 @@ import qualified Data.IntSet as IS
 import qualified Data.Set as S
 import qualified Data.Sequence as Seq
 
--- heaps: https://www.stackage.org/haddock/lts-16.31/heaps-0.3.6.1/Data-Heap.html
+-- heaps
 import qualified Data.Heap as H
 
--- hashable: https://www.stackage.org/lts-16.11/package/hashable-1.3.0.0
-import Data.Hashable
-
--- unordered-containers: https://www.stackage.org/haddock/lts-16.31/unordered-containers-0.2.10.0
+-- unordered-containers
 import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet as HS
 
