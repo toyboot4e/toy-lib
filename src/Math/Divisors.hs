@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | The number of divisor is smaller than \(log N\).
 -- See also: <https://scrapbox.io/magurofly/%E7%B4%84%E6%95%B0%E3%81%AE%E5%80%8B%E6%95%B0%E3%81%AE%E3%82%AA%E3%83%BC%E3%83%80%E3%83%BC>
 --

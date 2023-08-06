@@ -1,7 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | \(O(log N)\) binary search for sorted items in an inclusive range (from left to right only).
 --
@@ -132,7 +129,7 @@ compressList :: [Int] -> (VU.Vector Int, [Int])
 compressList xs = (indices, map (fromJust . fst . f) xs)
   where
     !indices = VU.fromList $ nubSort xs
-    f !x = bsearch (0, pred (vLength indices)) $ \i -> indices VU.! i <= x
+    f !x = bsearch (0, pred (VU.length indices)) $ \i -> indices VU.! i <= x
 
 -- | Retrieves square root of an `Int`.
 isqrtSlow :: Int -> Int

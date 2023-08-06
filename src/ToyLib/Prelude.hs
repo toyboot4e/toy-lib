@@ -1,8 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
 
 module ToyLib.Prelude where
 
@@ -87,13 +84,6 @@ foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 -- TODO: `minimumMay` from `mono-traversable`?
 -- or copy the `safe` packge: <https://hackage.haskell.org/package/safe-0.3.14/docs/Safe-Foldable.html>
 
--- TODO: 2023 update
--- minimumOr :: (Ord a, Foldable t) => a -> t a -> a
--- minimumOr !orValue !xs =
---   if null xs
---     then orValue
---     else minimum xs
-
 minimumOr :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> a
 minimumOr !orValue !xs =
   if VU.null xs
@@ -106,32 +96,6 @@ maximumOr !orValue !xs =
     then orValue
     else VU.maximum xs
 
--- | TODO: Remove on 2023 update.
-{-# INLINE unconsVG #-}
-unconsVG :: VG.Vector v a => v a -> Maybe (a, v a)
-unconsVG v
-  | VG.null v = Nothing
-  | otherwise = Just (VG.unsafeHead v, VG.unsafeTail v)
-
--- | TODO: Remove on 2023 langauge update.
--- @since 0.13.0.1
-{-# INLINE groupByVG #-}
-groupByVG :: (VG.Vector v a) => (a -> a -> Bool) -> v a -> [v a]
-groupByVG _ !v | VG.null v = []
-groupByVG !f !v =
-  let !h = VG.unsafeHead v
-      !tl = VG.unsafeTail v
-   in case VG.findIndex (not . f h) tl of
-        Nothing -> [v]
-        Just !n -> VG.unsafeTake (n + 1) v : groupByVG f (VG.unsafeDrop (n + 1) v)
-
--- | TODO: Remove on 2023 langauge update.
--- /O(n)/ Split a vector into a list of slices.
--- @since 0.13.0.1
-{-# INLINE groupVG #-}
-groupVG :: (VG.Vector v a, Eq a) => v a -> [v a]
-groupVG = groupByVG (==)
-
 safeHead :: (VU.Unbox a) => VU.Vector a -> Maybe a
 safeHead vec = if VU.null vec then Nothing else Just $! VU.head vec
 
@@ -141,18 +105,6 @@ safeLast vec = if VU.null vec then Nothing else Just $! VU.last vec
 -- }}}
 
 -- {{{ Libary complements
-
--- | TODO: Remove on 2023 langauge update (?)
-{-# INLINE modifyArray #-}
-modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
-modifyArray !ary !f !i = do
-  !v <- f <$> readArray ary i
-  writeArray ary i v
-
--- TODO: Remove on language update
-{-# INLINE vLength #-}
-vLength :: (VG.Vector v e) => v e -> Int
-vLength = VFB.length . VG.stream
 
 {-# INLINE rangeVG #-}
 rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
@@ -263,7 +215,7 @@ times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 -- - <https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c>
 combs :: Int -> [a] -> [[a]]
 combs _ [] = error "given empty list"
-combs k as@(!x : xs)
+combs k as@(!_ : xs)
   | k == 0 = [[]]
   | k == 1 = map pure as
   | k == l = pure as

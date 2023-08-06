@@ -1,7 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Data.SegmentTree.Strict where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)

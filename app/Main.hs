@@ -1,25 +1,18 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
 
 module Main (main) where
 
 import Control.Monad
 import Data.Graph.Sparse
-import qualified Data.List as L
+import Data.List qualified as L
 import Data.List.Extra (stripSuffix)
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 import Data.Maybe
-import Data.Ord
-import qualified Data.Vector.Unboxed as VU
-import Debug.Trace
-import qualified Language.Haskell.Exts as H
-import qualified Language.Haskell.Exts.Parser as H
-import qualified Language.Haskell.Exts.Syntax as H
+import Data.Vector.Unboxed qualified as VU
+import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
-import System.Environment (getArgs)
 import System.Exit (exitFailure)
 import System.IO.Temp (withTempDirectory)
 import System.Process (rawSystem)
@@ -29,14 +22,18 @@ import System.Process (rawSystem)
 
 main :: IO ()
 main = do
-  -- (name : opts) <- getArgs
   let srcDir = installPath ++ "/src"
   files <- collectSourceFiles srcDir
 
+  -- Because `haskell-src-exts` does not understand `GHC2021`, collect language extensions enalbed
+  -- by `GHC2021` and give them manually to the the parser:
+  let ghc2021File = installPath ++ "/template/GHC2021.hs"
+  (!ghc2021Extensions, !_) <- parseFile [] ghc2021File
+
   -- parse source files
   parsedFiles <- forM files $ \path -> do
-    (path,) <$> parseFile path
-  let (failures, successes) = partitionParseResults parsedFiles
+    (path,) <$> parseFile ghc2021Extensions path
+  let (!failures, !successes) = partitionParseResults parsedFiles
 
   when ((not . null) failures) $ do
     forM_ failures print
@@ -44,7 +41,7 @@ main = do
 
   -- parse template
   let template = installPath ++ "/template/Main.hs"
-  (extensions, parsed) <- parseFile template
+  (!templateExtensions, !parsed) <- parseFile ghc2021Extensions template
 
   header <- readFile $ installPath ++ "/template/Header.hs"
   macros <- readFile $ installPath ++ "/template/Macros.hs"
@@ -52,8 +49,8 @@ main = do
 
   case parsed of
     H.ParseOk templateAst -> do
-      let toylib = generateLibrary successes
-      putStr $ generateTemplate extensions templateAst toylib header macros body
+      let toylib = generateLibrary ghc2021Extensions successes
+      putStr $ generateTemplate templateExtensions templateAst toylib header macros body
     failure -> do
       putStrLn "Failed to parse template:"
       print failure
@@ -76,8 +73,8 @@ filterSourceFiles :: String -> Bool
 filterSourceFiles s = (".hs" `L.isSuffixOf` s) && (not $ ("Macro.hs" `L.isSuffixOf` s))
 
 -- | Collects declaratrions from a Haskell source file and minify them into one line.
-parseFile :: String -> IO ([H.Extension], H.ParseResult (H.Module H.SrcSpanInfo))
-parseFile absPath = do
+parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Module H.SrcSpanInfo))
+parseFile ghc2021Extensions absPath = do
   code <- readFile absPath
 
   -- Pre-processing CPP:
@@ -99,7 +96,7 @@ parseFile absPath = do
   let parseOption =
         H.defaultParseMode
           { H.parseFilename = absPath,
-            H.extensions = extensions
+            H.extensions = extensions ++ ghc2021Extensions
           }
 
   return (extensions, H.parseModuleWithMode parseOption processed)
@@ -129,10 +126,14 @@ removeMacros :: String -> String
 removeMacros = unlines . filter (not . L.isPrefixOf "#") . lines
 
 -- | Geneartes `toy-lib` in one line.
-generateLibrary :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
-generateLibrary parsedFiles =
+generateLibrary :: [H.Extension] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
+generateLibrary ghc2021Extensions parsedFiles =
   let files = topSortSourceFiles parsedFiles
-   in map (\(path, exts, module_) -> (path, minifyDeclarations exts module_)) files
+   in map
+        ( \(path, exts, module_) ->
+            (path, minifyDeclarations (exts ++ ghc2021Extensions) module_)
+        )
+        files
   where
     topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
     topSortSourceFiles input =

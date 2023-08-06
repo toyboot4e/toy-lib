@@ -1,8 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-
 -- | The rolling hash algorithm lets you create fastly (\(O(1)\)) comparable / concatanatable string
 -- slice in after \(O(N)\) preparation.
 --

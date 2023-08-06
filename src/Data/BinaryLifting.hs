@@ -1,6 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
-
 -- | Binary lifting is a technique for calculating nth power of a semigroup element in a (big)
 -- constant time, or applying them to their semigroup action target.
 --

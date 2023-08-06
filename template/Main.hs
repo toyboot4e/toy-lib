@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
-{- stack script --resolver lts-16.31
+{- stack script --resolver lts-21.6
 --package array --package bytestring --package containers --package extra
 --package hashable --package unordered-containers --package heaps --package utility-ht
 --package vector --package vector-th-unbox --package vector-algorithms --package primitive
@@ -9,20 +9,11 @@
 -}
 
 {- ORMOLU_DISABLE -}
-{-# LANGUAGE BangPatterns, BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf #-}
-{-# LANGUAGE NamedFieldPuns, NumDecimals, NumericUnderscores, PatternGuards, TupleSections #-}
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, InstanceSigs, MultiParamTypeClasses #-}
-{-# LANGUAGE QuantifiedConstraints, RecordWildCards, ScopedTypeVariables, StrictData #-}
-{-# LANGUAGE TypeApplications, TypeFamilies, RankNTypes #-}
+{-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
+{-# LANGUAGE QuantifiedConstraints, RecordWildCards, StandaloneDeriving, StrictData, TypeFamilies #-}
 
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}
-
-{- TODO: on 2023 langauge update,
-  - ditch `vector-th-unbox` and `TemplateHaskell`
-  - remove `vLength`
-  - refactor `primes` with new Prelude
--}
 
 -- {{{ Imports
 
@@ -95,7 +86,9 @@ import qualified Data.List.HT as HT -- `groupBy`, but with adjacent elements
 import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Primitive as VP
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed.Base as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM

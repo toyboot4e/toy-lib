@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Data.UnionFind.Sparse where
 
 import Data.List (foldl')

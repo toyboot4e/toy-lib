@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Obsolute. TODO: Delete.
 module Math.Digits where
 

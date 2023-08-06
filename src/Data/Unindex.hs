@@ -1,6 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances #-}
-
 -- | Handy, more restricted `Data.Ix` with reverse conversion, fast monadic iteration and unboxing.
 module Data.Unindex where
 

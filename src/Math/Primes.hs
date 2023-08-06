@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | Prime number enumeration and prime factorization.
 
 module Math.Primes where
@@ -8,26 +6,7 @@ import Data.List (group)
 
 -- {{{ Prime factors
 
--- -- @gotoki_no_joe
--- primes :: [Int]
--- primes = 2 : 3 : sieve q0 [5, 7 ..]
---   where
---     q0 = H.insert (H.Entry 9 6) H.empty
---     sieve queue xxs@(x : xs) =
---       case compare np x of
---         LT -> sieve queue1 xxs
---         EQ -> sieve queue1 xs
---         GT -> x : sieve queue2 xs
---       where
---         H.Entry np p2 = H.minimum queue
---         queue1 = H.insert (H.Entry (np + p2) p2) $ H.deleteMin queue
---         queue2 = H.insert (H.Entry (x * x) (x * 2)) queue
---     sieve _ _ = error "unreachale"
-
--- | @0xYusuke
--- <https://zenn.dev/link/comments/1022553732563c>
---
--- TODO: remove `union*` on 2023 update
+-- | @0xYusuke <https://zenn.dev/link/comments/1022553732563c>
 primes :: [Int]
 primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tail primes])
   where

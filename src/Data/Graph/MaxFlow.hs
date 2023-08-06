@@ -1,8 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Maximum flow calculation (Ford-Fulkerson algorithm).
@@ -77,7 +74,6 @@ buildRN !nVerts !edges = do
 {-# INLINE maxFlowRN #-}
 maxFlowRN :: Int -> ResidualNetwork -> Int -> Int -> IO Int
 maxFlowRN !nVerts !rn !v0 !ve = do
-  -- TODO: use BitVec in 2023 environment
   !vis <- VM.replicate nVerts False
   inner vis
   where
