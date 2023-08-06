@@ -15,12 +15,6 @@
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}
 
-{- TODO: on 2023 langauge update,
-  - ditch `vector-th-unbox` and `TemplateHaskell`
-  - remove `vLength`
-  - refactor `primes` with new Prelude
--}
-
 -- {{{ Imports
 
 module Template () where

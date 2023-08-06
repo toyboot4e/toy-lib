@@ -120,11 +120,6 @@ modifyArray !ary !f !i = do
   !v <- f <$> readArray ary i
   writeArray ary i v
 
--- TODO: Remove on language update
-{-# INLINE vLength #-}
-vLength :: (VG.Vector v e) => v e -> Int
-vLength = VFB.length . VG.stream
-
 {-# INLINE rangeVG #-}
 rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
 rangeVG !i !j = VG.enumFromN i (succ j - i)
