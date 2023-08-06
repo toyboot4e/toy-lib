@@ -113,13 +113,6 @@ safeLast vec = if VU.null vec then Nothing else Just $! VU.last vec
 
 -- {{{ Libary complements
 
--- | TODO: Remove on 2023 langauge update (?)
-{-# INLINE modifyArray #-}
-modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
-modifyArray !ary !f !i = do
-  !v <- f <$> readArray ary i
-  writeArray ary i v
-
 {-# INLINE rangeVG #-}
 rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
 rangeVG !i !j = VG.enumFromN i (succ j - i)
