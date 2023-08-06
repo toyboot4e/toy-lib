@@ -74,7 +74,6 @@ buildRN !nVerts !edges = do
 {-# INLINE maxFlowRN #-}
 maxFlowRN :: Int -> ResidualNetwork -> Int -> Int -> IO Int
 maxFlowRN !nVerts !rn !v0 !ve = do
-  -- TODO: use BitVec in 2023 environment
   !vis <- VM.replicate nVerts False
   inner vis
   where
