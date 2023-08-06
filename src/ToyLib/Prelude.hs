@@ -84,13 +84,6 @@ foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 -- TODO: `minimumMay` from `mono-traversable`?
 -- or copy the `safe` packge: <https://hackage.haskell.org/package/safe-0.3.14/docs/Safe-Foldable.html>
 
--- TODO: 2023 update
--- minimumOr :: (Ord a, Foldable t) => a -> t a -> a
--- minimumOr !orValue !xs =
---   if null xs
---     then orValue
---     else minimum xs
-
 minimumOr :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> a
 minimumOr !orValue !xs =
   if VU.null xs
