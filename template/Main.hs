@@ -9,8 +9,8 @@
 -}
 
 {- ORMOLU_DISABLE -}
-{-# LANGUAGE BlockArguments, DefaultSignatures, LambdaCase, MultiWayIf, NumDecimals #-}
-{-# LANGUAGE QuantifiedConstraints, RecordWildCards, StrictData, TypeFamilies #-}
+{-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
+{-# LANGUAGE QuantifiedConstraints, RecordWildCards, StandaloneDeriving, StrictData, TypeFamilies #-}
 
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}
@@ -92,7 +92,9 @@ import qualified Data.List.HT as HT -- `groupBy`, but with adjacent elements
 import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Primitive as VP
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed.Base as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
