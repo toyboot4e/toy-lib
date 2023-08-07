@@ -55,7 +55,7 @@ ghc-options:
 - -Wno-missing-export-lists
 ```
 
-We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand it, but all the extensions enabled by `haskell-src-exts` are enabled as `default-extensison`:
+We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand it, but all the extensions enabled by `GHC2021` are enabled as `default-extensisons`:
 
 ```yaml
 language: Haskell2010
@@ -68,7 +68,7 @@ default-extensions:
 ### `hacddock`
 
 - Run `stack test` for running [`doctest`] over [`haddock`] doctests.
-- Run `stack haddock toy-lib:lib --fast "$@"` to build local library documentation. Add `--open` to it for opening it on your browser.
+- Run `stack haddock toy-lib:lib --fast` to build local library documentation. Add `--open` to it for opening it on your browser.
   - TODO: Include it in `stack test` or project-specific command?
 
 [`doctest`]: https://github.com/sol/doctest
