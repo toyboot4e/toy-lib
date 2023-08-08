@@ -19,6 +19,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed.Mutable as VUM
 import Debug.Trace
 import System.IO (stdout)
 
@@ -138,6 +139,17 @@ relaxMany !relax !vec0 !input !expander = VG.create $ do
   VG.forM_ input $ \x -> do
     VG.forM_ (expander x) $ \(!i, !x') -> do
       VGM.modify vec (`relax` x') i
+
+  return vec
+
+-- | Monoid variant of `relaxMany`
+relaxMany' :: (Monoid m, VU.Unbox m, VU.Unbox a) => VU.Vector m -> VU.Vector a -> (a -> VU.Vector (Int, m)) -> VU.Vector m
+relaxMany' !vec0 !input !expander = VU.create $ do
+  !vec <- VU.unsafeThaw vec0
+
+  VU.forM_ input $ \x -> do
+    VU.forM_ (expander x) $ \(!i, !x') -> do
+      VUM.modify vec (<> x') i
 
   return vec
 
