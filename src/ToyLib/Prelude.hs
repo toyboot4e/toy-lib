@@ -6,7 +6,6 @@ module ToyLib.Prelude where
 import Control.Monad
 import Control.Monad.Primitive
 import Data.Array.IArray
-import Data.Array.MArray
 import Data.Bifunctor
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
@@ -15,9 +14,9 @@ import qualified Data.Heap as H
 import Data.List
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
-import qualified Data.Vector.Fusion.Bundle as VFB
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import Debug.Trace
@@ -130,6 +129,17 @@ rangeVR = rangeVGR
 {-# INLINE rangeVUR #-}
 rangeVUR :: Int -> Int -> VU.Vector Int
 rangeVUR = rangeVGR
+
+-- | @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
+relaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
+relaxMany !relax !vec0 !input !expander = VG.create $ do
+  !vec <- VG.unsafeThaw vec0
+
+  VG.forM_ input $ \x -> do
+    VG.forM_ (expander x) $ \(!i, !x') -> do
+      VGM.modify vec (`relax` x') i
+
+  return vec
 
 -- | @cojna (`stream`)
 {-# INLINE [1] rangeMS #-}
