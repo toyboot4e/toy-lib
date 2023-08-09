@@ -90,7 +90,7 @@ library
       GeneralisedNewtypeDeriving
       HexFloatLiterals
       ImplicitPrelude
-      ImportQualifiedPost
+      NoImportQualifiedPost
       InstanceSigs
       KindSignatures
       MonomorphismRestriction
@@ -161,7 +161,7 @@ executable toy-lib-exe
       GeneralisedNewtypeDeriving
       HexFloatLiterals
       ImplicitPrelude
-      ImportQualifiedPost
+      NoImportQualifiedPost
       InstanceSigs
       KindSignatures
       MonomorphismRestriction
@@ -239,7 +239,7 @@ test-suite toy-lib-test
       GeneralisedNewtypeDeriving
       HexFloatLiterals
       ImplicitPrelude
-      ImportQualifiedPost
+      NoImportQualifiedPost
       InstanceSigs
       KindSignatures
       MonomorphismRestriction

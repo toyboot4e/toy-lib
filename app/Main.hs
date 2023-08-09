@@ -5,12 +5,12 @@ module Main (main) where
 
 import Control.Monad
 import Data.Graph.Sparse
-import Data.List qualified as L
+import qualified Data.List as L
 import Data.List.Extra (stripSuffix)
-import Data.Map.Strict qualified as M
+import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Vector.Unboxed qualified as VU
-import Language.Haskell.Exts qualified as H
+import qualified Data.Vector.Unboxed as VU
+import qualified Language.Haskell.Exts as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Exit (exitFailure)

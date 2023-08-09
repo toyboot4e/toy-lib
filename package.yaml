@@ -48,7 +48,9 @@ default-extensions:
 - GeneralisedNewtypeDeriving
 - HexFloatLiterals
 - ImplicitPrelude
-- ImportQualifiedPost
+# Because `haskell-src-exts` does not understand it:
+- NoImportQualifiedPost
+# - ImportQualifiedPost
 - InstanceSigs
 - KindSignatures
 - MonomorphismRestriction
