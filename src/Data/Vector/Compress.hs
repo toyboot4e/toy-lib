@@ -4,7 +4,6 @@ import Algorithm.BinarySearch
 import Data.List.Extra (nubSort)
 import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
-import ToyLib.Prelude
 
 -- | One dimensional index compression: xs -> (indexer, xs')
 compressVU :: VU.Vector Int -> (VU.Vector Int, VU.Vector Int)
