@@ -1,93 +1,102 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
-</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
-</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
-</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
-</span><span id="line-5"></span><span>
-</span><span id="line-6"></span><span class="hs-comment">-- | Semigroup action @*@ is an operator where \(s_2 * (s_1 * a) == (s_2 &#8853; s_1) * a\) holds.</span><span>
-</span><span id="line-7"></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SemigroupAction</span><span> </span><span class="hs-keyword">where</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Semigroup action @*@ is an operator where \(s_2 * (s_1 * a) == (s_2 &#8853; s_1) * a\) holds.</span></span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SemigroupAction</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Monoid</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Macro.html"><span class="hs-identifier">ToyLib.Macro</span></a></span><span>
 </span><span id="line-9"></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Monoid</span></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Macro.html"><span class="hs-identifier">ToyLib.Macro</span></a></span><span>
-</span><span id="line-14"></span><span>
-</span><span id="line-15"></span><span class="hs-comment">-- {{{ Semigroup action and binary lifting</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- {{{ Semigroup action and binary lifting</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="annot"><span class="hs-comment">-- | Right semigroup aciton.</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">class</span><span> </span><span id="SemigroupAction"><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-var">SemigroupAction</span></a></span></span><span> </span><span id="local-6989586621679148496"><span class="annot"><a href="#local-6989586621679148496"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679148497"><span class="annot"><a href="#local-6989586621679148497"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-comment">-- | Right semigroup aciton</span><span>
+</span><span id="line-15"></span><span>  </span><span id="sact"><span class="annot"><a href="Data.SemigroupAction.html#sact"><span class="hs-identifier hs-type">sact</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679148496"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148497"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148497"><span class="hs-identifier hs-type">a</span></a></span><span>
 </span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span class="hs-comment">-- | Right semigroup aciton.</span><span>
-</span><span id="line-18"></span><span class="hs-keyword">class</span><span> </span><span id="SemigroupAction"><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-var">SemigroupAction</span></a></span></span><span> </span><span id="local-6989586621679151295"><span class="annot"><a href="#local-6989586621679151295"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679151294"><span class="annot"><a href="#local-6989586621679151294"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-19"></span><span>  </span><span class="hs-comment">-- | Right semigroup aciton</span><span>
-</span><span id="line-20"></span><span>  </span><span id="sact"><span class="annot"><a href="Data.SemigroupAction.html#sact"><span class="hs-identifier hs-type">sact</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679151295"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679151294"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679151294"><span class="hs-identifier hs-type">a</span></a></span><span>
-</span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span class="hs-comment">-- | Right monoid action.</span><span>
-</span><span id="line-23"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151299"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151298"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679151299"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonoidAction"><span class="annot"><a href="Data.SemigroupAction.html#MonoidAction"><span class="hs-identifier hs-var">MonoidAction</span></a></span></span><span> </span><span id="local-6989586621679151299"><span class="annot"><a href="#local-6989586621679151299"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679151298"><span class="annot"><a href="#local-6989586621679151298"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-24"></span><span>  </span><span class="hs-comment">-- | Right monoid aciton</span><span>
-</span><span id="line-25"></span><span>  </span><span id="mact"><span class="annot"><a href="Data.SemigroupAction.html#mact"><span class="hs-identifier hs-type">mact</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679151299"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679151298"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679151298"><span class="hs-identifier hs-type">a</span></a></span><span>
-</span><span id="line-26"></span><span>  </span><span id="local-6989586621679151259"><span class="annot"><a href="Data.SemigroupAction.html#mact"><span class="hs-identifier hs-var hs-var">mact</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall s a. SemigroupAction s a =&gt; s -&gt; a -&gt; a
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">-- | Right monoid action.</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148492"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148493"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679148492"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonoidAction"><span class="annot"><a href="Data.SemigroupAction.html#MonoidAction"><span class="hs-identifier hs-var">MonoidAction</span></a></span></span><span> </span><span id="local-6989586621679148492"><span class="annot"><a href="#local-6989586621679148492"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679148493"><span class="annot"><a href="#local-6989586621679148493"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-comment">-- | Right monoid aciton</span><span>
+</span><span id="line-20"></span><span>  </span><span id="mact"><span class="annot"><a href="Data.SemigroupAction.html#mact"><span class="hs-identifier hs-type">mact</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679148492"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148493"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148493"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span id="local-6989586621679148526"><span class="annot"><a href="Data.SemigroupAction.html#mact"><span class="hs-identifier hs-var hs-var">mact</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m -&gt; a -&gt; a
+forall s a. SemigroupAction s a =&gt; s -&gt; a -&gt; a
 </span><a href="Data.SemigroupAction.html#sact"><span class="hs-identifier hs-var">sact</span></a></span></span><span>
-</span><span id="line-27"></span><span>
-</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Product</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-29"></span><span>  </span><span id="local-6989586621679151251"><span class="annot"><span class="annottext">sact :: Product Int -&gt; Int -&gt; Int
-</span><a href="#local-6989586621679151251"><span class="hs-identifier hs-var hs-var hs-var hs-var">sact</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Product</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151249"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151249"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151248"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151248"><span class="hs-identifier hs-var">x2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151249"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Product</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>  </span><span id="local-6989586621679148534"><span class="annot"><span class="annottext">sact :: Product Int -&gt; Int -&gt; Int
+</span><a href="Data.SemigroupAction.html#sact"><span class="hs-identifier hs-var hs-var hs-var hs-var">sact</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Product</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148536"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148536"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148537"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148537"><span class="hs-identifier hs-var">x2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148536"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151248"><span class="hs-identifier hs-var">x2</span></a></span><span>
-</span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-comment">-- | Permutation of N sequence.</span><span>
-</span><span id="line-32"></span><span class="hs-comment">--</span><span>
-</span><span id="line-33"></span><span class="hs-comment">-- = Typical problems</span><span>
-</span><span id="line-34"></span><span class="hs-comment">-- - [Typical 058 - Original Calculator (&#9733;4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)</span><span>
-</span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="Permutation"><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Permutation"><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151234"><span id="local-6989586621679151236"><span id="local-6989586621679151244"><span class="annot"><span class="annottext">Int -&gt; Permutation -&gt; ShowS
+</span><a href="#local-6989586621679148537"><span class="hs-identifier hs-var">x2</span></a></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- | Permutation of N sequence.</span><span>
+</span><span id="line-27"></span><span class="hs-comment">--</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- = Typical problems</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- - [Typical 058 - Original Calculator (&#9733;4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">newtype</span><span> </span><span id="Permutation"><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Permutation"><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148541"><span id="local-6989586621679148549"><span id="local-6989586621679148553"><span class="annot"><span class="annottext">Int -&gt; Permutation -&gt; ShowS
 [Permutation] -&gt; ShowS
 Permutation -&gt; String
+(Int -&gt; Permutation -&gt; ShowS)
+-&gt; (Permutation -&gt; String)
+-&gt; ([Permutation] -&gt; ShowS)
+-&gt; Show Permutation
 forall a.
 (Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
-showList :: [Permutation] -&gt; ShowS
-$cshowList :: [Permutation] -&gt; ShowS
-show :: Permutation -&gt; String
-$cshow :: Permutation -&gt; String
-showsPrec :: Int -&gt; Permutation -&gt; ShowS
 $cshowsPrec :: Int -&gt; Permutation -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151222"><span id="local-6989586621679151229"><span class="annot"><span class="annottext">Permutation -&gt; Permutation -&gt; Bool
+showsPrec :: Int -&gt; Permutation -&gt; ShowS
+$cshow :: Permutation -&gt; String
+show :: Permutation -&gt; String
+$cshowList :: [Permutation] -&gt; ShowS
+showList :: [Permutation] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148559"><span id="local-6989586621679148566"><span class="annot"><span class="annottext">Permutation -&gt; Permutation -&gt; Bool
+(Permutation -&gt; Permutation -&gt; Bool)
+-&gt; (Permutation -&gt; Permutation -&gt; Bool) -&gt; Eq Permutation
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
-/= :: Permutation -&gt; Permutation -&gt; Bool
-$c/= :: Permutation -&gt; Permutation -&gt; Bool
-== :: Permutation -&gt; Permutation -&gt; Bool
 $c== :: Permutation -&gt; Permutation -&gt; Bool
+== :: Permutation -&gt; Permutation -&gt; Bool
+$c/= :: Permutation -&gt; Permutation -&gt; Bool
+/= :: Permutation -&gt; Permutation -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151210"><span id="local-6989586621679151212"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-39"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span id="local-6989586621679151205"><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151205"><span class="hs-identifier hs-var">vec1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679151204"><span class="annot"><span class="annottext">&lt;&gt; :: Permutation -&gt; Permutation -&gt; Permutation
-</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span id="local-6989586621679151203"><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151203"><span class="hs-identifier hs-var">vec2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Permutation
-</span><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (Unbox a, Unbox b) =&gt; (a -&gt; b) -&gt; Vector a -&gt; Vector b
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679148576"><span id="local-6989586621679148580"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span id="local-6989586621679148588"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679148588"><span class="hs-identifier hs-var">vec1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679148589"><span class="annot"><span class="annottext">&lt;&gt; :: Permutation -&gt; Permutation -&gt; Permutation
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span id="local-6989586621679148590"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679148590"><span class="hs-identifier hs-var">vec2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Permutation
+</span><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-var">Permutation</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector Int -&gt; Permutation) -&gt; Vector Int -&gt; Permutation
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; Vector Int -&gt; Vector Int
+forall a b. (Unbox a, Unbox b) =&gt; (a -&gt; b) -&gt; Vector a -&gt; Vector b
 </span><span class="hs-identifier hs-var">VU.map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151205"><span class="hs-identifier hs-var">vec1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Unbox a =&gt; Vector a -&gt; Int -&gt; a
-</span><span class="hs-operator hs-var">VU.!</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151203"><span class="hs-identifier hs-var">vec2</span></a></span><span>
-</span><span id="line-40"></span><span>    </span><span class="hs-keyword">where</span><span>
-</span><span id="line-41"></span><span>      </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Bool -&gt; a -&gt; a
-</span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
+</span><a href="#local-6989586621679148588"><span class="hs-identifier hs-var">vec1</span></a></span><span> </span><span class="hs-operator">VU.!</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679148590"><span class="hs-identifier hs-var">vec2</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any -&gt; Any
+forall a. Bool -&gt; a -&gt; a
+</span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Int -&gt; Int
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
 </span><span class="hs-identifier hs-var">VG.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151205"><span class="hs-identifier hs-var">vec1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
-</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
+</span><a href="#local-6989586621679148588"><span class="hs-identifier hs-var">vec1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
 </span><span class="hs-identifier hs-var">VG.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151203"><span class="hs-identifier hs-var">vec2</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-44"></span><span>  </span><span id="local-6989586621679151190"><span class="annot"><span class="annottext">sact :: Permutation -&gt; Int -&gt; Int
-</span><a href="#local-6989586621679151190"><span class="hs-identifier hs-var hs-var hs-var hs-var">sact</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151189"><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151189"><span class="hs-identifier hs-var">vec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151188"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151188"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679151189"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Unbox a =&gt; Vector a -&gt; Int -&gt; a
+</span><a href="#local-6989586621679148590"><span class="hs-identifier hs-var">vec2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#SemigroupAction"><span class="hs-identifier hs-type">SemigroupAction</span></a></span><span> </span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>  </span><span id="local-6989586621679148602"><span class="annot"><span class="annottext">sact :: Permutation -&gt; Int -&gt; Int
+</span><a href="Data.SemigroupAction.html#sact"><span class="hs-identifier hs-var hs-var hs-var hs-var">sact</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SemigroupAction.html#Permutation"><span class="hs-identifier hs-type">Permutation</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148603"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679148603"><span class="hs-identifier hs-var">vec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148604"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148604"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679148603"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">VU.!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151188"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-45"></span><span>
-</span><span id="line-46"></span><span class="hs-comment">-- }}}</span><span>
-</span><span id="line-47"></span></pre></body></html>
+</span><a href="#local-6989586621679148604"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- }}}</span><span>
+</span><span id="line-42"></span></pre></body></html>

@@ -1,255 +1,391 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
-</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
-</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
-</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
-</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
-</span><span id="line-6"></span><span>
-</span><span id="line-7"></span><span class="hs-comment">-- | TODO: Refactor in my way.</span><span>
-</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.Matrix</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-9"></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Array.IArray</span></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Array.Unboxed</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">UArray</span></span><span class="hs-special">)</span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.ModInt.html"><span class="hs-identifier">Data.ModInt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ModInt.html#TypeInt"><span class="hs-identifier">TypeInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.ModInt.html#typeInt"><span class="hs-identifier">typeInt</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Proxy</span></span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Tuple.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">dupe</span></span><span class="hs-special">)</span><span>
-</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Macro.html"><span class="hs-identifier">ToyLib.Macro</span></a></span><span>
-</span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span class="hs-comment">-- {{{ Math</span><span>
-</span><span id="line-18"></span><span>
-</span><span id="line-19"></span><span id="local-6989586621679157351"><span class="annot"><a href="Math.Matrix.html#mulMat"><span class="hs-identifier hs-type">mulMat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679157351"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IArray</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="annot"><a href="#local-6989586621679157351"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679157351"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679157351"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679157351"><span class="hs-identifier hs-type">e</span></a></span></span><span>
-</span><span id="line-20"></span><span id="mulMat"><span class="annot"><span class="annottext">mulMat :: forall e.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | TODO: Refactor in my way.</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.Matrix</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Array.IArray</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Array.Unboxed</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">UArray</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">chunksOf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.ModInt.html"><span class="hs-identifier">Data.ModInt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ModInt.html#TypeInt"><span class="hs-identifier">TypeInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.ModInt.html#typeInt"><span class="hs-identifier">typeInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Proxy</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Tuple.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">dupe</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Macro.html"><span class="hs-identifier">ToyLib.Macro</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- {{{ Math</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><span class="hs-comment">-- | Multiplies HxW matrix to a Hx1 column vector.</span></span><span>
+</span><span id="line-15"></span><span id="local-6989586621679154727"><span class="annot"><a href="Math.Matrix.html#mulMatToCol"><span class="hs-identifier hs-type">mulMatToCol</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679154727"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IArray</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="annot"><a href="#local-6989586621679154727"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679154727"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679154727"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679154727"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-16"></span><span id="mulMatToCol"><span class="annot"><span class="annottext">mulMatToCol :: forall e.
+(Num e, IArray UArray e) =&gt;
+UArray (Int, Int) e -&gt; [e] -&gt; [e]
+</span><a href="Math.Matrix.html#mulMatToCol"><span class="hs-identifier hs-var hs-var">mulMatToCol</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154850"><span class="annot"><span class="annottext">UArray (Int, Int) e
+</span><a href="#local-6989586621679154850"><span class="hs-identifier hs-var">mat</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154851"><span class="annot"><span class="annottext">[e]
+</span><a href="#local-6989586621679154851"><span class="hs-identifier hs-var">col</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154858"><span class="annot"><span class="annottext">rows :: [[e]]
+</span><a href="#local-6989586621679154858"><span class="hs-identifier hs-var hs-var">rows</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [e] -&gt; [[e]]
+forall a. Partial =&gt; Int -&gt; [a] -&gt; [[a]]
+</span><span class="hs-identifier hs-var">chunksOf</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154859"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; [e]
+forall (a :: * -&gt; * -&gt; *) e i. (IArray a e, Ix i) =&gt; a i e -&gt; [e]
+</span><span class="hs-identifier hs-var">elems</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e
+</span><a href="#local-6989586621679154850"><span class="hs-identifier hs-var">mat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">([e] -&gt; e) -&gt; [[e]] -&gt; [e]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[e] -&gt; e
+forall a. Num a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">sum</span></span><span> </span><span class="annot"><span class="annottext">([e] -&gt; e) -&gt; ([e] -&gt; [e]) -&gt; [e] -&gt; e
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(e -&gt; e -&gt; e) -&gt; [e] -&gt; [e] -&gt; [e]
+forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
+</span><span class="hs-identifier hs-var">zipWith</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; e -&gt; e
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">(*)</span></span><span> </span><span class="annot"><span class="annottext">[e]
+</span><a href="#local-6989586621679154851"><span class="hs-identifier hs-var">col</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[[e]]
+</span><a href="#local-6989586621679154858"><span class="hs-identifier hs-var">rows</span></a></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679154859"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679154859"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[e] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[e]
+</span><a href="#local-6989586621679154851"><span class="hs-identifier hs-var">col</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any -&gt; Any
+forall a. Bool -&gt; a -&gt; a
+</span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Any -&gt; Any) -&gt; Bool -&gt; Any -&gt; Any
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154859"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Bool)
+-&gt; (((Int, Int), (Int, Int)) -&gt; Int)
+-&gt; ((Int, Int), (Int, Int))
+-&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int)
+-&gt; (((Int, Int), (Int, Int)) -&gt; Int)
+-&gt; ((Int, Int), (Int, Int))
+-&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int) -&gt; Int)
+-&gt; (((Int, Int), (Int, Int)) -&gt; (Int, Int))
+-&gt; ((Int, Int), (Int, Int))
+-&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; (Int, Int)
+forall a b. (a, b) -&gt; b
+</span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">(((Int, Int), (Int, Int)) -&gt; Bool)
+-&gt; ((Int, Int), (Int, Int)) -&gt; Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; ((Int, Int), (Int, Int))
+forall i. Ix i =&gt; UArray i e -&gt; (i, i)
+forall (a :: * -&gt; * -&gt; *) e i.
+(IArray a e, Ix i) =&gt;
+a i e -&gt; (i, i)
+</span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e
+</span><a href="#local-6989586621679154850"><span class="hs-identifier hs-var">mat</span></a></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><span class="hs-comment">-- | Multiplies H1xK matrix to a KxW2 matrix.</span></span><span>
+</span><span id="line-24"></span><span id="local-6989586621679154759"><span class="annot"><a href="Math.Matrix.html#mulMat"><span class="hs-identifier hs-type">mulMat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679154759"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IArray</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="annot"><a href="#local-6989586621679154759"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679154759"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679154759"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679154759"><span class="hs-identifier hs-type">e</span></a></span></span><span>
+</span><span id="line-25"></span><span id="mulMat"><span class="annot"><span class="annottext">mulMat :: forall e.
 (Num e, IArray UArray e) =&gt;
 UArray (Int, Int) e -&gt; UArray (Int, Int) e -&gt; UArray (Int, Int) e
-</span><a href="Math.Matrix.html#mulMat"><span class="hs-identifier hs-var hs-var">mulMat</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157240"><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157240"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157239"><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157239"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-21"></span><span>  </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="Math.Matrix.html#mulMat"><span class="hs-identifier hs-var hs-var">mulMat</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154895"><span class="annot"><span class="annottext">UArray (Int, Int) e
+</span><a href="#local-6989586621679154895"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154896"><span class="annot"><span class="annottext">UArray (Int, Int) e
+</span><a href="#local-6989586621679154896"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 (i, i) -&gt; [e] -&gt; a i e
 </span><span class="hs-identifier hs-var">listArray</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span>
-</span><span id="line-22"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157237"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157236"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157235"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157234"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-23"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
+</span><span id="line-27"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154898"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154899"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154900"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154901"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">[e] -&gt; e
+forall a. Num a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
 </span><span class="hs-identifier hs-var">sum</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157240"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154895"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; (Int, Int) -&gt; e
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157231"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157230"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154903"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154904"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">e -&gt; e -&gt; e
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157239"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154896"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; (Int, Int) -&gt; e
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157228"><span class="hs-identifier hs-var">j'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157227"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679157230"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157230"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679157228"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157228"><span class="hs-identifier hs-var">j'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a b. [a] -&gt; [b] -&gt; [(a, b)]
-</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154905"><span class="hs-identifier hs-var">j'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154906"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679154904"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154904"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679154905"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154905"><span class="hs-identifier hs-var">j'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int] -&gt; [(Int, Int)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157225"><span class="hs-identifier hs-var">j0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157224"><span class="hs-identifier hs-var">jx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154908"><span class="hs-identifier hs-var">j0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154909"><span class="hs-identifier hs-var">jx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157223"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157222"><span class="hs-identifier hs-var">j'x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-24"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679157231"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157231"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154910"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154911"><span class="hs-identifier hs-var">j'x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-29"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679154903"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154903"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157237"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157235"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-25"></span><span>        </span><span id="local-6989586621679157227"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157227"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154898"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154900"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>        </span><span id="local-6989586621679154906"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154906"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157236"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157234"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-26"></span><span>    </span><span class="hs-special">]</span><span>
-</span><span id="line-27"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-28"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157237"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157237"><span class="hs-identifier hs-var">i0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157225"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157225"><span class="hs-identifier hs-var">j0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157235"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157235"><span class="hs-identifier hs-var">ix</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157224"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157224"><span class="hs-identifier hs-var">jx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154899"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154901"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154898"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154898"><span class="hs-identifier hs-var">i0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154908"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154908"><span class="hs-identifier hs-var">j0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154900"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154900"><span class="hs-identifier hs-var">ix</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154909"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154909"><span class="hs-identifier hs-var">jx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; ((Int, Int), (Int, Int))
+forall i. Ix i =&gt; UArray i e -&gt; (i, i)
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157240"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157223"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157223"><span class="hs-identifier hs-var">j'0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157236"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157236"><span class="hs-identifier hs-var">k0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157222"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157222"><span class="hs-identifier hs-var">j'x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157234"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157234"><span class="hs-identifier hs-var">kx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154895"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154910"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154910"><span class="hs-identifier hs-var">j'0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154899"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154899"><span class="hs-identifier hs-var">k0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154911"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154911"><span class="hs-identifier hs-var">j'x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154901"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154901"><span class="hs-identifier hs-var">kx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e -&gt; ((Int, Int), (Int, Int))
+forall i. Ix i =&gt; UArray i e -&gt; (i, i)
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) e
-</span><a href="#local-6989586621679157239"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-30"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Bool -&gt; a -&gt; a
+</span><a href="#local-6989586621679154896"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any -&gt; Any
+forall a. Bool -&gt; a -&gt; a
 </span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157224"><span class="hs-identifier hs-var">jx</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154909"><span class="hs-identifier hs-var">jx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157225"><span class="hs-identifier hs-var">j0</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679154908"><span class="hs-identifier hs-var">j0</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157222"><span class="hs-identifier hs-var">j'x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154911"><span class="hs-identifier hs-var">j'x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157223"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span class="annot"><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-type">mulMatMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-33"></span><span id="mulMatMod"><span class="annot"><span class="annottext">mulMatMod :: Int
+</span><a href="#local-6989586621679154910"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><span class="hs-comment">-- | Multiplies H1xK matrix to a KxW2 matrix, getting mod of @m@.</span></span><span>
+</span><span id="line-38"></span><span class="annot"><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-type">mulMatMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-39"></span><span id="mulMatMod"><span class="annot"><span class="annottext">mulMatMod :: Int
 -&gt; UArray (Int, Int) Int
 -&gt; UArray (Int, Int) Int
 -&gt; UArray (Int, Int) Int
-</span><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-var hs-var">mulMatMod</span></a></span></span><span> </span><span id="local-6989586621679157206"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157206"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679157205"><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157205"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679157204"><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157204"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-34"></span><span>  </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-var hs-var">mulMatMod</span></a></span></span><span> </span><span id="local-6989586621679154924"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154924"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679154925"><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679154925"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679154926"><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679154926"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 (i, i) -&gt; [e] -&gt; a i e
 </span><span class="hs-identifier hs-var">listArray</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span>
-</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157203"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157202"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157201"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157200"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
+</span><span id="line-41"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154927"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154928"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154929"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154930"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int
+forall a. Num a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
 </span><span class="hs-identifier hs-var">sum</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157205"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154925"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int -&gt; (Int, Int) -&gt; Int
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157199"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157198"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154931"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154932"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157204"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154926"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int -&gt; (Int, Int) -&gt; Int
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157197"><span class="hs-identifier hs-var">j'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157196"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154933"><span class="hs-identifier hs-var">j'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154934"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">`mod`</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157206"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679157198"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157198"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679157197"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157197"><span class="hs-identifier hs-var">j'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a b. [a] -&gt; [b] -&gt; [(a, b)]
-</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154924"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679154932"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154932"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679154933"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154933"><span class="hs-identifier hs-var">j'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int] -&gt; [(Int, Int)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157194"><span class="hs-identifier hs-var">j0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157193"><span class="hs-identifier hs-var">jx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154936"><span class="hs-identifier hs-var">j0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154937"><span class="hs-identifier hs-var">jx</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157192"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157191"><span class="hs-identifier hs-var">j'x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154938"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154939"><span class="hs-identifier hs-var">j'x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">`mod`</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157206"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-37"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679157199"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157199"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154924"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679154931"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154931"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157203"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157201"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-38"></span><span>        </span><span id="local-6989586621679157196"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157196"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><a href="#local-6989586621679154927"><span class="hs-identifier hs-var">i0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154929"><span class="hs-identifier hs-var">ix</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>        </span><span id="local-6989586621679154934"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154934"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157202"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157200"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-39"></span><span>    </span><span class="hs-special">]</span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-41"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157203"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157203"><span class="hs-identifier hs-var">i0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157194"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157194"><span class="hs-identifier hs-var">j0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157201"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157201"><span class="hs-identifier hs-var">ix</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157193"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157193"><span class="hs-identifier hs-var">jx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154928"><span class="hs-identifier hs-var">k0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154930"><span class="hs-identifier hs-var">kx</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">]</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154927"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154927"><span class="hs-identifier hs-var">i0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154936"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154936"><span class="hs-identifier hs-var">j0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154929"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154929"><span class="hs-identifier hs-var">ix</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154937"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154937"><span class="hs-identifier hs-var">jx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int -&gt; ((Int, Int), (Int, Int))
+forall i. Ix i =&gt; UArray i Int -&gt; (i, i)
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157205"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-42"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157192"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157192"><span class="hs-identifier hs-var">j'0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157202"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157202"><span class="hs-identifier hs-var">k0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679157191"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157191"><span class="hs-identifier hs-var">j'x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157200"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157200"><span class="hs-identifier hs-var">kx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i.
+</span><a href="#local-6989586621679154925"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154938"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154938"><span class="hs-identifier hs-var">j'0</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154928"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154928"><span class="hs-identifier hs-var">k0</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679154939"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154939"><span class="hs-identifier hs-var">j'x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154930"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154930"><span class="hs-identifier hs-var">kx</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int -&gt; ((Int, Int), (Int, Int))
+forall i. Ix i =&gt; UArray i Int -&gt; (i, i)
+forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157204"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-43"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Bool -&gt; a -&gt; a
+</span><a href="#local-6989586621679154926"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Any -&gt; Any
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any -&gt; Any
+forall a. Bool -&gt; a -&gt; a
 </span><a href="ToyLib.Macro.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157193"><span class="hs-identifier hs-var">jx</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154937"><span class="hs-identifier hs-var">jx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157194"><span class="hs-identifier hs-var">j0</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679154936"><span class="hs-identifier hs-var">j0</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157191"><span class="hs-identifier hs-var">j'x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679154939"><span class="hs-identifier hs-var">j'x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157192"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>
-</span><span id="line-45"></span><span class="annot"><a href="Math.Matrix.html#unitMat"><span class="hs-identifier hs-type">unitMat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-46"></span><span id="unitMat"><span class="annot"><span class="annottext">unitMat :: Int -&gt; UArray (Int, Int) Int
-</span><a href="Math.Matrix.html#unitMat"><span class="hs-identifier hs-var hs-var">unitMat</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157178"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157178"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i e'.
+</span><a href="#local-6989586621679154938"><span class="hs-identifier hs-var">j'0</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><span class="hs-comment">-- | Retruns NxN unit matrix.</span></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Math.Matrix.html#unitMat"><span class="hs-identifier hs-type">unitMat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-53"></span><span id="unitMat"><span class="annot"><span class="annottext">unitMat :: Int -&gt; UArray (Int, Int) Int
+</span><a href="Math.Matrix.html#unitMat"><span class="hs-identifier hs-var hs-var">unitMat</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679154952"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679154952"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: * -&gt; * -&gt; *) e i e'.
 (IArray a e, Ix i) =&gt;
 (e -&gt; e' -&gt; e) -&gt; e -&gt; (i, i) -&gt; [(i, e')] -&gt; a i e
-</span><span class="hs-identifier hs-var">accumArray</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">accumArray</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">pred</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157178"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
+</span><a href="#local-6989586621679154952"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">pred</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157178"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="#local-6989586621679154952"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([((Int, Int), Int)] -&gt; UArray (Int, Int) Int)
+-&gt; [((Int, Int), Int)] -&gt; UArray (Int, Int) Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; ((Int, Int), Int)) -&gt; [Int] -&gt; [((Int, Int), Int)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">,</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; (a, a)
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Int, Int) -&gt; ((Int, Int), Int))
+-&gt; (Int -&gt; (Int, Int)) -&gt; Int -&gt; ((Int, Int), Int)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Int, Int)
+forall a. a -&gt; (a, a)
 </span><span class="hs-identifier hs-var">dupe</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">pred</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679157178"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-47"></span><span>
-</span><span id="line-48"></span><span class="hs-comment">-- | `mulMatMod` wrapper for binary lifting.</span><span>
-</span><span id="line-49"></span><span class="hs-comment">--</span><span>
-</span><span id="line-50"></span><span class="hs-comment">-- &gt; let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'</span><span>
-</span><span id="line-51"></span><span class="hs-comment">-- &gt; let !mn = newBinLiftV $ MulMatMod @MyModulo m1</span><span>
-</span><span id="line-52"></span><span class="hs-comment">-- &gt; let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)</span><span>
-</span><span id="line-53"></span><span class="hs-keyword">newtype</span><span> </span><span id="MulMatMod"><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span></span><span> </span><span id="local-6989586621679157314"><span class="annot"><a href="#local-6989586621679157314"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MulMatMod"><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679157165"><span id="local-6989586621679157171"><span class="annot"><span class="annottext">MulMatMod a -&gt; MulMatMod a -&gt; Bool
-forall a. MulMatMod a -&gt; MulMatMod a -&gt; Bool
+</span><a href="#local-6989586621679154952"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- | `mulMatMod` wrapper for binary lifting.</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- &gt; let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- &gt; let !mn = newBinLiftV $ MulMatMod @MyModulo m1</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- &gt; let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">newtype</span><span> </span><span id="MulMatMod"><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span></span><span> </span><span id="local-6989586621679154802"><span class="annot"><a href="#local-6989586621679154802"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MulMatMod"><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UArray</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679154958"><span id="local-6989586621679154964"><span class="annot"><span class="annottext">MulMatMod a -&gt; MulMatMod a -&gt; Bool
+(MulMatMod a -&gt; MulMatMod a -&gt; Bool)
+-&gt; (MulMatMod a -&gt; MulMatMod a -&gt; Bool) -&gt; Eq (MulMatMod a)
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
-/= :: MulMatMod a -&gt; MulMatMod a -&gt; Bool
-$c/= :: forall a. MulMatMod a -&gt; MulMatMod a -&gt; Bool
+forall k (a :: k). MulMatMod a -&gt; MulMatMod a -&gt; Bool
+$c== :: forall k (a :: k). MulMatMod a -&gt; MulMatMod a -&gt; Bool
 == :: MulMatMod a -&gt; MulMatMod a -&gt; Bool
-$c== :: forall a. MulMatMod a -&gt; MulMatMod a -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679157148"><span id="local-6989586621679157150"><span id="local-6989586621679157158"><span class="annot"><span class="annottext">Int -&gt; MulMatMod a -&gt; ShowS
-forall a. Int -&gt; MulMatMod a -&gt; ShowS
-forall a. [MulMatMod a] -&gt; ShowS
-forall a. MulMatMod a -&gt; String
+$c/= :: forall k (a :: k). MulMatMod a -&gt; MulMatMod a -&gt; Bool
+/= :: MulMatMod a -&gt; MulMatMod a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679154971"><span id="local-6989586621679154979"><span id="local-6989586621679154983"><span class="annot"><span class="annottext">Int -&gt; MulMatMod a -&gt; ShowS
+[MulMatMod a] -&gt; ShowS
+MulMatMod a -&gt; String
+(Int -&gt; MulMatMod a -&gt; ShowS)
+-&gt; (MulMatMod a -&gt; String)
+-&gt; ([MulMatMod a] -&gt; ShowS)
+-&gt; Show (MulMatMod a)
 forall a.
 (Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
-showList :: [MulMatMod a] -&gt; ShowS
-$cshowList :: forall a. [MulMatMod a] -&gt; ShowS
-show :: MulMatMod a -&gt; String
-$cshow :: forall a. MulMatMod a -&gt; String
+forall k (a :: k). Int -&gt; MulMatMod a -&gt; ShowS
+forall k (a :: k). [MulMatMod a] -&gt; ShowS
+forall k (a :: k). MulMatMod a -&gt; String
+$cshowsPrec :: forall k (a :: k). Int -&gt; MulMatMod a -&gt; ShowS
 showsPrec :: Int -&gt; MulMatMod a -&gt; ShowS
-$cshowsPrec :: forall a. Int -&gt; MulMatMod a -&gt; ShowS
+$cshow :: forall k (a :: k). MulMatMod a -&gt; String
+show :: MulMatMod a -&gt; String
+$cshowList :: forall k (a :: k). [MulMatMod a] -&gt; ShowS
+showList :: [MulMatMod a] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679157138"><span id="local-6989586621679157140"><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679157305"><span class="annot"><a href="#local-6989586621679157305"><span class="hs-identifier hs-type">p</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Data.ModInt.html#TypeInt"><span class="hs-identifier hs-type">TypeInt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679157305"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679157305"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-57"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157135"><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157135"><span class="hs-identifier hs-var">m1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679157134"><span class="annot"><span class="annottext">&lt;&gt; :: MulMatMod p -&gt; MulMatMod p -&gt; MulMatMod p
-</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679157133"><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157133"><span class="hs-identifier hs-var">m2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. UArray (Int, Int) Int -&gt; MulMatMod a
-</span><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679154993"><span id="local-6989586621679154997"><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679154800"><span class="annot"><a href="#local-6989586621679154800"><span class="hs-identifier hs-type">p</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Data.ModInt.html#TypeInt"><span class="hs-identifier hs-type">TypeInt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679154800"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679154800"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679155003"><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679155003"><span class="hs-identifier hs-var">m1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679155004"><span class="annot"><span class="annottext">&lt;&gt; :: MulMatMod p -&gt; MulMatMod p -&gt; MulMatMod p
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-type">MulMatMod</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679155005"><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679155005"><span class="hs-identifier hs-var">m2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int -&gt; MulMatMod p
+forall {k} (a :: k). UArray (Int, Int) Int -&gt; MulMatMod a
+</span><a href="Math.Matrix.html#MulMatMod"><span class="hs-identifier hs-var">MulMatMod</span></a></span><span> </span><span class="annot"><span class="annottext">(UArray (Int, Int) Int -&gt; MulMatMod p)
+-&gt; UArray (Int, Int) Int -&gt; MulMatMod p
+forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int
 -&gt; UArray (Int, Int) Int
 -&gt; UArray (Int, Int) Int
 -&gt; UArray (Int, Int) Int
-</span><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-var">mulMatMod</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. TypeInt a =&gt; Proxy a -&gt; Int
-</span><a href="Data.ModInt.html#typeInt"><span class="hs-identifier hs-var">typeInt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall {k} (t :: k). Proxy t
-</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679157305"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157135"><span class="hs-identifier hs-var">m1</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
-</span><a href="#local-6989586621679157133"><span class="hs-identifier hs-var">m2</span></a></span><span>
-</span><span id="line-58"></span><span>
-</span><span id="line-59"></span><span class="hs-comment">-- }}}</span><span>
-</span><span id="line-60"></span></pre></body></html>
+</span><a href="Math.Matrix.html#mulMatMod"><span class="hs-identifier hs-var">mulMatMod</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy p -&gt; Int
+forall {k} (a :: k). TypeInt a =&gt; Proxy a -&gt; Int
+</span><a href="Data.ModInt.html#typeInt"><span class="hs-identifier hs-var">typeInt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (t :: k). Proxy t
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679154800"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679155003"><span class="hs-identifier hs-var">m1</span></a></span><span> </span><span class="annot"><span class="annottext">UArray (Int, Int) Int
+</span><a href="#local-6989586621679155005"><span class="hs-identifier hs-var">m2</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- }}}</span><span>
+</span><span id="line-67"></span></pre></body></html>

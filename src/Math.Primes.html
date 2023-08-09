@@ -1,245 +1,271 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Prime number enumeration and prime factorization.</span></span><span>
 </span><span id="line-2"></span><span>
-</span><span id="line-3"></span><span class="hs-comment">-- | Prime number enumeration and prime factorization.</span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.Primes</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-4"></span><span>
-</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.Primes</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">group</span></span><span class="hs-special">)</span><span>
 </span><span id="line-6"></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">group</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- {{{ Prime factors</span><span>
 </span><span id="line-8"></span><span>
-</span><span id="line-9"></span><span class="hs-comment">-- {{{ Prime factors</span><span>
-</span><span id="line-10"></span><span>
-</span><span id="line-11"></span><span class="hs-comment">-- -- @gotoki_no_joe</span><span>
-</span><span id="line-12"></span><span class="hs-comment">-- primes :: [Int]</span><span>
-</span><span id="line-13"></span><span class="hs-comment">-- primes = 2 : 3 : sieve q0 [5, 7 ..]</span><span>
-</span><span id="line-14"></span><span class="hs-comment">--   where</span><span>
-</span><span id="line-15"></span><span class="hs-comment">--     q0 = H.insert (H.Entry 9 6) H.empty</span><span>
-</span><span id="line-16"></span><span class="hs-comment">--     sieve queue xxs@(x : xs) =</span><span>
-</span><span id="line-17"></span><span class="hs-comment">--       case compare np x of</span><span>
-</span><span id="line-18"></span><span class="hs-comment">--         LT -&gt; sieve queue1 xxs</span><span>
-</span><span id="line-19"></span><span class="hs-comment">--         EQ -&gt; sieve queue1 xs</span><span>
-</span><span id="line-20"></span><span class="hs-comment">--         GT -&gt; x : sieve queue2 xs</span><span>
-</span><span id="line-21"></span><span class="hs-comment">--       where</span><span>
-</span><span id="line-22"></span><span class="hs-comment">--         H.Entry np p2 = H.minimum queue</span><span>
-</span><span id="line-23"></span><span class="hs-comment">--         queue1 = H.insert (H.Entry (np + p2) p2) $ H.deleteMin queue</span><span>
-</span><span id="line-24"></span><span class="hs-comment">--         queue2 = H.insert (H.Entry (x * x) (x * 2)) queue</span><span>
-</span><span id="line-25"></span><span class="hs-comment">--     sieve _ _ = error &quot;unreachale&quot;</span><span>
-</span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-comment">-- | @0xYusuke</span><span>
-</span><span id="line-28"></span><span class="hs-comment">-- &lt;https://zenn.dev/link/comments/1022553732563c&gt;</span><span>
-</span><span id="line-29"></span><span class="hs-comment">--</span><span>
-</span><span id="line-30"></span><span class="hs-comment">-- TODO: remove `union*` on 2023 update</span><span>
-</span><span id="line-31"></span><span class="annot"><a href="Math.Primes.html#primes"><span class="hs-identifier hs-type">primes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
-</span><span id="line-32"></span><span id="primes"><span class="annot"><span class="annottext">primes :: [Int]
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | @0xYusuke &lt;https://zenn.dev/link/comments/1022553732563c&gt;</span></span><span>
+</span><span id="line-10"></span><span class="annot"><a href="Math.Primes.html#primes"><span class="hs-identifier hs-type">primes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
+</span><span id="line-11"></span><span id="primes"><span class="annot"><span class="annottext">primes :: [Int]
 </span><a href="Math.Primes.html#primes"><span class="hs-identifier hs-var hs-var">primes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
-</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151066"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int] -&gt; [Int]
+forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148067"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">5</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">7</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ord a =&gt; [[a]] -&gt; [a]
-</span><a href="#local-6989586621679151065"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-number">7</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[[Int]] -&gt; [Int]
+forall a. Ord a =&gt; [[a]] -&gt; [a]
+</span><a href="#local-6989586621679148068"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679151064"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151064"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a]
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679148069"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148069"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int]
+forall a. HasCallStack =&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">tail</span></span><span> </span><span class="annot"><span class="annottext">[Int]
 </span><a href="Math.Primes.html#primes"><span class="hs-identifier hs-var">primes</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-34"></span><span>    </span><span id="local-6989586621679151066"><span class="annot"><span class="annottext">minus :: [a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151066"><span class="hs-identifier hs-var hs-var">minus</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151058"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151058"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151057"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151057"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151056"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151056"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151055"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151055"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span id="line-12"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>    </span><span id="local-6989586621679148067"><span class="annot"><span class="annottext">minus :: [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148067"><span class="hs-identifier hs-var hs-var">minus</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148078"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148078"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148079"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148079"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148080"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148080"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148081"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148081"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151058"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151056"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-35"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148078"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148080"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-14"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151058"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148078"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151066"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151057"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151056"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148067"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148079"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148080"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151055"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148081"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151066"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151057"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151055"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-37"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148067"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148079"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148081"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-16"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151066"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151058"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148067"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148078"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151057"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151055"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-38"></span><span>    </span><span class="annot"><a href="#local-6989586621679151066"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span id="local-6989586621679151053"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151053"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148079"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148081"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="#local-6989586621679148067"><span class="hs-identifier hs-var">minus</span></a></span><span> </span><span id="local-6989586621679148083"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148083"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="annot"><span class="annottext">[a]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151053"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span>    </span><span id="local-6989586621679151050"><span class="annot"><span class="annottext">union :: [a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var hs-var">union</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151049"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151049"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151048"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151048"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151047"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151047"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151046"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151046"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="#local-6989586621679148083"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span>    </span><span id="local-6989586621679148088"><span class="annot"><span class="annottext">union :: [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var hs-var">union</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148089"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148089"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148090"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148090"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148091"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148091"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148092"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148092"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151049"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151047"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-41"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148089"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148091"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-20"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151049"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148089"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151048"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151047"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148090"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148091"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151046"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148092"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151049"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148089"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151048"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151046"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-43"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148090"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148092"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-22"></span><span>      </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151047"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148091"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151049"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148089"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151048"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151046"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span id="local-6989586621679151045"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151045"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151045"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679151044"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151044"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151044"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-46"></span><span>
-</span><span id="line-47"></span><span>    </span><span id="local-6989586621679151116"><span class="annot"><a href="#local-6989586621679151065"><span class="hs-identifier hs-type">unionAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679151116"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679151116"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679151116"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
-</span><span id="line-48"></span><span>    </span><span id="local-6989586621679151065"><span class="annot"><span class="annottext">unionAll :: forall a. Ord a =&gt; [[a]] -&gt; [a]
-</span><a href="#local-6989586621679151065"><span class="hs-identifier hs-var hs-var">unionAll</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679151037"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151037"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151036"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151036"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151035"><span class="annot"><span class="annottext">[[a]]
-</span><a href="#local-6989586621679151035"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151037"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
-</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151036"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ord a =&gt; [[a]] -&gt; [a]
-</span><a href="#local-6989586621679151065"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall {a}. Ord a =&gt; [[a]] -&gt; [[a]]
-</span><a href="#local-6989586621679151034"><span class="hs-identifier hs-var">pairs</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
-</span><a href="#local-6989586621679151035"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-50"></span><span>        </span><span id="local-6989586621679151034"><span class="annot"><span class="annottext">pairs :: [[a]] -&gt; [[a]]
-</span><a href="#local-6989586621679151034"><span class="hs-identifier hs-var hs-var">pairs</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679151031"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151031"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151030"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151030"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151029"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151029"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679151028"><span class="annot"><span class="annottext">[[a]]
-</span><a href="#local-6989586621679151028"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679151031"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
-</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
-</span><a href="#local-6989586621679151050"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151030"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679151029"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148090"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148092"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span id="local-6989586621679148093"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148093"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148093"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679148094"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148094"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148094"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span>    </span><span id="local-6989586621679148014"><span class="annot"><a href="#local-6989586621679148068"><span class="hs-identifier hs-type">unionAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679148014"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679148014"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679148014"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-27"></span><span>    </span><span id="local-6989586621679148068"><span class="annot"><span class="annottext">unionAll :: forall a. Ord a =&gt; [[a]] -&gt; [a]
+</span><a href="#local-6989586621679148068"><span class="hs-identifier hs-var hs-var">unionAll</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679148101"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148101"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148102"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148102"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148103"><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621679148103"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148101"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148102"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[[a]] -&gt; [a]
+forall a. Ord a =&gt; [[a]] -&gt; [a]
+</span><a href="#local-6989586621679148068"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="annot"><span class="annottext">([[a]] -&gt; [a]) -&gt; [[a]] -&gt; [a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[[a]] -&gt; [[a]]
+forall {a}. Ord a =&gt; [[a]] -&gt; [[a]]
+</span><a href="#local-6989586621679148104"><span class="hs-identifier hs-var">pairs</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621679148103"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>        </span><span id="local-6989586621679148104"><span class="annot"><span class="annottext">pairs :: [[a]] -&gt; [[a]]
+</span><a href="#local-6989586621679148104"><span class="hs-identifier hs-var hs-var">pairs</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679148109"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148109"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148110"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148110"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148111"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148111"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148112"><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621679148112"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148109"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148088"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148110"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679148111"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [[a]] -&gt; [[a]]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[[a]] -&gt; [[a]]
-</span><a href="#local-6989586621679151034"><span class="hs-identifier hs-var">pairs</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
-</span><a href="#local-6989586621679151028"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679151065"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="#local-6989586621679148104"><span class="hs-identifier hs-var">pairs</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621679148112"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="#local-6989586621679148068"><span class="hs-identifier hs-var">unionAll</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [a]
+forall a. HasCallStack =&gt; [Char] -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;unionAll: unreachable&quot;</span></span><span>
-</span><span id="line-52"></span><span>
-</span><span id="line-53"></span><span class="hs-comment">-- | Returns @[(prime, count)]@</span><span>
-</span><span id="line-54"></span><span class="annot"><a href="Math.Primes.html#primeFactors"><span class="hs-identifier hs-type">primeFactors</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-55"></span><span id="primeFactors"><span class="annot"><span class="annottext">primeFactors :: Int -&gt; [(Int, Int)]
-</span><a href="Math.Primes.html#primeFactors"><span class="hs-identifier hs-var hs-var">primeFactors</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151025"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151025"><span class="hs-identifier hs-var">n_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
-</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679151024"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679151024"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. [a] -&gt; a
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><span class="hs-comment">-- | Returns @[(prime, count)]@</span></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Math.Primes.html#primeFactors"><span class="hs-identifier hs-type">primeFactors</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-34"></span><span id="primeFactors"><span class="annot"><span class="annottext">primeFactors :: Int -&gt; [(Int, Int)]
+</span><a href="Math.Primes.html#primeFactors"><span class="hs-identifier hs-var hs-var">primeFactors</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148115"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148115"><span class="hs-identifier hs-var">n_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; (Int, Int)) -&gt; [[Int]] -&gt; [(Int, Int)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148116"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679148116"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Int] -&gt; Int
+forall a. HasCallStack =&gt; [a] -&gt; a
 </span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679151024"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><a href="#local-6989586621679148116"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679151024"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; [a] -&gt; [[a]]
-</span><span class="hs-identifier hs-var">group</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall {t}. Integral t =&gt; t -&gt; [t] -&gt; [t]
-</span><a href="#local-6989586621679151020"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151025"><span class="hs-identifier hs-var">n_</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679151019"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-56"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-57"></span><span>    </span><span class="hs-comment">-- TODO: reuse `primes`?</span><span>
-</span><span id="line-58"></span><span>    </span><span id="local-6989586621679151019"><span class="annot"><span class="annottext">input :: [Int]
-</span><a href="#local-6989586621679151019"><span class="hs-identifier hs-var hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148116"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([[Int]] -&gt; [(Int, Int)])
+-&gt; ([Int] -&gt; [[Int]]) -&gt; [Int] -&gt; [(Int, Int)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [[Int]]
+forall a. Eq a =&gt; [a] -&gt; [[a]]
+</span><span class="hs-identifier hs-var">group</span></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [(Int, Int)]) -&gt; [Int] -&gt; [(Int, Int)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall {t}. Integral t =&gt; t -&gt; [t] -&gt; [t]
+</span><a href="#local-6989586621679148120"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148115"><span class="hs-identifier hs-var">n_</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679148121"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-comment">-- TODO: reuse `primes`?</span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621679148121"><span class="annot"><span class="annottext">input :: [Int]
+</span><a href="#local-6989586621679148121"><span class="hs-identifier hs-var hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151011"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679151010"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151010"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148129"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679148130"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148130"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">5</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">11</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151011"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151011"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151010"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679151010"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-number">11</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148129"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148129"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148130"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148130"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
-</span><span id="line-59"></span><span>    </span><span id="local-6989586621679151020"><span class="annot"><span class="annottext">inner :: t -&gt; [t] -&gt; [t]
-</span><a href="#local-6989586621679151020"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679150992"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679150991"><span class="annot"><span class="annottext">pps :: [t]
-</span><a href="#local-6989586621679150991"><span class="hs-identifier hs-var">pps</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679150990"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150990"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679150989"><span class="annot"><span class="annottext">[t]
-</span><a href="#local-6989586621679150989"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-60"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span id="line-38"></span><span>    </span><span id="local-6989586621679148120"><span class="annot"><span class="annottext">inner :: t -&gt; [t] -&gt; [t]
+</span><a href="#local-6989586621679148120"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679148150"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679148151"><span class="annot"><span class="annottext">pps :: [t]
+</span><a href="#local-6989586621679148151"><span class="hs-identifier hs-var">pps</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679148152"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148152"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679148153"><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679148153"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">t
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-61"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span id="line-40"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150990"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679148152"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; t
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150990"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-62"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150987"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679148152"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-41"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148155"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">t
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150990"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679148152"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; [t] -&gt; [t]
+forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">t -&gt; [t] -&gt; [t]
-</span><a href="#local-6989586621679151020"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150986"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
-</span><a href="#local-6989586621679150991"><span class="hs-identifier hs-var">pps</span></a></span><span>
-</span><span id="line-63"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679148120"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148156"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679148151"><span class="hs-identifier hs-var">pps</span></a></span><span>
+</span><span id="line-42"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">t -&gt; [t] -&gt; [t]
-</span><a href="#local-6989586621679151020"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
-</span><a href="#local-6989586621679150989"><span class="hs-identifier hs-var">ps</span></a></span><span>
-</span><span id="line-64"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-65"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679150986"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150986"><span class="hs-identifier hs-var">q</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679150987"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150987"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><a href="#local-6989586621679148120"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679148153"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679148156"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148156"><span class="hs-identifier hs-var">q</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148155"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148155"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; (t, t)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
 </span><span class="hs-identifier hs-var">divMod</span></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150992"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621679150990"><span class="hs-identifier hs-var">p</span></a></span><span>
-</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679151020"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148150"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679148152"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679148120"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">t
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[t]
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [t]
+forall a. HasCallStack =&gt; [Char] -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;unreachable&quot;</span></span><span>
-</span><span id="line-67"></span><span>
-</span><span id="line-68"></span><span class="hs-comment">-- }}}</span><span>
-</span><span id="line-69"></span></pre></body></html>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- }}}</span><span>
+</span><span id="line-48"></span></pre></body></html>

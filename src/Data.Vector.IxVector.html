@@ -1,266 +1,369 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
-</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NamedFieldPuns #-}</span><span>
-</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
-</span><span id="line-4"></span><span>
-</span><span id="line-5"></span><span class="hs-comment">-- | `Ix`-based API over `vector`.</span><span>
-</span><span id="line-6"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Vector.IxVector</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-7"></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">forM_</span></span><span class="hs-special">)</span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Ix</span></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VGM</span></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
-</span><span id="line-14"></span><span>
-</span><span id="line-15"></span><span class="hs-comment">-- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.</span><span>
-</span><span id="line-16"></span><span class="hs-keyword">data</span><span> </span><span id="IxVector"><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span></span><span> </span><span id="local-6989586621679150769"><span class="annot"><a href="#local-6989586621679150769"><span class="hs-identifier hs-type">i</span></a></span></span><span> </span><span id="local-6989586621679150768"><span class="annot"><a href="#local-6989586621679150768"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="IxVector"><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span></span><span> </span><span class="hs-special">{</span><span id="boundsIV"><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; (i, i)
-</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-identifier hs-var hs-var">boundsIV</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150769"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679150769"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="vecIV"><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; v
-</span><a href="Data.Vector.IxVector.html#vecIV"><span class="hs-identifier hs-var hs-var">vecIV</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679150768"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">}</span><span>
-</span><span id="line-17"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679150646"><span id="local-6989586621679150648"><span id="local-6989586621679150655"><span class="annot"><span class="annottext">Int -&gt; IxVector i v -&gt; ShowS
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">-- | `Ix`-based API over `vector`.</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Vector.IxVector</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">forM_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Ix</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VGM</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="annot"><span class="hs-comment">-- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">data</span><span> </span><span id="IxVector"><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span></span><span> </span><span id="local-6989586621679147493"><span class="annot"><a href="#local-6989586621679147493"><span class="hs-identifier hs-type">i</span></a></span></span><span> </span><span id="local-6989586621679147494"><span class="annot"><a href="#local-6989586621679147494"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="IxVector"><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span></span><span> </span><span class="hs-special">{</span><span id="boundsIV"><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; (i, i)
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-identifier hs-var hs-var">boundsIV</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147493"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679147493"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="vecIV"><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; v
+</span><a href="Data.Vector.IxVector.html#vecIV"><span class="hs-identifier hs-var hs-var">vecIV</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679147494"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679147617"><span id="local-6989586621679147624"><span id="local-6989586621679147628"><span class="annot"><span class="annottext">Int -&gt; IxVector i v -&gt; ShowS
+[IxVector i v] -&gt; ShowS
+IxVector i v -&gt; String
+(Int -&gt; IxVector i v -&gt; ShowS)
+-&gt; (IxVector i v -&gt; String)
+-&gt; ([IxVector i v] -&gt; ShowS)
+-&gt; Show (IxVector i v)
 forall a.
 (Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
 forall i v. (Show i, Show v) =&gt; Int -&gt; IxVector i v -&gt; ShowS
 forall i v. (Show i, Show v) =&gt; [IxVector i v] -&gt; ShowS
 forall i v. (Show i, Show v) =&gt; IxVector i v -&gt; String
-showList :: [IxVector i v] -&gt; ShowS
-$cshowList :: forall i v. (Show i, Show v) =&gt; [IxVector i v] -&gt; ShowS
-show :: IxVector i v -&gt; String
-$cshow :: forall i v. (Show i, Show v) =&gt; IxVector i v -&gt; String
-showsPrec :: Int -&gt; IxVector i v -&gt; ShowS
 $cshowsPrec :: forall i v. (Show i, Show v) =&gt; Int -&gt; IxVector i v -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679150638"><span id="local-6989586621679150643"><span class="annot"><span class="annottext">IxVector i v -&gt; IxVector i v -&gt; Bool
+showsPrec :: Int -&gt; IxVector i v -&gt; ShowS
+$cshow :: forall i v. (Show i, Show v) =&gt; IxVector i v -&gt; String
+show :: IxVector i v -&gt; String
+$cshowList :: forall i v. (Show i, Show v) =&gt; [IxVector i v] -&gt; ShowS
+showList :: [IxVector i v] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679147634"><span id="local-6989586621679147639"><span class="annot"><span class="annottext">IxVector i v -&gt; IxVector i v -&gt; Bool
+(IxVector i v -&gt; IxVector i v -&gt; Bool)
+-&gt; (IxVector i v -&gt; IxVector i v -&gt; Bool) -&gt; Eq (IxVector i v)
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 forall i v. (Eq i, Eq v) =&gt; IxVector i v -&gt; IxVector i v -&gt; Bool
-/= :: IxVector i v -&gt; IxVector i v -&gt; Bool
-$c/= :: forall i v. (Eq i, Eq v) =&gt; IxVector i v -&gt; IxVector i v -&gt; Bool
-== :: IxVector i v -&gt; IxVector i v -&gt; Bool
 $c== :: forall i v. (Eq i, Eq v) =&gt; IxVector i v -&gt; IxVector i v -&gt; Bool
+== :: IxVector i v -&gt; IxVector i v -&gt; Bool
+$c/= :: forall i v. (Eq i, Eq v) =&gt; IxVector i v -&gt; IxVector i v -&gt; Bool
+/= :: IxVector i v -&gt; IxVector i v -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-18"></span><span>
-</span><span id="line-19"></span><span class="hs-comment">-- | `IxVector` accessor</span><span>
-</span><span id="line-20"></span><span id="local-6989586621679150754"><span id="local-6989586621679150755"><span id="local-6989586621679150756"><span class="annot"><a href="Data.Vector.IxVector.html#%40%21"><span class="hs-operator hs-type">(@!)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679150756"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679150755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150754"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150756"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150755"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150754"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150756"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150754"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
-</span><span id="line-21"></span><span id="%40%21"><span class="annot"><span class="annottext">@! :: forall i (v :: * -&gt; *) a.
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">-- | Partial `IxVector` accessor</span></span><span>
+</span><span id="line-18"></span><span id="local-6989586621679147515"><span id="local-6989586621679147516"><span id="local-6989586621679147517"><span class="annot"><a href="Data.Vector.IxVector.html#%40%21"><span class="hs-operator hs-type">(@!)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147515"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147516"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147517"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147515"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147516"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147517"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147515"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147517"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-19"></span><span id="%40%21"><span class="annot"><span class="annottext">@! :: forall i (v :: * -&gt; *) a.
 (Ix i, Vector v a) =&gt;
 IxVector i (v a) -&gt; i -&gt; a
-</span><a href="Data.Vector.IxVector.html#%40%21"><span class="hs-operator hs-var hs-var">(@!)</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150630"><span id="local-6989586621679150631"><span class="annot"><span class="annottext">v a
+</span><a href="Data.Vector.IxVector.html#%40%21"><span class="hs-operator hs-var hs-var">(@!)</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147650"><span id="local-6989586621679147651"><span class="annot"><span class="annottext">v a
 (i, i)
-vecIV :: v a
-boundsIV :: (i, i)
-vecIV :: forall i v. IxVector i v -&gt; v
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150630"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679150629"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150629"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v a
-</span><a href="#local-6989586621679150630"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; a
-</span><span class="hs-operator hs-var">VG.!</span></span><span> </span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679147652"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147652"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679147651"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">v a -&gt; Int -&gt; a
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">VG.!</span></span><span> </span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150631"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150629"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span class="hs-comment">-- TODO: `createIx` where we freeze the `IxVector`</span><span>
-</span><span id="line-24"></span><span class="hs-comment">-- createIx :: (VG.Vector v a, Ix i) =&gt; (forall s. ST s (Mutable v s a)) -&gt; IxVector i (v a)</span><span>
-</span><span id="line-25"></span><span class="hs-comment">-- createIx = runST</span><span>
-</span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-comment">-- replicateIVM</span><span>
-</span><span id="line-28"></span><span>
-</span><span id="line-29"></span><span class="hs-comment">-- | Reads a value from `IxVector`.</span><span>
-</span><span id="line-30"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#readIV"><span class="hs-pragma hs-type">readIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-31"></span><span id="local-6989586621679150742"><span id="local-6989586621679150743"><span id="local-6989586621679150745"><span id="local-6989586621679150746"><span class="annot"><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-type">readIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679150746"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679150745"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679150743"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150742"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150746"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150743"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679150745"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679150742"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150746"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150745"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150742"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span><span>
-</span><span id="line-32"></span><span id="readIV"><span class="annot"><span class="annottext">readIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><a href="#local-6989586621679147650"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147652"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><span class="hs-comment">-- | Total `IxVector` accessor</span></span><span>
+</span><span id="line-22"></span><span id="local-6989586621679147526"><span id="local-6989586621679147527"><span id="local-6989586621679147528"><span class="annot"><a href="Data.Vector.IxVector.html#%40%21%3F"><span class="hs-operator hs-type">(@!?)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147526"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147527"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147528"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147526"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147527"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147528"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147526"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679147528"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-23"></span><span id="%40%21%3F"><span class="annot"><span class="annottext">@!? :: forall i (v :: * -&gt; *) a.
+(Ix i, Vector v a) =&gt;
+IxVector i (v a) -&gt; i -&gt; Maybe a
+</span><a href="Data.Vector.IxVector.html#%40%21%3F"><span class="hs-operator hs-var hs-var">(@!?)</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147663"><span id="local-6989586621679147664"><span class="annot"><span class="annottext">v a
+(i, i)
+boundsIV :: forall i v. IxVector i v -&gt; (i, i)
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679147665"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147665"><span class="hs-identifier hs-var">i</span></a></span></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-comment">-- NOTE: `index` panics on out of range</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Bool
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Bool
+</span><span class="hs-identifier hs-var">inRange</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
+</span><a href="#local-6989586621679147663"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147665"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679147664"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">v a -&gt; Int -&gt; a
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">VG.!</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
+</span><a href="#local-6989586621679147663"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147665"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- TODO: `createIx` where we freeze the `IxVector`</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- createIx :: (VG.Vector v a, Ix i) =&gt; (forall s. ST s (Mutable v s a)) -&gt; IxVector i (v a)</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- createIx = runST</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- replicateIVM</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><span class="hs-comment">-- | Reads a value from `IxVector`.</span></span><span>
+</span><span id="line-35"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#readIV"><span class="hs-pragma hs-type">readIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-36"></span><span id="local-6989586621679147533"><span id="local-6989586621679147534"><span id="local-6989586621679147536"><span id="local-6989586621679147537"><span class="annot"><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-type">readIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147533"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679147534"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147536"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147533"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147536"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679147534"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679147537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147533"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147534"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147537"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span><span>
+</span><span id="line-37"></span><span id="readIV"><span class="annot"><span class="annottext">readIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; i -&gt; m a
-</span><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-var hs-var">readIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150618"><span id="local-6989586621679150619"><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-var hs-var">readIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147676"><span id="local-6989586621679147677"><span class="annot"><span class="annottext">v (PrimState m) a
 (i, i)
-vecIV :: v (PrimState m) a
-boundsIV :: (i, i)
-vecIV :: forall i v. IxVector i v -&gt; v
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150618"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679150617"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150617"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
-(PrimMonad m, MVector v a) =&gt;
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679147678"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147678"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
 v (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VGM.read</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
-</span><a href="#local-6989586621679150618"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><a href="#local-6989586621679147677"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150619"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150617"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span>
-</span><span id="line-34"></span><span class="hs-comment">-- | Writes a value to `IxVector`.</span><span>
-</span><span id="line-35"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-pragma hs-type">writeIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-36"></span><span id="local-6989586621679150729"><span id="local-6989586621679150730"><span id="local-6989586621679150731"><span id="local-6989586621679150732"><span class="annot"><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-identifier hs-type">writeIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679150732"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679150731"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679150730"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150729"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150732"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150730"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679150731"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679150729"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150732"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150729"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150731"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
-</span><span id="line-37"></span><span id="writeIV"><span class="annot"><span class="annottext">writeIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><a href="#local-6989586621679147676"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147678"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><span class="hs-comment">-- | Writes a value to `IxVector`.</span></span><span>
+</span><span id="line-40"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-pragma hs-type">writeIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-41"></span><span id="local-6989586621679147547"><span id="local-6989586621679147548"><span id="local-6989586621679147549"><span id="local-6989586621679147550"><span class="annot"><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-identifier hs-type">writeIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147547"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679147548"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147549"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147550"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147547"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147549"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679147548"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679147550"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147547"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147550"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147548"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-42"></span><span id="writeIV"><span class="annot"><span class="annottext">writeIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; i -&gt; a -&gt; m ()
-</span><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-identifier hs-var hs-var">writeIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150607"><span id="local-6989586621679150608"><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#writeIV"><span class="hs-identifier hs-var hs-var">writeIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147689"><span id="local-6989586621679147690"><span class="annot"><span class="annottext">v (PrimState m) a
 (i, i)
-vecIV :: v (PrimState m) a
-boundsIV :: (i, i)
-vecIV :: forall i v. IxVector i v -&gt; v
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150607"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679150606"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150606"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679150605"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679150605"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
-(PrimMonad m, MVector v a) =&gt;
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679147691"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147691"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679147692"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679147692"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
 v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VGM.write</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
-</span><a href="#local-6989586621679150607"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><a href="#local-6989586621679147690"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150608"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150606"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679150605"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-38"></span><span>
-</span><span id="line-39"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-pragma hs-type">modifyIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-40"></span><span id="local-6989586621679150718"><span id="local-6989586621679150719"><span id="local-6989586621679150720"><span id="local-6989586621679150721"><span class="annot"><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-type">modifyIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679150721"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679150720"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679150719"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150718"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150721"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150719"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679150720"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679150718"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150718"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150718"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150721"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150720"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
-</span><span id="line-41"></span><span id="modifyIV"><span class="annot"><span class="annottext">modifyIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><a href="#local-6989586621679147689"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147691"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679147692"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-pragma hs-type">modifyIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-45"></span><span id="local-6989586621679147558"><span id="local-6989586621679147559"><span id="local-6989586621679147560"><span id="local-6989586621679147561"><span class="annot"><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-type">modifyIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147558"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679147559"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147560"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147561"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147558"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147560"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679147559"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679147561"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147561"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147561"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147558"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147559"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-46"></span><span id="modifyIV"><span class="annot"><span class="annottext">modifyIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; (a -&gt; a) -&gt; i -&gt; m ()
-</span><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-var hs-var">modifyIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150595"><span id="local-6989586621679150596"><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-var hs-var">modifyIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147703"><span id="local-6989586621679147704"><span class="annot"><span class="annottext">v (PrimState m) a
 (i, i)
-vecIV :: v (PrimState m) a
-boundsIV :: (i, i)
-vecIV :: forall i v. IxVector i v -&gt; v
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150595"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150594"><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679150594"><span class="hs-identifier hs-var">alter</span></a></span></span><span> </span><span id="local-6989586621679150593"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150593"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
-(PrimMonad m, MVector v a) =&gt;
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147705"><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679147705"><span class="hs-identifier hs-var">alter</span></a></span></span><span> </span><span id="local-6989586621679147706"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147706"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
 v (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
 </span><span class="hs-identifier hs-var">VGM.modify</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
-</span><a href="#local-6989586621679150595"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
-</span><a href="#local-6989586621679150594"><span class="hs-identifier hs-var">alter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><a href="#local-6989586621679147704"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679147705"><span class="hs-identifier hs-var">alter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150596"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150593"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-pragma hs-type">swapIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-44"></span><span id="local-6989586621679150707"><span id="local-6989586621679150708"><span id="local-6989586621679150709"><span id="local-6989586621679150710"><span class="annot"><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-identifier hs-type">swapIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679150710"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679150709"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679150708"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679150710"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679150708"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679150709"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679150707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150710"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150710"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679150709"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
-</span><span id="line-45"></span><span id="swapIV"><span class="annot"><span class="annottext">swapIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><a href="#local-6989586621679147703"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147706"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-pragma hs-type">swapIV</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-49"></span><span id="local-6989586621679147569"><span id="local-6989586621679147570"><span id="local-6989586621679147571"><span id="local-6989586621679147572"><span class="annot"><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-identifier hs-type">swapIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ix</span></span><span> </span><span class="annot"><a href="#local-6989586621679147569"><span class="hs-identifier hs-type">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679147570"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679147571"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147572"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679147569"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679147571"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679147570"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679147572"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147569"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147569"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679147570"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-50"></span><span id="swapIV"><span class="annot"><span class="annottext">swapIV :: forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; i -&gt; i -&gt; m ()
-</span><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-identifier hs-var hs-var">swapIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150582"><span id="local-6989586621679150583"><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#swapIV"><span class="hs-identifier hs-var hs-var">swapIV</span></a></span></span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147718"><span id="local-6989586621679147719"><span class="annot"><span class="annottext">v (PrimState m) a
 (i, i)
-vecIV :: v (PrimState m) a
-boundsIV :: (i, i)
-vecIV :: forall i v. IxVector i v -&gt; v
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150582"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150581"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150581"><span class="hs-identifier hs-var">i1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150580"><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150580"><span class="hs-identifier hs-var">i2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
-(PrimMonad m, MVector v a) =&gt;
+vecIV :: forall i v. IxVector i v -&gt; v
+boundsIV :: (i, i)
+vecIV :: v (PrimState m) a
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147720"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147720"><span class="hs-identifier hs-var">i1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147721"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147721"><span class="hs-identifier hs-var">i2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
 v (PrimState m) a -&gt; Int -&gt; Int -&gt; m ()
 </span><span class="hs-identifier hs-var">VGM.swap</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
-</span><a href="#local-6989586621679150582"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><a href="#local-6989586621679147719"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150583"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150581"><span class="hs-identifier hs-var">i1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><a href="#local-6989586621679147718"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147720"><span class="hs-identifier hs-var">i1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(i, i) -&gt; i -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(i, i)
-</span><a href="#local-6989586621679150583"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
-</span><a href="#local-6989586621679150580"><span class="hs-identifier hs-var">i2</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-46"></span><span>
-</span><span id="line-47"></span><span class="hs-comment">-- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?</span><span>
-</span><span id="line-48"></span><span class="annot"><a href="Data.Vector.IxVector.html#imos2DIV"><span class="hs-identifier hs-type">imos2DIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span id="imos2DIV"><span class="annot"><span class="annottext">imos2DIV :: IxVector (Int, Int) (Vector Int)
+</span><a href="#local-6989586621679147718"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679147721"><span class="hs-identifier hs-var">i2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><span class="hs-comment">-- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?</span></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Data.Vector.IxVector.html#imos2DIV"><span class="hs-identifier hs-type">imos2DIV</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span id="imos2DIV"><span class="annot"><span class="annottext">imos2DIV :: IxVector (Int, Int) (Vector Int)
 -&gt; IxVector (Int, Int) (Vector Int)
-</span><a href="Data.Vector.IxVector.html#imos2DIV"><span class="hs-identifier hs-var hs-var">imos2DIV</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150577"><span class="annot"><span class="annottext">seeds :: IxVector (Int, Int) (Vector Int)
-</span><a href="#local-6989586621679150577"><span class="hs-identifier hs-var">seeds</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679150576"><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-boundsIV :: ((Int, Int), (Int, Int))
+</span><a href="Data.Vector.IxVector.html#imos2DIV"><span class="hs-identifier hs-var hs-var">imos2DIV</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147724"><span class="annot"><span class="annottext">seeds :: IxVector (Int, Int) (Vector Int)
+</span><a href="#local-6989586621679147724"><span class="hs-identifier hs-var">seeds</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IxVector</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679147725"><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
 boundsIV :: forall i v. IxVector i v -&gt; (i, i)
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var hs-var">boundsIV</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall i v. (i, i) -&gt; v -&gt; IxVector i v
+boundsIV :: ((Int, Int), (Int, Int))
+</span><a href="Data.Vector.IxVector.html#boundsIV"><span class="hs-identifier hs-var hs-var">boundsIV</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+-&gt; Vector Int -&gt; IxVector (Int, Int) (Vector Int)
+forall i v. (i, i) -&gt; v -&gt; IxVector i v
 </span><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall a. Unbox a =&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
-</span><span class="hs-identifier hs-var">VU.create</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="#local-6989586621679147725"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector Int -&gt; IxVector (Int, Int) (Vector Int))
+-&gt; Vector Int -&gt; IxVector (Int, Int) (Vector Int)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(forall s. ST s (MVector s Int)) -&gt; Vector Int
+forall a. Unbox a =&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
+</span><span class="hs-identifier hs-var">VU.create</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (MVector s Int)) -&gt; Vector Int)
+-&gt; (forall s. ST s (MVector s Int)) -&gt; Vector Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-50"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679150524"><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall i v. (i, i) -&gt; v -&gt; IxVector i v
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679147777"><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+-&gt; MVector s Int -&gt; IxVector (Int, Int) (MVector s Int)
+forall i v. (i, i) -&gt; v -&gt; IxVector i v
 </span><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IxVector</span></a></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall a (m :: * -&gt; *).
+</span><a href="#local-6989586621679147725"><span class="hs-identifier hs-var">boundsIV</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector s Int -&gt; IxVector (Int, Int) (MVector s Int))
+-&gt; ST s (MVector s Int)
+-&gt; ST s (IxVector (Int, Int) (MVector s Int))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; ST s (MVector (PrimState (ST s)) Int)
+forall a (m :: * -&gt; *).
 (Unbox a, PrimMonad m) =&gt;
 Vector a -&gt; m (MVector (PrimState m) a)
-</span><span class="hs-identifier hs-var">VU.thaw</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; v
+</span><span class="hs-identifier hs-var">VU.thaw</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IxVector (Int, Int) (Vector Int) -&gt; Vector Int
+forall i v. IxVector i v -&gt; v
 </span><a href="Data.Vector.IxVector.html#vecIV"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (Vector Int)
-</span><a href="#local-6989586621679150577"><span class="hs-identifier hs-var">seeds</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679150521"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150521"><span class="hs-identifier hs-var">minY</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150520"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150520"><span class="hs-identifier hs-var">minX</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a b. (a, b) -&gt; a
+</span><a href="#local-6989586621679147724"><span class="hs-identifier hs-var">seeds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679147780"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147780"><span class="hs-identifier hs-var">minY</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147781"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147781"><span class="hs-identifier hs-var">minX</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; (Int, Int)
+forall a b. (a, b) -&gt; a
 </span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var">boundsIV</span></a></span><span>
-</span><span id="line-53"></span><span>
-</span><span id="line-54"></span><span>  </span><span class="hs-comment">-- row scan</span><span>
-</span><span id="line-55"></span><span>  </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+</span><a href="#local-6989586621679147725"><span class="hs-identifier hs-var">boundsIV</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-comment">-- row scan</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">[(Int, Int)] -&gt; ((Int, Int) -&gt; ST s ()) -&gt; ST s ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
-</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; [(Int, Int)]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var">boundsIV</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679150518"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150518"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150517"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150517"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-56"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679150516"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150516"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150517"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679147725"><span class="hs-identifier hs-var">boundsIV</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(((Int, Int) -&gt; ST s ()) -&gt; ST s ())
+-&gt; ((Int, Int) -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679147784"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147784"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147785"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147785"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679147786"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147786"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147785"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150520"><span class="hs-identifier hs-var">minX</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="#local-6989586621679147781"><span class="hs-identifier hs-var">minX</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ST s Int
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+-&gt; (Int, Int) -&gt; ST s Int
+forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; i -&gt; m a
 </span><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-var">readIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150518"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150517"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147784"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147785"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span>    </span><span class="annot"><span class="annottext">forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+-&gt; (Int -&gt; Int) -&gt; (Int, Int) -&gt; ST s ()
+forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; (a -&gt; a) -&gt; i -&gt; m ()
 </span><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-var">modifyIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150516"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150518"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150517"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-58"></span><span>
-</span><span id="line-59"></span><span>  </span><span class="hs-comment">-- column scan</span><span>
-</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+</span><a href="#local-6989586621679147786"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147784"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147785"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-comment">-- column scan</span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><span class="annottext">[(Int, Int)] -&gt; ((Int, Int) -&gt; ST s ()) -&gt; ST s ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
-</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Ix a =&gt; (a, a) -&gt; [a]
+</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; [(Int, Int)]
+forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
-</span><a href="#local-6989586621679150576"><span class="hs-identifier hs-var">boundsIV</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679150514"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150514"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679150513"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150513"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-61"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679150512"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150512"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150513"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679147725"><span class="hs-identifier hs-var">boundsIV</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(((Int, Int) -&gt; ST s ()) -&gt; ST s ())
+-&gt; ((Int, Int) -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679147788"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147788"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679147789"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147789"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679147790"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147790"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147789"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150521"><span class="hs-identifier hs-var">minY</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="#local-6989586621679147780"><span class="hs-identifier hs-var">minY</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ST s Int
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+-&gt; (Int, Int) -&gt; ST s Int
+forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; i -&gt; m a
 </span><a href="Data.Vector.IxVector.html#readIV"><span class="hs-identifier hs-var">readIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150513"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147789"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150514"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+</span><a href="#local-6989586621679147788"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+-&gt; (Int -&gt; Int) -&gt; (Int, Int) -&gt; ST s ()
+forall i (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
 (Ix i, PrimMonad m, MVector v a) =&gt;
 IxVector i (v (PrimState m) a) -&gt; (a -&gt; a) -&gt; i -&gt; m ()
 </span><a href="Data.Vector.IxVector.html#modifyIV"><span class="hs-identifier hs-var">modifyIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Num a =&gt; a -&gt; a -&gt; a
+IxVector (Int, Int) (MVector (PrimState (ST s)) Int)
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150512"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150513"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679150514"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-63"></span><span>
-</span><span id="line-64"></span><span>  </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
-</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall i v. IxVector i v -&gt; v
+</span><a href="#local-6989586621679147790"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147789"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679147788"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span>  </span><span class="annot"><span class="annottext">MVector s Int -&gt; ST s (MVector s Int)
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(MVector s Int -&gt; ST s (MVector s Int))
+-&gt; MVector s Int -&gt; ST s (MVector s Int)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int) -&gt; MVector s Int
+forall i v. IxVector i v -&gt; v
 </span><a href="Data.Vector.IxVector.html#vecIV"><span class="hs-identifier hs-var">vecIV</span></a></span><span> </span><span class="annot"><span class="annottext">IxVector (Int, Int) (MVector s Int)
-</span><a href="#local-6989586621679150524"><span class="hs-identifier hs-var">vec</span></a></span><span>
-</span><span id="line-65"></span><span>
-</span><span id="line-66"></span></pre></body></html>
+</span><a href="#local-6989586621679147777"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-70"></span></pre></body></html>

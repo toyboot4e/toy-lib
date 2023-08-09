@@ -16,6 +16,41 @@ powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 -- | Originally by @yamate11
 powerset :: (Bits a, Num a) => a -> [a]
 
+-- | TODO: Working as expected?
+powersetVU :: (Bits a, Num a, Unbox a) => a -> Vector a
+
+
+-- | <a>Data.Buffer</a> taken from <a>cojna/iota</a> (thanks!)
+module Data.Buffer
+data Buffer s a
+Buffer :: !MVector s Int -> !MVector s a -> !Int -> Buffer s a
+[bufferVars] :: Buffer s a -> !MVector s Int
+[internalBuffer] :: Buffer s a -> !MVector s a
+[internalBufferSize] :: Buffer s a -> !Int
+_bufferFrontPos :: Int
+_bufferBackPos :: Int
+newBuffer :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+type Stack s a = Buffer s a
+newBufferAsStack :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+type Queue s a = Buffer s a
+newBufferAsQueue :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+type Deque s a = Buffer s a
+newBufferAsDeque :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+lengthBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Int
+clearBuffer :: PrimMonad m => Buffer (PrimState m) a -> m ()
+freezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
+unsafeFreezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
+freezeInternalBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
+unsafeFreezeInternalBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
+popFront :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+viewFront :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+popBack :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+viewBack :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+pushFront :: (Unbox a, PrimMonad m) => a -> Buffer (PrimState m) a -> m ()
+pushBack :: (Unbox a, PrimMonad m) => a -> Buffer (PrimState m) a -> m ()
+pushFronts :: (Unbox a, PrimMonad m) => Vector a -> Buffer (PrimState m) a -> m ()
+pushBacks :: (Unbox a, PrimMonad m) => Vector a -> Buffer (PrimState m) a -> m ()
+
 
 -- | Strongly connected components and topological sort.
 module Data.Graph.Scc
@@ -206,8 +241,11 @@ IxVector :: !(i, i) -> !v -> IxVector i v
 [boundsIV] :: IxVector i v -> !(i, i)
 [vecIV] :: IxVector i v -> !v
 
--- | <a>IxVector</a> accessor
+-- | Partial <a>IxVector</a> accessor
 (@!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
+
+-- | Total <a>IxVector</a> accessor
+(@!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
 
 -- | Reads a value from <a>IxVector</a>.
 readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
@@ -354,12 +392,33 @@ rot45 :: (Int, Int) -> (Int, Int)
 module Math.Primes
 
 -- | @0xYusuke <a>https://zenn.dev/link/comments/1022553732563c</a>
---   
---   TODO: remove `union*` on 2023 update
 primes :: [Int]
 
 -- | Returns <tt>[(prime, count)]</tt>
 primeFactors :: Int -> [(Int, Int)]
+
+
+-- | Typical DP utilities
+module ToyLib.DP
+
+-- | Variant of <a>constructN</a>.
+constructFor :: (Unbox a, Unbox b) => a -> Vector b -> (Vector a -> b -> a) -> Vector a
+
+-- | <tt>relaxMany !f !vec0 !input !expander</tt> ~ <tt>VG.accumulate f
+--   vec0 $ VG.concatMap expander input</tt>
+relaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
+
+-- | Monoid variant of <a>relaxMany</a>
+relaxMany' :: (Monoid m, Unbox m, Unbox a) => Vector m -> Vector a -> (a -> Vector (Int, m)) -> Vector m
+
+
+-- | Debug utilities
+module ToyLib.Debug
+
+-- | For use with <tt>dbgS</tt>
+class ShowGrid a
+showGrid :: ShowGrid a => a -> String
+instance (Data.Vector.Generic.Base.Vector v a, GHC.Show.Show a) => ToyLib.Debug.ShowGrid (Data.Vector.IxVector.IxVector (GHC.Types.Int, GHC.Types.Int) (v a))
 
 module ToyLib.Macro
 dbg :: Show a => a -> ()
@@ -416,28 +475,14 @@ chunks :: Int -> [a] -> [[a]]
 (.!) :: (b -> c) -> (a -> b) -> a -> c
 infixr 9 .!
 foldFor :: Foldable t => b -> t a -> (b -> a -> b) -> b
-
--- | TODO: Remove on 2023 if not faster
 foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
-
--- | TODO: Remove on 2023 if not faster
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
-unconsVG :: Vector v a => v a -> Maybe (a, v a)
-
--- | TODO: Remove on 2023 langauge update. @since 0.13.0.1
-groupByVG :: Vector v a => (a -> a -> Bool) -> v a -> [v a]
-
--- | TODO: Remove on 2023 langauge update. <i>O(n)</i> Split a vector into
---   a list of slices. @since 0.13.0.1
-groupVG :: (Vector v a, Eq a) => v a -> [v a]
+minimumOr :: (Ord a, Unbox a) => a -> Vector a -> a
+maximumOr :: (Ord a, Unbox a) => a -> Vector a -> a
 safeHead :: Unbox a => Vector a -> Maybe a
 safeLast :: Unbox a => Vector a -> Maybe a
-
--- | TODO: Remove on 2023 langauge update (?)
-modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
-vLength :: Vector v e => v e -> Int
 rangeVG :: Vector v Int => Int -> Int -> v Int
 rangeV :: Int -> Int -> Vector Int
 rangeVU :: Int -> Int -> Vector Int
@@ -476,9 +521,13 @@ twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
 tuple2 :: [a] -> (a, a)
 tuple3 :: [a] -> (a, a, a)
 tuple4 :: [a] -> (a, a, a, a)
+tuple5 :: [a] -> (a, a, a, a, a)
+tuple6 :: [a] -> (a, a, a, a, a, a)
 ints2 :: IO (Int, Int)
 ints3 :: IO (Int, Int, Int)
 ints4 :: IO (Int, Int, Int, Int)
+ints5 :: IO (Int, Int, Int, Int, Int)
+ints6 :: IO (Int, Int, Int, Int, Int, Int)
 yn :: Bool -> String
 printYn :: Bool -> IO ()
 
@@ -519,6 +568,8 @@ intsN :: Int -> IO [Int]
 -- | FIXME: Faster implementation
 intsNVU :: Int -> IO (Vector Int)
 intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (Vector Int))
+intsRestVG :: Vector v Int => IO (v Int)
+intsRestVU :: IO (Vector Int)
 
 -- | Creates a graph from 1-based vertices
 getGraph :: Int -> Int -> IO (Array Int [Int])
@@ -814,8 +865,8 @@ dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
 bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 
--- | Dijkstra: $O ( ( E + V ) log ⁡ V ) O((E+V)log {V})$
-djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> i -> w -> Vector w
+-- | Dijkstra: $O((E+V)log {V})$
+djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> w -> i -> Vector w
 
 -- | Returns a list of a route in reverse order (a route from end to
 --   start).
@@ -960,8 +1011,8 @@ newDoublingV :: a -> (a -> a) -> Vector a
 
 -- | Old binary lifting implementation without typeclasses. TODO: Remove
 applyDoubling :: Vector v op => v op -> a -> (a -> op -> a) -> Int -> a
-instance GHC.Classes.Eq (v m) => GHC.Classes.Eq (Data.BinaryLifting.BinaryLifting v m)
-instance GHC.Show.Show (v m) => GHC.Show.Show (Data.BinaryLifting.BinaryLifting v m)
+instance forall k (v :: k -> *) (m :: k). GHC.Classes.Eq (v m) => GHC.Classes.Eq (Data.BinaryLifting.BinaryLifting v m)
+instance forall k (v :: k -> *) (m :: k). GHC.Show.Show (v m) => GHC.Show.Show (Data.BinaryLifting.BinaryLifting v m)
 
 
 -- | TODO, Combine ModInt as Modulo module.
@@ -1023,20 +1074,30 @@ typeInt :: TypeInt a => Proxy a -> Int
 newtype ModInt p
 ModInt :: Int -> ModInt p
 [toInt] :: ModInt p -> Int
-instance GHC.Classes.Eq (Data.ModInt.ModInt p)
-instance GHC.Show.Show (Data.ModInt.ModInt p)
-instance Data.ModInt.TypeInt p => GHC.Num.Num (Data.ModInt.ModInt p)
-instance Data.ModInt.TypeInt p => GHC.Real.Fractional (Data.ModInt.ModInt p)
-instance Data.ModInt.TypeInt p => GHC.Enum.Enum (Data.ModInt.ModInt p)
-instance Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Data.Semigroup.Internal.Product (Data.ModInt.ModInt p)) (Data.ModInt.ModInt p)
-instance Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
-instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
-instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.Primitive.Types.Prim (Data.ModInt.ModInt p)
+instance forall k (p :: k). GHC.Classes.Eq (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
+instance forall k (p :: k). GHC.Show.Show (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Num.Num (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Real.Fractional (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Enum.Enum (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Data.Semigroup.Internal.Product (Data.ModInt.ModInt p)) (Data.ModInt.ModInt p)
+instance forall k (p :: k). Data.Vector.Unboxed.Base.Unbox (Data.ModInt.ModInt p)
 
 
 module Math.Matrix
+
+-- | Multiplies HxW matrix to a Hx1 column vector.
+mulMatToCol :: (Num e, IArray UArray e) => UArray (Int, Int) e -> [e] -> [e]
+
+-- | Multiplies H1xK matrix to a KxW2 matrix.
 mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
+
+-- | Multiplies H1xK matrix to a KxW2 matrix, getting mod of <tt>m</tt>.
 mulMatMod :: Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int -> UArray (Int, Int) Int
+
+-- | Retruns NxN unit matrix.
 unitMat :: Int -> UArray (Int, Int) Int
 
 -- | <a>mulMatMod</a> wrapper for binary lifting.
@@ -1048,9 +1109,9 @@ unitMat :: Int -> UArray (Int, Int) Int
 --   </pre>
 newtype MulMatMod a
 MulMatMod :: UArray (Int, Int) Int -> MulMatMod a
-instance GHC.Show.Show (Math.Matrix.MulMatMod a)
-instance GHC.Classes.Eq (Math.Matrix.MulMatMod a)
-instance Data.ModInt.TypeInt p => GHC.Base.Semigroup (Math.Matrix.MulMatMod p)
+instance forall k (a :: k). GHC.Show.Show (Math.Matrix.MulMatMod a)
+instance forall k (a :: k). GHC.Classes.Eq (Math.Matrix.MulMatMod a)
+instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Base.Semigroup (Math.Matrix.MulMatMod p)
 
 
 -- | The rolling hash algorithm lets you create fastly ((O(1))) comparable
@@ -1108,10 +1169,10 @@ emptyHS :: HashSlice p
 
 -- | Concatanates two rolling hash slices.
 concatHS :: forall b p t. (TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
-instance GHC.Classes.Eq (Data.RollingHash.RollingHash b p)
-instance GHC.Show.Show (Data.RollingHash.RollingHash b p)
-instance GHC.Classes.Eq (Data.RollingHash.HashSlice p)
-instance GHC.Show.Show (Data.RollingHash.HashSlice p)
+instance forall k1 (b :: k1) k2 (p :: k2). GHC.Classes.Eq (Data.RollingHash.RollingHash b p)
+instance forall k1 (b :: k1) k2 (p :: k2). GHC.Show.Show (Data.RollingHash.RollingHash b p)
+instance forall k (p :: k). GHC.Classes.Eq (Data.RollingHash.HashSlice p)
+instance forall k (p :: k). GHC.Show.Show (Data.RollingHash.HashSlice p)
 instance Data.ModInt.TypeInt Data.RollingHash.HashInt
 
 

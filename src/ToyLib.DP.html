@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Typical DP utilities</span></span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">ToyLib.DP</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VUM</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VGM</span></span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="annot"><span class="hs-comment">-- | Variant of `VU.constructN`.</span></span><span>
+</span><span id="line-11"></span><span id="local-6989586621679148224"><span id="local-6989586621679148226"><span class="annot"><a href="ToyLib.DP.html#constructFor"><span class="hs-identifier hs-type">constructFor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679148224"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679148226"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148224"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148226"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148224"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148226"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148224"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148224"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-12"></span><span id="constructFor"><span class="annot"><span class="annottext">constructFor :: forall a b.
+(Unbox a, Unbox b) =&gt;
+a -&gt; Vector b -&gt; (Vector a -&gt; b -&gt; a) -&gt; Vector a
+</span><a href="ToyLib.DP.html#constructFor"><span class="hs-identifier hs-var hs-var">constructFor</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148311"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148311"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148312"><span class="annot"><span class="annottext">Vector b
+</span><a href="#local-6989586621679148312"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148313"><span class="annot"><span class="annottext">Vector a -&gt; b -&gt; a
+</span><a href="#local-6989586621679148313"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s (MVector s a)) -&gt; Vector a
+forall a. Unbox a =&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
+</span><span class="hs-identifier hs-var">VU.create</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (MVector s a)) -&gt; Vector a)
+-&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679148342"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679148342"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ST s (MVector (PrimState (ST s)) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">VUM.unsafeNew</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector b -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int
+</span><span class="hs-identifier hs-var">VU.length</span></span><span> </span><span class="annot"><span class="annottext">Vector b
+</span><a href="#local-6989586621679148312"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) a -&gt; Int -&gt; a -&gt; ST s ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">VUM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+MVector (PrimState (ST s)) a
+</span><a href="#local-6989586621679148342"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148311"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>  </span><span class="annot"><span class="annottext">((Int -&gt; b -&gt; ST s ()) -&gt; Vector b -&gt; ST s ())
+-&gt; Vector b -&gt; (Int -&gt; b -&gt; ST s ()) -&gt; ST s ()
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; b -&gt; ST s ()) -&gt; Vector b -&gt; ST s ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+(Int -&gt; a -&gt; m b) -&gt; Vector a -&gt; m ()
+</span><span class="hs-identifier hs-var">VU.imapM_</span></span><span> </span><span class="annot"><span class="annottext">Vector b
+</span><a href="#local-6989586621679148312"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">((Int -&gt; b -&gt; ST s ()) -&gt; ST s ())
+-&gt; (Int -&gt; b -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679148349"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148349"><span class="hs-identifier hs-var">lenS1</span></a></span></span><span> </span><span id="local-6989586621679148350"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679148350"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679148351"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679148351"><span class="hs-identifier hs-var">vec'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Int -&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">VU.take</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148349"><span class="hs-identifier hs-var">lenS1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector a) -&gt; ST s (Vector a) -&gt; ST s (Vector a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) a -&gt; ST s (Vector a)
+forall a (m :: * -&gt; *).
+(Unbox a, PrimMonad m) =&gt;
+MVector (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">VU.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+MVector (PrimState (ST s)) a
+</span><a href="#local-6989586621679148342"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) a -&gt; Int -&gt; a -&gt; ST s ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">VUM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+MVector (PrimState (ST s)) a
+</span><a href="#local-6989586621679148342"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148349"><span class="hs-identifier hs-var">lenS1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; ST s ()) -&gt; a -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; b -&gt; a
+</span><a href="#local-6989586621679148313"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679148351"><span class="hs-identifier hs-var">vec'</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679148350"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><span class="annottext">MVector s a -&gt; ST s (MVector s a)
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679148342"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><span class="hs-comment">-- | @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@</span></span><span>
+</span><span id="line-23"></span><span id="local-6989586621679148264"><span id="local-6989586621679148265"><span id="local-6989586621679148267"><span class="annot"><a href="ToyLib.DP.html#relaxMany"><span class="hs-identifier hs-type">relaxMany</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148267"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148267"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679148267"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148264"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148265"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-24"></span><span id="relaxMany"><span class="annot"><span class="annottext">relaxMany :: forall (v :: * -&gt; *) a b.
+(Vector v a, Vector v (Int, a), Vector v b) =&gt;
+(a -&gt; a -&gt; a) -&gt; v a -&gt; v b -&gt; (b -&gt; v (Int, a)) -&gt; v a
+</span><a href="ToyLib.DP.html#relaxMany"><span class="hs-identifier hs-var hs-var">relaxMany</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148364"><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+</span><a href="#local-6989586621679148364"><span class="hs-identifier hs-var">relax</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148365"><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679148365"><span class="hs-identifier hs-var">vec0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148366"><span class="annot"><span class="annottext">v b
+</span><a href="#local-6989586621679148366"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148367"><span class="annot"><span class="annottext">b -&gt; v (Int, a)
+</span><a href="#local-6989586621679148367"><span class="hs-identifier hs-var">expander</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s (Mutable v s a)) -&gt; v a
+forall (v :: * -&gt; *) a.
+Vector v a =&gt;
+(forall s. ST s (Mutable v s a)) -&gt; v a
+</span><span class="hs-identifier hs-var">VG.create</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (Mutable v s a)) -&gt; v a)
+-&gt; (forall s. ST s (Mutable v s a)) -&gt; v a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679148382"><span class="annot"><span class="annottext">Mutable v s a
+</span><a href="#local-6989586621679148382"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">v a -&gt; ST s (Mutable v (PrimState (ST s)) a)
+forall (m :: * -&gt; *) (v :: * -&gt; *) a.
+(PrimMonad m, Vector v a) =&gt;
+v a -&gt; m (Mutable v (PrimState m) a)
+</span><span class="hs-identifier hs-var">VG.unsafeThaw</span></span><span> </span><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679148365"><span class="hs-identifier hs-var">vec0</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>  </span><span class="annot"><span class="annottext">v b -&gt; (b -&gt; ST s ()) -&gt; ST s ()
+forall (m :: * -&gt; *) (v :: * -&gt; *) a b.
+(Monad m, Vector v a) =&gt;
+v a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">VG.forM_</span></span><span> </span><span class="annot"><span class="annottext">v b
+</span><a href="#local-6989586621679148366"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">((b -&gt; ST s ()) -&gt; ST s ()) -&gt; (b -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679148385"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679148385"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="annottext">v (Int, a) -&gt; ((Int, a) -&gt; ST s ()) -&gt; ST s ()
+forall (m :: * -&gt; *) (v :: * -&gt; *) a b.
+(Monad m, Vector v a) =&gt;
+v a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">VG.forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; v (Int, a)
+</span><a href="#local-6989586621679148367"><span class="hs-identifier hs-var">expander</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679148385"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(((Int, a) -&gt; ST s ()) -&gt; ST s ())
+-&gt; ((Int, a) -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679148386"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148386"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148387"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148387"><span class="hs-identifier hs-var">x'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-29"></span><span>      </span><span class="annot"><span class="annottext">Mutable v (PrimState (ST s)) a -&gt; (a -&gt; a) -&gt; Int -&gt; ST s ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">VGM.modify</span></span><span> </span><span class="annot"><span class="annottext">Mutable v s a
+Mutable v (PrimState (ST s)) a
+</span><a href="#local-6989586621679148382"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+</span><a href="#local-6989586621679148364"><span class="hs-operator hs-var">`relax`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148387"><span class="hs-identifier hs-var">x'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148386"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><span class="annottext">Mutable v s a -&gt; ST s (Mutable v s a)
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Mutable v s a
+</span><a href="#local-6989586621679148382"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><span class="hs-comment">-- | Monoid variant of `relaxMany`</span></span><span>
+</span><span id="line-34"></span><span id="local-6989586621679148290"><span id="local-6989586621679148291"><span class="annot"><a href="ToyLib.DP.html#relaxMany%27"><span class="hs-identifier hs-type">relaxMany'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679148290"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679148290"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679148291"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148290"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148291"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679148291"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679148290"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679148290"><span class="hs-identifier hs-type">m</span></a></span></span></span><span>
+</span><span id="line-35"></span><span id="relaxMany%27"><span class="annot"><span class="annottext">relaxMany' :: forall m a.
+(Monoid m, Unbox m, Unbox a) =&gt;
+Vector m -&gt; Vector a -&gt; (a -&gt; Vector (Int, m)) -&gt; Vector m
+</span><a href="ToyLib.DP.html#relaxMany%27"><span class="hs-identifier hs-var hs-var">relaxMany'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148396"><span class="annot"><span class="annottext">Vector m
+</span><a href="#local-6989586621679148396"><span class="hs-identifier hs-var">vec0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148397"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679148397"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148398"><span class="annot"><span class="annottext">a -&gt; Vector (Int, m)
+</span><a href="#local-6989586621679148398"><span class="hs-identifier hs-var">expander</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s (MVector s m)) -&gt; Vector m
+forall a. Unbox a =&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
+</span><span class="hs-identifier hs-var">VU.create</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (MVector s m)) -&gt; Vector m)
+-&gt; (forall s. ST s (MVector s m)) -&gt; Vector m
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679148414"><span class="annot"><span class="annottext">MVector s m
+</span><a href="#local-6989586621679148414"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Vector m -&gt; ST s (MVector (PrimState (ST s)) m)
+forall a (m :: * -&gt; *).
+(Unbox a, PrimMonad m) =&gt;
+Vector a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">VU.unsafeThaw</span></span><span> </span><span class="annot"><span class="annottext">Vector m
+</span><a href="#local-6989586621679148396"><span class="hs-identifier hs-var">vec0</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">Vector a -&gt; (a -&gt; ST s ()) -&gt; ST s ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">VU.forM_</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679148397"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">((a -&gt; ST s ()) -&gt; ST s ()) -&gt; (a -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679148417"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148417"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><span class="annottext">Vector (Int, m) -&gt; ((Int, m) -&gt; ST s ()) -&gt; ST s ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">VU.forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Vector (Int, m)
+</span><a href="#local-6989586621679148398"><span class="hs-identifier hs-var">expander</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679148417"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(((Int, m) -&gt; ST s ()) -&gt; ST s ())
+-&gt; ((Int, m) -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679148418"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148418"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679148419"><span class="annot"><span class="annottext">m
+</span><a href="#local-6989586621679148419"><span class="hs-identifier hs-var">x'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-40"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) m -&gt; (m -&gt; m) -&gt; Int -&gt; ST s ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">VUM.modify</span></span><span> </span><span class="annot"><span class="annottext">MVector s m
+MVector (PrimState (ST s)) m
+</span><a href="#local-6989586621679148414"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m -&gt; m -&gt; m
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">m
+</span><a href="#local-6989586621679148419"><span class="hs-identifier hs-var">x'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148418"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><span class="annottext">MVector s m -&gt; ST s (MVector s m)
+forall a. a -&gt; ST s a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">MVector s m
+</span><a href="#local-6989586621679148414"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span></pre></body></html>
