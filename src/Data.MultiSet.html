@@ -19,12 +19,12 @@ forall a. IntMap a
 </span><span id="line-15"></span><span>
 </span><span id="line-16"></span><span class="annot"><a href="Data.MultiSet.html#singletonMS"><span class="hs-identifier hs-type">singletonMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span>
 </span><span id="line-17"></span><span id="singletonMS"><span class="annot"><span class="annottext">singletonMS :: Int -&gt; MultiSet
-</span><a href="Data.MultiSet.html#singletonMS"><span class="hs-identifier hs-var hs-var">singletonMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146664"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146664"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="Data.MultiSet.html#singletonMS"><span class="hs-identifier hs-var hs-var">singletonMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096641"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096641"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; IntMap Int
 forall a. Int -&gt; a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.singleton</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146664"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096641"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
 </span><span id="line-18"></span><span>
 </span><span id="line-19"></span><span class="annot"><a href="Data.MultiSet.html#fromListMS"><span class="hs-identifier hs-type">fromListMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span>
@@ -43,122 +43,122 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span id="line-22"></span><span class="annot"><span class="hs-comment">-- | Increments key.</span></span><span>
 </span><span id="line-23"></span><span class="annot"><a href="Data.MultiSet.html#incMS"><span class="hs-identifier hs-type">incMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span>
 </span><span id="line-24"></span><span id="incMS"><span class="annot"><span class="annottext">incMS :: Int -&gt; MultiSet -&gt; MultiSet
-</span><a href="Data.MultiSet.html#incMS"><span class="hs-identifier hs-var hs-var">incMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146669"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146669"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679146670"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146670"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146671"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146671"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Data.MultiSet.html#incMS"><span class="hs-identifier hs-var hs-var">incMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096646"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096646"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679096647"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096647"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096648"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096648"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-25"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Bool
 forall a. Int -&gt; IntMap a -&gt; Bool
 </span><span class="hs-identifier hs-var">IM.member</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146669"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146671"><span class="hs-identifier hs-var">im</span></a></span><span>
+</span><a href="#local-6989586621679096646"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096648"><span class="hs-identifier hs-var">im</span></a></span><span>
 </span><span id="line-26"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146670"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; Int -&gt; Int -&gt; IntMap Int -&gt; IntMap Int
+</span><a href="#local-6989586621679096647"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; Int -&gt; Int -&gt; IntMap Int -&gt; IntMap Int
 forall a. (a -&gt; a -&gt; a) -&gt; Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insertWith</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146669"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096646"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146671"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096648"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-27"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146670"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679096647"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; IntMap Int -&gt; IntMap Int
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146669"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096646"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146671"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096648"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="annot"><span class="hs-comment">-- | Decrements key. Key with count zero are removed.</span></span><span>
 </span><span id="line-30"></span><span class="annot"><a href="Data.MultiSet.html#decMS"><span class="hs-identifier hs-type">decMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span>
 </span><span id="line-31"></span><span id="decMS"><span class="annot"><span class="annottext">decMS :: Int -&gt; MultiSet -&gt; MultiSet
-</span><a href="Data.MultiSet.html#decMS"><span class="hs-identifier hs-var hs-var">decMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146677"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146677"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679146678"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146678"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146679"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146679"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Data.MultiSet.html#decMS"><span class="hs-identifier hs-var hs-var">decMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096654"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096654"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679096655"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096655"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096656"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096656"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Maybe Int
 forall a. Int -&gt; IntMap a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">IM.lookup</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146677"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146679"><span class="hs-identifier hs-var">im</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679096654"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096656"><span class="hs-identifier hs-var">im</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146678"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679096655"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; IntMap Int
 forall a. Int -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.delete</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146677"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146679"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096654"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096656"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146678"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; Int -&gt; Int -&gt; IntMap Int -&gt; IntMap Int
+</span><a href="#local-6989586621679096655"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; Int -&gt; Int -&gt; IntMap Int -&gt; IntMap Int
 forall a. (a -&gt; a -&gt; a) -&gt; Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insertWith</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146677"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096654"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146679"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096656"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-35"></span><span>    </span><span class="annot"><span class="annottext">Maybe Int
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146678"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146679"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096655"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096656"><span class="hs-identifier hs-var">im</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="annot"><a href="Data.MultiSet.html#memberMS"><span class="hs-identifier hs-type">memberMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-38"></span><span id="memberMS"><span class="annot"><span class="annottext">memberMS :: Int -&gt; MultiSet -&gt; Bool
-</span><a href="Data.MultiSet.html#memberMS"><span class="hs-identifier hs-var hs-var">memberMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146683"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146683"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146684"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146684"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Bool
+</span><a href="Data.MultiSet.html#memberMS"><span class="hs-identifier hs-var hs-var">memberMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096660"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096660"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096661"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096661"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Bool
 forall a. Int -&gt; IntMap a -&gt; Bool
 </span><span class="hs-identifier hs-var">IM.member</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146683"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146684"><span class="hs-identifier hs-var">im</span></a></span><span>
+</span><a href="#local-6989586621679096660"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096661"><span class="hs-identifier hs-var">im</span></a></span><span>
 </span><span id="line-39"></span><span>
 </span><span id="line-40"></span><span class="annot"><a href="Data.MultiSet.html#notMemberMS"><span class="hs-identifier hs-type">notMemberMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-41"></span><span id="notMemberMS"><span class="annot"><span class="annottext">notMemberMS :: Int -&gt; MultiSet -&gt; Bool
-</span><a href="Data.MultiSet.html#notMemberMS"><span class="hs-identifier hs-var hs-var">notMemberMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146686"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146686"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146687"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146687"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Bool
+</span><a href="Data.MultiSet.html#notMemberMS"><span class="hs-identifier hs-var hs-var">notMemberMS</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096663"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679096663"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096664"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096664"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap Int -&gt; Bool
 forall a. Int -&gt; IntMap a -&gt; Bool
 </span><span class="hs-identifier hs-var">IM.notMember</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146686"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146687"><span class="hs-identifier hs-var">im</span></a></span><span>
+</span><a href="#local-6989586621679096663"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096664"><span class="hs-identifier hs-var">im</span></a></span><span>
 </span><span id="line-42"></span><span>
 </span><span id="line-43"></span><span class="annot"><a href="Data.MultiSet.html#deleteFindMinMS"><span class="hs-identifier hs-type">deleteFindMinMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-44"></span><span id="deleteFindMinMS"><span class="annot"><span class="annottext">deleteFindMinMS :: MultiSet -&gt; (Int, MultiSet)
-</span><a href="Data.MultiSet.html#deleteFindMinMS"><span class="hs-identifier hs-var hs-var">deleteFindMinMS</span></a></span></span><span> </span><span id="local-6989586621679146690"><span class="annot"><span class="annottext">ms :: MultiSet
-</span><a href="#local-6989586621679146690"><span class="hs-identifier hs-var">ms</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146691"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146691"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-45"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146692"><span class="annot"><span class="annottext">key :: Int
-</span><a href="#local-6989586621679146692"><span class="hs-identifier hs-var hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
+</span><a href="Data.MultiSet.html#deleteFindMinMS"><span class="hs-identifier hs-var hs-var">deleteFindMinMS</span></a></span></span><span> </span><span id="local-6989586621679096667"><span class="annot"><span class="annottext">ms :: MultiSet
+</span><a href="#local-6989586621679096667"><span class="hs-identifier hs-var">ms</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096668"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096668"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096669"><span class="annot"><span class="annottext">key :: Int
+</span><a href="#local-6989586621679096669"><span class="hs-identifier hs-var hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
 forall a b. (a, b) -&gt; a
 </span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int) -&gt; Int) -&gt; (Int, Int) -&gt; Int
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">IntMap Int -&gt; (Int, Int)
 forall a. IntMap a -&gt; (Int, a)
 </span><span class="hs-identifier hs-var">IM.findMin</span></span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146691"><span class="hs-identifier hs-var">im</span></a></span><span>
+</span><a href="#local-6989586621679096668"><span class="hs-identifier hs-var">im</span></a></span><span>
 </span><span id="line-46"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146692"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MultiSet -&gt; MultiSet
+</span><a href="#local-6989586621679096669"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MultiSet -&gt; MultiSet
 </span><a href="Data.MultiSet.html#decMS"><span class="hs-identifier hs-var">decMS</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679146692"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">MultiSet
-</span><a href="#local-6989586621679146690"><span class="hs-identifier hs-var">ms</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679096669"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">MultiSet
+</span><a href="#local-6989586621679096667"><span class="hs-identifier hs-var">ms</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-47"></span><span>
 </span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | Unwraps `MultiSet` into the underlying `IntMap`.</span></span><span>
 </span><span id="line-49"></span><span class="annot"><a href="Data.MultiSet.html#innerMS"><span class="hs-identifier hs-type">innerMS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.MultiSet.html#MultiSet"><span class="hs-identifier hs-type">MultiSet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IM.IntMap</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-50"></span><span id="innerMS"><span class="annot"><span class="annottext">innerMS :: MultiSet -&gt; IntMap Int
 </span><a href="Data.MultiSet.html#innerMS"><span class="hs-identifier hs-var hs-var">innerMS</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679146696"><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146696"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntMap Int
-</span><a href="#local-6989586621679146696"><span class="hs-identifier hs-var">im</span></a></span><span>
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679096673"><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096673"><span class="hs-identifier hs-var">im</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntMap Int
+</span><a href="#local-6989586621679096673"><span class="hs-identifier hs-var">im</span></a></span><span>
 </span><span id="line-51"></span><span>
 </span><span id="line-52"></span><span class="hs-comment">-- }}}</span><span>
 </span><span id="line-53"></span></pre></body></html>

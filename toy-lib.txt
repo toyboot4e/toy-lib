@@ -189,6 +189,16 @@ querySTree :: forall v a m. (MVector v a, PrimMonad m) => SegmentTree v (PrimSta
 module Data.UnionFind.Mutable
 
 -- | Dense, mutable union-find tree (originally by `@pel`)
+--   
+--   <pre>
+--   &gt;&gt;&gt; :{
+--   do
+--     !stree &lt;- newMUF 3
+--     uniteMUF stree 0 2
+--     sameMUF stree 0 2
+--   :}
+--   True
+--   </pre>
 newtype MUnionFind s
 MUnionFind :: MVector s MUFNode -> MUnionFind s
 type IOUnionFind = MUnionFind RealWorld
@@ -219,9 +229,10 @@ uniteMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> Int -> m ()
 
 -- | Returns the size of the root node, starting with `1`.
 sizeMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> m Int
-instance Data.Vector.Unboxed.Base.Unbox Data.UnionFind.Mutable.MUFNode
 instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector Data.UnionFind.Mutable.MUFNode
 instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector Data.UnionFind.Mutable.MUFNode
+instance Data.Vector.Unboxed.Base.IsoUnbox Data.UnionFind.Mutable.MUFNode (GHC.Types.Bool, GHC.Types.Int)
+instance Data.Vector.Unboxed.Base.Unbox Data.UnionFind.Mutable.MUFNode
 
 module Data.UnionFind.Sparse
 type SparseUnionFind = IntMap Int
@@ -926,10 +937,11 @@ maxFlowRN :: Int -> ResidualNetwork -> Int -> Int -> IO Int
 augumentPath :: ResidualNetwork -> IOVector Bool -> Vertex -> Int -> IO (Maybe (Int, [(Vertex, Vertex)]))
 updateFlow :: ResidualNetwork -> Int -> [(Vertex, Vertex)] -> IO ()
 addFlowRNEdge :: ResidualNetwork -> Vertex -> Vertex -> Int -> IO ()
-instance Data.Vector.Unboxed.Base.Unbox Data.Graph.MaxFlow.RNEdge
+instance GHC.Show.Show Data.Graph.MaxFlow.RNEdge
 instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector Data.Graph.MaxFlow.RNEdge
 instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector Data.Graph.MaxFlow.RNEdge
-instance GHC.Show.Show Data.Graph.MaxFlow.RNEdge
+instance Data.Vector.Unboxed.Base.IsoUnbox Data.Graph.MaxFlow.RNEdge (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+instance Data.Vector.Unboxed.Base.Unbox Data.Graph.MaxFlow.RNEdge
 
 
 -- | Calculates every shortest path between two vertices (Floyd-Warshall

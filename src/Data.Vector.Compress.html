@@ -4,14 +4,13 @@
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">nubSort</span></span><span class="hs-special">)</span><span>
 </span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span>
 </span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Prelude.html"><span class="hs-identifier">ToyLib.Prelude</span></a></span><span>
-</span><span id="line-8"></span><span>
-</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | One dimensional index compression: xs -&gt; (indexer, xs')</span></span><span>
-</span><span id="line-10"></span><span class="annot"><a href="Data.Vector.Compress.html#compressVU"><span class="hs-identifier hs-type">compressVU</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
-</span><span id="line-11"></span><span id="compressVU"><span class="annot"><span class="annottext">compressVU :: Vector Int -&gt; (Vector Int, Vector Int)
-</span><a href="Data.Vector.Compress.html#compressVU"><span class="hs-identifier hs-var hs-var">compressVU</span></a></span></span><span> </span><span id="local-6989586621679155765"><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155765"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155766"><span class="hs-identifier hs-var">indexer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; Vector Int -&gt; Vector Int
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="annot"><span class="hs-comment">-- | One dimensional index compression: xs -&gt; (indexer, xs')</span></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="Data.Vector.Compress.html#compressVU"><span class="hs-identifier hs-type">compressVU</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span id="compressVU"><span class="annot"><span class="annottext">compressVU :: Vector Int -&gt; (Vector Int, Vector Int)
+</span><a href="Data.Vector.Compress.html#compressVU"><span class="hs-identifier hs-var hs-var">compressVU</span></a></span></span><span> </span><span id="local-6989586621679105807"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679105807"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679105808"><span class="hs-identifier hs-var">indexer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; Vector Int -&gt; Vector Int
 forall a b. (Unbox a, Unbox b) =&gt; (a -&gt; b) -&gt; Vector a -&gt; Vector b
 </span><span class="hs-identifier hs-var">VU.map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 forall a. HasCallStack =&gt; Maybe a -&gt; a
@@ -23,11 +22,11 @@ forall a b. (a, b) -&gt; a
 -&gt; (Int -&gt; (Maybe Int, Maybe Int)) -&gt; Int -&gt; Maybe Int
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Maybe Int, Maybe Int)
-</span><a href="#local-6989586621679155771"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155765"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-12"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679155766"><span class="annot"><span class="annottext">indexer :: Vector Int
-</span><a href="#local-6989586621679155766"><span class="hs-identifier hs-var hs-var">indexer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Vector Int
+</span><a href="#local-6989586621679105813"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679105807"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679105808"><span class="annot"><span class="annottext">indexer :: Vector Int
+</span><a href="#local-6989586621679105808"><span class="hs-identifier hs-var hs-var">indexer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Vector Int
 forall a. Unbox a =&gt; [a] -&gt; Vector a
 </span><span class="hs-identifier hs-var">VU.fromList</span></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Vector Int) -&gt; [Int] -&gt; Vector Int
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -38,10 +37,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; [Int]
 forall a. Unbox a =&gt; Vector a -&gt; [a]
 </span><span class="hs-identifier hs-var">VU.toList</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155765"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-14"></span><span>    </span><span id="local-6989586621679155771"><span class="annot"><span class="annottext">f :: Int -&gt; (Maybe Int, Maybe Int)
-</span><a href="#local-6989586621679155771"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679155783"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679155783"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; (Int -&gt; Bool) -&gt; (Maybe Int, Maybe Int)
+</span><a href="#local-6989586621679105807"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-13"></span><span>    </span><span id="local-6989586621679105813"><span class="annot"><span class="annottext">f :: Int -&gt; (Maybe Int, Maybe Int)
+</span><a href="#local-6989586621679105813"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679105825"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679105825"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; (Int -&gt; Bool) -&gt; (Maybe Int, Maybe Int)
 </span><a href="Algorithm.BinarySearch.html#bsearch"><span class="hs-identifier hs-var">bsearch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Enum a =&gt; a -&gt; a
@@ -50,16 +49,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int
 forall a. Unbox a =&gt; Vector a -&gt; Int
 </span><span class="hs-identifier hs-var">VU.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155766"><span class="hs-identifier hs-var">indexer</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Int -&gt; Bool) -&gt; (Maybe Int, Maybe Int))
+</span><a href="#local-6989586621679105808"><span class="hs-identifier hs-var">indexer</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Int -&gt; Bool) -&gt; (Maybe Int, Maybe Int))
 -&gt; (Int -&gt; Bool) -&gt; (Maybe Int, Maybe Int)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679155787"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679155787"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Vector Int
-</span><a href="#local-6989586621679155766"><span class="hs-identifier hs-var">indexer</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int -&gt; Int
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679105829"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679105829"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679105808"><span class="hs-identifier hs-var">indexer</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int -&gt; Int
 forall a. Unbox a =&gt; Vector a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">VU.!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679155787"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679105829"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679155783"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-15"></span></pre></body></html>
+</span><a href="#local-6989586621679105825"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-14"></span></pre></body></html>
