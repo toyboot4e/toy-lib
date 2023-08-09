@@ -16,10 +16,8 @@ import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
 import Debug.Trace
 import System.IO (stdout)
 
@@ -130,28 +128,6 @@ rangeVR = rangeVGR
 {-# INLINE rangeVUR #-}
 rangeVUR :: Int -> Int -> VU.Vector Int
 rangeVUR = rangeVGR
-
--- | @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
-relaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
-relaxMany !relax !vec0 !input !expander = VG.create $ do
-  !vec <- VG.unsafeThaw vec0
-
-  VG.forM_ input $ \x -> do
-    VG.forM_ (expander x) $ \(!i, !x') -> do
-      VGM.modify vec (`relax` x') i
-
-  return vec
-
--- | Monoid variant of `relaxMany`
-relaxMany' :: (Monoid m, VU.Unbox m, VU.Unbox a) => VU.Vector m -> VU.Vector a -> (a -> VU.Vector (Int, m)) -> VU.Vector m
-relaxMany' !vec0 !input !expander = VU.create $ do
-  !vec <- VU.unsafeThaw vec0
-
-  VU.forM_ input $ \x -> do
-    VU.forM_ (expander x) $ \(!i, !x') -> do
-      VUM.modify vec (<> x') i
-
-  return vec
 
 -- | @cojna (`stream`)
 {-# INLINE [1] rangeMS #-}
