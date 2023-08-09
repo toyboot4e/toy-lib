@@ -1,25 +1,32 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Union-find tree
 --
 -- = Typical problems
 -- - [Typical 012 - Red Painting (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_l)
-
 module Data.UnionFind.Mutable where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST (RealWorld)
 import qualified Data.IntSet as IS
+import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import Data.Vector.Unboxed.Deriving (derivingUnbox)
+import qualified Data.Vector.Unboxed.Base as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- {{{ Dense, mutable union-Find tree
 
 -- | Dense, mutable union-find tree (originally by `@pel`)
+--
+-- >>> :{
+-- do
+--   !stree <- newMUF 3
+--   uniteMUF stree 0 2
+--   sameMUF stree 0 2
+-- :}
+-- True
 newtype MUnionFind s = MUnionFind (VUM.MVector s MUFNode)
 
 type IOUnionFind = MUnionFind RealWorld
@@ -29,11 +36,23 @@ type STUnionFind s = MUnionFind s
 -- | `MUFChild parent | MUFRoot size`.
 data MUFNode = MUFChild {-# UNPACK #-} !Int | MUFRoot {-# UNPACK #-} !Int
 
-derivingUnbox
-  "MUFNode"
-  [t|MUFNode -> (Bool, Int)|]
-  [|\case (MUFChild !x) -> (True, x); (MUFRoot !x) -> (False, x)|]
-  [|\case (True, !x) -> MUFChild x; (False, !x) -> MUFRoot x|]
+instance VU.IsoUnbox MUFNode (Bool, Int) where
+  {-# INLINE toURepr #-}
+  toURepr (MUFChild !x) = (True, x)
+  toURepr (MUFRoot !x) = (False, x)
+  {-# INLINE fromURepr #-}
+  fromURepr (True, !x) = MUFChild x
+  fromURepr (False, !x) = MUFRoot x
+
+newtype instance VU.MVector s MUFNode = MV_MUFNode (VUM.MVector s (Bool, Int))
+
+newtype instance VU.Vector MUFNode = V_MUFNode (VU.Vector (Bool, Int))
+
+deriving via (MUFNode `VU.As` (Bool, Int)) instance VGM.MVector VUM.MVector MUFNode
+
+deriving via (MUFNode `VU.As` (Bool, Int)) instance VG.Vector VU.Vector MUFNode
+
+instance VU.Unbox MUFNode
 
 -- | Creates a new Union-Find tree of the given size.
 {-# INLINE newMUF #-}

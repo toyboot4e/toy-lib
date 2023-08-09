@@ -91,7 +91,6 @@ dependencies:
 - unordered-containers
 - vector
 - vector-algorithms
-- vector-th-unbox
 
 ghc-options:
 - -Wall

@@ -29,6 +29,7 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE HexFloatLiterals #-}
 {-# LANGUAGE ImplicitPrelude #-}
+-- `haskell-src-exts` seems not to understand it though:
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}

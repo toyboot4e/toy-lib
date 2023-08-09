@@ -54,8 +54,8 @@ instance (TypeInt p) => Enum (ModInt p) where
 instance TypeInt p => SemigroupAction (Product (ModInt p)) (ModInt p) where
   sact (Product !x1) !x2 = x1 * x2
 
-newtype instance VU.MVector s (ModInt p) = MV_Int (VP.MVector s (ModInt p))
-newtype instance VU.Vector    (ModInt p) = V_Int  (VP.Vector    (ModInt p))
+newtype instance VU.MVector s (ModInt p) = MV_ModInt (VP.MVector s (ModInt p))
+newtype instance VU.Vector    (ModInt p) = V_ModInt  (VP.Vector    (ModInt p))
 deriving via (VU.UnboxViaPrim (ModInt p)) instance VGM.MVector VUM.MVector (ModInt p)
 deriving via (VU.UnboxViaPrim (ModInt p)) instance VG.Vector  VU.Vector  (ModInt p)
 instance VU.Unbox (ModInt p)

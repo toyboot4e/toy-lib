@@ -1,5 +1,5 @@
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Maximum flow calculation (Ford-Fulkerson algorithm).
@@ -10,8 +10,11 @@ import Data.Bifunctor
 import Data.Graph (Vertex)
 import qualified Data.IntMap.Strict as IM
 import Data.Tuple.Extra hiding (first, second)
+import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
-import Data.Vector.Unboxed.Deriving (derivingUnbox)
+import qualified Data.Vector.Unboxed.Base as VU
+import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- {{{ Maximum flow (Ford-Fulkerson algorithm)
 
@@ -32,11 +35,21 @@ data RNEdge = RNEdge
   }
   deriving (Show)
 
-derivingUnbox
-  "RNEdge"
-  [t|RNEdge -> (Vertex, Int, Int)|]
-  [|\(RNEdge !x1 !x2 !x3) -> (x1, x2, x3)|]
-  [|\(!x1, !x2, !x3) -> RNEdge x1 x2 x3|]
+instance VU.IsoUnbox RNEdge (Int, Int, Int) where
+  {-# INLINE toURepr #-}
+  toURepr (RNEdge !x1 !x2 !x3) = (x1, x2, x3)
+  {-# INLINE fromURepr #-}
+  fromURepr (!x1, !x2, !x3) = RNEdge x1 x2 x3
+
+newtype instance VU.MVector s RNEdge = MV_RNEdge (VUM.MVector s (Int, Int, Int))
+
+newtype instance VU.Vector RNEdge = V_RNEdge (VU.Vector (Int, Int, Int))
+
+deriving via (RNEdge `VU.As` (Int, Int, Int)) instance VGM.MVector VUM.MVector RNEdge
+
+deriving via (RNEdge `VU.As` (Int, Int, Int)) instance VG.Vector VU.Vector RNEdge
+
+instance VU.Unbox RNEdge
 
 -- | @Vertex -> [RNEdge]@.
 --

@@ -2,7 +2,7 @@
 {- stack script --resolver lts-21.6
 --package array --package bytestring --package containers --package extra
 --package hashable --package unordered-containers --package heaps --package utility-ht
---package vector --package vector-th-unbox --package vector-algorithms --package primitive
+--package vector --package vector-algorithms --package primitive
 --package transformers
 
 --ghc-options "-D DEBUG"
@@ -101,9 +101,6 @@ import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Algorithms.Search as VAS
 
--- vector-th-unbox
-import Data.Vector.Unboxed.Deriving (derivingUnbox)
-
 -- containers
 import qualified Data.Graph as G
 import qualified Data.IntMap.Strict as IM
@@ -131,12 +128,6 @@ instance TypeInt MyModulo where
   -- typeInt _ = 1_000_000_007
   typeInt _ = 998244353
 
-derivingUnbox
-  "HashSlice"
-  [t|HashSlice MyModulo -> (Int, Int)|]
-  [|\(HashSlice v l) -> (v, l)|]
-  [|\(!v, !l) -> HashSlice v l|]
-
 type MyModInt = ModInt MyModulo
 
 modInt :: Int -> MyModInt
@@ -146,25 +137,6 @@ undef :: Int
 undef = -1
 
 -- }}}
-
--- When run as a stack script, `dbg` expands to `traceShow`.
--- Otherwise it's an empty function.
-#ifdef DEBUG
-dbg :: Show a => a -> ()
-dbg !x = let !_ = traceShow x () in ()
-
-dbgAssert :: Bool -> String -> ()
-dbgAssert False !s = error $ "assertion failed!: " ++ s
-dbgAssert True _ = ()
-
-#else
-dbg :: Show a => a -> ()
-dbg _ = ()
-
-dbgAssert :: Bool -> a -> a
-dbgAssert = flip const
-
-#endif
 
 main :: IO ()
 main = do

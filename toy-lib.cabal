@@ -127,7 +127,6 @@ library
     , utility-ht
     , vector
     , vector-algorithms
-    , vector-th-unbox
   default-language: Haskell2010
 
 executable toy-lib-exe
@@ -204,7 +203,6 @@ executable toy-lib-exe
     , utility-ht
     , vector
     , vector-algorithms
-    , vector-th-unbox
   default-language: Haskell2010
 
 test-suite toy-lib-test
@@ -278,5 +276,4 @@ test-suite toy-lib-test
     , utility-ht
     , vector
     , vector-algorithms
-    , vector-th-unbox
   default-language: Haskell2010
