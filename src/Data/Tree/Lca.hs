@@ -27,7 +27,7 @@ instance Semigroup ToParent where
   (ToParent !vec1) <> (ToParent !vec2) = ToParent $ VU.map f vec2
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
-      f (-1) = (-1)
+      f (-1) = -1
       f i = vec1 VU.! i
 
 instance SemigroupAction ToParent Vertex where
@@ -156,11 +156,11 @@ foldViaLca (cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
     -- Folds up the monoid value on going upwards:
     -- TODO: use `PermutationWithMonoid` to outsource the folding method
     foldParentN :: Vertex -> Int -> m
-    foldParentN !v0 !nthParent = snd $ V.foldl' step (v0, mempty) input
+    foldParentN !v0 !nthParent = snd $ V.ifoldl' step (v0, mempty) input
       where
-        !input = V.zip3 (rangeVG 0 62) parents' ops'
-        step :: (Vertex, m) -> (Int, ToParent, VU.Vector m) -> (Vertex, m)
-        step (!v, !acc) (!iBit, !parents, !ops)
+        !input = V.zip parents' ops'
+        step :: (Vertex, m) -> Int -> (ToParent, VU.Vector m) -> (Vertex, m)
+        step (!v, !acc) !iBit (!parents, !ops)
           | testBit nthParent iBit = (parents `sact` v, acc <> (ops VU.! v))
           | otherwise = (v, acc)
 
