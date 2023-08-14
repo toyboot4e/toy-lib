@@ -14,7 +14,7 @@ undef = -1
 
 main :: IO ()
 main = do
-  [n] <- ints
+  n <- ints1
   !xs <- intsVU
 
   putStrLn "TODO"

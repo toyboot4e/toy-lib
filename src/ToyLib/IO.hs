@@ -1,5 +1,12 @@
 {-# LANGUAGE DefaultSignatures #-}
 
+-- | IO
+--
+-- >>> :{
+-- convert4BS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
+-- :}
+-- (1,"string",3.5,[10,20,30,40])
+
 module ToyLib.IO where
 
 import Control.Monad
@@ -17,6 +24,7 @@ import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import System.IO (stdout)
+
 -- import ToyLib.Prelude
 
 -- Input/parser
@@ -71,15 +79,37 @@ instance ReadBS Integer where
   {-# INLINE readMayBS #-}
   readMayBS = BS.readInteger
 
+instance ReadBS Float
+
+instance ReadBS Double
+
+instance ReadBS Char where
+  {-# INLINE convertBS #-}
+  convertBS = BS.head
+
 instance ReadBS String where
   {-# INLINE convertBS #-}
   convertBS = BS.unpack
-  {-# INLINE readBS #-}
-  readBS !bs = (BS.unpack bs, BS.empty)
-  {-# INLINE readMayBS #-}
+
+instance ReadBS BS.ByteString where
+  {-# INLINE convertBS #-}
+  convertBS = id
+
+instance (ReadBS a, VU.Unbox a) => ReadBS (VU.Vector a) where
+  {-# INLINE convertBS #-}
+  convertBS = convertVG
+  readBS = (,BS.empty) . convertVG
   readMayBS !bs
     | BS.null bs = Nothing
-    | otherwise = Just (BS.unpack bs, BS.empty)
+    | otherwise = Just (readBS bs)
+
+instance (ReadBS a) => ReadBS (V.Vector a) where
+  {-# INLINE convertBS #-}
+  convertBS = convertVG
+  readBS = (,BS.empty) . convertVG
+  readMayBS !bs
+    | BS.null bs = Nothing
+    | otherwise = Just (readBS bs)
 
 -- | Converrts the given `ByteString` as a vector of @a@.
 convertVG :: (ReadBS a, VG.Vector v a) => BS.ByteString -> v a
@@ -103,8 +133,8 @@ convertNVU = convertNVG
 
 convert2BS :: (ReadBS a1, ReadBS a2) => BS.ByteString -> (a1, a2)
 convert2BS !bs0 =
-  let (!a1, !bs1) = readBS bs0
-      !a2 = convertBS bs1
+  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+      !a2 = convertBS (BS.dropWhile isSpace bs1)
    in (a1, a2)
 
 convert3BS :: (ReadBS a1, ReadBS a2, ReadBS a3) => BS.ByteString -> (a1, a2, a3)
