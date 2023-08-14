@@ -6,6 +6,12 @@
 @package toy-lib
 @version 0.1.0.0
 
+module Algorithm.TwoPointers
+
+-- | Returns inclusive ranges that satisfy the given <tt>check</tt>. FIXME:
+--   Use a simpler, cheaper implementation
+twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
+
 
 -- | Bit set tricks
 module Data.BitSet
@@ -373,6 +379,17 @@ module Math.Divisors
 divisorsOf :: Int -> [Int]
 
 
+-- | Extended Eucried Algorithm
+--   
+--   # Typical problems - <a>ABC 186 E - Throne</a>
+--   
+--   # Related - <a>Water drawing problem</a>
+module Math.Exgcd
+
+-- | @4tsuzuru <a>https://zenn.dev/link/comments/29d659a57ead56</a>
+exgcd :: Integral a => a -> a -> (a, a, a)
+
+
 -- | Manhattan distance
 --   
 --   <h1>Typical problems</h1>
@@ -430,6 +447,141 @@ module ToyLib.Debug
 class ShowGrid a
 showGrid :: ShowGrid a => a -> String
 instance (Data.Vector.Generic.Base.Vector v a, GHC.Show.Show a) => ToyLib.Debug.ShowGrid (Data.Vector.IxVector.IxVector (GHC.Types.Int, GHC.Types.Int) (v a))
+
+module ToyLib.FromVec
+class FromVec a where {
+    type FromVecInput a;
+    type FromVecItem a;
+}
+fromVec :: (FromVec a, Vector v (FromVecInput a)) => v (FromVecInput a) -> a
+fromVecWith :: (FromVec a, Vector v (FromVecInput a)) => (FromVecItem a -> FromVecItem a -> FromVecItem a) -> v (FromVecInput a) -> a
+fromVecIM :: Vector v (Int, a) => v (Int, a) -> IntMap a
+fromVecM :: Vector v (Int, a) => v (Int, a) -> IntMap a
+fromVecIS :: Vector v Int => v Int -> IntSet
+fromVecS :: (Ord a, Vector v a) => v a -> Set a
+fromVecH :: (Ord a, Vector v a) => v a -> Heap a
+instance ToyLib.FromVec.FromVec (Data.IntMap.Internal.IntMap a)
+instance GHC.Classes.Ord k => ToyLib.FromVec.FromVec (Data.Map.Internal.Map k a)
+instance ToyLib.FromVec.FromVec Data.IntSet.Internal.IntSet
+instance GHC.Classes.Ord a => ToyLib.FromVec.FromVec (Data.Set.Internal.Set a)
+instance GHC.Classes.Ord a => ToyLib.FromVec.FromVec (Data.Heap.Heap a)
+
+
+-- | IO
+--   
+--   Primitives are <a>ReadBS</a>. Tuples of <a>ReadBS</a> are also
+--   <a>ReadBS</a>:
+--   
+--   <pre>
+--   &gt;&gt;&gt; :{
+--   convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
+--   :}
+--   (42,'c',"string",2.5)
+--   </pre>
+--   
+--   Vectors are <a>ReadBS</a> and they can also be embedded in the end of
+--   a tuple:
+--   
+--   <pre>
+--   &gt;&gt;&gt; :{
+--   convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
+--   :}
+--   (1,"string",3.5,[10,20,30,40])
+--   </pre>
+module ToyLib.IO
+int :: IO Int
+
+-- | Reads one line as a list of integers.
+ints :: IO [Int]
+
+-- | Read from a space-delimited <tt>ByteStrtig</tt>.
+class ReadBS a
+convertBS :: ReadBS a => ByteString -> a
+convertBS :: (ReadBS a, Read a) => ByteString -> a
+
+-- | For use with <a>unfoldrExactN</a>.
+readBS :: ReadBS a => ByteString -> (a, ByteString)
+
+-- | For use with <a>unfoldr</a>.
+readMayBS :: ReadBS a => ByteString -> Maybe (a, ByteString)
+
+-- | Converrts the given <tt>ByteString</tt> as a vector of <tt>a</tt>.
+convertVG :: (ReadBS a, Vector v a) => ByteString -> v a
+convertV :: ReadBS a => ByteString -> Vector a
+convertVU :: (ReadBS a, Unbox a) => ByteString -> Vector a
+
+-- | Converts the given <tt>ByteString</tt> as a vector of <tt>a</tt> with
+--   <tt>n</tt> elements.
+convertNVG :: (ReadBS a, Vector v a) => Int -> ByteString -> v a
+convertNV :: ReadBS a => Int -> ByteString -> Vector a
+convertNVU :: (ReadBS a, Unbox a) => Int -> ByteString -> Vector a
+get :: ReadBS a => IO a
+ints1 :: IO Int
+ints2 :: IO (Int, Int)
+ints3 :: IO (Int, Int, Int)
+ints4 :: IO (Int, Int, Int, Int)
+ints5 :: IO (Int, Int, Int, Int, Int)
+ints6 :: IO (Int, Int, Int, Int, Int, Int)
+
+-- | Reads one line as an integer.
+intsVG :: Vector v Int => IO (v Int)
+intsV :: IO (Vector Int)
+
+-- | Reads one line as a vector of integers.
+intsVU :: IO (Vector Int)
+digitsVU :: IO (Vector Int)
+intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (Vector Int))
+intsRestVG :: Vector v Int => IO (v Int)
+intsRestVU :: IO (Vector Int)
+
+-- | Creates a graph from 1-based vertices
+getGraph :: Int -> Int -> IO (Array Int [Int])
+
+-- | <a>concat</a> two-item tuples
+concat2 :: [(a, a)] -> [a]
+concatMap2 :: (a -> (b, b)) -> [a] -> [b]
+
+-- | Creates a weightend graph from 1-based vertices
+getWGraph :: Int -> Int -> IO (Array Int [Entry Int Int])
+
+-- | Creates a weightend graph from 1-based vertices
+getWGraph0 :: Int -> Int -> IO (Array Int [Entry Int Int])
+endlBSB :: Builder
+putBSB :: Builder -> IO ()
+putLnBSB :: Builder -> IO ()
+
+-- | Show as a bytestring builder.
+class ShowBSB a
+showBSB :: ShowBSB a => a -> Builder
+showBSB :: (ShowBSB a, Show a) => a -> Builder
+showLnBSB :: ShowBSB a => a -> Builder
+printBSB :: ShowBSB a => a -> IO ()
+
+-- | See <a>unwordsBSB</a> as example.
+concatBSB :: Vector v a => (a -> Builder) -> v a -> Builder
+unwordsBSB :: (ShowBSB a, Vector v a) => v a -> Builder
+unlinesBSB :: (ShowBSB a, Vector v a) => v a -> Builder
+yn :: Bool -> String
+ynBSB :: Bool -> Builder
+printYn :: Bool -> IO ()
+instance ToyLib.IO.ShowBSB GHC.Types.Int
+instance ToyLib.IO.ShowBSB GHC.Num.Integer.Integer
+instance ToyLib.IO.ShowBSB GHC.Types.Float
+instance ToyLib.IO.ShowBSB GHC.Types.Double
+instance ToyLib.IO.ReadBS GHC.Types.Int
+instance ToyLib.IO.ReadBS GHC.Num.Integer.Integer
+instance ToyLib.IO.ReadBS GHC.Types.Float
+instance ToyLib.IO.ReadBS GHC.Types.Double
+instance ToyLib.IO.ReadBS GHC.Types.Char
+instance ToyLib.IO.ReadBS GHC.Base.String
+instance ToyLib.IO.ReadBS Data.ByteString.Internal.Type.ByteString
+instance (ToyLib.IO.ReadBS a, Data.Vector.Unboxed.Base.Unbox a) => ToyLib.IO.ReadBS (Data.Vector.Unboxed.Base.Vector a)
+instance ToyLib.IO.ReadBS a => ToyLib.IO.ReadBS (Data.Vector.Vector a)
+instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2) => ToyLib.IO.ReadBS (a1, a2)
+instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3) => ToyLib.IO.ReadBS (a1, a2, a3)
+instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.IO.ReadBS a4) => ToyLib.IO.ReadBS (a1, a2, a3, a4)
+instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.IO.ReadBS a4, ToyLib.IO.ReadBS a5) => ToyLib.IO.ReadBS (a1, a2, a3, a4, a5)
+instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.IO.ReadBS a4, ToyLib.IO.ReadBS a5, ToyLib.IO.ReadBS a6) => ToyLib.IO.ReadBS (a1, a2, a3, a4, a5, a6)
 
 module ToyLib.Macro
 dbg :: Show a => a -> ()
@@ -492,8 +644,8 @@ foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
 minimumOr :: (Ord a, Unbox a) => a -> Vector a -> a
 maximumOr :: (Ord a, Unbox a) => a -> Vector a -> a
-safeHead :: Unbox a => Vector a -> Maybe a
-safeLast :: Unbox a => Vector a -> Maybe a
+headMay :: Unbox a => Vector a -> Maybe a
+lastMay :: Unbox a => Vector a -> Maybe a
 rangeVG :: Vector v Int => Int -> Int -> v Int
 rangeV :: Int -> Int -> Vector Int
 rangeVU :: Int -> Int -> Vector Int
@@ -525,26 +677,6 @@ times :: Int -> (a -> a) -> a -> a
 -- | Combinations. - <a>https://stackoverflow.com/a/58511843</a> -
 --   <a>https://zenn.dev/osushi0x/scraps/51ff0594a1e863#comment-e6b0af9b61c54c</a>
 combs :: Int -> [a] -> [[a]]
-
--- | Returns inclusive ranges that satisfy the given <tt>check</tt>. FIXME:
---   Use a simpler, cheaper implementation
-twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
-tuple2 :: [a] -> (a, a)
-tuple3 :: [a] -> (a, a, a)
-tuple4 :: [a] -> (a, a, a, a)
-tuple5 :: [a] -> (a, a, a, a, a)
-tuple6 :: [a] -> (a, a, a, a, a, a)
-ints2 :: IO (Int, Int)
-ints3 :: IO (Int, Int, Int)
-ints4 :: IO (Int, Int, Int, Int)
-ints5 :: IO (Int, Int, Int, Int, Int)
-ints6 :: IO (Int, Int, Int, Int, Int, Int)
-yn :: Bool -> String
-printYn :: Bool -> IO ()
-
--- | <a>concat</a> two-item tuples
-concat2 :: [(a, a)] -> [a]
-concatMap2 :: (a -> (b, b)) -> [a] -> [b]
 swapDupe :: (a, a) -> ((a, a), (a, a))
 add2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 sub2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
@@ -558,63 +690,12 @@ fst4 :: (a, b, c, d) -> a
 snd4 :: (a, b, c, d) -> b
 thd4 :: (a, b, c, d) -> c
 fth4 :: (a, b, c, d) -> d
-
--- | Reads one line as an integer.
-int :: IO Int
-
--- | Reads one line as a list of integers.
-ints :: IO [Int]
-intsVG :: Vector v Int => IO (v Int)
-intsV :: IO (Vector Int)
-
--- | Reads one line as a vector of integers.
-intsVU :: IO (Vector Int)
-
--- | Reads one line as a vector of digits.
-digitsVU :: IO (Vector Int)
-
--- | FIXME: Faster implementation
-intsN :: Int -> IO [Int]
-
--- | FIXME: Faster implementation
-intsNVU :: Int -> IO (Vector Int)
-intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (Vector Int))
-intsRestVG :: Vector v Int => IO (v Int)
-intsRestVU :: IO (Vector Int)
-
--- | Creates a graph from 1-based vertices
-getGraph :: Int -> Int -> IO (Array Int [Int])
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph :: Int -> Int -> IO (Array Int [Entry Int Int])
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph0 :: Int -> Int -> IO (Array Int [Entry Int Int])
-endlBSB :: Builder
-putBSB :: Builder -> IO ()
-putLnBSB :: Builder -> IO ()
-
--- | Show as a bytestring builder
-class ShowBSB a
-showBSB :: ShowBSB a => a -> Builder
-showBSB :: (ShowBSB a, Show a) => a -> Builder
-showLnBSB :: ShowBSB a => a -> Builder
-printBSB :: ShowBSB a => a -> IO ()
-
--- | See <a>unwordsBSB</a> as example.
-concatBSB :: Vector v a => (a -> Builder) -> v a -> Builder
-unwordsBSB :: (ShowBSB a, Vector v a) => v a -> Builder
-unlinesBSB :: (ShowBSB a, Vector v a) => v a -> Builder
 traceMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ()
 traceSubMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ((i, i), (i, i)) -> ()
 
 -- | Inaccurate, but fast <a>Int</a> square root. TODO: Fast and accurate
 --   implementation
 isqrt :: Int -> Int
-instance ToyLib.Prelude.ShowBSB GHC.Types.Int
-instance ToyLib.Prelude.ShowBSB GHC.Num.Integer.Integer
-instance ToyLib.Prelude.ShowBSB GHC.Types.Float
-instance ToyLib.Prelude.ShowBSB GHC.Types.Double
 
 
 -- | Handy, more restricted <a>Ix</a> with reverse conversion, fast monadic
