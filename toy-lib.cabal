@@ -61,6 +61,7 @@ library
       Math.Primes
       ToyLib.Debug
       ToyLib.DP
+      ToyLib.FromVec
       ToyLib.IO
       ToyLib.Macro
       ToyLib.Prelude
