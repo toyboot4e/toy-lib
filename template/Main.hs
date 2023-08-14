@@ -20,6 +20,7 @@
 module Template () where
 
 import Control.Applicative
+import Control.Arrow ((***))
 import Control.Exception (assert)
 import Control.Monad
 import Control.Monad.Fix
@@ -69,6 +70,7 @@ import qualified Data.Array as A
 -- bytestring
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Unsafe as BSU
 
 -- extra
 import Control.Monad.Extra hiding (loop) -- foldM, ..

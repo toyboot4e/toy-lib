@@ -1,4 +1,3 @@
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 
 module ToyLib.Prelude where
@@ -7,19 +6,13 @@ import Control.Monad
 import Control.Monad.Primitive
 import Data.Array.IArray
 import Data.Bifunctor
-import qualified Data.ByteString.Builder as BSB
-import qualified Data.ByteString.Char8 as BS
-import Data.Char (digitToInt, isSpace)
-import qualified Data.Heap as H
 import Data.List
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
-import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import Debug.Trace
-import System.IO (stdout)
 
 -- {{{ Prelude utilities
 
@@ -94,11 +87,11 @@ maximumOr !orValue !xs =
     then orValue
     else VU.maximum xs
 
-safeHead :: (VU.Unbox a) => VU.Vector a -> Maybe a
-safeHead vec = if VU.null vec then Nothing else Just $! VU.head vec
+headMay :: (VU.Unbox a) => VU.Vector a -> Maybe a
+headMay vec = if VU.null vec then Nothing else Just $! VU.head vec
 
-safeLast :: (VU.Unbox a) => VU.Vector a -> Maybe a
-safeLast vec = if VU.null vec then Nothing else Just $! VU.last vec
+lastMay :: (VU.Unbox a) => VU.Vector a -> Maybe a
+lastMay vec = if VU.null vec then Nothing else Just $! VU.last vec
 
 -- }}}
 
@@ -230,72 +223,9 @@ combs k as@(!_ : xs)
         (!q : qs) = take (n - k + 1) ys
         dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
 
--- | Returns inclusive ranges that satisfy the given `check`.
--- FIXME: Use a simpler, cheaper implementation
-twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
-twoPointers !n !check = inner (0, 0)
-  where
-    inner (!l, !_) | l >= n = []
-    inner (!l, !r)
-      | check (l, r) =
-          let (!l', !r') = until (not . peekCheck) (second succ) (l, r)
-           in (l', r') : inner (succ l', max l' r')
-      | otherwise = inner (succ l, max (succ l) r)
-    peekCheck (!_, !r) | r == pred n = False
-    peekCheck (!l, !r) = check (l, succ r)
-
 -- }}}
 
 -- {{{ Tuples
-
-tuple2 :: [a] -> (a, a)
-tuple2 [!a1, !a2] = (a1, a2)
-tuple2 _ = error "not a two-item list"
-
-tuple3 :: [a] -> (a, a, a)
-tuple3 [!a1, !a2, !a3] = (a1, a2, a3)
-tuple3 _ = error "not a three-item list"
-
-tuple4 :: [a] -> (a, a, a, a)
-tuple4 [!a1, !a2, !a3, !a4] = (a1, a2, a3, a4)
-tuple4 _ = error "not a four-item list"
-
-tuple5 :: [a] -> (a, a, a, a, a)
-tuple5 [!a1, !a2, !a3, !a4, !a5] = (a1, a2, a3, a4, a5)
-tuple5 _ = error "not a five-item list"
-
-tuple6 :: [a] -> (a, a, a, a, a, a)
-tuple6 [!a1, !a2, !a3, !a4, !a5, !a6] = (a1, a2, a3, a4, a5, a6)
-tuple6 _ = error "not a six-item list"
-
-ints2 :: IO (Int, Int)
-ints2 = tuple2 <$> ints
-
-ints3 :: IO (Int, Int, Int)
-ints3 = tuple3 <$> ints
-
-ints4 :: IO (Int, Int, Int, Int)
-ints4 = tuple4 <$> ints
-
-ints5 :: IO (Int, Int, Int, Int, Int)
-ints5 = tuple5 <$> ints
-
-ints6 :: IO (Int, Int, Int, Int, Int, Int)
-ints6 = tuple6 <$> ints
-
-yn :: Bool -> String
-yn b = if b then "Yes" else "No"
-
-printYn :: Bool -> IO ()
-printYn = putStrLn . yn
-
--- | `concat` two-item tuples
-concat2 :: [(a, a)] -> [a]
-concat2 [] = []
-concat2 ((!x, !y) : xys) = x : y : concat2 xys
-
-concatMap2 :: (a -> (b, b)) -> [a] -> [b]
-concatMap2 !f = concat2 . map f
 
 swapDupe :: (a, a) -> ((a, a), (a, a))
 swapDupe = second swap . dupe
@@ -336,127 +266,6 @@ thd4 (!_, !_, !c, !_) = c
 
 fth4 :: (a, b, c, d) -> d
 fth4 (!_, !_, !_, !d) = d
-
--- }}}
-
--- {{{ Input
-
--- TODO: Consider separating parser from reader
-
--- | Reads one line as an integer.
-int :: IO Int
-int = readLn
-
--- | Reads one line as a list of integers.
-ints :: IO [Int]
-ints = unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
-
-intsVG :: VG.Vector v Int => IO (v Int)
-intsVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
-
-intsV :: IO (V.Vector Int)
-intsV = intsVG
-
--- | Reads one line as a vector of integers.
-intsVU :: IO (VU.Vector Int)
-intsVU = intsVG
-
--- | Reads one line as a vector of digits.
-digitsVU :: IO (VU.Vector Int)
-digitsVU = VU.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
-
--- | FIXME: Faster implementation
-intsN :: Int -> IO [Int]
-intsN n = concat <$> replicateM n ints
-
--- | FIXME: Faster implementation
-intsNVU :: Int -> IO (VU.Vector Int)
-intsNVU n = VU.fromList . concat <$> replicateM n ints
-
-intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
-intsGrid h w = IxVector ((0, 0), (h - 1, w - 1)) <$> intsNVU h
-
-intsRestVG :: VG.Vector v Int => IO (v Int)
-intsRestVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
-
-intsRestVU :: IO (VU.Vector Int)
-intsRestVU = intsRestVG
-
--- | Creates a graph from 1-based vertices
-getGraph :: Int -> Int -> IO (Array Int [Int])
-getGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints
-  where
-    accGraph = accumArray @Array (flip (:)) [] (1, nVerts)
-    toInput = concatMap2 $ second swap . dupe . tuple2
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph :: Int -> Int -> IO (Array Int [H.Entry Int Int])
-getWGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints
-  where
-    accGraph = accumArray @Array (flip (:)) [] (1, nVerts)
-    toInput = concatMap2 $ \[!a, !b, !cost] -> ((a, H.Entry cost b), (b, H.Entry cost a))
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph0 :: Int -> Int -> IO (Array Int [H.Entry Int Int])
-getWGraph0 !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints
-  where
-    accGraph = accumArray @Array (flip (:)) [] (0, pred nVerts)
-    toInput = concatMap2 $ \[!a, !b, !cost] -> ((pred a, H.Entry cost (pred b)), (pred b, H.Entry cost (pred a)))
-
--- }}}
-
--- {{{ Output
-
-{-# INLINE endlBSB #-}
-endlBSB :: BSB.Builder
-endlBSB = BSB.char7 '\n'
-
-putBSB :: BSB.Builder -> IO ()
-putBSB = BSB.hPutBuilder stdout
-
-putLnBSB :: BSB.Builder -> IO ()
-putLnBSB = BSB.hPutBuilder stdout . (<> endlBSB)
-
--- ord8 :: Char -> Word8
--- ord8 = fromIntegral . fromEnum
---
--- chr8 :: Word8 -> Char
--- chr8 = toEnum . fromIntegral
-
--- | Show as a bytestring builder
-class ShowBSB a where
-  showBSB :: a -> BSB.Builder
-  default showBSB :: (Show a) => a -> BSB.Builder
-  showBSB = BSB.string8 . show
-
-instance ShowBSB Int where
-  showBSB = BSB.intDec
-
-instance ShowBSB Integer where
-  showBSB = BSB.integerDec
-
-instance ShowBSB Float where
-  showBSB = BSB.floatDec
-
-instance ShowBSB Double where
-  showBSB = BSB.doubleDec
-
-showLnBSB :: ShowBSB a => a -> BSB.Builder
-showLnBSB = (<> endlBSB) . showBSB
-
-printBSB :: ShowBSB a => a -> IO ()
-printBSB = putBSB . showBSB
-
--- | See `unwordsBSB` as example.
-concatBSB :: (VG.Vector v a) => (a -> BSB.Builder) -> v a -> BSB.Builder
-concatBSB f = VG.foldr' ((<>) . f) mempty
-
--- FIXME: unnecessary whitespace at the end?
-unwordsBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
-unwordsBSB = concatBSB ((<> BSB.string7 " ") . showBSB)
-
-unlinesBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
-unlinesBSB = concatBSB showLnBSB
 
 -- }}}
 
