@@ -2,11 +2,19 @@
 
 -- | IO
 --
+-- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
+--
 -- >>> :{
--- convert4BS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
+-- convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
+-- :}
+-- (42,'c',"string",2.5)
+--
+-- Vectors are `ReadBS` and they can also be embedded in the end of a tuple:
+--
+-- >>> :{
+-- convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
 -- :}
 -- (1,"string",3.5,[10,20,30,40])
-
 module ToyLib.IO where
 
 import Control.Monad
@@ -111,6 +119,96 @@ instance (ReadBS a) => ReadBS (V.Vector a) where
     | BS.null bs = Nothing
     | otherwise = Just (readBS bs)
 
+instance (ReadBS a1, ReadBS a2) => ReadBS (a1, a2) where
+  {-# INLINE convertBS #-}
+  convertBS !bs0 =
+    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+        !a2 = convertBS (BS.dropWhile isSpace bs1)
+     in (a1, a2)
+  {-# INLINE readBS #-}
+  readBS = fromJust . readMayBS
+  {-# INLINE readMayBS #-}
+  readMayBS !bs0 = do
+    (!x1, !bs1) <- readMayBS bs0
+    (!x2, !bs2) <- readMayBS bs1
+    Just ((x1, x2), bs2)
+
+instance (ReadBS a1, ReadBS a2, ReadBS a3) => ReadBS (a1, a2, a3) where
+  {-# INLINE convertBS #-}
+  convertBS !bs0 =
+    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+        (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
+        !a3 = convertBS (BS.dropWhile isSpace bs2)
+     in (a1, a2, a3)
+  {-# INLINE readBS #-}
+  readBS = fromJust . readMayBS
+  {-# INLINE readMayBS #-}
+  readMayBS !bs0 = do
+    (!x1, !bs1) <- readMayBS bs0
+    (!x2, !bs2) <- readMayBS bs1
+    (!x3, !bs3) <- readMayBS bs2
+    Just ((x1, x2, x3), bs3)
+
+instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4) => ReadBS (a1, a2, a3, a4) where
+  {-# INLINE convertBS #-}
+  convertBS !bs0 =
+    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+        (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
+        (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
+        !a4 = convertBS (BS.dropWhile isSpace bs3)
+     in (a1, a2, a3, a4)
+  {-# INLINE readBS #-}
+  readBS = fromJust . readMayBS
+  {-# INLINE readMayBS #-}
+  readMayBS !bs0 = do
+    (!x1, !bs1) <- readMayBS bs0
+    (!x2, !bs2) <- readMayBS bs1
+    (!x3, !bs3) <- readMayBS bs2
+    (!x4, !bs4) <- readMayBS bs3
+    Just ((x1, x2, x3, x4), bs4)
+
+instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5) => ReadBS (a1, a2, a3, a4, a5) where
+  {-# INLINE convertBS #-}
+  convertBS !bs0 =
+    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+        (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
+        (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
+        (!a4, !bs4) = readBS (BS.dropWhile isSpace bs3)
+        !a5 = convertBS (BS.dropWhile isSpace bs4)
+     in (a1, a2, a3, a4, a5)
+  {-# INLINE readBS #-}
+  readBS = fromJust . readMayBS
+  {-# INLINE readMayBS #-}
+  readMayBS !bs0 = do
+    (!x1, !bs1) <- readMayBS bs0
+    (!x2, !bs2) <- readMayBS bs1
+    (!x3, !bs3) <- readMayBS bs2
+    (!x4, !bs4) <- readMayBS bs3
+    (!x5, !bs5) <- readMayBS bs4
+    Just ((x1, x2, x3, x4, x5), bs5)
+
+instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => ReadBS (a1, a2, a3, a4, a5, a6) where
+  {-# INLINE convertBS #-}
+  convertBS !bs0 =
+    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
+        (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
+        (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
+        (!a4, !bs4) = readBS (BS.dropWhile isSpace bs3)
+        (!a5, !bs5) = readBS (BS.dropWhile isSpace bs4)
+        !a6 = convertBS (BS.dropWhile isSpace bs5)
+     in (a1, a2, a3, a4, a5, a6)
+  {-# INLINE readBS #-}
+  readBS = fromJust . readMayBS
+  {-# INLINE readMayBS #-}
+  readMayBS !bs0 = do
+    (!x1, !bs1) <- readMayBS bs0
+    (!x2, !bs2) <- readMayBS bs1
+    (!x3, !bs3) <- readMayBS bs2
+    (!x4, !bs4) <- readMayBS bs3
+    (!x5, !bs5) <- readMayBS bs4
+    (!x6, !bs6) <- readMayBS bs5
+    Just ((x1, x2, x3, x4, x5, x6), bs6)
+
 -- | Converrts the given `ByteString` as a vector of @a@.
 convertVG :: (ReadBS a, VG.Vector v a) => BS.ByteString -> v a
 convertVG = VG.unfoldr (readMayBS . BS.dropWhile isSpace)
@@ -131,83 +229,28 @@ convertNV = convertNVG
 convertNVU :: (ReadBS a, VU.Unbox a) => Int -> BS.ByteString -> VU.Vector a
 convertNVU = convertNVG
 
-convert2BS :: (ReadBS a1, ReadBS a2) => BS.ByteString -> (a1, a2)
-convert2BS !bs0 =
-  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-      !a2 = convertBS (BS.dropWhile isSpace bs1)
-   in (a1, a2)
-
-convert3BS :: (ReadBS a1, ReadBS a2, ReadBS a3) => BS.ByteString -> (a1, a2, a3)
-convert3BS !bs0 =
-  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-      (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
-      !a3 = convertBS (BS.dropWhile isSpace bs2)
-   in (a1, a2, a3)
-
-convert4BS :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4) => BS.ByteString -> (a1, a2, a3, a4)
-convert4BS !bs0 =
-  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-      (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
-      (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
-      !a4 = convertBS (BS.dropWhile isSpace bs3)
-   in (a1, a2, a3, a4)
-
-convert5BS :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5) => BS.ByteString -> (a1, a2, a3, a4, a5)
-convert5BS !bs0 =
-  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-      (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
-      (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
-      (!a4, !bs4) = readBS (BS.dropWhile isSpace bs3)
-      !a5 = convertBS (BS.dropWhile isSpace bs4)
-   in (a1, a2, a3, a4, a5)
-
-convert6BS :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => BS.ByteString -> (a1, a2, a3, a4, a5, a6)
-convert6BS !bs0 =
-  let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-      (!a2, !bs2) = readBS (BS.dropWhile isSpace bs1)
-      (!a3, !bs3) = readBS (BS.dropWhile isSpace bs2)
-      (!a4, !bs4) = readBS (BS.dropWhile isSpace bs3)
-      (!a5, !bs5) = readBS (BS.dropWhile isSpace bs4)
-      !a6 = convertBS (BS.dropWhile isSpace bs5)
-   in (a1, a2, a3, a4, a5, a6)
-
 -- Input/getter
 
-get1 :: (ReadBS a1) => IO a1
-get1 = convertBS <$> BS.getLine
-
-get2 :: (ReadBS a1, ReadBS a2) => IO (a1, a2)
-get2 = convert2BS <$> BS.getLine
-
-get3 :: (ReadBS a1, ReadBS a2, ReadBS a3) => IO (a1, a2, a3)
-get3 = convert3BS <$> BS.getLine
-
-get4 :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4) => IO (a1, a2, a3, a4)
-get4 = convert4BS <$> BS.getLine
-
-get5 :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5) => IO (a1, a2, a3, a4, a5)
-get5 = convert5BS <$> BS.getLine
-
-get6 :: (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => IO (a1, a2, a3, a4, a5, a6)
-get6 = convert6BS <$> BS.getLine
+get :: (ReadBS a) => IO a
+get = convertBS <$> BS.getLine
 
 ints1 :: IO Int
-ints1 = get1
+ints1 = get
 
 ints2 :: IO (Int, Int)
-ints2 = get2
+ints2 = get
 
 ints3 :: IO (Int, Int, Int)
-ints3 = get3
+ints3 = get
 
 ints4 :: IO (Int, Int, Int, Int)
-ints4 = get4
+ints4 = get
 
 ints5 :: IO (Int, Int, Int, Int, Int)
-ints5 = get5
+ints5 = get
 
 ints6 :: IO (Int, Int, Int, Int, Int, Int)
-ints6 = get6
+ints6 = get
 
 -- vectors
 
