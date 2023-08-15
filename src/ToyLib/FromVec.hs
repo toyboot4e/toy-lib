@@ -6,6 +6,7 @@ import qualified Data.Heap as H
 import qualified Data.IntMap.Strict as IM
 import qualified Data.IntSet as IS
 import qualified Data.Map.Strict as M
+import Data.MultiSet
 import qualified Data.Set as S
 import qualified Data.Vector.Generic as VG
 
@@ -44,6 +45,12 @@ instance (Ord a) => FromVec (H.Heap a) where
   type FromVecInput (H.Heap a) = a
   type FromVecItem (H.Heap a) = a
   fromVec = VG.foldl' (flip H.insert) H.empty
+  fromVecWith _ = fromVec
+
+instance FromVec MultiSet where
+  type FromVecInput MultiSet = Int
+  type FromVecItem MultiSet = Int
+  fromVec = VG.foldl' (flip incMS) emptyMS
   fromVecWith _ = fromVec
 
 fromVecIM :: (VG.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
