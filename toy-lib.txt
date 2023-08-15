@@ -22,7 +22,7 @@ powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 -- | Originally by @yamate11
 powerset :: (Bits a, Num a) => a -> [a]
 
--- | Returns a powerset of @x0` in descending order.
+-- | Returns a powerset of <tt>x0</tt> in descending order.
 powersetVU :: (Bits a, Num a, Unbox a) => a -> Vector a
 
 
@@ -110,6 +110,35 @@ deleteFindMinMS :: MultiSet -> (Int, MultiSet)
 
 -- | Unwraps <a>MultiSet</a> into the underlying <tt>IntMap</tt>.
 innerMS :: MultiSet -> IntMap Int
+
+module Data.FromVec
+class FromVec a where {
+    type FromVecInput a;
+    type FromVecItem a;
+}
+fromVec :: (FromVec a, Vector v (FromVecInput a)) => v (FromVecInput a) -> a
+fromVecWith :: (FromVec a, Vector v (FromVecInput a)) => (FromVecItem a -> FromVecItem a -> FromVecItem a) -> v (FromVecInput a) -> a
+
+-- | Strongly typed <a>fromVec</a>.
+fromVecIM :: Vector v (Int, a) => v (Int, a) -> IntMap a
+
+-- | Strongly typed <a>fromVec</a>.
+fromVecM :: Vector v (Int, a) => v (Int, a) -> IntMap a
+
+-- | Strongly typed <a>fromVec</a>.
+fromVecIS :: Vector v Int => v Int -> IntSet
+
+-- | Strongly typed <a>fromVec</a>.
+fromVecS :: (Ord a, Vector v a) => v a -> Set a
+
+-- | Strongly typed <a>fromVec</a>.
+fromVecH :: (Ord a, Vector v a) => v a -> Heap a
+instance Data.FromVec.FromVec (Data.IntMap.Internal.IntMap a)
+instance GHC.Classes.Ord k => Data.FromVec.FromVec (Data.Map.Internal.Map k a)
+instance Data.FromVec.FromVec Data.IntSet.Internal.IntSet
+instance GHC.Classes.Ord a => Data.FromVec.FromVec (Data.Set.Internal.Set a)
+instance GHC.Classes.Ord a => Data.FromVec.FromVec (Data.Heap.Heap a)
+instance Data.FromVec.FromVec Data.MultiSet.MultiSet
 
 module Data.SegmentTree.Strict
 
@@ -447,25 +476,6 @@ module ToyLib.Debug
 class ShowGrid a
 showGrid :: ShowGrid a => a -> String
 instance (Data.Vector.Generic.Base.Vector v a, GHC.Show.Show a) => ToyLib.Debug.ShowGrid (Data.Vector.IxVector.IxVector (GHC.Types.Int, GHC.Types.Int) (v a))
-
-module ToyLib.FromVec
-class FromVec a where {
-    type FromVecInput a;
-    type FromVecItem a;
-}
-fromVec :: (FromVec a, Vector v (FromVecInput a)) => v (FromVecInput a) -> a
-fromVecWith :: (FromVec a, Vector v (FromVecInput a)) => (FromVecItem a -> FromVecItem a -> FromVecItem a) -> v (FromVecInput a) -> a
-fromVecIM :: Vector v (Int, a) => v (Int, a) -> IntMap a
-fromVecM :: Vector v (Int, a) => v (Int, a) -> IntMap a
-fromVecIS :: Vector v Int => v Int -> IntSet
-fromVecS :: (Ord a, Vector v a) => v a -> Set a
-fromVecH :: (Ord a, Vector v a) => v a -> Heap a
-instance ToyLib.FromVec.FromVec (Data.IntMap.Internal.IntMap a)
-instance GHC.Classes.Ord k => ToyLib.FromVec.FromVec (Data.Map.Internal.Map k a)
-instance ToyLib.FromVec.FromVec Data.IntSet.Internal.IntSet
-instance GHC.Classes.Ord a => ToyLib.FromVec.FromVec (Data.Set.Internal.Set a)
-instance GHC.Classes.Ord a => ToyLib.FromVec.FromVec (Data.Heap.Heap a)
-instance ToyLib.FromVec.FromVec Data.MultiSet.MultiSet
 
 module ToyLib.Macro
 dbg :: Show a => a -> ()
@@ -933,9 +943,8 @@ foldTreeAll :: (Unbox a, Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> 
 -- | <tt>vector</tt>-based sparse graph implementation (weightened or
 --   unweightened).
 --   
---   Heavily inspired by <tt>cojna/iota</tt>. TODO: rename adjRaw to adj,
---   adj to adjIx
-module Data.Graph.Sparse
+--   Heavily inspired by <tt>cojna/iota</tt>.
+module Data.SparseGraph
 type Edge = (Vertex, Vertex)
 
 -- | Weightened edge
@@ -1017,7 +1026,7 @@ revSG :: (Unindex i, Unbox w) => SparseGraph i w -> SparseGraph i w
 --   Upstream vertices come first, e.g., <tt>(v1 - v2) -&gt; v3 -&gt;
 --   v4</tt>.
 topSccSG :: (Unindex i, Unbox w) => SparseGraph i w -> [[Int]]
-instance (GHC.Show.Show i, GHC.Show.Show w, Data.Vector.Unboxed.Base.Unbox w) => GHC.Show.Show (Data.Graph.Sparse.SparseGraph i w)
+instance (GHC.Show.Show i, GHC.Show.Show w, Data.Vector.Unboxed.Base.Unbox w) => GHC.Show.Show (Data.SparseGraph.SparseGraph i w)
 
 
 -- | Maximum flow calculation (Ford-Fulkerson algorithm).

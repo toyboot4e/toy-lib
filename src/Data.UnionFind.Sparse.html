@@ -37,125 +37,125 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span id="line-17"></span><span>
 </span><span id="line-18"></span><span class="annot"><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-type">rootSUF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.UnionFind.Sparse.html#SparseUnionFind"><span class="hs-identifier hs-type">SparseUnionFind</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
 </span><span id="line-19"></span><span id="rootSUF"><span class="annot"><span class="annottext">rootSUF :: SparseUnionFind -&gt; Int -&gt; (Int, Int)
-</span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var hs-var">rootSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100768"><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100768"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100769"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100769"><span class="hs-identifier hs-var">i</span></a></span></span><span>
+</span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var hs-var">rootSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100979"><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100979"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100980"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100980"><span class="hs-identifier hs-var">i</span></a></span></span><span>
 </span><span id="line-20"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; SparseUnionFind -&gt; Bool
 forall a. Int -&gt; IntMap a -&gt; Bool
 </span><span class="hs-identifier hs-var">IM.notMember</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100769"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100768"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100769"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100980"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100979"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100980"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
 </span><span id="line-21"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100771"><span class="hs-identifier hs-var">j</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679100982"><span class="hs-identifier hs-var">j</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100769"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100771"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679100980"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100982"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
 </span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var">rootSUF</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100768"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100771"><span class="hs-identifier hs-var">j</span></a></span><span>
+</span><a href="#local-6989586621679100979"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100982"><span class="hs-identifier hs-var">j</span></a></span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-24"></span><span>    </span><span id="local-6989586621679100771"><span class="annot"><span class="annottext">j :: Int
-</span><a href="#local-6989586621679100771"><span class="hs-identifier hs-var hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100768"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; Int
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621679100982"><span class="annot"><span class="annottext">j :: Int
+</span><a href="#local-6989586621679100982"><span class="hs-identifier hs-var hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100979"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; Int
 forall a. IntMap a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">IM.!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100769"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679100980"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-25"></span><span>
 </span><span id="line-26"></span><span class="annot"><a href="Data.UnionFind.Sparse.html#sameSUF"><span class="hs-identifier hs-type">sameSUF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.UnionFind.Sparse.html#SparseUnionFind"><span class="hs-identifier hs-type">SparseUnionFind</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-27"></span><span id="sameSUF"><span class="annot"><span class="annottext">sameSUF :: SparseUnionFind -&gt; Int -&gt; Int -&gt; Bool
-</span><a href="Data.UnionFind.Sparse.html#sameSUF"><span class="hs-identifier hs-var hs-var">sameSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100775"><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100775"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100776"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100776"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100777"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100777"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
+</span><a href="Data.UnionFind.Sparse.html#sameSUF"><span class="hs-identifier hs-var hs-var">sameSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100986"><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100986"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100987"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100987"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100988"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100988"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
 forall a b. (a, b) -&gt; a
 </span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
 </span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var">rootSUF</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100775"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100776"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679100986"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100987"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
 forall a b. (a, b) -&gt; a
 </span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
 </span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var">rootSUF</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100775"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100777"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679100986"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100988"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="annot"><a href="Data.UnionFind.Sparse.html#uniteSUF"><span class="hs-identifier hs-type">uniteSUF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.UnionFind.Sparse.html#SparseUnionFind"><span class="hs-identifier hs-type">SparseUnionFind</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.UnionFind.Sparse.html#SparseUnionFind"><span class="hs-identifier hs-type">SparseUnionFind</span></a></span><span>
 </span><span id="line-30"></span><span id="uniteSUF"><span class="annot"><span class="annottext">uniteSUF :: SparseUnionFind -&gt; Int -&gt; Int -&gt; SparseUnionFind
-</span><a href="Data.UnionFind.Sparse.html#uniteSUF"><span class="hs-identifier hs-var hs-var">uniteSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100779"><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100780"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100780"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100781"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100781"><span class="hs-identifier hs-var">j</span></a></span></span><span>
+</span><a href="Data.UnionFind.Sparse.html#uniteSUF"><span class="hs-identifier hs-var hs-var">uniteSUF</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100990"><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100991"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100991"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100992"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100992"><span class="hs-identifier hs-var">j</span></a></span></span><span>
 </span><span id="line-31"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100782"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679100993"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100783"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span><span>
+</span><a href="#local-6989586621679100994"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100784"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679100995"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100785"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; SparseUnionFind -&gt; SparseUnionFind
+</span><a href="#local-6989586621679100996"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100782"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="#local-6989586621679100993"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">negate</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; Int -&gt; Int
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100784"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679100995"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100785"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(SparseUnionFind -&gt; SparseUnionFind)
+</span><a href="#local-6989586621679100996"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(SparseUnionFind -&gt; SparseUnionFind)
 -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100783"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100782"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span><span>
+</span><a href="#local-6989586621679100994"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100993"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span><span>
 </span><span id="line-33"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100783"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="#local-6989586621679100994"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">negate</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; Int -&gt; Int
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100784"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679100995"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100785"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(SparseUnionFind -&gt; SparseUnionFind)
+</span><a href="#local-6989586621679100996"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(SparseUnionFind -&gt; SparseUnionFind)
 -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; SparseUnionFind -&gt; SparseUnionFind
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100782"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100783"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span><span>
+</span><a href="#local-6989586621679100993"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100994"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span><span>
 </span><span id="line-34"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679100782"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100782"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100784"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100784"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
+</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679100993"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100993"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100995"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100995"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
 </span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var">rootSUF</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100780"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-36"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679100783"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100783"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100785"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100785"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100991"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679100994"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100994"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679100996"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100996"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SparseUnionFind -&gt; Int -&gt; (Int, Int)
 </span><a href="Data.UnionFind.Sparse.html#rootSUF"><span class="hs-identifier hs-var">rootSUF</span></a></span><span> </span><span class="annot"><span class="annottext">SparseUnionFind
-</span><a href="#local-6989586621679100779"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679100781"><span class="hs-identifier hs-var">j</span></a></span><span>
+</span><a href="#local-6989586621679100990"><span class="hs-identifier hs-var">uf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679100992"><span class="hs-identifier hs-var">j</span></a></span><span>
 </span><span id="line-37"></span><span>
 </span><span id="line-38"></span><span class="hs-comment">-- }}}</span><span>
 </span><span id="line-39"></span></pre></body></html>
