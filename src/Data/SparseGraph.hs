@@ -4,8 +4,7 @@
 -- | `vector`-based sparse graph implementation (weightened or unweightened).
 --
 -- Heavily inspired by @cojna/iota@.
--- TODO: rename adjRaw to adj, adj to adjIx
-module Data.Graph.Sparse where
+module Data.SparseGraph where
 
 import Control.Applicative
 import Control.Monad

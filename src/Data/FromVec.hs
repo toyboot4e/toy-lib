@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module ToyLib.FromVec where
+module Data.FromVec where
 
 import qualified Data.Heap as H
 import qualified Data.IntMap.Strict as IM
@@ -53,17 +53,22 @@ instance FromVec MultiSet where
   fromVec = VG.foldl' (flip incMS) emptyMS
   fromVecWith _ = fromVec
 
+-- | Strongly typed `fromVec`.
 fromVecIM :: (VG.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
 fromVecIM = fromVec
 
+-- | Strongly typed `fromVec`.
 fromVecM :: (VG.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
 fromVecM = fromVec
 
+-- | Strongly typed `fromVec`.
 fromVecIS :: (VG.Vector v Int) => v Int -> IS.IntSet
 fromVecIS = fromVec
 
+-- | Strongly typed `fromVec`.
 fromVecS :: (Ord a, VG.Vector v a) => v a -> S.Set a
 fromVecS = fromVec
 
+-- | Strongly typed `fromVec`.
 fromVecH :: (Ord a, VG.Vector v a) => v a -> H.Heap a
 fromVecH = fromVec

@@ -22,7 +22,7 @@ powerset !a = a : unfoldr f a
     f 0 = Nothing
     f !x = Just . dupe $! a .&. (x - 1)
 
--- | Returns a powerset of @x0` in descending order.
+-- | Returns a powerset of @x0@ in descending order.
 powersetVU :: (Bits a, Num a, VU.Unbox a) => a -> VU.Vector a
 powersetVU !x0 = VU.unfoldrExactN n f x0
   where

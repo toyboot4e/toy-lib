@@ -4,7 +4,7 @@
 module Main (main) where
 
 import Control.Monad
-import Data.Graph.Sparse
+import Data.SparseGraph
 import qualified Data.List as L
 import Data.List.Extra (stripSuffix)
 import qualified Data.Map.Strict as M

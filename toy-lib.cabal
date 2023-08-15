@@ -30,18 +30,19 @@ library
       Data.BinaryLifting
       Data.BitSet
       Data.Buffer
+      Data.FromVec
       Data.Graph
       Data.Graph.Digraph
       Data.Graph.FloydWarshall
       Data.Graph.MaxFlow
       Data.Graph.Scc
-      Data.Graph.Sparse
       Data.ModInt
       Data.MultiSet
       Data.RollingHash
       Data.SegmentTree.Lazy
       Data.SegmentTree.Strict
       Data.SemigroupAction
+      Data.SparseGraph
       Data.Tree.Fold
       Data.Tree.Lca
       Data.Unindex
@@ -61,7 +62,6 @@ library
       Math.Primes
       ToyLib.Debug
       ToyLib.DP
-      ToyLib.FromVec
       ToyLib.IO
       ToyLib.Macro
       ToyLib.Prelude
