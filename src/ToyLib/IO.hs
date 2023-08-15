@@ -2,6 +2,12 @@
 
 -- | Super dirty slow IO
 --
+-- # Main procedures
+--
+-- `int2`, `intsW`, `get`, `getGrid` and `charsH`.
+--
+-- # `ReadBS` and `get`
+--
 -- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
 --
 -- >>> :{
@@ -243,6 +249,9 @@ ints6 :: IO (Int, Int, Int, Int, Int, Int)
 ints6 = get
 
 -- vectors
+
+intsW :: (VG.Vector v Int) => Int -> IO (v Int)
+intsW !w = VG.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 -- | Reads one line as an integer.
 intsVG :: (VG.Vector v Int) => IO (v Int)
