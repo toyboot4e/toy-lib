@@ -12,7 +12,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
 import ToyLib.Prelude (foldForMVG)
 
--- | Calculates the inversion number.
+-- | Calculates the inversion number. Be sure to compress the input vector!
 invNumVG :: Int -> (VG.Vector v Int) => v Int -> Int
 invNumVG xMax xs = runST $ do
   !stree <- newSTreeVU (+) (xMax + 1) (0 :: Int)

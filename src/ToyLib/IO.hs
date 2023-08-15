@@ -2,11 +2,11 @@
 
 -- | Super dirty slow IO
 --
--- # Main procedures
+-- = Main procedures
 --
--- `int2`, `intsW`, `get`, `getGrid` and `charsH`.
+-- `ints2`, `intsW`, `get`, `digitsVU`, `getGrid` and `charsH`.
 --
--- # `ReadBS` and `get`
+-- = `ReadBS` and `get`
 --
 -- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
 --

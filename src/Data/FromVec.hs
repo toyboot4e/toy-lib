@@ -57,9 +57,17 @@ instance FromVec MultiSet where
 fromVecIM :: (VG.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
 fromVecIM = fromVec
 
+-- | Strongly typed `fromVecWith`.
+fromVecWithIM :: (VG.Vector v (Int, a)) => (a -> a -> a) -> v (Int, a) -> IM.IntMap a
+fromVecWithIM = fromVecWith
+
 -- | Strongly typed `fromVec`.
-fromVecM :: (VG.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
+fromVecM :: (VG.Vector v (k, a), Ord k) => v (k, a) -> M.Map k a
 fromVecM = fromVec
+
+-- | Strongly typed `fromVecWith`.
+fromVecWithM :: (VG.Vector v (k, a), Ord k) => (a -> a -> a) -> v (k, a) -> M.Map k a
+fromVecWithM = fromVecWith
 
 -- | Strongly typed `fromVec`.
 fromVecIS :: (VG.Vector v Int) => v Int -> IS.IntSet

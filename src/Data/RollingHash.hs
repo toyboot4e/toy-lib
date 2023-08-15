@@ -6,7 +6,7 @@
 
 module Data.RollingHash where
 
-import Control.Monad.Trans.State.Strict
+import Control.Monad.Trans.State.Strict hiding (get)
 import Data.Char (ord)
 import Data.List (foldl')
 import Data.Maybe

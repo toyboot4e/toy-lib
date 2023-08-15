@@ -1,9 +1,9 @@
 -- | Extended Eucried Algorithm
 --
--- # Typical problems
+-- = Typical problems
 -- - [ABC 186 E - Throne](https://atcoder.jp/contests/abc186/tasks/abc186_e)
 --
--- # Related
+-- = Related
 -- - [Water drawing problem](https://science-log.com/%E3%83%9B%E3%83%BC%E3%83%A0%E3%83%9A%E3%83%BC%E3%82%B8/%E6%95%B0%E5%AD%A6top%E3%83%9A%E3%83%BC%E3%82%B8/%E6%95%B4%E6%95%B0top/%E6%95%B4%E6%95%B0%E7%AC%AC%EF%BC%93%E7%AB%A0%E7%9B%AE%E6%AC%A1/%E6%95%B4%E6%95%B0%E7%AC%AC%EF%BC%93%E7%AB%A0%E7%AC%AC%EF%BC%91%E7%AF%80/%E6%95%B4%E6%95%B0%E7%AC%AC%EF%BC%93%E7%AB%A0%E7%AC%AC%EF%BC%91%E7%AF%80%EF%BD%83-%EF%BC%91/%E5%95%8F%E9%A1%8Cc003/)
 
 module Math.Exgcd where

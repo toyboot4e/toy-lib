@@ -103,7 +103,7 @@ adj SparseGraph {..} v = VU.unsafeSlice o1 (o2 - o1) adjacentsSG
     !o1 = VU.unsafeIndex offsetsSG v
     !o2 = VU.unsafeIndex offsetsSG (v + 1)
 
--- | Returns `(EdgeId, Vertex)` paris. Hardly used.
+-- | Returns @(EdgeId, Vertex)@ paris. Hardly used.
 {-# INLINE eAdj #-}
 eAdj :: SparseGraph i w -> Vertex -> VU.Vector (EdgeId, Vertex)
 eAdj SparseGraph {..} v = VU.imap ((,) . (+ o1)) vs
@@ -194,7 +194,7 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
--- | Dijkstra: $O((E+V)\log {V})$
+-- | Dijkstra: $O((E+V) \log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> w -> i -> VU.Vector w
 djSG gr@SparseGraph {..} !undef !startIx = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
