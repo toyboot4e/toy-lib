@@ -1,6 +1,6 @@
 {-# LANGUAGE DefaultSignatures #-}
 
--- | IO
+-- | Super dirty slow IO
 --
 -- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
 --
@@ -31,7 +31,9 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed.Mutable as VUM
 import System.IO (stdout)
+import ToyLib.Prelude (repM_)
 
 -- import ToyLib.Prelude
 
@@ -213,21 +215,9 @@ instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => R
 convertVG :: (ReadBS a, VG.Vector v a) => BS.ByteString -> v a
 convertVG = VG.unfoldr (readMayBS . BS.dropWhile isSpace)
 
-convertV :: (ReadBS a) => BS.ByteString -> V.Vector a
-convertV = convertVG
-
-convertVU :: (ReadBS a, VU.Unbox a) => BS.ByteString -> VU.Vector a
-convertVU = convertVG
-
 -- | Converts the given `ByteString` as a vector of @a@ with @n@ elements.
 convertNVG :: (ReadBS a, VG.Vector v a) => Int -> BS.ByteString -> v a
 convertNVG !n = VG.unfoldrExactN n (readBS . BS.dropWhile isSpace)
-
-convertNV :: (ReadBS a) => Int -> BS.ByteString -> V.Vector a
-convertNV = convertNVG
-
-convertNVU :: (ReadBS a, VU.Unbox a) => Int -> BS.ByteString -> VU.Vector a
-convertNVU = convertNVG
 
 -- Input/getter
 
@@ -268,9 +258,6 @@ intsVU = intsVG
 digitsVU :: IO (VU.Vector Int)
 digitsVU = VU.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
-intsGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
-intsGrid h w = IxVector ((0, 0), (h - 1, w - 1)) . VU.concat <$> replicateM h intsVU
-
 intsRestVG :: (VG.Vector v Int) => IO (v Int)
 intsRestVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
 
@@ -283,6 +270,59 @@ getGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints2
   where
     accGraph = accumArray @Array (flip (:)) [] (1, nVerts)
     toInput = concatMap2 $ second swap . dupe
+
+-- Multi lines
+
+-- | Converts @n@ lines of **whitespace-delimited `ByteString`** into a flat vector of type @a@.
+--
+-- >>> :{
+-- convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
+-- :}
+-- [1,2,3,4,5,6,7,8,9]
+convertNBS :: forall a. (VU.Unbox a, ReadBS a) => Int -> V.Vector BS.ByteString -> VU.Vector a
+convertNBS !n !bss = VU.unfoldrExactN n step $ fromJust (V.uncons bss)
+  where
+    step :: (BS.ByteString, V.Vector BS.ByteString) -> (a, (BS.ByteString, V.Vector BS.ByteString))
+    step (!cur, !rest)
+      | BS.null cur' = step $ fromJust (V.uncons rest)
+      | otherwise =
+          let (!x, !cur'') = readBS cur'
+           in (x, (cur'', rest))
+      where
+        -- ignore white spaces
+        !cur' = BS.dropWhile isSpace cur
+
+-- | Reads @h@ lines of stdin and converts them as HxW **whitespace-delimited `ByteString`** and
+-- converts them into a flat vector of type @a@.
+getHW :: (VU.Unbox a, ReadBS a) => Int -> Int -> IO (VU.Vector a)
+getHW !h !w = convertNBS (h * w) <$> V.replicateM h BS.getLine
+
+-- | Reads @h@ lines of stdin and converts them into a IxVector reading as HxW
+-- **whitespace-separated** input.
+getGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
+getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW h w
+
+-- | Converts @n` lines of `ByteString` into a flat vector.
+--
+-- >>> :{
+-- VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
+-- :}
+-- [True,False,True,False,True,False]
+convertCharsHW :: V.Vector BS.ByteString -> VU.Vector Char
+convertCharsHW !bss = VU.create $ do
+  !vec <- VUM.unsafeNew (h * w)
+  V.iforM_ bss $ \y bs ->
+    repM_ 0 (w - 1) $ \x -> do
+      let !char = BS.index bs x
+      VUM.unsafeWrite vec (w * y + x) char
+  return vec
+  where
+    !w = BS.length (V.head bss)
+    !h = V.length bss
+
+-- | See `convertCharsHW`.
+charsH :: Int -> IO (VU.Vector Char)
+charsH !h = convertCharsHW <$> V.replicateM h BS.getLine
 
 -- Obsolute
 
