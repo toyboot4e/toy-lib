@@ -22,12 +22,9 @@ powerset !a = a : unfoldr f a
     f 0 = Nothing
     f !x = Just . dupe $! a .&. (x - 1)
 
--- | TODO: Working as expected?
+-- | Returns a powerset of @x0` in descending order.
 powersetVU :: (Bits a, Num a, VU.Unbox a) => a -> VU.Vector a
-powersetVU !a = VU.unfoldr f a
+powersetVU !x0 = VU.unfoldrExactN n f x0
   where
-    f (-1) = Nothing
-    f 0 = Just (0, -1)
-    f !x =
-      let !x' = a .&. (x - 1)
-       in Just (x, x')
+    !n = bit (popCount x0)
+    f !x = (x, (x - 1) .&. x0)
