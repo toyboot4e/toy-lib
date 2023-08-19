@@ -46,6 +46,10 @@ lengthBuffer Buffer{bufferVars} =
     (VUM.unsafeRead bufferVars _bufferFrontPos)
 {-# INLINE lengthBuffer #-}
 
+emptyBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m Bool
+emptyBuffer = fmap (== 0) . lengthBuffer
+{-# INLINE emptyBuffer #-}
+
 clearBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m ()
 clearBuffer Buffer{bufferVars} = do
   VUM.unsafeWrite bufferVars _bufferFrontPos 0
