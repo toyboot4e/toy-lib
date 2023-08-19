@@ -12,7 +12,7 @@ modInt = ModInt . (`mod` typeInt (Proxy @MyModulo))
 undef :: Int
 undef = -1
 
-main :: IO ()
+main :: HasCallStack => IO ()
 main = do
   !n <- ints1
   !xs <- intsVU

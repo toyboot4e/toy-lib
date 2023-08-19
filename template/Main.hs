@@ -48,6 +48,7 @@ import Data.Word
 import Debug.Trace
 import GHC.Exts
 import GHC.Float (int2Float)
+import GHC.Stack (HasCallStack)
 import System.Exit (exitSuccess)
 import System.IO
 import Text.Printf
