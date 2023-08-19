@@ -5,6 +5,7 @@ module ToyLib.Prelude where
 import Control.Monad
 import Control.Monad.Primitive
 import Data.Array.IArray
+import Data.Array.MArray
 import Data.Bifunctor
 import Data.List
 import Data.Tuple.Extra hiding (first, second)
@@ -38,6 +39,12 @@ chunks n = inner
     inner xs =
       let (!g, !rest) = splitAt n xs
        in g : inner rest
+
+{-# INLINE modifyArray #-}
+modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
+modifyArray !ary !f !i = do
+  !v <- f <$> readArray ary i
+  writeArray ary i v
 
 -- }}}
 
