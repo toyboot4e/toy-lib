@@ -19,59 +19,7 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         For more info, see Github <https://github.com/toyboot4e/toy-lib>
 
-# Because `haskell-src-exts` (the parser) does NOT understand `GHC2021`, we're using `Haskell2010`:
-language: Haskell2010
-
-# But allow `GHC2021` extensions as it's enabled on AtCoder:
-default-extensions:
-- BangPatterns
-- BinaryLiterals
-- ConstrainedClassMethods
-- ConstraintKinds
-- DeriveDataTypeable
-- DeriveFoldable
-- DeriveFunctor
-- DeriveGeneric
-- DeriveLift
-- DeriveTraversable
-- DoAndIfThenElse
-- EmptyCase
-- EmptyDataDecls
-- EmptyDataDeriving
-- ExistentialQuantification
-- ExplicitForAll
-- FieldSelectors
-- FlexibleContexts
-- FlexibleInstances
-- ForeignFunctionInterface
-- GADTSyntax
-- GeneralisedNewtypeDeriving
-- HexFloatLiterals
-- ImplicitPrelude
-# Because `haskell-src-exts` does not understand it:
-- NoImportQualifiedPost
-# - ImportQualifiedPost
-- InstanceSigs
-- KindSignatures
-- MonomorphismRestriction
-- MultiParamTypeClasses
-- NamedFieldPuns
-- NamedWildCards
-- NumericUnderscores
-- PatternGuards
-- PolyKinds
-- PostfixOperators
-- RankNTypes
-- RelaxedPolyRec
-- ScopedTypeVariables
-- StandaloneDeriving
-- StandaloneKindSignatures
-- StarIsType
-- TraditionalRecordSyntax
-- TupleSections
-- TypeApplications
-- TypeOperators
-- TypeSynonymInstances
+language: GHC2021
 
 # On AtCoder:
 # optimization: 2
@@ -118,7 +66,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
       - directory
-      - haskell-src-exts
+      - ghc-lib-parser
+      - ghc-lib-parser-ex
       - process
       - template-haskell
       - temporary

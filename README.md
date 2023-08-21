@@ -55,14 +55,10 @@ ghc-options:
 - -Wno-missing-export-lists
 ```
 
-We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand it, but all the extensions enabled by `GHC2021` are enabled as `default-extensisons`:
+We're using `GHC2021` as the default langauge:
 
 ```yaml
-language: Haskell2010
-
-default-extensions:
-- BangPatterns
-# and lots more
+language: GHC2021
 ```
 
 ### `hacddock`
@@ -81,17 +77,6 @@ GHC 9.4.5, [lts-21.6](https://www.stackage.org/lts-21.6).
 ### Incremental builds?
 
 TODO
-
-### Limitations
-
-We have limitations coming from [haskell-src-exts](https://github.com/haskell-suite/haskell-src-exts):
-
-- Can't use `MultiWayIf`
-  `haskell-src-exts` does not understand it well.
-
-- Can't use `GHC2021` syntax
-  For example `import X qualified as Y` is not available.
-  > But [the default language extensisons enabled by `GHC2021`](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/control.html#extension-GHC2021) is supported and needs not to be declared.
 
 ## Thanks
 

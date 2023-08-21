@@ -1,65 +1,86 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Main (main) where
 
 import Control.Monad
-import Data.SparseGraph
-import qualified Data.List as L
+import Data.List qualified as L
 import Data.List.Extra (stripSuffix)
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 import Data.Maybe
-import qualified Data.Vector.Unboxed as VU
-import qualified Language.Haskell.Exts as H
-import Language.Haskell.TH (runIO)
+import Data.SparseGraph
+import Data.Vector.Unboxed qualified as VU
+import GHC.Data.EnumSet qualified as EnumSet
+import GHC.Data.StringBuffer (stringToStringBuffer)
+import GHC.Driver.Config.Parser qualified
+import GHC.Driver.Session (DynFlags, extensionFlags)
+import GHC.Driver.Session qualified
+import GHC.Hs (HsModule (..), hsmodDecls, hsmodImports, ideclName)
+import GHC.LanguageExtensions
+import GHC.Parser.Header qualified
+import GHC.Parser.Lexer qualified
+import GHC.Types.SourceError (handleSourceError)
+import GHC.Types.SrcLoc (Located, unLoc)
+import GHC.Unit.Module.Name (moduleNameString)
+import GHC.Utils.Error qualified
+import GHC.Utils.Outputable qualified
+import GHC.Utils.Panic (handleGhcException)
+import GHC.Utils.Ppr qualified as Pretty
+import Language.Haskell.GhclibParserEx.GHC.Parser qualified as GHC.Parser.Ex
+import Language.Haskell.GhclibParserEx.GHC.Settings.Config qualified as GHC.Settings.Config.Ex
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Exit (exitFailure)
 import System.IO.Temp (withTempDirectory)
 import System.Process (rawSystem)
+import "template-haskell" Language.Haskell.TH (runIO)
 
--- TODO: Refactor
--- TODO: Filter dependencies and do topological sort
+-- TODO: Need of keep `Located`?
 
 main :: IO ()
 main = do
   let srcDir = installPath ++ "/src"
   files <- collectSourceFiles srcDir
 
-  -- Because `haskell-src-exts` does not understand `GHC2021`, collect language extensions enalbed
-  -- by `GHC2021` and give them manually to the the parser:
-  let ghc2021File = installPath ++ "/template/GHC2021.hs"
-  (!ghc2021Extensions, !_) <- parseFile [] ghc2021File
-
   -- parse source files
-  parsedFiles <- forM files $ \path -> do
-    (path,) <$> parseFile ghc2021Extensions path
+  parsedFiles <- fmap ((\x -> [x]) . (!! 1)) . forM files $ \absPath -> do
+    (absPath,) <$> parseFile absPath
   let (!failures, !successes) = partitionParseResults parsedFiles
 
-  when ((not . null) failures) $ do
-    forM_ failures print
+  -- exit on any failure
+  unless (null failures) $ do
+    forM_ failures $ \(!_, !dynFlags, !ps) ->
+      putStrLn $ renderParseErrors dynFlags ps
     exitFailure
 
   -- parse template
-  let template = installPath ++ "/template/Main.hs"
-  (!templateExtensions, !parsed) <- parseFile ghc2021Extensions template
+  let templatePath = installPath ++ "/template/Main.hs"
+  (templateDynFlags, parsed) <- parseFile templatePath
 
-  header <- readFile $ installPath ++ "/template/Header.hs"
-  macros <- readFile $ installPath ++ "/template/Macros.hs"
-  body <- readFile $ installPath ++ "/template/Body.hs"
-
+  -- generate the output file
   case parsed of
-    H.ParseOk templateAst -> do
-      let toylib = generateLibrary ghc2021Extensions successes
-      putStr $ generateTemplate templateExtensions templateAst toylib header macros body
-    failure -> do
-      putStrLn "Failed to parse template:"
-      print failure
+    (POk _ templateAst) -> do
+      let successes' = map (\(!path, !dynFlags, !ast) -> (path, dynFlags, unLoc ast)) successes
+      let toylib = sortModules successes'
+
+      header <- readFile $ installPath ++ "/template/Header.hs"
+      macros <- readFile $ installPath ++ "/template/Macros.hs"
+      body <- readFile $ installPath ++ "/template/Body.hs"
+      putStr $ generateTemplate (templateDynFlags, (unLoc templateAst)) toylib header macros body
+    (PFailed ps) -> do
+      putStrLn "Failed to parse the template file"
+      putStrLn $ renderParseErrors templateDynFlags ps
   where
-    partitionParseResults :: [(a, ([H.Extension], H.ParseResult b))] -> ([(a, [H.Extension], (H.SrcLoc, String))], [(a, [H.Extension], b)])
-    partitionParseResults = foldr step ([], [])
+    partitionParseResults = L.foldr step ([], [])
       where
-        step (f, (exts, H.ParseFailed loc s)) (accL, accR) = ((f, exts, (loc, s)) : accL, accR)
-        step (f, (exts, H.ParseOk l)) (accL, accR) = (accL, (f, exts, l) : accR)
+        step (!path, (!dynFlags, PFailed ps)) (!accL, !accR) = ((path, dynFlags, ps) : accL, accR)
+        step (!path, (!dynFlags, POk _ ast)) (!accL, !accR) = (accL, (path, dynFlags, ast) : accR)
+
+-- --------------------------------------------------------------------------------
+-- IO
+-- --------------------------------------------------------------------------------
 
 -- | Recursively collects @.hs@ files.
 collectSourceFiles :: FilePath -> IO [FilePath]
@@ -70,36 +91,16 @@ collectSourceFiles dir = do
   L.foldl' (++) sourceFiles <$> mapM collectSourceFiles subDirs
 
 filterSourceFiles :: String -> Bool
-filterSourceFiles s = (".hs" `L.isSuffixOf` s) && (not $ ("Macro.hs" `L.isSuffixOf` s))
+filterSourceFiles = (&&) <$> (".hs" `L.isSuffixOf`) <*> (not . ("Macro.hs" `L.isSuffixOf`))
 
--- | Collects declaratrions from a Haskell source file and minify them into one line.
-parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Module H.SrcSpanInfo))
-parseFile ghc2021Extensions absPath = do
-  code <- readFile absPath
-
-  -- Pre-processing CPP:
-  -- TODO: why removing macros?
-  processed <- withTempDirectory "." "toy-lib-cpp" $ \tmpDir -> do
-    let originalPath = tmpDir ++ "/define-removed.hs"
+-- | Reads a file with CPP preprocessed
+readFileWithCPP :: FilePath -> IO String
+readFileWithCPP absPath = do
+  withTempDirectory "." "toy-lib-cpp" $ \tmpDir -> do
     let processedPath = tmpDir ++ "/cpp-processed.hs"
-    writeFile originalPath $ removeDefineMacros code
-
-    _exitCode <- rawSystem "stack" ["ghc", "--", "-E", originalPath, "-o", processedPath]
-
-    removeMacros <$> readFile processedPath
-
-  -- Collect language extensions:
-  let extensions = case H.readExtensions processed of
-        Just (_, exts) -> exts
-        Nothing -> []
-
-  let parseOption =
-        H.defaultParseMode
-          { H.parseFilename = absPath,
-            H.extensions = extensions ++ ghc2021Extensions
-          }
-
-  return (extensions, H.parseModuleWithMode parseOption processed)
+    -- TODO: Just get `stdout` on execution
+    _exitCode <- rawSystem "stack" ["ghc", "--", "-E", absPath, "-o", processedPath]
+    readFile processedPath
 
 -- | Returns the root directory.
 installPath :: FilePath
@@ -119,65 +120,140 @@ moduleName name = do
   name2 <- stripSuffix ".hs" name1
   return $ map (\c -> if c == '/' then '.' else c) name2
 
-removeDefineMacros :: String -> String
-removeDefineMacros = unlines . filter (not . L.isPrefixOf "#define") . lines
+renderParseErrors :: DynFlags -> GHC.Parser.Lexer.PState -> String
+renderParseErrors dynFlags =
+  GHC.Utils.Outputable.renderWithContext
+    (GHC.Driver.Session.initDefaultSDocContext dynFlags)
+    . GHC.Utils.Error.pprMessages
+    . snd
+    . GHC.Parser.Lexer.getPsMessages
 
-removeMacros :: String -> String
-removeMacros = unlines . filter (not . L.isPrefixOf "#") . lines
+-- --------------------------------------------------------------------------------
+-- Parse / generate
+-- --------------------------------------------------------------------------------
+
+defaultDynFlags :: DynFlags
+defaultDynFlags =
+  GHC.Driver.Session.defaultDynFlags
+    GHC.Settings.Config.Ex.fakeSettings
+    GHC.Settings.Config.Ex.fakeLlvmConfig
+
+-- | Boxed (lifted) alternative to `GHC.Parser.Lexer.ParseResult`
+data BoxedParseResult a = POk GHC.Parser.Lexer.PState a | PFailed GHC.Parser.Lexer.PState
+
+unliftParseResult :: GHC.Parser.Lexer.ParseResult a -> BoxedParseResult a
+unliftParseResult (GHC.Parser.Lexer.POk ps a) = POk ps a
+unliftParseResult (GHC.Parser.Lexer.PFailed ps) = PFailed ps
+
+-- | Collects declaratrions from a Haskell source file.
+parseFile :: FilePath -> IO (DynFlags, BoxedParseResult (Located HsModule))
+parseFile absPath = do
+  fileContent <- readFileWithCPP absPath
+  -- TODO: No need of `defaultDynFlags`?
+  dynFlags <- fromJust <$> parsePragmasIntoDynFlags defaultDynFlags absPath fileContent
+  let res = GHC.Parser.Ex.parseFile absPath dynFlags fileContent
+  return (dynFlags, unliftParseResult res)
+
+-- TODO: what is `str`? why IO?
+parsePragmasIntoDynFlags :: DynFlags -> FilePath -> String -> IO (Maybe DynFlags)
+parsePragmasIntoDynFlags flags filePath str =
+  catchErrors $ do
+    let opts = GHC.Driver.Config.Parser.initParserOpts flags
+    let (_warnings, !pragmas) = GHC.Parser.Header.getOptions opts (stringToStringBuffer str) filePath
+    (flags', _left_pragmas, _warnings) <- GHC.Driver.Session.parseDynamicFilePragma flags pragmas
+    return $ Just flags'
+  where
+    catchErrors :: IO (Maybe DynFlags) -> IO (Maybe DynFlags)
+    catchErrors act =
+      handleGhcException
+        reportErr
+        (handleSourceError reportErr act)
+    reportErr e = do putStrLn $ "error : " ++ show e; return Nothing
+
+-- | Renders module declarations into one line.
+renderDecls :: DynFlags -> HsModule -> String
+renderDecls dynFlags =
+  L.intercalate ";"
+    . map (inOneline . GHC.Utils.Outputable.ppr)
+    . GHC.Hs.hsmodDecls
+  where
+    ctx = GHC.Driver.Session.initDefaultSDocContext dynFlags
+    -- Whitespace-separated and not parsable!
+    -- inOneline = GHC.Utils.Outputable.showSDocOneLine context
+    -- inOneline = L.intercalate ";" . lines . GHC.Utils.Outputable.showSDocOneLine context
+
+    -- ダメだわ。。
+    -- TODO: Faster implementation or builtin parsable oneline output?
+    inOneline sdoc =
+      -- L.intercalate ";" . lines $
+        foldr mergeLines ""
+        . lines
+        . Pretty.fullRender
+          Pretty.LeftMode
+          -- (GHC.Utils.Outputable.sdocLineLength ctx)
+          1_000_000_000
+          1.5 -- ribbon?
+          Pretty.txtPrinter
+          ""
+        $ GHC.Utils.Outputable.runSDoc sdoc ctx
+
+    mergeLines "where" ln = "where" ++ (' ' : ln)
+    mergeLines ln "where" = ln ++ " where"
+    mergeLines fn ln@('=' : _) = fn ++ ln
+    mergeLines ln1 ln2 = ln1 ++ (';' : ln2)
+
+-- Semicolon-separated and not parsable:
+-- inOneline sdoc =
+--   Pretty.fullRender
+--     (Pretty.PageMode True)
+--     -- (GHC.Utils.Outputable.sdocLineLength ctx)
+--     1_000_000_000
+--     1.5 -- ribbon?
+--     Pretty.txtPrinter
+--     ""
+--     $ GHC.Utils.Outputable.runSDoc sdoc ctx
+
+-- TODO: stringify qualified imports
+importModuleNames :: HsModule -> [String]
+importModuleNames = map (moduleNameString . unLoc . ideclName . unLoc) . hsmodImports
+
+importModuleStrings :: HsModule -> [String]
+importModuleStrings = map (GHC.Utils.Outputable.showSDocUnsafe . GHC.Utils.Outputable.ppr) . hsmodImports
 
 -- | Geneartes `toy-lib` in one line.
-generateLibrary :: [H.Extension] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
-generateLibrary ghc2021Extensions parsedFiles =
-  let files = topSortSourceFiles parsedFiles
-   in map
-        ( \(path, exts, module_) ->
-            (path, minifyDeclarations (exts ++ ghc2021Extensions) module_)
-        )
-        files
+sortModules :: [(FilePath, DynFlags, HsModule)] -> [(FilePath, DynFlags, HsModule)]
+sortModules input =
+  let edges = VU.fromList $ concatMap (\(!path, !_, !ast) -> edgesOf path ast) input
+      gr = buildUSG (0, pred (length input)) edges
+      vs = topSortSG gr
+   in map (input !!) vs
   where
-    topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
-    topSortSourceFiles input =
-      let edges = VU.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
-          gr = buildUSG (0, pred (length input)) edges
-          vs = topSortSG gr
-       in map (input !!) vs
-      where
-        moduleNameToVert :: M.Map String Int
-        !moduleNameToVert = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ moduleName path) input) [0 :: Int ..]
+    moduleNameToVert :: M.Map String Int
+    moduleNameToVert = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ moduleName path) input) [0 :: Int ..]
 
-        -- edge from depended vertex to dependent vertex
-        edgesOf :: FilePath -> H.Module a -> [(Int, Int)]
-        edgesOf path (H.Module _ _ _ !imports _) =
-          let !v1 = moduleNameToVert M.! fromJust (moduleName path)
-              !v2s = mapMaybe ((moduleNameToVert M.!?) . (\(H.ModuleName _ s) -> s) . H.importModule) imports
-           in map (,v1) v2s
-        edgesOf _ _ = error "unexpected module data"
+    -- edge from depended vertex to dependent vertex
+    edgesOf :: FilePath -> HsModule -> [(Int, Int)]
+    edgesOf path hsModule =
+      let !v1 = moduleNameToVert M.! fromJust (moduleName path)
+          !v2s = mapMaybe (moduleNameToVert M.!?) (importModuleNames hsModule)
+       in map (,v1) v2s
+    edgesOf _ _ = error "unexpected module data"
 
-    minifyDeclarations :: [H.Extension] -> H.Module l -> String
-    minifyDeclarations _ ast = minify ast
-      where
-        pretty :: H.Module l -> String
-        pretty (H.Module _ _ _ _ !decls) = unlines $ map (H.prettyPrintWithMode pphsMode) decls
-        pretty _ = ""
-
-        minify :: H.Module l -> String
-        minify (H.Module _ _ _ _ !decls) = L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
-        minify _ = ""
-
-pphsMode :: H.PPHsMode
-pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
-
-generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [(FilePath, String)] -> String -> String -> String -> String
-generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body =
-  unlines [header, pre, disableFormat, exts, imports', "", macros, toylib', enableFormat, post, "", body]
+generateTemplate :: (DynFlags, HsModule) -> [(FilePath, DynFlags, HsModule)] -> String -> String -> String -> String
+generateTemplate (!templateDynFlags, !hsModule) toylib header macros body =
+  unlines [header, pre, disableFormat, exts, imports, "", macros, toylib', enableFormat, post, "", body]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"
       where
-        es = L.intercalate ", " . L.sort $ map H.prettyExtension extensions
+        es = L.intercalate ", " . L.sort . map toName . EnumSet.toList $ extensionFlags templateDynFlags
+        toName :: Extension -> String
+        toName ext = case show ext of
+          "Cpp" -> "CPP"
+          s -> s
 
-    imports' :: String
-    imports' = L.intercalate ";" [L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports)]
+    imports :: String
+    imports = L.intercalate ";" $ importModuleStrings hsModule
 
     pre = "-- {{{ toy-lib: https://github.com/toyboot4e/toy-lib"
     post = "-- }}}"
@@ -185,4 +261,4 @@ generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body
     disableFormat = "{- ORMOLU_DISABLE -}"
     enableFormat = "{- ORMOLU_ENABLE -}"
 
-    toylib' = L.intercalate ";" (map snd toylib)
+    toylib' = L.intercalate ";" $ map (\(_, !dynFlags, !ast) -> renderDecls dynFlags ast) toylib

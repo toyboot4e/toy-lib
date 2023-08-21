@@ -69,53 +69,6 @@ library
       Paths_toy_lib
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      BinaryLiterals
-      ConstrainedClassMethods
-      ConstraintKinds
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DoAndIfThenElse
-      EmptyCase
-      EmptyDataDecls
-      EmptyDataDeriving
-      ExistentialQuantification
-      ExplicitForAll
-      FieldSelectors
-      FlexibleContexts
-      FlexibleInstances
-      ForeignFunctionInterface
-      GADTSyntax
-      GeneralisedNewtypeDeriving
-      HexFloatLiterals
-      ImplicitPrelude
-      NoImportQualifiedPost
-      InstanceSigs
-      KindSignatures
-      MonomorphismRestriction
-      MultiParamTypeClasses
-      NamedFieldPuns
-      NamedWildCards
-      NumericUnderscores
-      PatternGuards
-      PolyKinds
-      PostfixOperators
-      RankNTypes
-      RelaxedPolyRec
-      ScopedTypeVariables
-      StandaloneDeriving
-      StandaloneKindSignatures
-      StarIsType
-      TraditionalRecordSyntax
-      TupleSections
-      TypeApplications
-      TypeOperators
-      TypeSynonymInstances
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
       array
@@ -131,7 +84,7 @@ library
     , utility-ht
     , vector
     , vector-algorithms
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable toy-lib-exe
   main-is: Main.hs
@@ -139,53 +92,6 @@ executable toy-lib-exe
       Paths_toy_lib
   hs-source-dirs:
       app
-  default-extensions:
-      BangPatterns
-      BinaryLiterals
-      ConstrainedClassMethods
-      ConstraintKinds
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DoAndIfThenElse
-      EmptyCase
-      EmptyDataDecls
-      EmptyDataDeriving
-      ExistentialQuantification
-      ExplicitForAll
-      FieldSelectors
-      FlexibleContexts
-      FlexibleInstances
-      ForeignFunctionInterface
-      GADTSyntax
-      GeneralisedNewtypeDeriving
-      HexFloatLiterals
-      ImplicitPrelude
-      NoImportQualifiedPost
-      InstanceSigs
-      KindSignatures
-      MonomorphismRestriction
-      MultiParamTypeClasses
-      NamedFieldPuns
-      NamedWildCards
-      NumericUnderscores
-      PatternGuards
-      PolyKinds
-      PostfixOperators
-      RankNTypes
-      RelaxedPolyRec
-      ScopedTypeVariables
-      StandaloneDeriving
-      StandaloneKindSignatures
-      StarIsType
-      TraditionalRecordSyntax
-      TupleSections
-      TypeApplications
-      TypeOperators
-      TypeSynonymInstances
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
@@ -194,8 +100,9 @@ executable toy-lib-exe
     , containers
     , directory
     , extra
+    , ghc-lib-parser
+    , ghc-lib-parser-ex
     , hashable
-    , haskell-src-exts
     , heaps
     , primitive
     , process
@@ -207,7 +114,7 @@ executable toy-lib-exe
     , utility-ht
     , vector
     , vector-algorithms
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite toy-lib-test
   type: exitcode-stdio-1.0
@@ -216,53 +123,6 @@ test-suite toy-lib-test
       Paths_toy_lib
   hs-source-dirs:
       test
-  default-extensions:
-      BangPatterns
-      BinaryLiterals
-      ConstrainedClassMethods
-      ConstraintKinds
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DoAndIfThenElse
-      EmptyCase
-      EmptyDataDecls
-      EmptyDataDeriving
-      ExistentialQuantification
-      ExplicitForAll
-      FieldSelectors
-      FlexibleContexts
-      FlexibleInstances
-      ForeignFunctionInterface
-      GADTSyntax
-      GeneralisedNewtypeDeriving
-      HexFloatLiterals
-      ImplicitPrelude
-      NoImportQualifiedPost
-      InstanceSigs
-      KindSignatures
-      MonomorphismRestriction
-      MultiParamTypeClasses
-      NamedFieldPuns
-      NamedWildCards
-      NumericUnderscores
-      PatternGuards
-      PolyKinds
-      PostfixOperators
-      RankNTypes
-      RelaxedPolyRec
-      ScopedTypeVariables
-      StandaloneDeriving
-      StandaloneKindSignatures
-      StarIsType
-      TraditionalRecordSyntax
-      TupleSections
-      TypeApplications
-      TypeOperators
-      TypeSynonymInstances
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
@@ -280,4 +140,4 @@ test-suite toy-lib-test
     , utility-ht
     , vector
     , vector-algorithms
-  default-language: Haskell2010
+  default-language: GHC2021
