@@ -20,12 +20,9 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 
 -- | Dense, mutable union-find tree (originally by `@pel`)
 --
--- >>> :{
--- do
---   !stree <- newMUF 3
---   uniteMUF stree 0 2
---   sameMUF stree 0 2
--- :}
+-- >>> stree <- newMUF 3
+-- >>> uniteMUF stree 0 2
+-- >>> sameMUF stree 0 2
 -- True
 newtype MUnionFind s = MUnionFind (VUM.MVector s MUFNode)
 

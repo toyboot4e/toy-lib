@@ -10,16 +10,12 @@
 --
 -- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
 --
--- >>> :{
--- convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
--- :}
+-- >>> convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
 -- (42,'c',"string",2.5)
 --
 -- Vectors are `ReadBS` and they can also be embedded in the end of a tuple:
 --
--- >>> :{
--- convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
--- :}
+-- >>> convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.IO where
 
@@ -284,9 +280,7 @@ getGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints2
 
 -- | Converts @n@ lines of **whitespace-delimited `ByteString`** into a flat vector of type @a@.
 --
--- >>> :{
--- convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
--- :}
+-- >>> convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
 -- [1,2,3,4,5,6,7,8,9]
 convertNBS :: forall a. (VU.Unbox a, ReadBS a) => Int -> V.Vector BS.ByteString -> VU.Vector a
 convertNBS !n !bss = VU.unfoldrExactN n step $ fromJust (V.uncons bss)
@@ -313,9 +307,7 @@ getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW h w
 
 -- | Converts @n` lines of `ByteString` into a flat vector.
 --
--- >>> :{
--- VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
--- :}
+-- >>> VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
 -- [True,False,True,False,True,False]
 convertCharsHW :: V.Vector BS.ByteString -> VU.Vector Char
 convertCharsHW !bss = VU.create $ do
