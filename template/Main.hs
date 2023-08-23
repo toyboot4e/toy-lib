@@ -38,7 +38,7 @@ import Data.Function (on)
 import Data.Functor
 import Data.Functor.Identity
 import Data.IORef
-import Data.List
+import Data.List.Extra hiding (nubOn)
 import Data.Maybe
 import Data.Ord
 import Data.Proxy
