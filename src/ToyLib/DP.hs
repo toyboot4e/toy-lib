@@ -6,6 +6,7 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
+import ToyLib.Prelude (rangeVU)
 
 -- | Variant of `VU.constructN`.
 constructFor :: (VU.Unbox a, VU.Unbox b) => a -> VU.Vector b -> (VU.Vector a -> b -> a) -> VU.Vector a
@@ -40,4 +41,8 @@ relaxMany' !vec0 !input !expander = VU.create $ do
       VUM.modify vec (<> x') i
 
   return vec
+
+-- | Returns non-zero two spans over the given inclusive range @[l, r]@.
+spansVU :: Int -> Int -> VU.Vector ((Int, Int), (Int, Int))
+spansVU !l !r = VU.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeVU 1 (r - l)
 
