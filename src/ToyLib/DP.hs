@@ -1,11 +1,13 @@
 -- | Typical DP utilities
-
 module ToyLib.DP where
 
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import Data.Ix
+import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
+import Data.Vector.IxVector
+import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude (rangeVU)
 
 -- | Variant of `VU.constructN`.
@@ -43,6 +45,23 @@ relaxMany' !vec0 !input !expander = VU.create $ do
   return vec
 
 -- | Returns non-zero two spans over the given inclusive range @[l, r]@.
+-- >>> spansVU 3 6
+-- [((3,3),(4,6)),((3,4),(5,6)),((3,5),(6,6))]
 spansVU :: Int -> Int -> VU.Vector ((Int, Int), (Int, Int))
 spansVU !l !r = VU.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeVU 1 (r - l)
 
+-- | `VU.constructN` for `IxVector`
+constructIV :: (Unindex i, VU.Unbox a) => (i, i) -> (IxVector i (VU.Vector a) -> i -> a) -> IxVector i (VU.Vector a)
+constructIV !rng !f = IxVector rng $ VG.constructN (rangeSize rng) $ \vec ->
+  let !i = unindex rng (VG.length vec)
+   in f (IxVector rng vec) i
+
+-- | Span-based DP with preset index patterns.
+spanDP :: (VU.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (VU.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (VU.Vector a)
+spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
+  if spanLen == 0 || spanL >= (n + 1 - spanLen)
+    then undef
+    else
+      if spanLen == 1
+        then onOne spanL
+        else f vec (spanLen, spanL)
