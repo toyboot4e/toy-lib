@@ -3,11 +3,14 @@ module Math.Matrix where
 
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
+import Data.List (foldl1')
 import Data.List.Extra (chunksOf)
 import Data.ModInt (TypeInt, typeInt)
 import Data.Proxy
+import Data.SemigroupAction
 import Data.Tuple.Extra (dupe)
 import ToyLib.Macro
+import ToyLib.Prelude ((.:))
 
 -- {{{ Math
 
@@ -16,6 +19,14 @@ mulMatToCol :: (Num e, IArray UArray e) => UArray (Int, Int) e -> [e] -> [e]
 mulMatToCol !mat !col =
   let !rows = chunksOf n (elems mat)
    in map (sum . zipWith (*) col) rows
+  where
+    !n = length col
+    !_ = dbgAssert $ (== n) . succ . fst . snd $ bounds mat
+
+mulMatToColMod :: UArray (Int, Int) Int -> Int -> [Int] -> [Int]
+mulMatToColMod !mat !modulus !col =
+  let !rows = chunksOf n (elems mat)
+   in map (foldl1' ((`mod` modulus) .: (+)) . zipWith (*) col) rows
   where
     !n = length col
     !_ = dbgAssert $ (== n) . succ . fst . snd $ bounds mat
@@ -57,10 +68,16 @@ unitMat !n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map 
 -- > let !m1 = accumArray @UArray (-) (1 :: Int) ((0, 0), (pred nVerts, pred nVerts)) $ map (,1) removals'
 -- > let !mn = newBinLiftV $ MulMatMod @MyModulo m1
 -- > let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
-newtype MulMatMod a = MulMatMod (UArray (Int, Int) Int)
+newtype MulMatMod p = MulMatMod (UArray (Int, Int) Int)
   deriving (Eq, Show)
 
-instance forall p. TypeInt p => Semigroup (MulMatMod p) where
+-- Implementation over `Int` only!
+
+instance forall p. (TypeInt p) => Semigroup (MulMatMod p) where
   (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (typeInt (Proxy @p)) m1 m2
+
+-- | Semigroup action over a list as a column vector
+instance (TypeInt p) => SemigroupAction (MulMatMod p) [Int] where
+  sact (MulMatMod !mat) !col = mulMatToColMod mat (typeInt (Proxy @p)) col
 
 -- }}}
