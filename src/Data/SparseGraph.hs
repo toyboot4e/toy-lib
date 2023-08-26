@@ -152,6 +152,20 @@ dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
 
   return dist
 
+-- | Just a template. Typical problem: [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
+dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
+dfsEveryPathSG gr@SparseGraph{..} !start = runST $ do
+  !vis <- VUM.replicate nVertsSG False
+
+  flip fix (0 :: Int, start) $ \loop (!d1, !v1) -> do
+    -- let !_ = dbg (start, v1)
+    VUM.write vis v1 True
+    !v2s <- VU.filterM (fmap not . VUM.read vis . fst) $ gr `adjW` v1
+    !maxDistance <- fmap (VU.foldl' max (0 :: Int)) . VU.forM v2s $ \(!v2, !w) -> do
+         loop (d1 + w, v2)
+    VUM.write vis v1 False
+    return $ max d1 maxDistance
+
 -- | Also consider using union-find tree.
 componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (VU.Vector Bool)
 componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do

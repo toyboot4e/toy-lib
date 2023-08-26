@@ -1,6 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- | Dense, mutable multi set.
+--
+-- = Typical problems
+-- - [ABC 315 D - Magical Cookies](https://atcoder.jp/contests/abc315/tasks/abc315_d)
 module Data.MultiSetVec where
 
 import Control.Monad.Primitive
