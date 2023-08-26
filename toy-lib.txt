@@ -43,6 +43,7 @@ newBufferAsQueue :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 type Deque s a = Buffer s a
 newBufferAsDeque :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 lengthBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Int
+emptyBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Bool
 clearBuffer :: PrimMonad m => Buffer (PrimState m) a -> m ()
 freezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
 unsafeFreezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
@@ -122,8 +123,14 @@ fromVecWith :: (FromVec a, Vector v (FromVecInput a)) => (FromVecItem a -> FromV
 -- | Strongly typed <a>fromVec</a>.
 fromVecIM :: Vector v (Int, a) => v (Int, a) -> IntMap a
 
+-- | Strongly typed <a>fromVecWith</a>.
+fromVecWithIM :: Vector v (Int, a) => (a -> a -> a) -> v (Int, a) -> IntMap a
+
 -- | Strongly typed <a>fromVec</a>.
-fromVecM :: Vector v (Int, a) => v (Int, a) -> IntMap a
+fromVecM :: (Vector v (k, a), Ord k) => v (k, a) -> Map k a
+
+-- | Strongly typed <a>fromVecWith</a>.
+fromVecWithM :: (Vector v (k, a), Ord k) => (a -> a -> a) -> v (k, a) -> Map k a
 
 -- | Strongly typed <a>fromVec</a>.
 fromVecIS :: Vector v Int => v Int -> IntSet
@@ -139,6 +146,32 @@ instance Data.FromVec.FromVec Data.IntSet.Internal.IntSet
 instance GHC.Classes.Ord a => Data.FromVec.FromVec (Data.Set.Internal.Set a)
 instance GHC.Classes.Ord a => Data.FromVec.FromVec (Data.Heap.Heap a)
 instance Data.FromVec.FromVec Data.MultiSet.MultiSet
+
+
+-- | Dense, mutable multi set.
+module Data.MultiSetVec
+
+-- | Dense, mutable multi set.
+data MultiSetVec s
+MultiSetVec :: MutVar s Int -> MVector s Int -> MultiSetVec s
+
+-- | Monadic <a>show</a> over <a>MultiSetVec</a>.
+showMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m String
+newMSV :: PrimMonad m => Int -> m (MultiSetVec (PrimState m))
+clearMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m ()
+fromVecMSV :: PrimMonad m => Int -> Vector Int -> m (MultiSetVec (PrimState m))
+countMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m Int
+nullMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m Bool
+readMSV :: PrimMonad m => MultiSetVec (PrimState m) -> Int -> m Int
+incMSV :: PrimMonad m => MultiSetVec (PrimState m) -> Int -> m ()
+decMSV :: PrimMonad m => MultiSetVec (PrimState m) -> Int -> m ()
+
+-- | $O(n)$ Find minimum key element
+minMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
+
+-- | $O(n)$ Find maximum key element
+maxMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
+unsafeFreezeMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Int, Vector Int)
 
 module Data.SegmentTree.Strict
 
@@ -226,12 +259,11 @@ module Data.UnionFind.Mutable
 -- | Dense, mutable union-find tree (originally by `@pel`)
 --   
 --   <pre>
---   &gt;&gt;&gt; :{
---   do
---     !stree &lt;- newMUF 3
---     uniteMUF stree 0 2
---     sameMUF stree 0 2
---   :}
+--   &gt;&gt;&gt; stree &lt;- newMUF 3
+--   
+--   &gt;&gt;&gt; uniteMUF stree 0 2
+--   
+--   &gt;&gt;&gt; sameMUF stree 0 2
 --   True
 --   </pre>
 newtype MUnionFind s
@@ -410,9 +442,17 @@ divisorsOf :: Int -> [Int]
 
 -- | Extended Eucried Algorithm
 --   
---   # Typical problems - <a>ABC 186 E - Throne</a>
+--   <h1>Typical problems</h1>
 --   
---   # Related - <a>Water drawing problem</a>
+--   <ul>
+--   <li><a>ABC 186 E - Throne</a></li>
+--   </ul>
+--   
+--   <h1>Related</h1>
+--   
+--   <ul>
+--   <li><a>Water drawing problem</a></li>
+--   </ul>
 module Math.Exgcd
 
 -- | @4tsuzuru <a>https://zenn.dev/link/comments/29d659a57ead56</a>
@@ -453,20 +493,6 @@ primes :: [Int]
 
 -- | Returns <tt>[(prime, count)]</tt>
 primeFactors :: Int -> [(Int, Int)]
-
-
--- | Typical DP utilities
-module ToyLib.DP
-
--- | Variant of <a>constructN</a>.
-constructFor :: (Unbox a, Unbox b) => a -> Vector b -> (Vector a -> b -> a) -> Vector a
-
--- | <tt>relaxMany !f !vec0 !input !expander</tt> ~ <tt>VG.accumulate f
---   vec0 $ VG.concatMap expander input</tt>
-relaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
-
--- | Monoid variant of <a>relaxMany</a>
-relaxMany' :: (Monoid m, Unbox m, Unbox a) => Vector m -> Vector a -> (a -> Vector (Int, m)) -> Vector m
 
 
 -- | Debug utilities
@@ -521,6 +547,7 @@ square :: Num a => a -> a
 
 -- | Returns chunks of size <tt>n</tt>. TODO: Just use <a>chunksOf</a>.
 chunks :: Int -> [a] -> [[a]]
+modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 
 -- | Two-variable function compositon.
 (.:) :: (b -> c) -> (a1 -> a2 -> b) -> a1 -> a2 -> c
@@ -594,20 +621,18 @@ isqrt :: Int -> Int
 
 -- | Super dirty slow IO
 --   
---   # Main procedures
+--   <h1>Main procedures</h1>
 --   
---   <tt>int2</tt>, <a>intsW</a>, <a>get</a>, <a>getGrid</a> and
---   <a>charsH</a>.
+--   <a>ints2</a>, <a>intsW</a>, <a>get</a>, <a>digitsVU</a>,
+--   <a>getGrid</a> and <a>charsH</a>.
 --   
---   # <a>ReadBS</a> and <a>get</a>
+--   <h1><a>ReadBS</a> and <a>get</a></h1>
 --   
 --   Primitives are <a>ReadBS</a>. Tuples of <a>ReadBS</a> are also
 --   <a>ReadBS</a>:
 --   
 --   <pre>
---   &gt;&gt;&gt; :{
---   convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
---   :}
+--   &gt;&gt;&gt; convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
 --   (42,'c',"string",2.5)
 --   </pre>
 --   
@@ -615,9 +640,7 @@ isqrt :: Int -> Int
 --   a tuple:
 --   
 --   <pre>
---   &gt;&gt;&gt; :{
---   convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
---   :}
+--   &gt;&gt;&gt; convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
 --   (1,"string",3.5,[10,20,30,40])
 --   </pre>
 module ToyLib.IO
@@ -669,9 +692,7 @@ getGraph :: Int -> Int -> IO (Array Int [Int])
 --   <tt>ByteString</tt>** into a flat vector of type <tt>a</tt>.
 --   
 --   <pre>
---   &gt;&gt;&gt; :{
---   convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
---   :}
+--   &gt;&gt;&gt; convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
 --   [1,2,3,4,5,6,7,8,9]
 --   </pre>
 convertNBS :: forall a. (Unbox a, ReadBS a) => Int -> Vector ByteString -> Vector a
@@ -688,9 +709,7 @@ getGrid :: Int -> Int -> IO (IxVector (Int, Int) (Vector Int))
 -- | Converts @n` lines of <tt>ByteString</tt> into a flat vector.
 --   
 --   <pre>
---   &gt;&gt;&gt; :{
---   VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
---   :}
+--   &gt;&gt;&gt; VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
 --   [True,False,True,False,True,False]
 --   </pre>
 convertCharsHW :: Vector ByteString -> Vector Char
@@ -757,6 +776,31 @@ instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int)
 instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
 instance Data.Unindex.RangeMS GHC.Types.Int
 instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
+
+
+-- | Typical DP utilities
+module ToyLib.DP
+
+-- | Variant of <a>constructN</a>.
+constructFor :: (Unbox a, Unbox b) => a -> Vector b -> (Vector a -> b -> a) -> Vector a
+
+-- | <tt>relaxMany !f !vec0 !input !expander</tt> ~ <tt>VG.accumulate f
+--   vec0 $ VG.concatMap expander input</tt>
+relaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
+
+-- | Monoid variant of <a>relaxMany</a>
+relaxMany' :: (Monoid m, Unbox m, Unbox a) => Vector m -> Vector a -> (a -> Vector (Int, m)) -> Vector m
+
+-- | Returns non-zero two spans over the given inclusive range <tt>[l,
+--   r]</tt>. &gt;&gt;&gt; spansVU 3 6
+--   [((3,3),(4,6)),((3,4),(5,6)),((3,5),(6,6))]
+spansVU :: Int -> Int -> Vector ((Int, Int), (Int, Int))
+
+-- | <a>constructN</a> for <a>IxVector</a>
+constructIV :: (Unindex i, Unbox a) => (i, i) -> (IxVector i (Vector a) -> i -> a) -> IxVector i (Vector a)
+
+-- | Span-based DP with preset index patterns.
+spanDP :: Unbox a => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (Vector a)
 
 
 -- | Lazy segment tree, where we can perform operation over range.
@@ -986,7 +1030,7 @@ buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Vector (Vertex, Vertex, w) -> Sp
 -- | Retrieves adjacent vertices.
 adj :: SparseGraph i w -> Vertex -> Vector Vertex
 
--- | Returns `(EdgeId, Vertex)` paris. Hardly used.
+-- | Returns <tt>(EdgeId, Vertex)</tt> paris. Hardly used.
 eAdj :: SparseGraph i w -> Vertex -> Vector (EdgeId, Vertex)
 
 -- | Retrieves adjacent vertex indices.
@@ -1003,7 +1047,7 @@ dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
 bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 
--- | Dijkstra: $O((E+V)log {V})$
+-- | Dijkstra: $O((E+V) log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> w -> i -> Vector w
 
 -- | Returns a list of a route in reverse order (a route from end to
@@ -1229,6 +1273,7 @@ module Math.Matrix
 
 -- | Multiplies HxW matrix to a Hx1 column vector.
 mulMatToCol :: (Num e, IArray UArray e) => UArray (Int, Int) e -> [e] -> [e]
+mulMatToColMod :: UArray (Int, Int) Int -> Int -> [Int] -> [Int]
 
 -- | Multiplies H1xK matrix to a KxW2 matrix.
 mulMat :: (Num e, IArray UArray e) => UArray (Int, Int) e -> UArray (Int, Int) e -> UArray (Int, Int) e
@@ -1246,11 +1291,12 @@ unitMat :: Int -> UArray (Int, Int) Int
 --   let !mn = newBinLiftV $ MulMatMod @MyModulo m1
 --   let MulMatMod !mk = stimesBL mn (MulMatMod $ unitMat nVerts) (lenPath)
 --   </pre>
-newtype MulMatMod a
-MulMatMod :: UArray (Int, Int) Int -> MulMatMod a
-instance forall k (a :: k). GHC.Show.Show (Math.Matrix.MulMatMod a)
-instance forall k (a :: k). GHC.Classes.Eq (Math.Matrix.MulMatMod a)
+newtype MulMatMod p
+MulMatMod :: UArray (Int, Int) Int -> MulMatMod p
+instance forall k (p :: k). GHC.Show.Show (Math.Matrix.MulMatMod p)
+instance forall k (p :: k). GHC.Classes.Eq (Math.Matrix.MulMatMod p)
 instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Base.Semigroup (Math.Matrix.MulMatMod p)
+instance forall k (p :: k). Data.ModInt.TypeInt p => Data.SemigroupAction.SemigroupAction (Math.Matrix.MulMatMod p) [GHC.Types.Int]
 
 
 -- | The rolling hash algorithm lets you create fastly ((O(1))) comparable
@@ -1391,7 +1437,7 @@ compressVU :: Vector Int -> (Vector Int, Vector Int)
 
 module Data.Vector.InvNum
 
--- | Calculates the inversion number.
+-- | Calculates the inversion number. Be sure to compress the input vector!
 invNumVG :: Int -> Vector v Int => v Int -> Int
 
 -- | Calculates the inversion number after applying index compression. It
