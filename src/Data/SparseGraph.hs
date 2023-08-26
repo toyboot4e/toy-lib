@@ -8,23 +8,30 @@ module Data.SparseGraph where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Extra (whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
+import Data.Array.IArray
+import Data.Array.MArray
+import Data.Array.ST
+import Data.Array.Unboxed (UArray)
 import Data.Bifunctor
+import Data.Buffer
 import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntSet as IS
-import Data.Ix
 import Data.Maybe
+import Data.Tuple.Extra (both)
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (foldForM, foldForMVG, rangeMS, rangeVU)
+import ToyLib.Prelude (add2, foldForM, foldForMVG, rangeMS, rangeVU)
 
 type Edge = (Vertex, Vertex)
 
@@ -154,7 +161,7 @@ dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
 
 -- | Just a template. Typical problem: [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
 dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
-dfsEveryPathSG gr@SparseGraph{..} !start = runST $ do
+dfsEveryPathSG gr@SparseGraph {..} !start = runST $ do
   !vis <- VUM.replicate nVertsSG False
 
   flip fix (0 :: Int, start) $ \loop (!d1, !v1) -> do
@@ -162,7 +169,7 @@ dfsEveryPathSG gr@SparseGraph{..} !start = runST $ do
     VUM.write vis v1 True
     !v2s <- VU.filterM (fmap not . VUM.read vis . fst) $ gr `adjW` v1
     !maxDistance <- fmap (VU.foldl' max (0 :: Int)) . VU.forM v2s $ \(!v2, !w) -> do
-         loop (d1 + w, v2)
+      loop (d1 + w, v2)
     VUM.write vis v1 False
     return $ max d1 maxDistance
 
@@ -207,6 +214,33 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
 
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
+
+bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> UArray (Int, Int) Int
+bfsGrid317E_MBuffer !isBlock !start = runSTUArray $ do
+  !vis <- newArray bounds_ undef
+  !queue <- newBufferAsQueue (2 * h * w)
+
+  pushBack start queue
+  writeArray vis start 0
+
+  fix $ \loop ->
+    popFront queue >>= \case
+      Nothing -> return ()
+      Just !yx1 -> do
+        !d <- readArray vis yx1
+        VU.forM_ (nexts yx1) $ \yx2 -> do
+          whenM ((== undef) <$> readArray vis yx2) $ do
+            writeArray vis yx2 (d + 1)
+            pushBack yx2 queue
+        loop
+
+  return vis
+  where
+    !undef = -1 :: Int
+    !bounds_ = boundsIV isBlock
+    (!h, !w) = both succ $! snd bounds_
+    nexts !yx0 = VU.filter (\yx -> inRange bounds_ yx && not (isBlock @! yx)) $! VU.map (add2 yx0) dyxs
+    !dyxs = VU.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 -- | Dijkstra: $O((E+V) \log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> w -> i -> VU.Vector w
