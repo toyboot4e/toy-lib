@@ -38,6 +38,7 @@ library
       Data.Graph.Scc
       Data.ModInt
       Data.MultiSet
+      Data.MultiSetVec
       Data.RollingHash
       Data.SegmentTree.Lazy
       Data.SegmentTree.Strict
