@@ -10,6 +10,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Ix (unsafeIndex)
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
@@ -40,7 +41,7 @@ type IxMUVector i s a = IxVector i (VUM.MVector s a)
   | otherwise = Nothing
 
 -- | Total unsafe `IxVector` accessor
-{-# INLINE (@!?) #-}
+{-# INLINE (@!!?) #-}
 (@!!?) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> Maybe a
 (@!!?) IxVector {..} i
   -- NOTE: `index` panics on out of range

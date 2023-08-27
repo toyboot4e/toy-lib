@@ -47,6 +47,7 @@ import Data.STRef
 import Data.Semigroup
 import Data.Word
 import Debug.Trace
+import GHC.Ix (unsafeIndex)
 import GHC.Exts
 import GHC.Float (int2Float)
 import GHC.Stack (HasCallStack)
