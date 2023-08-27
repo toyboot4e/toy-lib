@@ -215,31 +215,30 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
-bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> UArray (Int, Int) Int
-bfsGrid317E_MBuffer !isBlock !start = runSTUArray $ do
-  !vis <- newArray bounds_ undef
-  !queue <- newBufferAsQueue (2 * h * w)
+bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
+bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
+  !vis <- IxVector bounds_ <$> VUM.replicate (rangeSize bounds_) undef
+  !queue <- newBufferAsQueue (rangeSize bounds_)
 
   pushBack start queue
-  writeArray vis start 0
+  writeIV vis start 0
 
   fix $ \loop ->
     popFront queue >>= \case
       Nothing -> return ()
       Just !yx1 -> do
-        !d <- readArray vis yx1
+        !d <- readIV vis yx1
         VU.forM_ (nexts yx1) $ \yx2 -> do
-          whenM ((== undef) <$> readArray vis yx2) $ do
-            writeArray vis yx2 (d + 1)
+          whenM ((== undef) <$> readIV vis yx2) $ do
+            writeIV vis yx2 (d + 1)
             pushBack yx2 queue
         loop
 
-  return vis
+  VU.unsafeFreeze $ vecIV vis
   where
     !undef = -1 :: Int
     !bounds_ = boundsIV isBlock
-    (!h, !w) = both succ $! snd bounds_
-    nexts !yx0 = VU.filter (\yx -> inRange bounds_ yx && not (isBlock @! yx)) $! VU.map (add2 yx0) dyxs
+    nexts !yx0 = VU.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ VU.map (add2 yx0) dyxs
     !dyxs = VU.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 -- | Dijkstra: $O((E+V) \log {V})$
