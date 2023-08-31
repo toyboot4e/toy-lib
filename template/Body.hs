@@ -6,8 +6,11 @@ instance TypeInt MyModulo where
 
 type MyModInt = ModInt MyModulo
 
+myModulo :: Int
+myModulo = typeInt (Proxy @MyModulo)
+
 modInt :: Int -> MyModInt
-modInt = ModInt . (`mod` typeInt (Proxy @MyModulo))
+modInt = ModInt . (`rem` myModulo)
 
 undef :: Int
 undef = -1
