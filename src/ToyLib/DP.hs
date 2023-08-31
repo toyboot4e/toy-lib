@@ -1,6 +1,8 @@
 -- | Typical DP utilities
 module ToyLib.DP where
 
+import Data.Bits
+import Data.Bool (bool)
 import Data.Ix
 import Data.Unindex
 import qualified Data.Vector.Generic as VG
@@ -65,3 +67,25 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
       if spanLen == 1
         then onOne spanL
         else f vec (spanLen, spanL)
+
+-- | Typical set-based DP.
+--
+-- = Typical problems
+-- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
+tspDP :: Int -> IxUVector (Int, Int) Int -> VU.Vector Int
+tspDP !nVerts !gr = VU.constructN (nSets * nVerts) $ \vec -> case VG.length vec `divMod` nVerts of
+  -- initial states
+  (!s, !vTo) | s == bit vTo -> 0 :: Int
+  -- non-reachable states
+  (!s, !vTo) | not (testBit s vTo) -> undef
+  -- possible transitions
+  (!s, !vTo) ->
+    let !s' = clearBit s vTo
+        !candidates = (VU.take nVerts . VU.drop (nVerts * s')) vec
+     in VU.maximum $ flip VU.imap candidates $ \vFrom w0 ->
+          let !dw = gr @! (vFrom, vTo)
+           in -- !_ = dbg (s, "<-", s', (vFrom, vTo), w0, dw, w0 + dw)
+              bool (w0 + dw) undef (dw == undef || w0 == undef)
+  where
+    !nSets = bit nVerts
+    !undef = -1 :: Int
