@@ -13,16 +13,12 @@ import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Array.IArray
-import Data.Array.MArray
-import Data.Array.ST
-import Data.Array.Unboxed (UArray)
 import Data.Bifunctor
 import Data.Buffer
 import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntSet as IS
 import Data.Maybe
-import Data.Tuple.Extra (both)
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
