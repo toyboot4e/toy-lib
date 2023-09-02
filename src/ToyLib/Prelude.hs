@@ -79,27 +79,6 @@ foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
--- TODO: `minimumMay` from `mono-traversable`?
--- or copy the `safe` packge: <https://hackage.haskell.org/package/safe-0.3.14/docs/Safe-Foldable.html>
-
-minimumOr :: (Ord a, VG.Vector v a) => a -> v a -> a
-minimumOr !orValue !xs =
-  if VG.null xs
-    then orValue
-    else VG.minimum xs
-
-maximumOr :: (Ord a, VG.Vector v a) => a -> v a -> a
-maximumOr !orValue !xs =
-  if VG.null xs
-    then orValue
-    else VG.maximum xs
-
-headMay :: (VU.Unbox a) => VU.Vector a -> Maybe a
-headMay vec = if VU.null vec then Nothing else Just $! VU.head vec
-
-lastMay :: (VU.Unbox a) => VU.Vector a -> Maybe a
-lastMay vec = if VU.null vec then Nothing else Just $! VU.last vec
-
 -- }}}
 
 -- {{{ Libary complements
