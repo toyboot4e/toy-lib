@@ -1,0 +1,513 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SafeList</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VG</span></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | Safelist</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">class</span><span> </span><span id="SafeList"><span class="annot"><a href="Data.SafeList.html#SafeList"><span class="hs-identifier hs-var">SafeList</span></a></span></span><span> </span><span id="local-6989586621679104219"><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="SafeListElem"><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-var">SafeListElem</span></a></span></span><span> </span><span id="local-6989586621679104219"><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>  </span><span id="headMay"><span class="annot"><a href="Data.SafeList.html#headMay"><span class="hs-identifier hs-type">headMay</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>  </span><span id="lastMay"><span class="annot"><a href="Data.SafeList.html#lastMay"><span class="hs-identifier hs-type">lastMay</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>  </span><span id="headOr"><span class="annot"><a href="Data.SafeList.html#headOr"><span class="hs-identifier hs-type">headOr</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-17"></span><span>  </span><span id="lastOr"><span class="annot"><a href="Data.SafeList.html#lastOr"><span class="hs-identifier hs-type">lastOr</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span>  </span><span id="minimumMay"><span class="annot"><a href="Data.SafeList.html#minimumMay"><span class="hs-identifier hs-type">minimumMay</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span id="maximumMay"><span class="annot"><a href="Data.SafeList.html#maximumMay"><span class="hs-identifier hs-type">maximumMay</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>  </span><span id="minimumOr"><span class="annot"><a href="Data.SafeList.html#minimumOr"><span class="hs-identifier hs-type">minimumOr</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span id="maximumOr"><span class="annot"><a href="Data.SafeList.html#maximumOr"><span class="hs-identifier hs-type">maximumOr</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-type">SafeListElem</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679104219"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- | = Tests</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- &gt;&gt;&gt; headMay ([] :: [Int])</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- &gt;&gt;&gt; headMay ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- Just 1</span><span>
+</span><span id="line-31"></span><span class="hs-comment">--</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- &gt;&gt;&gt; lastMay ([] :: [Int])</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- &gt;&gt;&gt; lastMay ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- Just 3</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- &gt;&gt;&gt; headOr (-1) ([] :: [Int])</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- &gt;&gt;&gt; headOr (-1) ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-41"></span><span class="hs-comment">--</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- &gt;&gt;&gt; lastOr (-1) ([] :: [Int])</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- &gt;&gt;&gt; lastOr (-1) ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- 3</span><span>
+</span><span id="line-46"></span><span class="hs-comment">--</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumMay ([] :: [Int])</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumMay ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- Just 1</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumMay ([] :: [Int])</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumMay ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- Just 4</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumOr (-1) ([] :: [Int])</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumOr (-1) ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumOr (-1) ([] :: [Int])</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumOr (-1) ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- 4</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679104220"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679104220"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeList"><span class="hs-identifier hs-type">SafeList</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679104220"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="SafeListElem"><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-var">SafeListElem</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679104220"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679104220"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679104264"><span class="annot"><span class="annottext">headMay :: [a] -&gt; Maybe (SafeListElem [a])
+</span><a href="Data.SafeList.html#headMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">headMay</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem [a])
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#headMay"><span class="hs-identifier hs-var">headMay</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679104265"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679104265"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span class="annot"><span class="annottext">[a]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679104265"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679104268"><span class="annot"><span class="annottext">lastMay :: [a] -&gt; Maybe (SafeListElem [a])
+</span><a href="Data.SafeList.html#lastMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastMay</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem [a])
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#lastMay"><span class="hs-identifier hs-var">lastMay</span></a></span><span> </span><span id="local-6989586621679104269"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104269"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem [a] -&gt; Maybe (SafeListElem [a]))
+-&gt; SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104269"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621679104273"><span class="annot"><span class="annottext">headOr :: SafeListElem [a] -&gt; [a] -&gt; SafeListElem [a]
+</span><a href="Data.SafeList.html#headOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">headOr</span></a></span></span><span> </span><span id="local-6989586621679104274"><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104274"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104274"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#headOr"><span class="hs-identifier hs-var">headOr</span></a></span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679104275"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104275"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104275"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span>  </span><span id="local-6989586621679104279"><span class="annot"><span class="annottext">lastOr :: SafeListElem [a] -&gt; [a] -&gt; SafeListElem [a]
+</span><a href="Data.SafeList.html#lastOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastOr</span></a></span></span><span> </span><span id="local-6989586621679104280"><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104280"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104280"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-79"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#lastOr"><span class="hs-identifier hs-var">lastOr</span></a></span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679104281"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104281"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104281"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span>  </span><span id="local-6989586621679104285"><span class="annot"><span class="annottext">minimumMay :: [a] -&gt; Maybe (SafeListElem [a])
+</span><a href="Data.SafeList.html#minimumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumMay</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem [a])
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-82"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#minimumMay"><span class="hs-identifier hs-var">minimumMay</span></a></span><span> </span><span id="local-6989586621679104286"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104286"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem [a] -&gt; Maybe (SafeListElem [a]))
+-&gt; SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. Ord a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">minimum</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104286"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679104290"><span class="annot"><span class="annottext">maximumMay :: [a] -&gt; Maybe (SafeListElem [a])
+</span><a href="Data.SafeList.html#maximumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumMay</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem [a])
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-85"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#maximumMay"><span class="hs-identifier hs-var">maximumMay</span></a></span><span> </span><span id="local-6989586621679104291"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104291"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem [a] -&gt; Maybe (SafeListElem [a]))
+-&gt; SafeListElem [a] -&gt; Maybe (SafeListElem [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. Ord a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">maximum</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104291"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621679104295"><span class="annot"><span class="annottext">minimumOr :: SafeListElem [a] -&gt; [a] -&gt; SafeListElem [a]
+</span><a href="Data.SafeList.html#minimumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumOr</span></a></span></span><span> </span><span id="local-6989586621679104296"><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104296"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104296"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#minimumOr"><span class="hs-identifier hs-var">minimumOr</span></a></span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679104297"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104297"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. Ord a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">minimum</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104297"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679104300"><span class="annot"><span class="annottext">maximumOr :: SafeListElem [a] -&gt; [a] -&gt; SafeListElem [a]
+</span><a href="Data.SafeList.html#maximumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumOr</span></a></span></span><span> </span><span id="local-6989586621679104301"><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104301"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><a href="#local-6989586621679104301"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-91"></span><span>  </span><span class="annot"><a href="Data.SafeList.html#maximumOr"><span class="hs-identifier hs-var">maximumOr</span></a></span><span> </span><span class="annot"><span class="annottext">SafeListElem [a]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679104302"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104302"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; a
+forall a. Ord a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">maximum</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679104302"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- | = Tests</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- &gt;&gt;&gt; headMay $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- &gt;&gt;&gt; headMay $ V.fromList ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- Just 1</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- &gt;&gt;&gt; lastMay $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- &gt;&gt;&gt; lastMay $ V.fromList ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- Just 3</span><span>
+</span><span id="line-104"></span><span class="hs-comment">--</span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- &gt;&gt;&gt; headOr (-1) $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- &gt;&gt;&gt; headOr (-1) $ V.fromList ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-109"></span><span class="hs-comment">--</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- &gt;&gt;&gt; lastOr (-1) $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- &gt;&gt;&gt; lastOr (-1) $ V.fromList ([1, 2, 3] :: [Int])</span><span>
+</span><span id="line-113"></span><span class="hs-comment">-- 3</span><span>
+</span><span id="line-114"></span><span class="hs-comment">--</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumMay $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumMay $ V.fromList ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- Just 1</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumMay $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumMay $ V.fromList ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- Just 4</span><span>
+</span><span id="line-124"></span><span class="hs-comment">--</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumOr (-1) $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- &gt;&gt;&gt; minimumOr (-1) $ V.fromList ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-129"></span><span class="hs-comment">--</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumOr (-1) $ V.fromList ([] :: [Int])</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- &gt;&gt;&gt; maximumOr (-1) $ V.fromList ([2, 1, 4, 3] :: [Int])</span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- 4</span><span>
+</span><span id="line-134"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679104231"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679104231"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeList"><span class="hs-identifier hs-type">SafeList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679104231"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-135"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="SafeListElem"><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-var">SafeListElem</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679104231"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679104231"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span>  </span><span id="local-6989586621679104316"><span class="annot"><span class="annottext">headMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#headMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">headMay</span></a></span></span><span> </span><span id="local-6989586621679104317"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104317"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104317"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeHead</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104317"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span>  </span><span id="local-6989586621679104322"><span class="annot"><span class="annottext">lastMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#lastMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastMay</span></a></span></span><span> </span><span id="local-6989586621679104323"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104323"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104323"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-143"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeLast</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104323"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span>  </span><span id="local-6989586621679104327"><span class="annot"><span class="annottext">headOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#headOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">headOr</span></a></span></span><span> </span><span id="local-6989586621679104328"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104328"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104329"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104329"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-146"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104329"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104328"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-147"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeHead</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104329"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span>  </span><span id="local-6989586621679104332"><span class="annot"><span class="annottext">lastOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#lastOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastOr</span></a></span></span><span> </span><span id="local-6989586621679104333"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104333"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104334"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104334"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-150"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104334"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104333"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-151"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeLast</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104334"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-152"></span><span>
+</span><span id="line-153"></span><span>  </span><span id="local-6989586621679104338"><span class="annot"><span class="annottext">minimumMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#minimumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumMay</span></a></span></span><span> </span><span id="local-6989586621679104339"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104339"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104339"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.minimum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104339"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span>  </span><span id="local-6989586621679104344"><span class="annot"><span class="annottext">maximumMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#maximumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumMay</span></a></span></span><span> </span><span id="local-6989586621679104345"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104345"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104345"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-159"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.maximum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104345"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span>  </span><span id="local-6989586621679104350"><span class="annot"><span class="annottext">minimumOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#minimumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumOr</span></a></span></span><span> </span><span id="local-6989586621679104351"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104351"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104352"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104352"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-162"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104352"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104351"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-163"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.minimum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104352"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span>  </span><span id="local-6989586621679104356"><span class="annot"><span class="annottext">maximumOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#maximumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumOr</span></a></span></span><span> </span><span id="local-6989586621679104357"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104357"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104358"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104358"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-166"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104358"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104357"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-167"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.maximum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104358"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-168"></span><span>
+</span><span id="line-169"></span><span class="annot"><span class="hs-comment">-- | The implementation is same as the one for `V.Vector`.</span></span><span>
+</span><span id="line-170"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679104243"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679104243"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679104243"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.SafeList.html#SafeList"><span class="hs-identifier hs-type">SafeList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679104243"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="SafeListElem"><span class="annot"><a href="Data.SafeList.html#SafeListElem"><span class="hs-identifier hs-var">SafeListElem</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679104243"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679104243"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span>  </span><span id="local-6989586621679104374"><span class="annot"><span class="annottext">headMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#headMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">headMay</span></a></span></span><span> </span><span id="local-6989586621679104375"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104375"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104375"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-175"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeHead</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104375"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span>  </span><span id="local-6989586621679104378"><span class="annot"><span class="annottext">lastMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#lastMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastMay</span></a></span></span><span> </span><span id="local-6989586621679104379"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104379"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-178"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104379"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-179"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeLast</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104379"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span>  </span><span id="local-6989586621679104382"><span class="annot"><span class="annottext">headOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#headOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">headOr</span></a></span></span><span> </span><span id="local-6989586621679104383"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104383"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104384"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104384"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-182"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104384"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104383"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-183"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeHead</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104384"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-184"></span><span>
+</span><span id="line-185"></span><span>  </span><span id="local-6989586621679104387"><span class="annot"><span class="annottext">lastOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#lastOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">lastOr</span></a></span></span><span> </span><span id="local-6989586621679104388"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104388"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104389"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104389"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-186"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104389"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104388"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.unsafeLast</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104389"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-188"></span><span>
+</span><span id="line-189"></span><span>  </span><span id="local-6989586621679104393"><span class="annot"><span class="annottext">minimumMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#minimumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumMay</span></a></span></span><span> </span><span id="local-6989586621679104394"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104394"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-190"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104394"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-191"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.minimum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104394"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-192"></span><span>
+</span><span id="line-193"></span><span>  </span><span id="local-6989586621679104398"><span class="annot"><span class="annottext">maximumMay :: Vector a -&gt; Maybe (SafeListElem (Vector a))
+</span><a href="Data.SafeList.html#maximumMay"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumMay</span></a></span></span><span> </span><span id="local-6989586621679104399"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104399"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-194"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104399"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
+Maybe (SafeListElem (Vector a))
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-195"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a)))
+-&gt; SafeListElem (Vector a) -&gt; Maybe (SafeListElem (Vector a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.maximum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104399"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-196"></span><span>
+</span><span id="line-197"></span><span>  </span><span id="local-6989586621679104403"><span class="annot"><span class="annottext">minimumOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#minimumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">minimumOr</span></a></span></span><span> </span><span id="local-6989586621679104404"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104404"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104405"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104405"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-198"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104405"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104404"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-199"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.minimum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104405"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-200"></span><span>
+</span><span id="line-201"></span><span>  </span><span id="local-6989586621679104409"><span class="annot"><span class="annottext">maximumOr :: SafeListElem (Vector a) -&gt; Vector a -&gt; SafeListElem (Vector a)
+</span><a href="Data.SafeList.html#maximumOr"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximumOr</span></a></span></span><span> </span><span id="local-6989586621679104410"><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104410"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span id="local-6989586621679104411"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104411"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><span id="line-202"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">VG.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104411"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SafeListElem (Vector a)
+</span><a href="#local-6989586621679104410"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-203"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. (Vector v a, Ord a) =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">VG.maximum</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679104411"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-204"></span><span>
+</span><span id="line-205"></span></pre></body></html>

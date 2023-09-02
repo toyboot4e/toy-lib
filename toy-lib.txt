@@ -43,7 +43,7 @@ newBufferAsQueue :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 type Deque s a = Buffer s a
 newBufferAsDeque :: (Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 lengthBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Int
-emptyBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Bool
+nullBuffer :: PrimMonad m => Buffer (PrimState m) a -> m Bool
 clearBuffer :: PrimMonad m => Buffer (PrimState m) a -> m ()
 freezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
 unsafeFreezeBuffer :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Vector a)
@@ -149,6 +149,12 @@ instance Data.FromVec.FromVec Data.MultiSet.MultiSet
 
 
 -- | Dense, mutable multi set.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>ABC 315 D - Magical Cookies</a></li>
+--   </ul>
 module Data.MultiSetVec
 
 -- | Dense, mutable multi set.
@@ -172,6 +178,24 @@ minMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 -- | $O(n)$ Find maximum key element
 maxMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 unsafeFreezeMSV :: PrimMonad m => MultiSetVec (PrimState m) -> m (Int, Vector Int)
+
+module Data.SafeList
+
+-- | Safelist
+class SafeList v where {
+    type SafeListElem v;
+}
+headMay :: SafeList v => v -> Maybe (SafeListElem v)
+lastMay :: SafeList v => v -> Maybe (SafeListElem v)
+headOr :: SafeList v => SafeListElem v -> v -> SafeListElem v
+lastOr :: SafeList v => SafeListElem v -> v -> SafeListElem v
+minimumMay :: SafeList v => v -> Maybe (SafeListElem v)
+maximumMay :: SafeList v => v -> Maybe (SafeListElem v)
+minimumOr :: SafeList v => SafeListElem v -> v -> SafeListElem v
+maximumOr :: SafeList v => SafeListElem v -> v -> SafeListElem v
+instance GHC.Classes.Ord a => Data.SafeList.SafeList [a]
+instance GHC.Classes.Ord a => Data.SafeList.SafeList (Data.Vector.Vector a)
+instance (Data.Vector.Unboxed.Base.Unbox a, GHC.Classes.Ord a) => Data.SafeList.SafeList (Data.Vector.Unboxed.Base.Vector a)
 
 module Data.SegmentTree.Strict
 
@@ -319,19 +343,37 @@ IxVector :: !(i, i) -> !v -> IxVector i v
 [boundsIV] :: IxVector i v -> !(i, i)
 [vecIV] :: IxVector i v -> !v
 
+-- | Primary <a>IxVector</a> type notation.
+type IxUVector i a = IxVector i (Vector a)
+
+-- | Primary <a>IxVector</a> type notation.
+type IxMUVector i s a = IxVector i (MVector s a)
+
 -- | Partial <a>IxVector</a> accessor
 (@!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
+
+-- | Partial unsafe <a>IxVector</a> accessor
+(@!!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
 
 -- | Total <a>IxVector</a> accessor
 (@!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
 
+-- | Total unsafe <a>IxVector</a> accessor
+(@!!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
+
 -- | Reads a value from <a>IxVector</a>.
 readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+unsafeReadIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 
 -- | Writes a value to <a>IxVector</a>.
 writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+unsafeWriteIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
 modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+unsafeModifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+modifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
+unsafeModifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
 swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+unsafeSwapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
 
 -- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
 imos2DIV :: IxVector (Int, Int) (Vector Int) -> IxVector (Int, Int) (Vector Int)
@@ -563,10 +605,6 @@ foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
-minimumOr :: (Ord a, Unbox a) => a -> Vector a -> a
-maximumOr :: (Ord a, Unbox a) => a -> Vector a -> a
-headMay :: Unbox a => Vector a -> Maybe a
-lastMay :: Unbox a => Vector a -> Maybe a
 rangeVG :: Vector v Int => Int -> Int -> v Int
 rangeV :: Int -> Int -> Vector Int
 rangeVU :: Int -> Int -> Vector Int
@@ -801,6 +839,15 @@ constructIV :: (Unindex i, Unbox a) => (i, i) -> (IxVector i (Vector a) -> i -> 
 
 -- | Span-based DP with preset index patterns.
 spanDP :: Unbox a => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (Vector a)
+
+-- | Typical set-based DP.
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>ABC 317 C - Remembering the Days</a></li>
+--   </ul>
+tspDP :: Int -> IxUVector (Int, Int) Int -> Vector Int
 
 
 -- | Lazy segment tree, where we can perform operation over range.
@@ -1043,9 +1090,14 @@ adjW :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
 adjWIx :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
 dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
 
+-- | Just a template. Typical problem: <a>ABC 317 C - Remembering the
+--   Days</a>
+dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
+
 -- | Also consider using union-find tree.
 componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
 bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
+bfsGrid317E_MBuffer :: HasCallStack => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
 
 -- | Dijkstra: $O((E+V) log {V})$
 djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> w -> i -> Vector w
