@@ -20,7 +20,6 @@
 module Template () where
 
 import Control.Applicative
-import Control.Arrow ((***))
 import Control.Exception (assert)
 import Control.Monad
 import Control.Monad.Fix
