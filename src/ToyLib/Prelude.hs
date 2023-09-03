@@ -73,11 +73,10 @@ foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 -- >>> chunksOfVG 3 $ VU.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
 chunksOfVG :: (VG.Vector v a) => Int -> v a -> V.Vector (v a)
-chunksOfVG k = VG.unfoldr step
+chunksOfVG k xs0 = V.unfoldrExactN n step xs0
   where
-    step xs
-      | VG.null xs = Nothing
-      | otherwise = Just (VG.take k xs, VG.drop k xs)
+    n = (VG.length xs0 + k - 1) `div` k
+    step xs = (VG.take k xs, VG.drop k xs)
 
 -- }}}
 
