@@ -69,6 +69,16 @@ foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
+-- | = Test
+-- >>> chunksOfVG 3 $ VU.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
+-- [[1,2,3],[4,5,6],[7]]
+chunksOfVG :: (VG.Vector v a) => Int -> v a -> V.Vector (v a)
+chunksOfVG k = VG.unfoldr step
+  where
+    step xs
+      | VG.null xs = Nothing
+      | otherwise = Just (VG.take k xs, VG.drop k xs)
+
 -- }}}
 
 -- {{{ Libary complements
