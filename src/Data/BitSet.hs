@@ -16,6 +16,9 @@ powersetM_ !is0 !act = act2 is0
       unless (is == 0) (act2 (is0 .&. (is - 1)))
 
 -- | Originally by @yamate11
+--
+-- >>> powerset (7 :: Int)
+-- [7,6,5,4,3,2,1,0]
 powerset :: (Bits a, Num a) => a -> [a]
 powerset !a = a : unfoldr f a
   where
@@ -23,6 +26,9 @@ powerset !a = a : unfoldr f a
     f !x = Just . dupe $! a .&. (x - 1)
 
 -- | Returns a powerset of @x0@ in descending order.
+--
+-- >>> powersetVU (7 :: Int)
+-- [7,6,5,4,3,2,1,0]
 powersetVU :: (Bits a, Num a, VU.Unbox a) => a -> VU.Vector a
 powersetVU !x0 = VU.unfoldrExactN n f x0
   where

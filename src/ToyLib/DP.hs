@@ -2,6 +2,7 @@
 module ToyLib.DP where
 
 import Data.Bits
+import Data.BitSet (powersetVU)
 import Data.Bool (bool)
 import Data.Ix
 import Data.Unindex
@@ -89,3 +90,26 @@ tspDP !nVerts !gr = VU.constructN (nSets * nVerts) $ \vec -> case VG.length vec 
   where
     !nSets = bit nVerts
     !undef = -1 :: Int
+
+-- | Enumerates all possible bitsets that composes @bit n - 1@.
+--
+-- >>> enumerateBitSets 4
+-- [[8,4,2,1],[12,2,1],[8,6,1],[4,10,1],[14,1],[8,4,3],[12,3],[8,2,5],[10,5],[8,7],[4,2,9],[6,9],[4,11],[2,13],[15],[]]
+--
+-- = Typical problems
+-- - [ABC 310 D - Peaceful Teams](https://atcoder.jp/contests/abc310/tasks/abc310_d)
+-- - [ABC 319 D - General Weighted Max Matching](https://atcoder.jp/contests/abc318/tasks/abc318_d)
+--   (Not the exact pattern though)
+enumerateBitSets :: Int -> [[Int]]
+enumerateBitSets !n = inner [[]] [] (bit n - 1)
+  where
+    inner :: [[Int]] -> [Int] -> Int -> [[Int]]
+    inner !results !acc 0 = acc : results
+    inner !results !acc !rest = VU.foldl' step results (powersetVU rest')
+      where
+        !lsb = countTrailingZeros rest
+        !rest' = clearBit rest lsb
+        step !res !set =
+          let !set' = set .|. bit lsb
+           in inner res (set' : acc) (rest' .&. complement set')
+
