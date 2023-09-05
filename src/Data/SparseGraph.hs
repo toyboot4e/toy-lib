@@ -14,11 +14,13 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Array.IArray
 import Data.Bifunctor
+import Data.BinaryLifting
 import Data.Buffer
 import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntSet as IS
 import Data.Maybe
+import Data.Tree.Lca (LcaCache, ToParent (..))
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
@@ -354,3 +356,28 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
     collectSccPreorderSG !topVerts = runST $ do
       !vis <- VUM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
+
+-- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
+treeDepthInfoSG :: SparseGraph Int w -> Int -> (ToParent, VU.Vector Int)
+treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
+  !parents <- VUM.replicate nVerts (-1 :: Int)
+  !depths <- VUM.replicate nVerts (-1 :: Int)
+
+  flip fix (0 :: Int, -1 :: Int, VU.singleton root) $ \loop (!depth, !parent, !vs) -> do
+    VU.forM_ vs $ \v -> do
+      VUM.unsafeWrite depths v depth
+      VUM.unsafeWrite parents v parent
+      let !vs' = VU.filter (/= parent) $ gr `adj` v
+      loop (succ depth, v, vs')
+
+  (,) <$> (ToParent <$> VU.unsafeFreeze parents) <*> VU.unsafeFreeze depths
+  where
+    !nVerts = rangeSize boundsSG
+
+-- | LCA component. Returns `LcaCache`, i.e., `(parents, depths, parents')`.
+lcaCacheSG :: SparseGraph Int w -> Vertex -> LcaCache
+lcaCacheSG !gr !root = (toParent, depths, toParentN)
+  where
+    (!toParent, !depths) = treeDepthInfoSG gr root
+    !toParentN = newBinLift toParent
+
