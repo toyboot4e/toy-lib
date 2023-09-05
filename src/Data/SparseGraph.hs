@@ -25,7 +25,6 @@ import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
-import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
 import ToyLib.Prelude (add2, foldForM, foldForMVG, rangeMS, rangeVU)
 
@@ -211,7 +210,7 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
-bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
+bfsGrid317E_MBuffer :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
 bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
   !vis <- IxVector bounds_ <$> VUM.replicate (rangeSize bounds_) undef
   !queue <- newBufferAsQueue (rangeSize bounds_)
@@ -245,13 +244,13 @@ djSG gr@SparseGraph {..} !undef !startIx = VU.create $ do
   let !heap0 = H.singleton $ H.Entry 0 (index boundsSG startIx)
   flip fix heap0 $ \loop heap -> case H.uncons heap of
     Nothing -> return ()
-    Just (entry@(H.Entry cost v), heap') -> do
-      (== undef) <$> VUM.read dist v >>= \case
+    Just (entry@(H.Entry cost v1), heap') -> do
+      (== undef) <$> VUM.read dist v1 >>= \case
         False -> loop heap'
         True -> do
-          VUM.write dist v cost
-          !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjW` v
-          loop $ VU.foldl' (\h (!v, !w) -> H.insert (merge entry (H.Entry w v)) h) heap' vws
+          VUM.write dist v1 cost
+          !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjW` v1
+          loop $ VU.foldl' (\h (!v2, !w) -> H.insert (merge entry (H.Entry w v2)) h) heap' vws
 
   return dist
   where
