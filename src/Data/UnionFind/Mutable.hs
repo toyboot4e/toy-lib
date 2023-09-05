@@ -102,11 +102,16 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
     VUM.unsafeWrite vec chld (MUFChild par)
     VUM.unsafeWrite vec par (MUFRoot $! sx + sy)
 
--- | Returns the size of the root node, starting with `1`.
+-- | Returns the size of the a node, starting with `1`.
 {-# INLINE sizeMUF #-}
 sizeMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 sizeMUF uf@(MUnionFind !vec) !x = do
   !px <- rootMUF uf x
   _unwrapMUFRoot <$> VUM.unsafeRead vec px
+
+{-# INLINE clearMUF #-}
+clearMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
+clearMUF (MUnionFind !vec) = do
+  VUM.set vec (MUFRoot 1)
 
 -- }}}
