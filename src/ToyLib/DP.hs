@@ -1,4 +1,6 @@
 -- | Typical DP utilities
+--
+-- TODO: Refactor `relaxMany` variants.
 module ToyLib.DP where
 
 import Data.Bits
@@ -11,7 +13,7 @@ import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
-import ToyLib.Prelude (rangeVU)
+import ToyLib.Prelude (rangeVU, repM_)
 
 -- | Variant of `VU.constructN`.
 constructFor :: (VU.Unbox a, VU.Unbox b) => a -> VU.Vector b -> (VU.Vector a -> b -> a) -> VU.Vector a
@@ -36,6 +38,17 @@ relaxMany !relax !vec0 !input !expander = VG.create $ do
 
   return vec
 
+-- | `relaxMany` with index input.
+irelaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
+irelaxMany !relax !vec0 !input !expander = VG.create $ do
+  !vec <- VG.unsafeThaw vec0
+
+  VG.iforM_ input $ \ix x -> do
+    VG.forM_ (expander ix x) $ \(!i, !x') -> do
+      VGM.modify vec (`relax` x') i
+
+  return vec
+
 -- | Monoid variant of `relaxMany`
 relaxMany' :: (Monoid m, VU.Unbox m, VU.Unbox a) => VU.Vector m -> VU.Vector a -> (a -> VU.Vector (Int, m)) -> VU.Vector m
 relaxMany' !vec0 !input !expander = VU.create $ do
@@ -44,6 +57,19 @@ relaxMany' !vec0 !input !expander = VU.create $ do
   VU.forM_ input $ \x -> do
     VU.forM_ (expander x) $ \(!i, !x') -> do
       VUM.modify vec (<> x') i
+
+  return vec
+
+{-# INLINE pushBasedConstructN #-}
+pushBasedConstructN :: (VG.Vector v a, VG.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
+pushBasedConstructN !relax !vec0 !expander = VG.create $ do
+  !vec <- VG.unsafeThaw vec0
+
+  repM_ 0 (VGM.length vec - 1) $ \iFrom -> do
+    -- REMARK: Because this is a push-based DP, the value for the interested index is already known.
+    !freezed <- VG.unsafeFreeze (VGM.take (iFrom + 1) vec)
+    VG.forM_ (expander iFrom freezed) $ \(!iTo, !x') -> do
+      VGM.modify vec (`relax` x') iTo
 
   return vec
 
