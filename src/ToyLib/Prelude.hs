@@ -82,27 +82,38 @@ chunksOfVG k xs0 = V.unfoldrExactN n step xs0
 
 -- {{{ Libary complements
 
+-- | List-like range syntax for `vector`.
+--
+-- >>> rangeVG @VU.Vector 3 5
+-- [3,4,5]
 {-# INLINE rangeVG #-}
 rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
 rangeVG !i !j = VG.enumFromN i (succ j - i)
 
+-- | Type-constrained `rangeVG`.
 {-# INLINE rangeV #-}
 rangeV :: Int -> Int -> V.Vector Int
 rangeV = rangeVG
 
+-- | Type-constrained `rangeVG`.
 {-# INLINE rangeVU #-}
 rangeVU :: Int -> Int -> VU.Vector Int
 rangeVU = rangeVG
 
--- | `rangeVG` in reverse.
+-- | Easier reverse range syntax for `vector`.
+--
+-- >>> rangeVGR @VU.Vector 3 5
+-- [5,4,3]
 {-# INLINE rangeVGR #-}
 rangeVGR :: (VG.Vector v Int) => Int -> Int -> v Int
-rangeVGR !i !j = VG.enumFromStepN (pred j) (-1) (succ j - i)
+rangeVGR !i !j = VG.enumFromStepN j (-1) (succ j - i)
 
+-- | Type-constrained `rangeVGR`.
 {-# INLINE rangeVR #-}
 rangeVR :: Int -> Int -> V.Vector Int
 rangeVR = rangeVGR
 
+-- | Type-constrained `rangeVGR`.
 {-# INLINE rangeVUR #-}
 rangeVUR :: Int -> Int -> VU.Vector Int
 rangeVUR = rangeVGR
