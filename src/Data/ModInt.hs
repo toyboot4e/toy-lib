@@ -37,8 +37,9 @@ instance (TypeInt p) => Num (ModInt p) where
   signum _ = 1
   fromInteger = ModInt . fromInteger
 
-instance TypeInt p => Fractional (ModInt p) where
-  -- | Reciprocal of x (inverse of x).
+-- FIXME: Use `KnownNat`
+instance (TypeInt p) => Fractional (ModInt p) where
+  -- \| Reciprocal of x (inverse of x).
   -- REMARK: This is TOO slow. Do cache when possible.
   recip (ModInt !x) = ModInt $! invModF x (typeInt (Proxy @p))
   fromRational !r = ModInt n / ModInt d
@@ -50,11 +51,15 @@ instance (TypeInt p) => Enum (ModInt p) where
   toEnum = ModInt . (`mod` typeInt (Proxy @p))
   fromEnum = coerce
 
-instance TypeInt p => SemigroupAction (Product (ModInt p)) (ModInt p) where
+instance (TypeInt p) => SemigroupAction (Product (ModInt p)) (ModInt p) where
   sact (Product !x1) !x2 = x1 * x2
 
 newtype instance VU.MVector s (ModInt p) = MV_ModInt (VP.MVector s (ModInt p))
-newtype instance VU.Vector    (ModInt p) = V_ModInt  (VP.Vector    (ModInt p))
+
+newtype instance VU.Vector (ModInt p) = V_ModInt (VP.Vector (ModInt p))
+
 deriving via (VU.UnboxViaPrim (ModInt p)) instance VGM.MVector VUM.MVector (ModInt p)
-deriving via (VU.UnboxViaPrim (ModInt p)) instance VG.Vector  VU.Vector  (ModInt p)
+
+deriving via (VU.UnboxViaPrim (ModInt p)) instance VG.Vector VU.Vector (ModInt p)
+
 instance VU.Unbox (ModInt p)
