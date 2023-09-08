@@ -161,7 +161,12 @@ generateLibrary ghc2021Extensions parsedFiles =
         pretty _ = ""
 
         minify :: H.Module l -> String
-        minify (H.Module _ _ _ _ !decls) = L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) decls)
+        minify (H.Module _ _ _ _ !decls) = L.intercalate ";" (map (hack . H.prettyPrintWithMode pphsMode) decls)
+          where
+            -- | `deriving newtype` is not handled correctly by `haskell-src-exts`.
+            -- Here we remove newline characters, but there's some needless many spaces before `deriving newtype`:
+            hack :: String -> String
+            hack = filter (/= '\n')
         minify _ = ""
 
 pphsMode :: H.PPHsMode
