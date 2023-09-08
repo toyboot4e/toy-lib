@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -26,11 +27,9 @@ class TypeInt a where
 -- | `Int` with automatic moudlo arithmetic performed.
 newtype ModInt p = ModInt {toInt :: Int}
   deriving (Eq, VP.Prim)
+  deriving newtype (Ord, Read, Show, Real)
 
-instance Show (ModInt p) where
-  show = show . toInt
-
-instance TypeInt p => Num (ModInt p) where
+instance (TypeInt p) => Num (ModInt p) where
   (ModInt !x1) + (ModInt !x2) = ModInt $! (x1 + x2) `mod` typeInt (Proxy @p)
   (ModInt !x1) * (ModInt !x2) = ModInt $! (x1 * x2) `mod` typeInt (Proxy @p)
   negate (ModInt !v) = ModInt $ (-v) `mod` typeInt (Proxy @p)
