@@ -217,7 +217,7 @@ bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
   !vis <- IxVector bounds_ <$> VUM.replicate (rangeSize bounds_) undef
   !queue <- newBufferAsQueue (rangeSize bounds_)
 
-  pushBack start queue
+  pushBack queue start
   writeIV vis start 0
 
   fix $ \loop ->
@@ -228,7 +228,7 @@ bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
         VU.forM_ (nexts yx1) $ \yx2 -> do
           whenM ((== undef) <$> readIV vis yx2) $ do
             writeIV vis yx2 (d + 1)
-            pushBack yx2 queue
+            pushBack queue yx2
         loop
 
   VU.unsafeFreeze $ vecIV vis

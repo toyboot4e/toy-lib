@@ -24,7 +24,7 @@ bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
   !deque <- newBufferAsDeque (redundantSpace + 4 * nVerts)
   repM_ 0 3 $ \iDir -> do
     let !vExt = (iDir, fst start, snd start)
-    pushFront (0 :: Int, vExt) deque
+    pushFront deque (0 :: Int, vExt)
     writeIV vec vExt (0 :: Int)
 
   let extract !w0 vExt0@(!iDir0, !y0, !x0) = do
@@ -39,8 +39,8 @@ bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
               when (wReserved == undef || w < wReserved) $ do
                 writeIV vec vExt w
                 if iDir == iDir0
-                  then pushFront (w, vExt) deque
-                  else pushBack (w, vExt) deque
+                  then pushFront deque (w, vExt)
+                  else pushBack deque (w, vExt)
 
   -- generic BFS = pop loop
   fix $ \loop ->
