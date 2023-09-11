@@ -10,7 +10,8 @@
 
 {- ORMOLU_DISABLE -}
 {-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
-{-# LANGUAGE QuantifiedConstraints, RecordWildCards, StandaloneDeriving, StrictData, TypeFamilies #-}
+{-# LANGUAGE PatternSynonyms,QuantifiedConstraints, RecordWildCards, StandaloneDeriving #-}
+{-# LANGAUGE StrictData, TypeFamilies #-}
 
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {- ORMOLU_ENABLE -}
