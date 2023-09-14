@@ -9,11 +9,13 @@
 -}
 
 {- ORMOLU_DISABLE -}
-{-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
-{-# LANGUAGE PatternSynonyms,QuantifiedConstraints, RecordWildCards, StandaloneDeriving #-}
-{-# LANGAUGE StrictData, TypeFamilies #-}
 
-{-# LANGUAGE CPP, TemplateHaskell #-}
+{-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
+{-# LANGUAGE PatternSynonyms, QuantifiedConstraints, RecordWildCards, StandaloneDeriving, StrictData #-}
+{-# LANGUAGE TypeFamilies #-}
+
+{-# LANGUAGE CPP #-}
+
 {- ORMOLU_ENABLE -}
 
 -- {{{ Imports
@@ -47,9 +49,9 @@ import Data.STRef
 import Data.Semigroup
 import Data.Word
 import Debug.Trace
-import GHC.Ix (unsafeIndex)
 import GHC.Exts
 import GHC.Float (int2Float)
+import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
 import System.Exit (exitSuccess)
 import System.IO
