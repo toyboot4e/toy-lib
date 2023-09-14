@@ -25,7 +25,7 @@ class TypeInt a where
   typeInt :: Proxy a -> Int
 
 -- | `Int` with automatic moudlo arithmetic performed.
-newtype ModInt p = ModInt {toInt :: Int}
+newtype ModInt p = ModInt {getModInt :: Int}
   deriving (Eq, VP.Prim)
   deriving newtype (Ord, Read, Show, Real)
 
