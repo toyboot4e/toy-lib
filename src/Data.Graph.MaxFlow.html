@@ -36,7 +36,7 @@
 </span><span id="line-34"></span><span>    </span><span id="rev"><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#rev"><span class="hs-identifier hs-var hs-var">rev</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679112018"><span id="local-6989586621679112025"><span id="local-6989586621679112029"><span class="annot"><span class="annottext">Int -&gt; RNEdge -&gt; ShowS
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120064"><span id="local-6989586621679120071"><span id="local-6989586621679120075"><span class="annot"><span class="annottext">Int -&gt; RNEdge -&gt; ShowS
 [RNEdge] -&gt; ShowS
 RNEdge -&gt; String
 (Int -&gt; RNEdge -&gt; ShowS)
@@ -53,32 +53,32 @@ showList :: [RNEdge] -&gt; ShowS
 </span><span id="line-37"></span><span>
 </span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.IsoUnbox</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-39"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">toURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-40"></span><span>  </span><span id="local-6989586621679112037"><span class="annot"><span class="annottext">toURepr :: RNEdge -&gt; (Int, Int, Int)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112038"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112038"><span class="hs-identifier hs-var">x1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112039"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112039"><span class="hs-identifier hs-var">x2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112040"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112040"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112038"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112039"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112040"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span id="local-6989586621679120083"><span class="annot"><span class="annottext">toURepr :: RNEdge -&gt; (Int, Int, Int)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120084"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120084"><span class="hs-identifier hs-var">x1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120085"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120085"><span class="hs-identifier hs-var">x2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120086"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120086"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120084"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120085"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120086"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">fromURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-42"></span><span>  </span><span id="local-6989586621679112042"><span class="annot"><span class="annottext">fromURepr :: (Int, Int, Int) -&gt; RNEdge
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112043"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112043"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112044"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112044"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112045"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112045"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621679120088"><span class="annot"><span class="annottext">fromURepr :: (Int, Int, Int) -&gt; RNEdge
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120089"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120089"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120090"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120090"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120091"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120091"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112043"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112044"><span class="hs-identifier hs-var">x2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112045"><span class="hs-identifier hs-var">x3</span></a></span><span>
+</span><a href="#local-6989586621679120089"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120090"><span class="hs-identifier hs-var">x2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120091"><span class="hs-identifier hs-var">x3</span></a></span><span>
 </span><span id="line-43"></span><span>
-</span><span id="line-44"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">VU.MVector</span></span></span><span> </span><span id="local-6989586621679112046"><span class="annot"><a href="#local-6989586621679112046"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_RNEdge"><span class="annot"><a href="Data.Graph.MaxFlow.html#MV_RNEdge"><span class="hs-identifier hs-var">MV_RNEdge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679112046"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">VU.MVector</span></span></span><span> </span><span id="local-6989586621679120092"><span class="annot"><a href="#local-6989586621679120092"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_RNEdge"><span class="annot"><a href="Data.Graph.MaxFlow.html#MV_RNEdge"><span class="hs-identifier hs-var">MV_RNEdge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679120092"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-45"></span><span>
 </span><span id="line-46"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">VU.Vector</span></span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_RNEdge"><span class="annot"><a href="Data.Graph.MaxFlow.html#V_RNEdge"><span class="hs-identifier hs-var">V_RNEdge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-47"></span><span>
-</span><span id="line-48"></span><span id="local-6989586621679112050"><span id="local-6989586621679112057"><span id="local-6989586621679112063"><span id="local-6989586621679112069"><span id="local-6989586621679112075"><span id="local-6989586621679112081"><span id="local-6989586621679112087"><span id="local-6989586621679112093"><span id="local-6989586621679112099"><span id="local-6989586621679112105"><span id="local-6989586621679112111"><span id="local-6989586621679112117"><span id="local-6989586621679112123"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`VU.As`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-48"></span><span id="local-6989586621679120096"><span id="local-6989586621679120103"><span id="local-6989586621679120109"><span id="local-6989586621679120115"><span id="local-6989586621679120121"><span id="local-6989586621679120127"><span id="local-6989586621679120133"><span id="local-6989586621679120139"><span id="local-6989586621679120145"><span id="local-6989586621679120151"><span id="local-6989586621679120157"><span id="local-6989586621679120163"><span id="local-6989586621679120169"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`VU.As`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VGM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
 </span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span id="local-6989586621679112175"><span id="local-6989586621679112183"><span id="local-6989586621679112190"><span id="local-6989586621679112196"><span id="local-6989586621679112202"><span id="local-6989586621679112208"><span id="local-6989586621679112215"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`VU.As`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679120221"><span id="local-6989586621679120229"><span id="local-6989586621679120236"><span id="local-6989586621679120242"><span id="local-6989586621679120248"><span id="local-6989586621679120254"><span id="local-6989586621679120261"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`VU.As`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VG.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Vector</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span></span></span></span></span></span></span></span><span>
 </span><span id="line-51"></span><span>
 </span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VU.Unbox</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span>
 </span><span id="line-53"></span><span>
@@ -92,16 +92,16 @@ showList :: [RNEdge] -&gt; ShowS
 </span><span id="line-61"></span><span class="hs-comment">-- TODO: make it generic over ST.. for no reason?</span><span>
 </span><span id="line-62"></span><span class="annot"><a href="Data.Graph.MaxFlow.html#buildRN"><span class="hs-identifier hs-type">buildRN</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span>
 </span><span id="line-63"></span><span id="buildRN"><span class="annot"><span class="annottext">buildRN :: Int -&gt; [(Int, (Int, Int))] -&gt; IO ResidualNetwork
-</span><a href="Data.Graph.MaxFlow.html#buildRN"><span class="hs-identifier hs-var hs-var">buildRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112250"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112250"><span class="hs-identifier hs-var">nVerts</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112251"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679112251"><span class="hs-identifier hs-var">edges</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-64"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679112252"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112252"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap RNEdge -&gt; IO (MVector (PrimState IO) (IntMap RNEdge))
+</span><a href="Data.Graph.MaxFlow.html#buildRN"><span class="hs-identifier hs-var hs-var">buildRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120296"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120296"><span class="hs-identifier hs-var">nVerts</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120297"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
+</span><a href="#local-6989586621679120297"><span class="hs-identifier hs-var">edges</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679120298"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120298"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntMap RNEdge -&gt; IO (MVector (PrimState IO) (IntMap RNEdge))
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 Int -&gt; a -&gt; m (MVector (PrimState m) a)
 </span><span class="hs-identifier hs-var">VM.replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112250"><span class="hs-identifier hs-var">nVerts</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120296"><span class="hs-identifier hs-var">nVerts</span></a></span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
 forall a. IntMap a
 </span><span class="hs-identifier hs-var">IM.empty</span></span><span>
 </span><span id="line-65"></span><span>  </span><span class="hs-comment">-- TODO: consider using `VU.accumlate` instead?</span><span>
@@ -110,50 +110,50 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679112251"><span class="hs-identifier hs-var">edges</span></a></span><span> </span><span class="annot"><span class="annottext">(((Int, (Int, Int)) -&gt; IO ()) -&gt; IO ())
+</span><a href="#local-6989586621679120297"><span class="hs-identifier hs-var">edges</span></a></span><span> </span><span class="annot"><span class="annottext">(((Int, (Int, Int)) -&gt; IO ()) -&gt; IO ())
 -&gt; ((Int, (Int, Int)) -&gt; IO ()) -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112256"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112256"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112257"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112257"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112258"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112258"><span class="hs-identifier hs-var">cap_</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120302"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120302"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120303"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120303"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120304"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120304"><span class="hs-identifier hs-var">cap_</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
-</span><a href="#local-6989586621679112259"><span class="hs-identifier hs-var">addEdgeRN</span></a></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112252"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112256"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112257"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112258"><span class="hs-identifier hs-var">cap_</span></a></span><span>
+</span><a href="#local-6989586621679120305"><span class="hs-identifier hs-var">addEdgeRN</span></a></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120298"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120302"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120303"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120304"><span class="hs-identifier hs-var">cap_</span></a></span><span>
 </span><span id="line-68"></span><span>  </span><span class="annot"><span class="annottext">ResidualNetwork -&gt; IO ResidualNetwork
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112252"><span class="hs-identifier hs-var">rn</span></a></span><span>
+</span><a href="#local-6989586621679120298"><span class="hs-identifier hs-var">rn</span></a></span><span>
 </span><span id="line-69"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679112259"><span class="hs-identifier hs-type">addEdgeRN</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-71"></span><span>    </span><span id="local-6989586621679112259"><span class="annot"><span class="annottext">addEdgeRN :: ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
-</span><a href="#local-6989586621679112259"><span class="hs-identifier hs-var hs-var">addEdgeRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112260"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112260"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112261"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112262"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112263"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112263"><span class="hs-identifier hs-var">maxFlow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-72"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679112264"><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112264"><span class="hs-identifier hs-var">edges1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679120305"><span class="hs-identifier hs-type">addEdgeRN</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679120305"><span class="annot"><span class="annottext">addEdgeRN :: ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
+</span><a href="#local-6989586621679120305"><span class="hs-identifier hs-var hs-var">addEdgeRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120306"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120307"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120308"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120309"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120309"><span class="hs-identifier hs-var">maxFlow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679120310"><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120310"><span class="hs-identifier hs-var">edges1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112260"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span><span>
-</span><span id="line-73"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679112266"><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112266"><span class="hs-identifier hs-var">edges2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span><span>
+</span><span id="line-73"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679120312"><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120312"><span class="hs-identifier hs-var">edges2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112260"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span><span>
 </span><span id="line-74"></span><span>
 </span><span id="line-75"></span><span>      </span><span class="hs-comment">-- REMARK: Be sure to use `insertWith`!</span><span>
 </span><span id="line-76"></span><span>      </span><span class="hs-comment">-- We can have both (v1 -&gt; v2) path and (v2 -&gt; v1) path</span><span>
@@ -166,20 +166,20 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.write</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112260"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(RNEdge -&gt; RNEdge -&gt; RNEdge)
 -&gt; Int -&gt; RNEdge -&gt; IntMap RNEdge -&gt; IntMap RNEdge
 forall a. (a -&gt; a -&gt; a) -&gt; Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insertWith</span></span><span> </span><span class="annot"><span class="annottext">RNEdge -&gt; RNEdge -&gt; RNEdge
-</span><a href="#local-6989586621679112269"><span class="hs-identifier hs-var">mergeEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
+</span><a href="#local-6989586621679120315"><span class="hs-identifier hs-var">mergeEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112263"><span class="hs-identifier hs-var">maxFlow</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112264"><span class="hs-identifier hs-var">edges1</span></a></span><span>
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120309"><span class="hs-identifier hs-var">maxFlow</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120310"><span class="hs-identifier hs-var">edges1</span></a></span><span>
 </span><span id="line-80"></span><span>      </span><span class="hs-comment">-- We cannot reverse when there's no flow:</span><span>
 </span><span id="line-81"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge)
 -&gt; Int -&gt; IntMap RNEdge -&gt; IO ()
@@ -188,70 +188,70 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.write</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112260"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(RNEdge -&gt; RNEdge -&gt; RNEdge)
 -&gt; Int -&gt; RNEdge -&gt; IntMap RNEdge -&gt; IntMap RNEdge
 forall a. (a -&gt; a -&gt; a) -&gt; Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insertWith</span></span><span> </span><span class="annot"><span class="annottext">RNEdge -&gt; RNEdge -&gt; RNEdge
-</span><a href="#local-6989586621679112269"><span class="hs-identifier hs-var">mergeEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
+</span><a href="#local-6989586621679120315"><span class="hs-identifier hs-var">mergeEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112261"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112262"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112266"><span class="hs-identifier hs-var">edges2</span></a></span><span>
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120312"><span class="hs-identifier hs-var">edges2</span></a></span><span>
 </span><span id="line-82"></span><span>
-</span><span id="line-83"></span><span>    </span><span class="annot"><a href="#local-6989586621679112269"><span class="hs-identifier hs-type">mergeEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span>
-</span><span id="line-84"></span><span>    </span><span id="local-6989586621679112269"><span class="annot"><span class="annottext">mergeEdge :: RNEdge -&gt; RNEdge -&gt; RNEdge
-</span><a href="#local-6989586621679112269"><span class="hs-identifier hs-var hs-var">mergeEdge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112270"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112270"><span class="hs-identifier hs-var">to_</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112271"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112271"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112272"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112272"><span class="hs-identifier hs-var">cap_</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112273"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112273"><span class="hs-identifier hs-var">flow'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span id="line-83"></span><span>    </span><span class="annot"><a href="#local-6989586621679120315"><span class="hs-identifier hs-type">mergeEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span>
+</span><span id="line-84"></span><span>    </span><span id="local-6989586621679120315"><span class="annot"><span class="annottext">mergeEdge :: RNEdge -&gt; RNEdge -&gt; RNEdge
+</span><a href="#local-6989586621679120315"><span class="hs-identifier hs-var hs-var">mergeEdge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120316"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120316"><span class="hs-identifier hs-var">to_</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120317"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120317"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120318"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120318"><span class="hs-identifier hs-var">cap_</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120319"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120319"><span class="hs-identifier hs-var">flow'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112270"><span class="hs-identifier hs-var">to_</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112271"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679120316"><span class="hs-identifier hs-var">to_</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120317"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112273"><span class="hs-identifier hs-var">flow'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112272"><span class="hs-identifier hs-var">cap_</span></a></span><span>
+</span><a href="#local-6989586621679120319"><span class="hs-identifier hs-var">flow'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120318"><span class="hs-identifier hs-var">cap_</span></a></span><span>
 </span><span id="line-85"></span><span>
 </span><span id="line-86"></span><span class="annot"><span class="hs-comment">-- | Calculates max flow.</span></span><span>
 </span><span id="line-87"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#maxFlowRN"><span class="hs-pragma hs-type">maxFlowRN</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
 </span><span id="line-88"></span><span class="annot"><a href="Data.Graph.MaxFlow.html#maxFlowRN"><span class="hs-identifier hs-type">maxFlowRN</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-89"></span><span id="maxFlowRN"><span class="annot"><span class="annottext">maxFlowRN :: Int -&gt; ResidualNetwork -&gt; Int -&gt; Int -&gt; IO Int
-</span><a href="Data.Graph.MaxFlow.html#maxFlowRN"><span class="hs-identifier hs-var hs-var">maxFlowRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112276"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112276"><span class="hs-identifier hs-var">nVerts</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112277"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112277"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112278"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112278"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112279"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112279"><span class="hs-identifier hs-var">ve</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-90"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679112280"><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112280"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; IO (MVector (PrimState IO) Bool)
+</span><a href="Data.Graph.MaxFlow.html#maxFlowRN"><span class="hs-identifier hs-var hs-var">maxFlowRN</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120322"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120322"><span class="hs-identifier hs-var">nVerts</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120323"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120323"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120324"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120324"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120325"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120325"><span class="hs-identifier hs-var">ve</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679120326"><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120326"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; IO (MVector (PrimState IO) Bool)
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 Int -&gt; a -&gt; m (MVector (PrimState m) a)
 </span><span class="hs-identifier hs-var">VM.replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112276"><span class="hs-identifier hs-var">nVerts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679120322"><span class="hs-identifier hs-var">nVerts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-91"></span><span>  </span><span class="annot"><span class="annottext">IOVector Bool -&gt; IO Int
-</span><a href="#local-6989586621679112281"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112280"><span class="hs-identifier hs-var">vis</span></a></span><span>
+</span><a href="#local-6989586621679120327"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120326"><span class="hs-identifier hs-var">vis</span></a></span><span>
 </span><span id="line-92"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-93"></span><span>    </span><span class="annot"><a href="#local-6989586621679112281"><span class="hs-identifier hs-type">inner</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VM.IOVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-94"></span><span>    </span><span id="local-6989586621679112281"><span class="annot"><span class="annottext">inner :: IOVector Bool -&gt; IO Int
-</span><a href="#local-6989586621679112281"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112282"><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112282"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><a href="#local-6989586621679120327"><span class="hs-identifier hs-type">inner</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VM.IOVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-94"></span><span>    </span><span id="local-6989586621679120327"><span class="annot"><span class="annottext">inner :: IOVector Bool -&gt; IO Int
+</span><a href="#local-6989586621679120327"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120328"><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120328"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-95"></span><span>      </span><span class="annot"><span class="annottext">ResidualNetwork
 -&gt; IOVector Bool -&gt; Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
 </span><a href="Data.Graph.MaxFlow.html#augumentPath"><span class="hs-identifier hs-var">augumentPath</span></a></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112277"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112282"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112278"><span class="hs-identifier hs-var">v0</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112279"><span class="hs-identifier hs-var">ve</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Int, [(Int, Int)]))
+</span><a href="#local-6989586621679120323"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120328"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120324"><span class="hs-identifier hs-var">v0</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120325"><span class="hs-identifier hs-var">ve</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Int, [(Int, Int)]))
 -&gt; (Maybe (Int, [(Int, Int)]) -&gt; IO Int) -&gt; IO Int
 forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
@@ -262,53 +262,53 @@ forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
-</span><span id="line-97"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112284"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112284"><span class="hs-identifier hs-var">flow</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112285"><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112285"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-97"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120330"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120330"><span class="hs-identifier hs-var">flow</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120331"><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679120331"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-98"></span><span>          </span><span class="annot"><span class="annottext">ResidualNetwork -&gt; Int -&gt; [(Int, Int)] -&gt; IO ()
 </span><a href="Data.Graph.MaxFlow.html#updateFlow"><span class="hs-identifier hs-var">updateFlow</span></a></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112277"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112284"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112285"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><a href="#local-6989586621679120323"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120330"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679120331"><span class="hs-identifier hs-var">path</span></a></span><span>
 </span><span id="line-99"></span><span>          </span><span class="annot"><span class="annottext">MVector (PrimState IO) Bool -&gt; Bool -&gt; IO ()
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.set</span></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
 MVector (PrimState IO) Bool
-</span><a href="#local-6989586621679112282"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679120328"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-100"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112284"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="hs-operator">+</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; IO Int -&gt; IO Int
+</span><a href="#local-6989586621679120330"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="hs-operator">+</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; IO Int -&gt; IO Int
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">IOVector Bool -&gt; IO Int
-</span><a href="#local-6989586621679112281"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112282"><span class="hs-identifier hs-var">vis</span></a></span><span>
+</span><a href="#local-6989586621679120327"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120328"><span class="hs-identifier hs-var">vis</span></a></span><span>
 </span><span id="line-101"></span><span>
 </span><span id="line-102"></span><span class="annot"><span class="hs-comment">-- | Find a flow augment path between two vertices.</span></span><span>
 </span><span id="line-103"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#augumentPath"><span class="hs-pragma hs-type">augumentPath</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
 </span><span id="line-104"></span><span class="annot"><a href="Data.Graph.MaxFlow.html#augumentPath"><span class="hs-identifier hs-type">augumentPath</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VM.IOVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-105"></span><span id="augumentPath"><span class="annot"><span class="annottext">augumentPath :: ResidualNetwork
 -&gt; IOVector Bool -&gt; Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="Data.Graph.MaxFlow.html#augumentPath"><span class="hs-identifier hs-var hs-var">augumentPath</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112289"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112289"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112290"><span class="annot"><span class="annottext">IOVector Bool
-</span><a href="#local-6989586621679112290"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112291"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112291"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112292"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112292"><span class="hs-identifier hs-var">goal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="#local-6989586621679112293"><span class="hs-identifier hs-var">visitVertex</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112291"><span class="hs-identifier hs-var">v0</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Bounded a =&gt; a
+</span><a href="Data.Graph.MaxFlow.html#augumentPath"><span class="hs-identifier hs-var hs-var">augumentPath</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120335"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120335"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120336"><span class="annot"><span class="annottext">IOVector Bool
+</span><a href="#local-6989586621679120336"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120337"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120337"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120338"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120338"><span class="hs-identifier hs-var">goal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
+</span><a href="#local-6989586621679120339"><span class="hs-identifier hs-var">visitVertex</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120337"><span class="hs-identifier hs-var">v0</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Bounded a =&gt; a
 </span><span class="hs-identifier hs-var">maxBound</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
 </span><span id="line-106"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-107"></span><span>    </span><span class="annot"><a href="#local-6989586621679112293"><span class="hs-identifier hs-type">visitVertex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-108"></span><span>    </span><span id="local-6989586621679112293"><span class="annot"><span class="annottext">visitVertex :: Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="#local-6989586621679112293"><span class="hs-identifier hs-var hs-var">visitVertex</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112295"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112295"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112296"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112296"><span class="hs-identifier hs-var">flow</span></a></span></span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><a href="#local-6989586621679120339"><span class="hs-identifier hs-type">visitVertex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621679120339"><span class="annot"><span class="annottext">visitVertex :: Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
+</span><a href="#local-6989586621679120339"><span class="hs-identifier hs-var hs-var">visitVertex</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120341"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120342"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120342"><span class="hs-identifier hs-var">flow</span></a></span></span><span>
 </span><span id="line-109"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112295"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112292"><span class="hs-identifier hs-var">goal</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)]))
+</span><a href="#local-6989586621679120338"><span class="hs-identifier hs-var">goal</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)]))
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)])))
@@ -317,7 +317,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, [(Int, Int)]) -&gt; Maybe (Int, [(Int, Int)])
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112296"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679120342"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-110"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-111"></span><span>          </span><span class="annot"><span class="annottext">MVector (PrimState IO) Bool -&gt; Int -&gt; Bool -&gt; IO ()
@@ -326,18 +326,18 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.write</span></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
 MVector (PrimState IO) Bool
-</span><a href="#local-6989586621679112290"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112295"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679120336"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-112"></span><span>          </span><span class="hs-glyph">!</span><span id="local-6989586621679112297"><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112297"><span class="hs-identifier hs-var">edges</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
+</span><span id="line-112"></span><span>          </span><span class="hs-glyph">!</span><span id="local-6989586621679120343"><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120343"><span class="hs-identifier hs-var">edges</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge) -&gt; Int -&gt; IO (IntMap RNEdge)
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112289"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112295"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679120335"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-113"></span><span>          </span><span class="annot"><span class="annottext">(Maybe (Int, [(Int, Int)])
  -&gt; RNEdge -&gt; IO (Maybe (Int, [(Int, Int)])))
 -&gt; Maybe (Int, [(Int, Int)])
@@ -351,48 +351,48 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 -&gt; Maybe (Int, [(Int, Int)])
 -&gt; RNEdge
 -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="#local-6989586621679112299"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112295"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112296"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
+</span><a href="#local-6989586621679120345"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120342"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112297"><span class="hs-identifier hs-var">edges</span></a></span><span>
+</span><a href="#local-6989586621679120343"><span class="hs-identifier hs-var">edges</span></a></span><span>
 </span><span id="line-114"></span><span>
-</span><span id="line-115"></span><span>    </span><span class="annot"><a href="#local-6989586621679112299"><span class="hs-identifier hs-type">step</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-116"></span><span>    </span><span id="local-6989586621679112299"><span class="annot"><span class="annottext">step :: Int
+</span><span id="line-115"></span><span>    </span><span class="annot"><a href="#local-6989586621679120345"><span class="hs-identifier hs-type">step</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-type">RNEdge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621679120345"><span class="annot"><span class="annottext">step :: Int
 -&gt; Int
 -&gt; Maybe (Int, [(Int, Int)])
 -&gt; RNEdge
 -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="#local-6989586621679112299"><span class="hs-identifier hs-var hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120345"><span class="hs-identifier hs-var hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679112300"><span class="annot"><span class="annottext">r :: Maybe (Int, [(Int, Int)])
-</span><a href="#local-6989586621679112300"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">(Int, [(Int, Int)])
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679120346"><span class="annot"><span class="annottext">r :: Maybe (Int, [(Int, Int)])
+</span><a href="#local-6989586621679120346"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">(Int, [(Int, Int)])
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">RNEdge
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)]))
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
-</span><a href="#local-6989586621679112300"><span class="hs-identifier hs-var">r</span></a></span><span>
-</span><span id="line-117"></span><span>    </span><span class="annot"><a href="#local-6989586621679112299"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112301"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112301"><span class="hs-identifier hs-var">from</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112302"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112302"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112303"><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112303"><span class="hs-identifier hs-var">edge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-118"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679112304"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679112304"><span class="hs-identifier hs-var">visited</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) Bool -&gt; Int -&gt; IO Bool
+</span><a href="#local-6989586621679120346"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><a href="#local-6989586621679120345"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120347"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120347"><span class="hs-identifier hs-var">from</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120348"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120348"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120349"><span class="annot"><span class="annottext">RNEdge
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">edge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-118"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679120350"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679120350"><span class="hs-identifier hs-var">visited</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState IO) Bool -&gt; Int -&gt; IO Bool
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">IOVector Bool
 MVector (PrimState IO) Bool
-</span><a href="#local-6989586621679112290"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120336"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112303"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-119"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679112304"><span class="hs-identifier hs-var">visited</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679120350"><span class="hs-identifier hs-var">visited</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112306"><span class="hs-identifier hs-var">flow'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679120352"><span class="hs-identifier hs-var">flow'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
@@ -404,10 +404,10 @@ forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
 </span><span id="line-121"></span><span>        </span><span class="hs-keyword">else</span><span>
 </span><span id="line-122"></span><span>          </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; IO (Maybe (Int, [(Int, Int)]))
-</span><a href="#local-6989586621679112293"><span class="hs-identifier hs-var">visitVertex</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120339"><span class="hs-identifier hs-var">visitVertex</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112303"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112306"><span class="hs-identifier hs-var">flow'</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Int, [(Int, Int)]))
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120352"><span class="hs-identifier hs-var">flow'</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Int, [(Int, Int)]))
 -&gt; (Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)])))
 -&gt; IO (Maybe (Int, [(Int, Int)]))
 forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
@@ -420,9 +420,9 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)])
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-124"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112307"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112307"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112308"><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112308"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)]))
+</span><span id="line-124"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120353"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120353"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120354"><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679120354"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)]))
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Int, [(Int, Int)]) -&gt; IO (Maybe (Int, [(Int, Int)])))
@@ -431,61 +431,61 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, [(Int, Int)]) -&gt; Maybe (Int, [(Int, Int)])
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112307"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679112309"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [(Int, Int)] -&gt; [(Int, Int)]
+</span><a href="#local-6989586621679120353"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679120355"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [(Int, Int)] -&gt; [(Int, Int)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112308"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679120354"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-125"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-126"></span><span>        </span><span id="local-6989586621679112306"><span class="annot"><span class="annottext">flow' :: Int
-</span><a href="#local-6989586621679112306"><span class="hs-identifier hs-var hs-var">flow'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><span id="line-126"></span><span>        </span><span id="local-6989586621679120352"><span class="annot"><span class="annottext">flow' :: Int
+</span><a href="#local-6989586621679120352"><span class="hs-identifier hs-var hs-var">flow'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Ord a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112302"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120348"><span class="hs-identifier hs-var">flow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#cap"><span class="hs-identifier hs-var">cap</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112303"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-127"></span><span>        </span><span id="local-6989586621679112309"><span class="annot"><span class="annottext">p :: (Int, Int)
-</span><a href="#local-6989586621679112309"><span class="hs-identifier hs-var hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112301"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>        </span><span id="local-6989586621679120355"><span class="annot"><span class="annottext">p :: (Int, Int)
+</span><a href="#local-6989586621679120355"><span class="hs-identifier hs-var hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120347"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112303"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-128"></span><span>
 </span><span id="line-129"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#updateFlow"><span class="hs-pragma hs-type">updateFlow</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
 </span><span id="line-130"></span><span class="annot"><a href="Data.Graph.MaxFlow.html#updateFlow"><span class="hs-identifier hs-type">updateFlow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-131"></span><span id="updateFlow"><span class="annot"><span class="annottext">updateFlow :: ResidualNetwork -&gt; Int -&gt; [(Int, Int)] -&gt; IO ()
-</span><a href="Data.Graph.MaxFlow.html#updateFlow"><span class="hs-identifier hs-var hs-var">updateFlow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112311"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112311"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112312"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112312"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112313"><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112313"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)] -&gt; ((Int, Int) -&gt; IO ()) -&gt; IO ()
+</span><a href="Data.Graph.MaxFlow.html#updateFlow"><span class="hs-identifier hs-var hs-var">updateFlow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120357"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120357"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120358"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120358"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120359"><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679120359"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)] -&gt; ((Int, Int) -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679112313"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">(((Int, Int) -&gt; IO ()) -&gt; IO ()) -&gt; ((Int, Int) -&gt; IO ()) -&gt; IO ()
+</span><a href="#local-6989586621679120359"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">(((Int, Int) -&gt; IO ()) -&gt; IO ()) -&gt; ((Int, Int) -&gt; IO ()) -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112314"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112314"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112315"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112315"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120360"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120360"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120361"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120361"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
 </span><a href="Data.Graph.MaxFlow.html#addFlowRNEdge"><span class="hs-identifier hs-var">addFlowRNEdge</span></a></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112311"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112314"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112315"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112312"><span class="hs-identifier hs-var">flow</span></a></span><span>
+</span><a href="#local-6989586621679120357"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120360"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120361"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120358"><span class="hs-identifier hs-var">flow</span></a></span><span>
 </span><span id="line-132"></span><span>
 </span><span id="line-133"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#addFlowRNEdge"><span class="hs-pragma hs-type">addFlowRNEdge</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
 </span><span id="line-134"></span><span class="annot"><a href="Data.Graph.MaxFlow.html#addFlowRNEdge"><span class="hs-identifier hs-type">addFlowRNEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Graph.MaxFlow.html#ResidualNetwork"><span class="hs-identifier hs-type">ResidualNetwork</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Graph.html#Vertex"><span class="hs-identifier hs-type">Vertex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-135"></span><span id="addFlowRNEdge"><span class="annot"><span class="annottext">addFlowRNEdge :: ResidualNetwork -&gt; Int -&gt; Int -&gt; Int -&gt; IO ()
-</span><a href="Data.Graph.MaxFlow.html#addFlowRNEdge"><span class="hs-identifier hs-var hs-var">addFlowRNEdge</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112317"><span class="annot"><span class="annottext">ResidualNetwork
-</span><a href="#local-6989586621679112317"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112318"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112318"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112319"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112319"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112320"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112320"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Data.Graph.MaxFlow.html#addFlowRNEdge"><span class="hs-identifier hs-var hs-var">addFlowRNEdge</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120363"><span class="annot"><span class="annottext">ResidualNetwork
+</span><a href="#local-6989586621679120363"><span class="hs-identifier hs-var">rn</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120364"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120364"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120365"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120365"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120366"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120366"><span class="hs-identifier hs-var">flow</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-136"></span><span>  </span><span class="hs-comment">-- TODO: consider using `VM.modify`</span><span>
 </span><span id="line-137"></span><span>  </span><span class="hs-comment">-- TODO: consider using `lens`, `snd2` (or not)</span><span>
 </span><span id="line-138"></span><span>  </span><span class="hs-comment">-- TODO: replace `dupe` with function applicative?</span><span>
-</span><span id="line-139"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112321"><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112321"><span class="hs-identifier hs-var">edges1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112322"><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112322"><span class="hs-identifier hs-var">edge12</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; RNEdge)
+</span><span id="line-139"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120367"><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120367"><span class="hs-identifier hs-var">edges1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120368"><span class="annot"><span class="annottext">RNEdge
+</span><a href="#local-6989586621679120368"><span class="hs-identifier hs-var">edge12</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; RNEdge)
 -&gt; (IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge)
 forall b c a. (b -&gt; c) -&gt; (a, b) -&gt; (a, c)
 forall (p :: * -&gt; * -&gt; *) b c a.
@@ -494,7 +494,7 @@ Bifunctor p =&gt;
 </span><span class="hs-identifier hs-var">second</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IntMap RNEdge -&gt; Int -&gt; RNEdge
 forall a. IntMap a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">IM.!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112319"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge))
+</span><a href="#local-6989586621679120365"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge))
 -&gt; (IntMap RNEdge -&gt; (IntMap RNEdge, IntMap RNEdge))
 -&gt; IntMap RNEdge
 -&gt; (IntMap RNEdge, RNEdge)
@@ -510,11 +510,11 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112317"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112318"><span class="hs-identifier hs-var">v1</span></a></span><span>
-</span><span id="line-140"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112327"><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112327"><span class="hs-identifier hs-var">edges2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112328"><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112328"><span class="hs-identifier hs-var">edge21</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; RNEdge)
+</span><a href="#local-6989586621679120363"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120364"><span class="hs-identifier hs-var">v1</span></a></span><span>
+</span><span id="line-140"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679120373"><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120373"><span class="hs-identifier hs-var">edges2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679120374"><span class="annot"><span class="annottext">RNEdge
+</span><a href="#local-6989586621679120374"><span class="hs-identifier hs-var">edge21</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; RNEdge)
 -&gt; (IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge)
 forall b c a. (b -&gt; c) -&gt; (a, b) -&gt; (a, c)
 forall (p :: * -&gt; * -&gt; *) b c a.
@@ -523,7 +523,7 @@ Bifunctor p =&gt;
 </span><span class="hs-identifier hs-var">second</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IntMap RNEdge -&gt; Int -&gt; RNEdge
 forall a. IntMap a -&gt; Int -&gt; a
 </span><span class="hs-operator hs-var">IM.!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112318"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge))
+</span><a href="#local-6989586621679120364"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((IntMap RNEdge, IntMap RNEdge) -&gt; (IntMap RNEdge, RNEdge))
 -&gt; (IntMap RNEdge -&gt; (IntMap RNEdge, IntMap RNEdge))
 -&gt; IntMap RNEdge
 -&gt; (IntMap RNEdge, RNEdge)
@@ -539,8 +539,8 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VM.read</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112317"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112319"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><a href="#local-6989586621679120363"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120365"><span class="hs-identifier hs-var">v2</span></a></span><span>
 </span><span id="line-141"></span><span>  </span><span class="hs-comment">-- let !_ = traceShow (&quot;edge&quot;, &quot;v1:&quot;, v1, edge12, &quot;v2:&quot;, v2, edge21, flow) ()</span><span>
 </span><span id="line-142"></span><span>
 </span><span id="line-143"></span><span>  </span><span class="hs-comment">-- TODO: debugAssert</span><span>
@@ -552,24 +552,24 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.write</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112317"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112318"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
+</span><a href="#local-6989586621679120363"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120364"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; RNEdge -&gt; IntMap RNEdge -&gt; IntMap RNEdge
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112319"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
+</span><a href="#local-6989586621679120365"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112322"><span class="hs-identifier hs-var">edge12</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120368"><span class="hs-identifier hs-var">edge12</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#cap"><span class="hs-identifier hs-var">cap</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112322"><span class="hs-identifier hs-var">edge12</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679120368"><span class="hs-identifier hs-var">edge12</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112320"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120366"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#rev"><span class="hs-identifier hs-var">rev</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112322"><span class="hs-identifier hs-var">edge12</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112321"><span class="hs-identifier hs-var">edges1</span></a></span><span>
+</span><a href="#local-6989586621679120368"><span class="hs-identifier hs-var">edge12</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120367"><span class="hs-identifier hs-var">edges1</span></a></span><span>
 </span><span id="line-146"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState IO) (IntMap RNEdge)
 -&gt; Int -&gt; IntMap RNEdge -&gt; IO ()
 forall (m :: * -&gt; *) a.
@@ -577,24 +577,24 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VM.write</span></span><span> </span><span class="annot"><span class="annottext">ResidualNetwork
 MVector (PrimState IO) (IntMap RNEdge)
-</span><a href="#local-6989586621679112317"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112319"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
+</span><a href="#local-6989586621679120363"><span class="hs-identifier hs-var">rn</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679120365"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">(IntMap RNEdge -&gt; IO ()) -&gt; IntMap RNEdge -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; RNEdge -&gt; IntMap RNEdge -&gt; IntMap RNEdge
 forall a. Int -&gt; a -&gt; IntMap a -&gt; IntMap a
 </span><span class="hs-identifier hs-var">IM.insert</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112318"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
+</span><a href="#local-6989586621679120364"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; RNEdge
 </span><a href="Data.Graph.MaxFlow.html#RNEdge"><span class="hs-identifier hs-var">RNEdge</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112328"><span class="hs-identifier hs-var">edge21</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120374"><span class="hs-identifier hs-var">edge21</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#cap"><span class="hs-identifier hs-var">cap</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112328"><span class="hs-identifier hs-var">edge21</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679120374"><span class="hs-identifier hs-var">edge21</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679112320"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
+</span><a href="#local-6989586621679120366"><span class="hs-identifier hs-var">flow</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RNEdge -&gt; Int
 </span><a href="Data.Graph.MaxFlow.html#rev"><span class="hs-identifier hs-var">rev</span></a></span><span> </span><span class="annot"><span class="annottext">RNEdge
-</span><a href="#local-6989586621679112328"><span class="hs-identifier hs-var">edge21</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
-</span><a href="#local-6989586621679112327"><span class="hs-identifier hs-var">edges2</span></a></span><span>
+</span><a href="#local-6989586621679120374"><span class="hs-identifier hs-var">edge21</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntMap RNEdge
+</span><a href="#local-6989586621679120373"><span class="hs-identifier hs-var">edges2</span></a></span><span>
 </span><span id="line-147"></span><span>
 </span><span id="line-148"></span><span class="hs-comment">-- }}}</span><span>
 </span><span id="line-149"></span></pre></body></html>

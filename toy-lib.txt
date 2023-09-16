@@ -20,9 +20,19 @@ module Data.BitSet
 powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 
 -- | Originally by @yamate11
+--   
+--   <pre>
+--   &gt;&gt;&gt; powerset (7 :: Int)
+--   [7,6,5,4,3,2,1,0]
+--   </pre>
 powerset :: (Bits a, Num a) => a -> [a]
 
 -- | Returns a powerset of <tt>x0</tt> in descending order.
+--   
+--   <pre>
+--   &gt;&gt;&gt; powersetVU (7 :: Int)
+--   [7,6,5,4,3,2,1,0]
+--   </pre>
 powersetVU :: (Bits a, Num a, Unbox a) => a -> Vector a
 
 
@@ -53,10 +63,10 @@ popFront :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewFront :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 popBack :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewBack :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
-pushFront :: (Unbox a, PrimMonad m) => a -> Buffer (PrimState m) a -> m ()
-pushBack :: (Unbox a, PrimMonad m) => a -> Buffer (PrimState m) a -> m ()
-pushFronts :: (Unbox a, PrimMonad m) => Vector a -> Buffer (PrimState m) a -> m ()
-pushBacks :: (Unbox a, PrimMonad m) => Vector a -> Buffer (PrimState m) a -> m ()
+pushFront :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushBack :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushFronts :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Vector a -> m ()
+pushBacks :: (Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Vector a -> m ()
 
 
 -- | Strongly connected components and topological sort.
@@ -271,6 +281,74 @@ _updateElement :: (MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a ->
 querySTree :: forall v a m. (MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
 
 
+-- | <a>Semiring</a>
+module Data.Semiring
+
+-- | Semiring @(s, <a>+</a>, <a>.</a>)`. Sometimes called "deoid" (double
+--   monoid).
+class Semiring s
+
+-- | Plus (addition) opeator of the communicative monoid <tt>(s, <a>+</a>,
+--   szero)</tt>.
+(<+>) :: Semiring s => s -> s -> s
+
+-- | Identical element of the communicative monoid <tt>(s, <a>+</a>,
+--   szero)</tt>.
+szero :: Semiring s => s
+
+-- | Times (mulitplication) operator of the monoid <tt>(s, <a>.</a>,
+--   sone)</tt>.
+(<.>) :: Semiring s => s -> s -> s
+
+-- | Identical element of the monoid <tt>(s, <a>.</a>, sone)</tt>
+sone :: Semiring s => s
+
+-- | Fold using the <a>&lt;+&gt;</a> (plus) opreator.
+foldP :: (Semiring a, Vector v a) => v a -> a
+
+-- | Fold using the <a>&lt;.&gt;</a> (times) opreator.
+foldT :: (Semiring a, Vector v a) => v a -> a
+
+-- | Max-Plus semiring
+newtype MaxPlus a
+MaxPlus :: a -> MaxPlus a
+[getMaxPlus] :: MaxPlus a -> a
+
+-- | Min-Plus semiring
+newtype MinPlus a
+MinPlus :: a -> MinPlus a
+[getMinPlus] :: MinPlus a -> a
+
+-- | Boolean semiring
+newtype Boolean
+Boolean :: Bool -> Boolean
+[getBoolean] :: Boolean -> Bool
+instance GHC.Show.Show a => GHC.Show.Show (Data.Semiring.MaxPlus a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Data.Semiring.MaxPlus a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Data.Semiring.MaxPlus a)
+instance Data.Primitive.Types.Prim a => Data.Primitive.Types.Prim (Data.Semiring.MaxPlus a)
+instance GHC.Show.Show a => GHC.Show.Show (Data.Semiring.MinPlus a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Data.Semiring.MinPlus a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Data.Semiring.MinPlus a)
+instance Data.Primitive.Types.Prim a => Data.Primitive.Types.Prim (Data.Semiring.MinPlus a)
+instance GHC.Show.Show Data.Semiring.Boolean
+instance GHC.Classes.Ord Data.Semiring.Boolean
+instance GHC.Classes.Eq Data.Semiring.Boolean
+instance Data.Primitive.Types.Prim a => Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.Semiring.MaxPlus a)
+instance Data.Primitive.Types.Prim a => Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.Semiring.MaxPlus a)
+instance Data.Primitive.Types.Prim a => Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.Semiring.MinPlus a)
+instance Data.Primitive.Types.Prim a => Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.Semiring.MinPlus a)
+instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector Data.Semiring.Boolean
+instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector Data.Semiring.Boolean
+instance Data.Vector.Unboxed.Base.IsoUnbox Data.Semiring.Boolean GHC.Types.Bool
+instance Data.Vector.Unboxed.Base.Unbox Data.Semiring.Boolean
+instance Data.Semiring.Semiring Data.Semiring.Boolean
+instance Data.Primitive.Types.Prim a => Data.Vector.Unboxed.Base.Unbox (Data.Semiring.MinPlus a)
+instance (GHC.Num.Num a, GHC.Enum.Bounded a, GHC.Classes.Ord a) => Data.Semiring.Semiring (Data.Semiring.MinPlus a)
+instance Data.Primitive.Types.Prim a => Data.Vector.Unboxed.Base.Unbox (Data.Semiring.MaxPlus a)
+instance (GHC.Num.Num a, GHC.Enum.Bounded a, GHC.Classes.Ord a) => Data.Semiring.Semiring (Data.Semiring.MaxPlus a)
+
+
 -- | Union-find tree
 --   
 --   <h1>Typical problems</h1>
@@ -318,8 +396,9 @@ _unwrapMUFRoot :: MUFNode -> Int
 -- | Unites two nodes.
 uniteMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> Int -> m ()
 
--- | Returns the size of the root node, starting with `1`.
+-- | Returns the size of the a node, starting with `1`.
 sizeMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> m Int
+clearMUF :: PrimMonad m => MUnionFind (PrimState m) -> m ()
 instance Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector Data.UnionFind.Mutable.MUFNode
 instance Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector Data.UnionFind.Mutable.MUFNode
 instance Data.Vector.Unboxed.Base.IsoUnbox Data.UnionFind.Mutable.MUFNode (GHC.Types.Bool, GHC.Types.Int)
@@ -498,7 +577,23 @@ divisorsOf :: Int -> [Int]
 module Math.Exgcd
 
 -- | @4tsuzuru <a>https://zenn.dev/link/comments/29d659a57ead56</a>
+--   
+--   <tt>exgcd a b</tt> returns <tt>(g, na, nb)</tt> where &lt;math&gt;.
+--   
+--   <pre>
+--   &gt;&gt;&gt; exgcd 3 5
+--   (1,2,-1)
+--   
+--   &gt;&gt;&gt; 1 == 3 * 2 + 5 * (-1)
+--   True
+--   </pre>
+--   
+--   Note that &lt;math&gt;: &lt;math&gt;
 exgcd :: Integral a => a -> a -> (a, a, a)
+
+-- | Just for showing how to use <a>exgcd</a> to calculate the modular
+--   multicative inverse.
+invModGcd :: Integral a => a -> a -> Maybe a
 
 
 -- | Manhattan distance
@@ -586,9 +681,6 @@ module ToyLib.Prelude
 clamp :: Ord a => (a, a) -> a -> a
 flipOrder :: Ordering -> Ordering
 square :: Num a => a -> a
-
--- | Returns chunks of size <tt>n</tt>. TODO: Just use <a>chunksOf</a>.
-chunks :: Int -> [a] -> [[a]]
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
 
 -- | Two-variable function compositon.
@@ -605,13 +697,41 @@ foldForVG :: Vector v a => b -> v a -> (b -> a -> b) -> b
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForMVG :: (PrimMonad m, Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
+
+-- | <h1>Test</h1>
+--   
+--   <pre>
+--   &gt;&gt;&gt; chunksOfVG 3 $ VU.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
+--   [[1,2,3],[4,5,6],[7]]
+--   </pre>
+chunksOfVG :: Vector v a => Int -> v a -> Vector (v a)
+
+-- | List-like range syntax for <tt>vector</tt>.
+--   
+--   <pre>
+--   &gt;&gt;&gt; rangeVG @VU.Vector 3 5
+--   [3,4,5]
+--   </pre>
 rangeVG :: Vector v Int => Int -> Int -> v Int
+
+-- | Type-constrained <a>rangeVG</a>.
 rangeV :: Int -> Int -> Vector Int
+
+-- | Type-constrained <a>rangeVG</a>.
 rangeVU :: Int -> Int -> Vector Int
 
--- | <a>rangeVG</a> in reverse.
+-- | Easier reverse range syntax for <tt>vector</tt>.
+--   
+--   <pre>
+--   &gt;&gt;&gt; rangeVGR @VU.Vector 3 5
+--   [5,4,3]
+--   </pre>
 rangeVGR :: Vector v Int => Int -> Int -> v Int
+
+-- | Type-constrained <a>rangeVGR</a>.
 rangeVR :: Int -> Int -> Vector Int
+
+-- | Type-constrained <a>rangeVGR</a>.
 rangeVUR :: Int -> Int -> Vector Int
 
 -- | @cojna (<tt>stream</tt>)
@@ -802,6 +922,11 @@ instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.
 instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.IO.ReadBS a4, ToyLib.IO.ReadBS a5, ToyLib.IO.ReadBS a6) => ToyLib.IO.ReadBS (a1, a2, a3, a4, a5, a6)
 
 
+-- | 01-BFS
+module ToyLib.BFS01
+bfs01_grid4_typical043 :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
+
+
 -- | Handy, more restricted <a>Ix</a> with reverse conversion, fast monadic
 --   iteration and unboxing.
 module Data.Unindex
@@ -817,6 +942,8 @@ instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
 
 
 -- | Typical DP utilities
+--   
+--   TODO: Refactor <a>relaxMany</a> variants.
 module ToyLib.DP
 
 -- | Variant of <a>constructN</a>.
@@ -826,8 +953,12 @@ constructFor :: (Unbox a, Unbox b) => a -> Vector b -> (Vector a -> b -> a) -> V
 --   vec0 $ VG.concatMap expander input</tt>
 relaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
 
+-- | <a>relaxMany</a> with index input.
+irelaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
+
 -- | Monoid variant of <a>relaxMany</a>
 relaxMany' :: (Monoid m, Unbox m, Unbox a) => Vector m -> Vector a -> (a -> Vector (Int, m)) -> Vector m
+pushBasedConstructN :: (Vector v a, Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
 
 -- | Returns non-zero two spans over the given inclusive range <tt>[l,
 --   r]</tt>. &gt;&gt;&gt; spansVU 3 6
@@ -848,6 +979,22 @@ spanDP :: Unbox a => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (Vector a) -
 --   <li><a>ABC 317 C - Remembering the Days</a></li>
 --   </ul>
 tspDP :: Int -> IxUVector (Int, Int) Int -> Vector Int
+
+-- | Enumerates all possible bitsets that composes <tt>bit n - 1</tt>.
+--   
+--   <pre>
+--   &gt;&gt;&gt; enumerateBitSets 4
+--   [[8,4,2,1],[12,2,1],[8,6,1],[4,10,1],[14,1],[8,4,3],[12,3],[8,2,5],[10,5],[8,7],[4,2,9],[6,9],[4,11],[2,13],[15],[]]
+--   </pre>
+--   
+--   <h1>Typical problems</h1>
+--   
+--   <ul>
+--   <li><a>ABC 310 D - Peaceful Teams</a></li>
+--   <li><a>ABC 319 D - General Weighted Max Matching</a> (Not the exact
+--   pattern though)</li>
+--   </ul>
+enumerateBitSets :: Int -> [[Int]]
 
 
 -- | Lazy segment tree, where we can perform operation over range.
@@ -1029,100 +1176,6 @@ scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -
 --   <li><a>Typical 039 - Tree Distance (★5)</a></li>
 --   </ul>
 foldTreeAll :: (Unbox a, Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> Vector a
-
-
--- | <tt>vector</tt>-based sparse graph implementation (weightened or
---   unweightened).
---   
---   Heavily inspired by <tt>cojna/iota</tt>.
-module Data.SparseGraph
-type Edge = (Vertex, Vertex)
-
--- | Weightened edge
-type WEdgeWith w = (Vertex, Vertex, w)
-type EdgeId = Int
-
--- | CSR (compressed sparse row) representation of a graph (weightened or
---   unweightened)
-data SparseGraph i w
-SparseGraph :: !(i, i) -> !Int -> !Int -> !Vector Int -> !Vector Vertex -> !Vector w -> SparseGraph i w
-
--- | Vertex index boundary.
-[boundsSG] :: SparseGraph i w -> !(i, i)
-
--- | Number of vertices.
-[nVertsSG] :: SparseGraph i w -> !Int
-
--- | Number of edges.
-[nEdgesSG] :: SparseGraph i w -> !Int
-
--- | Maps <tt>Vector</tt> to the starting edge index.
-[offsetsSG] :: SparseGraph i w -> !Vector Int
-
--- | Adjacent vertices sorted with starting vertex.
-[adjacentsSG] :: SparseGraph i w -> !Vector Vertex
-
--- | Edge weight information.
-[edgeWeightsSG] :: SparseGraph i w -> !Vector w
-
--- | Builds an unweightned <a>SparseGraph</a>.
---   
---   TODO: Faster implementation
-buildUSG :: Unindex i => (i, i) -> Vector (i, i) -> SparseGraph i ()
-
--- | Builds a weightned <a>SparseGraph</a>.
-buildWSG :: (Unindex i, Unbox w) => (i, i) -> Vector (i, i, w) -> SparseGraph i w
-buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Vector (Vertex, Vertex, w) -> SparseGraph i w
-
--- | Retrieves adjacent vertices.
-adj :: SparseGraph i w -> Vertex -> Vector Vertex
-
--- | Returns <tt>(EdgeId, Vertex)</tt> paris. Hardly used.
-eAdj :: SparseGraph i w -> Vertex -> Vector (EdgeId, Vertex)
-
--- | Retrieves adjacent vertex indices.
-adjIx :: Unindex i => SparseGraph i w -> i -> Vector i
-
--- | Retrieves adjacent vertices with weights.
-adjW :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
-
--- | Retrieves adjacent vertex indices with weights.
-adjWIx :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
-dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
-
--- | Just a template. Typical problem: <a>ABC 317 C - Remembering the
---   Days</a>
-dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
-
--- | Also consider using union-find tree.
-componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
-bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
-bfsGrid317E_MBuffer :: HasCallStack => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
-
--- | Dijkstra: $O((E+V) log {V})$
-djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> w -> i -> Vector w
-
--- | Returns a list of a route in reverse order (a route from end to
---   start).
-dfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> Maybe [Edge]
-
--- | Returns a list of a route in reverse order (a route from end to
---   start).
-treeDfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> [Edge]
-topSortSG :: SparseGraph i w -> [Vertex]
-
--- | Partial running of <tt>scc</tt> over topologically sorted vertices,
---   but for some connected components only.
-topScc1SG :: forall i w m. PrimMonad m => SparseGraph i w -> MVector (PrimState m) Bool -> Vertex -> m [Vertex]
-
--- | Creates a reverse graph. TODO: return weightned graph
-revSG :: (Unindex i, Unbox w) => SparseGraph i w -> SparseGraph i w
-
--- | Collectes strongly connected components, topologically sorted.
---   Upstream vertices come first, e.g., <tt>(v1 - v2) -&gt; v3 -&gt;
---   v4</tt>.
-topSccSG :: (Unindex i, Unbox w) => SparseGraph i w -> [[Int]]
-instance (GHC.Show.Show i, GHC.Show.Show w, Data.Vector.Unboxed.Base.Unbox w) => GHC.Show.Show (Data.SparseGraph.SparseGraph i w)
 
 
 -- | Maximum flow calculation (Ford-Fulkerson algorithm).
@@ -1308,12 +1361,15 @@ typeInt :: TypeInt a => Proxy a -> Int
 -- | <a>Int</a> with automatic moudlo arithmetic performed.
 newtype ModInt p
 ModInt :: Int -> ModInt p
-[toInt] :: ModInt p -> Int
+[getModInt] :: ModInt p -> Int
+instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Real.Real (Data.ModInt.ModInt p)
+instance forall k (p :: k). GHC.Show.Show (Data.ModInt.ModInt p)
+instance forall k (p :: k). GHC.Read.Read (Data.ModInt.ModInt p)
+instance forall k (p :: k). GHC.Classes.Ord (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.Primitive.Types.Prim (Data.ModInt.ModInt p)
 instance forall k (p :: k). GHC.Classes.Eq (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.Vector.Generic.Mutable.Base.MVector Data.Vector.Unboxed.Base.MVector (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.Vector.Generic.Base.Vector Data.Vector.Unboxed.Base.Vector (Data.ModInt.ModInt p)
-instance forall k (p :: k). GHC.Show.Show (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Num.Num (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Real.Fractional (Data.ModInt.ModInt p)
 instance forall k (p :: k). Data.ModInt.TypeInt p => GHC.Enum.Enum (Data.ModInt.ModInt p)
@@ -1544,3 +1600,105 @@ foldLcaCache2 :: forall a m. (Monoid m, Unbox m) => Array Int [(Vertex, a)] -> (
 foldViaLca :: forall m. (Monoid m, Unbox m) => FoldLcaCache m -> Int -> Int -> m
 instance GHC.Base.Semigroup Data.Tree.Lca.ToParent
 instance Data.SemigroupAction.SemigroupAction Data.Tree.Lca.ToParent Data.Graph.Vertex
+
+
+-- | <tt>vector</tt>-based sparse graph implementation (weightened or
+--   unweightened).
+--   
+--   Heavily inspired by <tt>cojna/iota</tt>.
+module Data.SparseGraph
+type Edge = (Vertex, Vertex)
+
+-- | Weightened edge
+type WEdgeWith w = (Vertex, Vertex, w)
+type EdgeId = Int
+
+-- | CSR (compressed sparse row) representation of a graph (weightened or
+--   unweightened)
+data SparseGraph i w
+SparseGraph :: !(i, i) -> !Int -> !Int -> !Vector Int -> !Vector Vertex -> !Vector w -> SparseGraph i w
+
+-- | Vertex index boundary.
+[boundsSG] :: SparseGraph i w -> !(i, i)
+
+-- | Number of vertices.
+[nVertsSG] :: SparseGraph i w -> !Int
+
+-- | Number of edges.
+[nEdgesSG] :: SparseGraph i w -> !Int
+
+-- | Maps <tt>Vector</tt> to the starting edge index.
+[offsetsSG] :: SparseGraph i w -> !Vector Int
+
+-- | Adjacent vertices sorted with starting vertex.
+[adjacentsSG] :: SparseGraph i w -> !Vector Vertex
+
+-- | Edge weight information.
+[edgeWeightsSG] :: SparseGraph i w -> !Vector w
+
+-- | Builds an unweightned <a>SparseGraph</a>.
+--   
+--   TODO: Faster implementation
+buildUSG :: Unindex i => (i, i) -> Vector (i, i) -> SparseGraph i ()
+
+-- | Builds a weightned <a>SparseGraph</a>.
+buildWSG :: (Unindex i, Unbox w) => (i, i) -> Vector (i, i, w) -> SparseGraph i w
+buildRawSG :: (Unindex i, Unbox w) => (i, i) -> Vector (Vertex, Vertex, w) -> SparseGraph i w
+
+-- | Retrieves adjacent vertices.
+adj :: SparseGraph i w -> Vertex -> Vector Vertex
+
+-- | Returns <tt>(EdgeId, Vertex)</tt> paris. Hardly used.
+eAdj :: SparseGraph i w -> Vertex -> Vector (EdgeId, Vertex)
+
+-- | Retrieves adjacent vertex indices.
+adjIx :: Unindex i => SparseGraph i w -> i -> Vector i
+
+-- | Retrieves adjacent vertices with weights.
+adjW :: Unbox w => SparseGraph i w -> Vertex -> Vector (Vertex, w)
+
+-- | Retrieves adjacent vertex indices with weights.
+adjWIx :: (Unindex i, Unbox w) => SparseGraph i w -> i -> Vector (i, w)
+dfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
+
+-- | Just a template. Typical problem: <a>ABC 317 C - Remembering the
+--   Days</a>
+dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
+
+-- | Also consider using union-find tree.
+componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
+bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
+bfsGrid317E_MBuffer :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
+
+-- | Dijkstra: $O((E+V) log {V})$
+djSG :: forall i w. (Unindex i, Num w, Ord w, Unbox w) => SparseGraph i w -> w -> i -> Vector w
+
+-- | Returns a list of a route in reverse order (a route from end to
+--   start).
+dfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> Maybe [Edge]
+
+-- | Returns a list of a route in reverse order (a route from end to
+--   start).
+treeDfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> [Edge]
+topSortSG :: SparseGraph i w -> [Vertex]
+
+-- | Partial running of <tt>scc</tt> over topologically sorted vertices,
+--   but for some connected components only.
+topScc1SG :: forall i w m. PrimMonad m => SparseGraph i w -> MVector (PrimState m) Bool -> Vertex -> m [Vertex]
+
+-- | Creates a reverse graph. TODO: return weightned graph
+revSG :: (Unindex i, Unbox w) => SparseGraph i w -> SparseGraph i w
+
+-- | Collectes strongly connected components, topologically sorted.
+--   Upstream vertices come first, e.g., <tt>(v1 - v2) -&gt; v3 -&gt;
+--   v4</tt>.
+topSccSG :: (Unindex i, Unbox w) => SparseGraph i w -> [[Int]]
+
+-- | LCA component. See also <tt>lca</tt> and <tt>lcaLen</tt> from
+--   <a>Tree</a>.
+treeDepthInfoSG :: SparseGraph Int w -> Int -> (ToParent, Vector Int)
+
+-- | LCA component. Returns <a>LcaCache</a>, i.e., `(parents, depths,
+--   parents')`.
+lcaCacheSG :: SparseGraph Int w -> Vertex -> LcaCache
+instance (GHC.Show.Show i, GHC.Show.Show w, Data.Vector.Unboxed.Base.Unbox w) => GHC.Show.Show (Data.SparseGraph.SparseGraph i w)
