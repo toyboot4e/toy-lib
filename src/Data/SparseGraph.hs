@@ -194,7 +194,6 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
   !queue <- newBufferAsQueue (nEdgesSG + 1)
 
-  let !_ = dbg (boundsSG, startIx)
   let !start = index boundsSG startIx
   pushBack queue start
   VUM.unsafeWrite dist start (0 :: Int)

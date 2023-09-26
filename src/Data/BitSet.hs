@@ -7,6 +7,28 @@ import Data.List (unfoldr)
 import Data.Tuple.Extra (dupe)
 import qualified Data.Vector.Unboxed as VU
 
+-- | Retrieves the most significant bit.
+--
+-- >>> msbOf 0
+-- -1
+-- >>> msbOf maxBound
+-- 62
+-- >>> msbOf $ 4 + 2 + 1
+-- 2
+msbOf :: Int -> Int
+msbOf !x = 63 - countLeadingZeros x
+
+-- | Retrieves the least significant bit.
+--
+-- >>> lsbOf 0
+-- 64
+-- >>> lsbOf maxBound
+-- 0
+-- >>> lsbOf $ 4 + 2 + 1
+-- 0
+lsbOf :: Int -> Int
+lsbOf = countTrailingZeros
+
 -- | Originally by @yamate11
 powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 powersetM_ !is0 !act = act2 is0
