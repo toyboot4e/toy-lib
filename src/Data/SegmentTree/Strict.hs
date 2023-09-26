@@ -44,15 +44,17 @@ data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 
 -- TODO: Can I UNPACK? the funciton?
 -- TODO: Possibly a show instance?
+-- TODO: Use 1-based index
 
 -- | Creates a new segment tree for `n` leaves.
 -- REMARK: Always give a zero value. It fills all the nodes including parent nodes, and the parent
 -- nodes are not updated.
 {-# INLINE newSTreeVG #-}
 newSTreeVG :: (VGM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
-newSTreeVG !f !n !zero = SegmentTree f <$> VGM.replicate n' zero
+newSTreeVG !f !nLeaves !zero = SegmentTree f <$> VGM.replicate nVerts zero
   where
-    !n' = until (>= 2 * n) (* 2) 2
+    !nVerts = until (>= 2 * nLeaves) (* 2) 2
+    -- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
 
 -- | Creates a boxed segment tree.
 {-# INLINE newSTreeV #-}

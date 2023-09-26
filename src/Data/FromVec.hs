@@ -1,3 +1,5 @@
+-- | Helper methods for creating collections types from @Vector@ types.
+
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.FromVec where

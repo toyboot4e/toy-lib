@@ -1,4 +1,6 @@
--- | I'm using @Array Int [Int]@ as a primary `Graph` data storage.
+-- | Old adjacency list-based graph module.
+--
+-- It's using @Array Int [Int]@ as the primary `Graph` data storage.
 module Data.Graph where
 
 import Control.Monad
