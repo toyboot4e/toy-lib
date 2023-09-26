@@ -187,29 +187,32 @@ componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ 
   where
     !start = index boundsSG startIx :: Vertex
 
-bfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
+-- | /O(V+E)/ breadth-first search. Unreachable vertices have length of @-1@.
+bfsSG :: (Show i, Unindex i) => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
 bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
+  !queue <- newBufferAsQueue (nEdgesSG + 1)
 
-  let inner !depth !vs1
-        | IS.null vs1 = return ()
-        | otherwise = do
-            let vs1' = IS.toList vs1
-            forM_ vs1' $ \v1 -> do
-              VUM.unsafeWrite dist v1 depth
+  let !_ = dbg (boundsSG, startIx)
+  let !start = index boundsSG startIx
+  pushBack queue start
+  VUM.unsafeWrite dist start (0 :: Int)
 
-            -- FIXME: Easier iteration?
-            !vs2 <- foldForM [] vs1' $ \acc v1 -> do
-              foldForMVG acc (gr `adj` v1) $ \acc' v2 -> do
-                !d <- VUM.unsafeRead dist v2
-                if d == undef
-                  then return (v2 : acc')
-                  else return acc'
+  -- procedural programming is great
+  fix $ \loop -> do
+    popFront queue >>= \case
+      Nothing -> return ()
+      Just !v1 -> do
+        !d1 <- VUM.unsafeRead dist v1
+        VU.forM_ (gr `adj` v1) $ \v2 -> do
+          !lastD <- VUM.unsafeRead dist v2
+          when (lastD == undef) $ do
+            VUM.unsafeWrite dist v2 (d1 + 1)
+            pushBack queue v2
 
-            inner (succ depth) $ IS.fromList vs2
+        loop
 
-  !_ <- inner (0 :: Int) (IS.singleton (index boundsSG startIx))
   return dist
 
 bfsGrid317E_MBuffer :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
