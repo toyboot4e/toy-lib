@@ -25,12 +25,6 @@ dbgId :: Show a => a -> a
 dbgId = id
 
 dbgAssert :: Bool -> a -> a
-dbgAssert = flip const
-
+dbgAssert _ x = x
 #endif
-
-($$) :: (Show a) => (a -> b) -> a -> b
-($$) lhs rhs = lhs (dbgId rhs)
-
-infixr 0 $$
 
