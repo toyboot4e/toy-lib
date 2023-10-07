@@ -57,6 +57,7 @@ library
       Data.Vector.IxVector
       Math.Bits
       Math.Digits
+      Math.DigitsVector
       Math.Divisors
       Math.Exgcd
       Math.Manhattan
