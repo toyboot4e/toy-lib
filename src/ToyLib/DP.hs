@@ -3,14 +3,17 @@
 -- TODO: Refactor `relaxMany` variants.
 module ToyLib.DP where
 
-import Data.Bits
+import Control.Monad.ST
 import Data.BitSet (powersetVU)
+import Data.Bits
+import Data.Maybe
 import Data.Bool (bool)
 import Data.Ix
 import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
+import Data.SegmentTree.Strict
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude (rangeVU, repM_)
@@ -27,7 +30,10 @@ constructFor !x0 !input !f = VU.create $ do
 
   return vec
 
--- | @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
+-- | `accumulate` variant with `concatMap`-like expander. Be wanrned that *the @input@ is consumed
+-- in-place*. Run like @relaxMany vec0 (VU.force vec0) $ \x -> ..@ if it needs to be cloned.
+--
+-- @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
 relaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
 relaxMany !relax !vec0 !input !expander = VG.create $ do
   !vec <- VG.unsafeThaw vec0
@@ -38,7 +44,8 @@ relaxMany !relax !vec0 !input !expander = VG.create $ do
 
   return vec
 
--- | `relaxMany` with index input.
+-- | `relaxMany` with index input. Be wanrned that *the @input@ is consumed in-place*. Run like
+-- @relaxMany vec0 (VU.force vec0) $ \x -> ..@ if it needs to be cloned.
 irelaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
 irelaxMany !relax !vec0 !input !expander = VG.create $ do
   !vec <- VG.unsafeThaw vec0
@@ -139,3 +146,13 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
           let !set' = set .|. bit lsb
            in inner res (set' : acc) (rest' .&. complement set')
 
+-- | The input must be one-based
+lcs :: VU.Vector Int -> Int
+lcs !xs = runST $ do
+  !stree <- newSTreeVU max (VG.length xs) (0 :: Int)
+
+  VU.forM_ xs $ \x -> do
+    !n0 <- fromMaybe 0 <$> querySTree stree (0, x - 1)
+    insertSTree stree x (n0 + 1)
+
+  fromJust <$> querySTree stree (0, VG.length xs - 1)
