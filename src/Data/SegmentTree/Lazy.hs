@@ -74,7 +74,6 @@ newLazySTreeVU :: forall a op m. (VU.Unbox a, Monoid a, MonoidAction op a, VU.Un
 newLazySTreeVU = newLazySTree
 
 -- | Creates `LazySegmentTree` with initial leaf values.
--- FIXME: Use `mempty` for $i >= n$.
 generateLazySTree ::
   forall v a op m.
   (VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
@@ -86,7 +85,9 @@ generateLazySTree !n !f = do
 
   -- Create leaves:
   forMS_ (rangeMS 1 nLeaves) $ \i -> do
-    VGM.write as (nLeaves + i - 1) $ f (pred i)
+    if i <= n
+      then VGM.write as (nLeaves + i - 1) $! f (pred i)
+      else VGM.write as (nLeaves + i - 1) mempty
 
   -- Create parents:
   forMS_ (rangeMSR 1 (pred nLeaves)) $ \i -> do
