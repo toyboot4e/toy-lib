@@ -3,4 +3,3 @@ dbg :: Show a => a -> () ; dbg !x = let !_ = traceShow x () in () ; dbgAssert ::
 #else
 dbg :: Show a => a -> () ; dbg _ = () ; dbgAssert :: Bool -> a -> a ; dbgAssert = flip const ; dbgS :: String -> () ; dbgS _ = () ; dbgId :: Show a => a -> a ; dbgId = id ;
 #endif
-
