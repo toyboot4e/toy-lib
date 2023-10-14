@@ -306,6 +306,12 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
     !start = index boundsSG startIx
     !end = index boundsSG endIx
 
+-- | Topological sort
+--
+-- Non-referenced vertices come first:
+-- >>> let !gr = buildUSG ((0, 4) :: (Int, Int)) $ VU.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
+-- >>> topSortSG gr
+-- [4,0,2,3,1]
 topSortSG :: SparseGraph i w -> [Vertex]
 topSortSG gr@SparseGraph {..} = runST $ do
   !vis <- VUM.replicate nVertsSG False
