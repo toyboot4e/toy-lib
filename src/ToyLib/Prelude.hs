@@ -78,6 +78,9 @@ chunksOfVG k xs0 = V.unfoldrExactN n step xs0
     n = (VG.length xs0 + k - 1) `div` k
     step xs = (VG.take k xs, VG.drop k xs)
 
+swapDupeVU :: VU.Vector (Int, Int) -> VU.Vector (Int, Int)
+swapDupeVU = VU.concatMap (\vs -> VU.fromListN 2 [vs, swap vs])
+
 -- }}}
 
 -- {{{ Libary complements
