@@ -6,6 +6,7 @@ module Data.Vector.IxVector where
 import Control.Monad (forM_)
 import Control.Monad.Primitive
 import Data.Ix
+import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
@@ -47,6 +48,17 @@ type IxMUVector i s a = IxVector i (VUM.MVector s a)
   -- NOTE: `index` panics on out of range
   | inRange boundsIV i = Just (VG.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
+
+mapIV :: (VU.Unbox a, VU.Unbox b) => (a -> b) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b)
+mapIV !f !vec = IxVector bnd $ VU.map f (vecIV vec)
+  where
+    !bnd = boundsIV vec
+
+imapIV :: (Unindex i, VU.Unbox a, VU.Unbox b) => (i -> a -> b) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b)
+imapIV !f !vec = IxVector bnd $ VU.imap wrapper (vecIV vec)
+  where
+    !bnd = boundsIV vec
+    wrapper i = f (unindex bnd i)
 
 -- TODO: `createIx` where we freeze the `IxVector`
 -- createIx :: (VG.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
