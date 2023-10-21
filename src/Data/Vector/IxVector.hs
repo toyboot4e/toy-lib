@@ -60,6 +60,13 @@ imapIV !f !vec = IxVector bnd $ VU.imap wrapper (vecIV vec)
     !bnd = boundsIV vec
     wrapper i = f (unindex bnd i)
 
+zipWithIV :: (VU.Unbox a, VU.Unbox b, VU.Unbox c) => (a -> b -> c) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b) -> IxVector i (VU.Vector c)
+zipWithIV !f !vec1 !vec2 = IxVector bnd $ VU.zipWith f (vecIV vec1) (vecIV vec2)
+  where
+    !bnd = boundsIV vec1
+
+-- TOOD: `ixmapIV` and rotation examples
+
 -- TODO: `createIx` where we freeze the `IxVector`
 -- createIx :: (VG.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
 -- createIx = runST
