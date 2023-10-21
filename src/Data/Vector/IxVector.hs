@@ -6,12 +6,14 @@ module Data.Vector.IxVector where
 import Control.Monad (forM_)
 import Control.Monad.Primitive
 import Data.Ix
+import Data.Tuple.Extra (first)
 import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import GHC.Ix (unsafeIndex)
+import ToyLib.Macro (dbgAssert)
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
@@ -64,6 +66,16 @@ zipWithIV :: (VU.Unbox a, VU.Unbox b, VU.Unbox c) => (a -> b -> c) -> IxVector i
 zipWithIV !f !vec1 !vec2 = IxVector bnd $ VU.zipWith f (vecIV vec1) (vecIV vec2)
   where
     !bnd = boundsIV vec1
+
+-- | Altertnative to `accumulate` for `IxVector` that share the same bounds.
+accumulateIV :: (Ix i, VU.Unbox i, VU.Unbox a, VU.Unbox b) => (a -> b -> a) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector (i, b)) -> IxVector i (VU.Vector a)
+accumulateIV !f !vec0 !commands =
+  let !input1d = VU.map (first (index bnd)) (vecIV commands)
+      !vec1d = VU.accumulate f (vecIV vec0) input1d
+   in IxVector bnd vec1d
+  where
+    !bnd = boundsIV vec0
+    !_ = dbgAssert (boundsIV vec0 == boundsIV commands)
 
 -- TOOD: `ixmapIV` and rotation examples
 
