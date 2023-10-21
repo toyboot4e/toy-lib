@@ -45,6 +45,7 @@ library
       Data.SegmentTree.Strict
       Data.SemigroupAction
       Data.Semiring
+      Data.SizedList
       Data.SparseGraph
       Data.Tree.Fold
       Data.Tree.Lca
