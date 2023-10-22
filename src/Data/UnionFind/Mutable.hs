@@ -21,9 +21,14 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 -- | Dense, mutable union-find tree (originally by `@pel`)
 --
 -- >>> stree <- newMUF 3
+-- >>> sameMUF stree 0 2
+-- False
 -- >>> uniteMUF stree 0 2
+-- True
 -- >>> sameMUF stree 0 2
 -- True
+-- >>> uniteMUF stree 0 2
+-- False
 newtype MUnionFind s = MUnionFind (VUM.MVector s MUFNode)
 
 type IOUnionFind = MUnionFind RealWorld
@@ -88,9 +93,9 @@ _unwrapMUFRoot :: MUFNode -> Int
 _unwrapMUFRoot (MUFRoot !s) = s
 _unwrapMUFRoot (MUFChild !_) = error "tried to unwrap child as UF root"
 
--- | Unites two nodes.
+-- | Unites two nodes. Returns `True` when thry're newly united.
 {-# INLINE uniteMUF #-}
-uniteMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m ()
+uniteMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 uniteMUF uf@(MUnionFind !vec) !x !y = do
   !px <- rootMUF uf x
   !py <- rootMUF uf y
@@ -101,6 +106,7 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
     let (!par, !chld) = if sx < sy then (px, py) else (py, px)
     VUM.unsafeWrite vec chld (MUFChild par)
     VUM.unsafeWrite vec par (MUFRoot $! sx + sy)
+  return $ px /= py
 
 -- | Returns the size of the a node, starting with `1`.
 {-# INLINE sizeMUF #-}
