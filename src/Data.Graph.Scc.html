@@ -17,23 +17,23 @@
 </span><span id="line-17"></span><span class="hs-comment">-- come.</span><span>
 </span><span id="line-18"></span><span class="annot"><a href="Data.Graph.Scc.html#topSort"><span class="hs-identifier hs-type">topSort</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
 </span><span id="line-19"></span><span id="topSort"><span class="annot"><span class="annottext">topSort :: Array Int [Int] -&gt; [Int]
-</span><a href="Data.Graph.Scc.html#topSort"><span class="hs-identifier hs-var hs-var">topSort</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111357"><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111357"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s [Int]) -&gt; [Int]
+</span><a href="Data.Graph.Scc.html#topSort"><span class="hs-identifier hs-var hs-var">topSort</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112681"><span class="annot"><span class="annottext">Array Int [Int]
+</span><a href="#local-6989586621679112681"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s [Int]) -&gt; [Int]
 forall a. (forall s. ST s a) -&gt; a
 </span><span class="hs-identifier hs-var">runST</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s [Int]) -&gt; [Int])
 -&gt; (forall s. ST s [Int]) -&gt; [Int]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-20"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111373"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
+</span><span id="line-20"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112697"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
 forall i. Ix i =&gt; Array i [Int] -&gt; (i, i)
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111357"><span class="hs-identifier hs-var">graph</span></a></span><span>
-</span><span id="line-21"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679111375"><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool
-</span><a href="#local-6989586621679111375"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; ST s (MVector (PrimState (ST s)) Bool)
+</span><a href="#local-6989586621679112681"><span class="hs-identifier hs-var">graph</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679112699"><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool
+</span><a href="#local-6989586621679112699"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; ST s (MVector (PrimState (ST s)) Bool)
 forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 Int -&gt; a -&gt; m (MVector (PrimState m) a)
@@ -44,45 +44,45 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; Int
 </span><span class="hs-identifier hs-var">rangeSize</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679111407"><span class="annot"><span class="annottext">dfsM :: [Int] -&gt; Int -&gt; ST s [Int]
-</span><a href="#local-6989586621679111407"><span class="hs-identifier hs-var hs-var">dfsM</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111408"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111408"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111409"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111409"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-24"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679111410"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679111410"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool -&gt; Int -&gt; ST s Bool
+</span><span id="line-23"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679112731"><span class="annot"><span class="annottext">dfsM :: [Int] -&gt; Int -&gt; ST s [Int]
+</span><a href="#local-6989586621679112731"><span class="hs-identifier hs-var hs-var">dfsM</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112732"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112732"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112733"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112733"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-24"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679112734"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112734"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool -&gt; Int -&gt; ST s Bool
 forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VUM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool
-</span><a href="#local-6989586621679111375"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679112699"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111409"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112733"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-25"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679111410"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621679112734"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-26"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; ST s [Int]
 forall a. a -&gt; ST s a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111408"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><a href="#local-6989586621679112732"><span class="hs-identifier hs-var">acc</span></a></span><span>
 </span><span id="line-27"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-28"></span><span>            </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool -&gt; Int -&gt; Bool -&gt; ST s ()
 forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VUM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool
-</span><a href="#local-6989586621679111375"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679112699"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111409"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112733"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-29"></span><span>            </span><span class="hs-glyph">!</span><span id="local-6989586621679111414"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111414"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; ST s Bool) -&gt; [Int] -&gt; ST s [Int]
+</span><span id="line-29"></span><span>            </span><span class="hs-glyph">!</span><span id="local-6989586621679112738"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112738"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; ST s Bool) -&gt; [Int] -&gt; ST s [Int]
 forall (m :: * -&gt; *) a.
 Applicative m =&gt;
 (a -&gt; m Bool) -&gt; [a] -&gt; m [a]
@@ -97,87 +97,87 @@ forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VUM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Bool
-</span><a href="#local-6989586621679111375"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; ST s Bool) -&gt; (Int -&gt; Int) -&gt; Int -&gt; ST s Bool
+</span><a href="#local-6989586621679112699"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; ST s Bool) -&gt; (Int -&gt; Int) -&gt; Int -&gt; ST s Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; ST s [Int]) -&gt; [Int] -&gt; ST s [Int]
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; ST s [Int]) -&gt; [Int] -&gt; ST s [Int]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111357"><span class="hs-identifier hs-var">graph</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
+</span><a href="#local-6989586621679112681"><span class="hs-identifier hs-var">graph</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111409"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679112733"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-30"></span><span>            </span><span class="hs-comment">-- Create postorder output:</span><span>
 </span><span id="line-31"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111409"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-glyph">:</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [Int]) -&gt; ST s [Int] -&gt; ST s [Int]
+</span><a href="#local-6989586621679112733"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-glyph">:</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [Int]) -&gt; ST s [Int] -&gt; ST s [Int]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Int -&gt; ST s [Int]) -&gt; [Int] -&gt; [Int] -&gt; ST s [Int]
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
 (b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
 </span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int -&gt; ST s [Int]
-</span><a href="#local-6989586621679111407"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111408"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111414"><span class="hs-identifier hs-var">vs</span></a></span><span>
+</span><a href="#local-6989586621679112731"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112732"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112738"><span class="hs-identifier hs-var">vs</span></a></span><span>
 </span><span id="line-32"></span><span>
 </span><span id="line-33"></span><span>  </span><span class="annot"><span class="annottext">([Int] -&gt; Int -&gt; ST s [Int]) -&gt; [Int] -&gt; [Int] -&gt; ST s [Int]
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
 (b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
 </span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int -&gt; ST s [Int]
-</span><a href="#local-6989586621679111407"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; ST s [Int]) -&gt; [Int] -&gt; ST s [Int]
+</span><a href="#local-6989586621679112731"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; ST s [Int]) -&gt; [Int] -&gt; ST s [Int]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [Int]
 forall a. Ix a =&gt; (a, a) -&gt; [a]
 </span><span class="hs-identifier hs-var">range</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111373"><span class="hs-identifier hs-var">bounds_</span></a></span><span>
+</span><a href="#local-6989586621679112697"><span class="hs-identifier hs-var">bounds_</span></a></span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-comment">-- | Partial running of `scc` over topologically sorted vertices, but for some connected components</span><span>
 </span><span id="line-36"></span><span class="hs-comment">-- only.</span><span>
-</span><span id="line-37"></span><span class="annot"><a href="Data.Graph.Scc.html#topScc1"><span class="hs-identifier hs-type">topScc1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679111314"><span class="annot"><a href="#local-6989586621679111314"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679111314"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679111314"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679111314"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Data.Graph.Scc.html#topScc1"><span class="hs-identifier hs-type">topScc1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679112638"><span class="annot"><a href="#local-6989586621679112638"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679112638"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VUM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679112638"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679112638"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
 </span><span id="line-38"></span><span id="topScc1"><span class="annot"><span class="annottext">topScc1 :: forall (m :: * -&gt; *).
 PrimMonad m =&gt;
 Array Int [Int] -&gt; MVector (PrimState m) Bool -&gt; Int -&gt; m [Int]
-</span><a href="Data.Graph.Scc.html#topScc1"><span class="hs-identifier hs-var hs-var">topScc1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111426"><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111426"><span class="hs-identifier hs-var">graph'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111427"><span class="annot"><span class="annottext">MVector (PrimState m) Bool
-</span><a href="#local-6989586621679111427"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111428"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111428"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-39"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111431"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
-</span><a href="#local-6989586621679111431"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
+</span><a href="Data.Graph.Scc.html#topScc1"><span class="hs-identifier hs-var hs-var">topScc1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112750"><span class="annot"><span class="annottext">Array Int [Int]
+</span><a href="#local-6989586621679112750"><span class="hs-identifier hs-var">graph'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112751"><span class="annot"><span class="annottext">MVector (PrimState m) Bool
+</span><a href="#local-6989586621679112751"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112752"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112752"><span class="hs-identifier hs-var">v0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112755"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
+</span><a href="#local-6989586621679112755"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
 forall i. Ix i =&gt; Array i [Int] -&gt; (i, i)
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111426"><span class="hs-identifier hs-var">graph'</span></a></span><span>
+</span><a href="#local-6989586621679112750"><span class="hs-identifier hs-var">graph'</span></a></span><span>
 </span><span id="line-40"></span><span>
-</span><span id="line-41"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679111467"><span class="annot"><span class="annottext">dfsM :: [Int] -&gt; Int -&gt; m [Int]
-</span><a href="#local-6989586621679111467"><span class="hs-identifier hs-var hs-var">dfsM</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111468"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111468"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111469"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111469"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-42"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679111470"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679111470"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool -&gt; Int -&gt; m Bool
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679112791"><span class="annot"><span class="annottext">dfsM :: [Int] -&gt; Int -&gt; m [Int]
+</span><a href="#local-6989586621679112791"><span class="hs-identifier hs-var hs-var">dfsM</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112792"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112792"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112793"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112793"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679112794"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112794"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool -&gt; Int -&gt; m Bool
 forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VUM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool
 MVector (PrimState m) Bool
-</span><a href="#local-6989586621679111427"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679112751"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111431"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111469"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679112755"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112793"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-43"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679111470"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621679112794"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-44"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; m [Int]
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111468"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><a href="#local-6989586621679112792"><span class="hs-identifier hs-var">acc</span></a></span><span>
 </span><span id="line-45"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-46"></span><span>            </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool -&gt; Int -&gt; Bool -&gt; m ()
 forall (m :: * -&gt; *) a.
@@ -185,14 +185,14 @@ forall (m :: * -&gt; *) a.
 MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
 </span><span class="hs-identifier hs-var">VUM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool
 MVector (PrimState m) Bool
-</span><a href="#local-6989586621679111427"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679112751"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111431"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111469"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112755"><span class="hs-identifier hs-var">bounds_</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112793"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-47"></span><span>            </span><span class="hs-glyph">!</span><span id="local-6989586621679111471"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111471"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m Bool) -&gt; [Int] -&gt; m [Int]
+</span><span id="line-47"></span><span>            </span><span class="hs-glyph">!</span><span id="local-6989586621679112795"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112795"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m Bool) -&gt; [Int] -&gt; m [Int]
 forall (m :: * -&gt; *) a.
 Applicative m =&gt;
 (a -&gt; m Bool) -&gt; [a] -&gt; m [a]
@@ -208,45 +208,45 @@ forall (m :: * -&gt; *) a.
 MVector (PrimState m) a -&gt; Int -&gt; m a
 </span><span class="hs-identifier hs-var">VUM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Bool
 MVector (PrimState m) Bool
-</span><a href="#local-6989586621679111427"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m Bool) -&gt; (Int -&gt; Int) -&gt; Int -&gt; m Bool
+</span><a href="#local-6989586621679112751"><span class="hs-identifier hs-var">vis</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m Bool) -&gt; (Int -&gt; Int) -&gt; Int -&gt; m Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
 </span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111431"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; m [Int]) -&gt; [Int] -&gt; m [Int]
+</span><a href="#local-6989586621679112755"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; m [Int]) -&gt; [Int] -&gt; m [Int]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111426"><span class="hs-identifier hs-var">graph'</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
+</span><a href="#local-6989586621679112750"><span class="hs-identifier hs-var">graph'</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111469"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679112793"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-48"></span><span>            </span><span class="hs-comment">-- Create preorder output:</span><span>
 </span><span id="line-49"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111469"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-glyph">:</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [Int]) -&gt; m [Int] -&gt; m [Int]
+</span><a href="#local-6989586621679112793"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-glyph">:</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [Int]) -&gt; m [Int] -&gt; m [Int]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Int -&gt; m [Int]) -&gt; [Int] -&gt; [Int] -&gt; m [Int]
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
 (b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
 </span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int -&gt; m [Int]
-</span><a href="#local-6989586621679111467"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111468"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111471"><span class="hs-identifier hs-var">vs</span></a></span><span>
+</span><a href="#local-6989586621679112791"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112792"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112795"><span class="hs-identifier hs-var">vs</span></a></span><span>
 </span><span id="line-50"></span><span>
 </span><span id="line-51"></span><span>  </span><span class="annot"><span class="annottext">[Int] -&gt; Int -&gt; m [Int]
 forall {m :: * -&gt; *}.
 (PrimState m ~ PrimState m, PrimMonad m) =&gt;
 [Int] -&gt; Int -&gt; m [Int]
-</span><a href="#local-6989586621679111467"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111428"><span class="hs-identifier hs-var">v0</span></a></span><span>
+</span><a href="#local-6989586621679112791"><span class="hs-identifier hs-var">dfsM</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112752"><span class="hs-identifier hs-var">v0</span></a></span><span>
 </span><span id="line-52"></span><span>
 </span><span id="line-53"></span><span class="annot"><span class="hs-comment">-- | Retrieves a reverse graph</span></span><span>
 </span><span id="line-54"></span><span class="annot"><a href="Data.Graph.Scc.html#revGraph"><span class="hs-identifier hs-type">revGraph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
 </span><span id="line-55"></span><span id="revGraph"><span class="annot"><span class="annottext">revGraph :: Array Int [Int] -&gt; Array Int [Int]
-</span><a href="Data.Graph.Scc.html#revGraph"><span class="hs-identifier hs-var hs-var">revGraph</span></a></span></span><span> </span><span id="local-6989586621679111473"><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111473"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Int -&gt; [Int])
+</span><a href="Data.Graph.Scc.html#revGraph"><span class="hs-identifier hs-var hs-var">revGraph</span></a></span></span><span> </span><span id="local-6989586621679112797"><span class="annot"><span class="annottext">Array Int [Int]
+</span><a href="#local-6989586621679112797"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Int -&gt; [Int])
 -&gt; [Int] -&gt; (Int, Int) -&gt; [(Int, Int)] -&gt; Array Int [Int]
 forall (a :: * -&gt; * -&gt; *) e i e'.
 (IArray a e, Ix i) =&gt;
@@ -259,80 +259,80 @@ forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111473"><span class="hs-identifier hs-var">graph</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679111476"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679112797"><span class="hs-identifier hs-var">graph</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679112800"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-56"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-57"></span><span>    </span><span class="annot"><a href="#local-6989586621679111476"><span class="hs-identifier hs-type">input</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-58"></span><span>    </span><span id="local-6989586621679111476"><span class="annot"><span class="annottext">input :: [(Int, Int)]
-</span><a href="#local-6989586621679111476"><span class="hs-identifier hs-var hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([(Int, Int)] -&gt; (Int, [Int]) -&gt; [(Int, Int)])
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="#local-6989586621679112800"><span class="hs-identifier hs-type">input</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-58"></span><span>    </span><span id="local-6989586621679112800"><span class="annot"><span class="annottext">input :: [(Int, Int)]
+</span><a href="#local-6989586621679112800"><span class="hs-identifier hs-var hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([(Int, Int)] -&gt; (Int, [Int]) -&gt; [(Int, Int)])
 -&gt; [(Int, Int)] -&gt; [(Int, [Int])] -&gt; [(Int, Int)]
 forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
 forall (t :: * -&gt; *) b a.
 Foldable t =&gt;
 (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
-</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111477"><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679111477"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679111478"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111478"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111479"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111479"><span class="hs-identifier hs-var">v1s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">([(Int, Int)] -&gt; Int -&gt; [(Int, Int)])
+</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112801"><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679112801"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679112802"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112802"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112803"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112803"><span class="hs-identifier hs-var">v1s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">([(Int, Int)] -&gt; Int -&gt; [(Int, Int)])
 -&gt; [(Int, Int)] -&gt; [Int] -&gt; [(Int, Int)]
 forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
 forall (t :: * -&gt; *) b a.
 Foldable t =&gt;
 (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
-</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111480"><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679111480"><span class="hs-identifier hs-var">acc'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111481"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111481"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111481"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111478"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [(Int, Int)] -&gt; [(Int, Int)]
+</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112804"><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679112804"><span class="hs-identifier hs-var">acc'</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112805"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112805"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112805"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112802"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; [(Int, Int)] -&gt; [(Int, Int)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679111480"><span class="hs-identifier hs-var">acc'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
-</span><a href="#local-6989586621679111477"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111479"><span class="hs-identifier hs-var">v1s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">([(Int, [Int])] -&gt; [(Int, Int)]) -&gt; [(Int, [Int])] -&gt; [(Int, Int)]
+</span><a href="#local-6989586621679112804"><span class="hs-identifier hs-var">acc'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Int, Int)]
+</span><a href="#local-6989586621679112801"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112803"><span class="hs-identifier hs-var">v1s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">([(Int, [Int])] -&gt; [(Int, Int)]) -&gt; [(Int, [Int])] -&gt; [(Int, Int)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; [(Int, [Int])]
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; [(i, e)]
 </span><span class="hs-identifier hs-var">assocs</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111473"><span class="hs-identifier hs-var">graph</span></a></span><span>
+</span><a href="#local-6989586621679112797"><span class="hs-identifier hs-var">graph</span></a></span><span>
 </span><span id="line-59"></span><span>
 </span><span id="line-60"></span><span class="hs-comment">-- | Collectes strongly connected components, topologically sorted.</span><span>
 </span><span id="line-61"></span><span class="hs-comment">-- Upstream vertices come first, e.g., @(v1 - v2) -&gt; v3 -&gt; v4@.</span><span>
 </span><span id="line-62"></span><span class="annot"><a href="Data.Graph.Scc.html#topScc"><span class="hs-identifier hs-type">topScc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
 </span><span id="line-63"></span><span id="topScc"><span class="annot"><span class="annottext">topScc :: Array Int [Int] -&gt; [[Int]]
-</span><a href="Data.Graph.Scc.html#topScc"><span class="hs-identifier hs-var hs-var">topScc</span></a></span></span><span> </span><span id="local-6989586621679111484"><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111484"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [[Int]]
-</span><a href="#local-6989586621679111485"><span class="hs-identifier hs-var">collectSccPreorder</span></a></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [[Int]]) -&gt; [Int] -&gt; [[Int]]
+</span><a href="Data.Graph.Scc.html#topScc"><span class="hs-identifier hs-var hs-var">topScc</span></a></span></span><span> </span><span id="local-6989586621679112808"><span class="annot"><span class="annottext">Array Int [Int]
+</span><a href="#local-6989586621679112808"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [[Int]]
+</span><a href="#local-6989586621679112809"><span class="hs-identifier hs-var">collectSccPreorder</span></a></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [[Int]]) -&gt; [Int] -&gt; [[Int]]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; [Int]
 </span><a href="Data.Graph.Scc.html#topSort"><span class="hs-identifier hs-var">topSort</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111484"><span class="hs-identifier hs-var">graph</span></a></span><span>
+</span><a href="#local-6989586621679112808"><span class="hs-identifier hs-var">graph</span></a></span><span>
 </span><span id="line-64"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-65"></span><span>    </span><span id="local-6989586621679111486"><span class="annot"><span class="annottext">graph' :: Array Int [Int]
-</span><a href="#local-6989586621679111486"><span class="hs-identifier hs-var hs-var">graph'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Array Int [Int]
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621679112810"><span class="annot"><span class="annottext">graph' :: Array Int [Int]
+</span><a href="#local-6989586621679112810"><span class="hs-identifier hs-var hs-var">graph'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Array Int [Int]
 </span><a href="Data.Graph.Scc.html#revGraph"><span class="hs-identifier hs-var">revGraph</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111484"><span class="hs-identifier hs-var">graph</span></a></span><span>
+</span><a href="#local-6989586621679112808"><span class="hs-identifier hs-var">graph</span></a></span><span>
 </span><span id="line-66"></span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><a href="#local-6989586621679111485"><span class="hs-identifier hs-type">collectSccPreorder</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
-</span><span id="line-68"></span><span>    </span><span id="local-6989586621679111485"><span class="annot"><span class="annottext">collectSccPreorder :: [Int] -&gt; [[Int]]
-</span><a href="#local-6989586621679111485"><span class="hs-identifier hs-var hs-var">collectSccPreorder</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111487"><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111487"><span class="hs-identifier hs-var">topVerts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s [[Int]]) -&gt; [[Int]]
+</span><span id="line-67"></span><span>    </span><span class="annot"><a href="#local-6989586621679112809"><span class="hs-identifier hs-type">collectSccPreorder</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-68"></span><span>    </span><span id="local-6989586621679112809"><span class="annot"><span class="annottext">collectSccPreorder :: [Int] -&gt; [[Int]]
+</span><a href="#local-6989586621679112809"><span class="hs-identifier hs-var hs-var">collectSccPreorder</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112811"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112811"><span class="hs-identifier hs-var">topVerts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s [[Int]]) -&gt; [[Int]]
 forall a. (forall s. ST s a) -&gt; a
 </span><span class="hs-identifier hs-var">runST</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s [[Int]]) -&gt; [[Int]])
 -&gt; (forall s. ST s [[Int]]) -&gt; [[Int]]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-69"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679111501"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
-</span><a href="#local-6989586621679111501"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
+</span><span id="line-69"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679112825"><span class="annot"><span class="annottext">bounds_ :: (Int, Int)
+</span><a href="#local-6989586621679112825"><span class="hs-identifier hs-var hs-var">bounds_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; (Int, Int)
 forall i. Ix i =&gt; Array i [Int] -&gt; (i, i)
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111486"><span class="hs-identifier hs-var">graph'</span></a></span><span>
-</span><span id="line-70"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679111502"><span class="annot"><span class="annottext">MVector s Bool
-</span><a href="#local-6989586621679111502"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; ST s (MVector (PrimState (ST s)) Bool)
+</span><a href="#local-6989586621679112810"><span class="hs-identifier hs-var">graph'</span></a></span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679112826"><span class="annot"><span class="annottext">MVector s Bool
+</span><a href="#local-6989586621679112826"><span class="hs-identifier hs-var">vis</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; ST s (MVector (PrimState (ST s)) Bool)
 forall (m :: * -&gt; *) a.
 (PrimMonad m, Unbox a) =&gt;
 Int -&gt; a -&gt; m (MVector (PrimState m) a)
@@ -343,7 +343,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int
 forall a. Ix a =&gt; (a, a) -&gt; Int
 </span><span class="hs-identifier hs-var">rangeSize</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679111501"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679112825"><span class="hs-identifier hs-var">bounds_</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-71"></span><span>      </span><span class="annot"><span class="annottext">([Int] -&gt; Bool) -&gt; [[Int]] -&gt; [[Int]]
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
@@ -366,38 +366,38 @@ forall (m :: * -&gt; *).
 PrimMonad m =&gt;
 Array Int [Int] -&gt; MVector (PrimState m) Bool -&gt; Int -&gt; m [Int]
 </span><a href="Data.Graph.Scc.html#topScc1"><span class="hs-identifier hs-var">topScc1</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111486"><span class="hs-identifier hs-var">graph'</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s Bool
+</span><a href="#local-6989586621679112810"><span class="hs-identifier hs-var">graph'</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s Bool
 MVector (PrimState (ST s)) Bool
-</span><a href="#local-6989586621679111502"><span class="hs-identifier hs-var">vis</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Int]
-</span><a href="#local-6989586621679111487"><span class="hs-identifier hs-var">topVerts</span></a></span><span>
+</span><a href="#local-6989586621679112826"><span class="hs-identifier hs-var">vis</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112811"><span class="hs-identifier hs-var">topVerts</span></a></span><span>
 </span><span id="line-72"></span><span>
 </span><span id="line-73"></span><span class="annot"><span class="hs-comment">-- | Collects cycles using `scc`.</span></span><span>
 </span><span id="line-74"></span><span class="annot"><a href="Data.Graph.Scc.html#topSccCycles"><span class="hs-identifier hs-type">topSccCycles</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Array</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
 </span><span id="line-75"></span><span id="topSccCycles"><span class="annot"><span class="annottext">topSccCycles :: Array Int [Int] -&gt; [[Int]]
-</span><a href="Data.Graph.Scc.html#topSccCycles"><span class="hs-identifier hs-var hs-var">topSccCycles</span></a></span></span><span> </span><span id="local-6989586621679111506"><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111506"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Bool) -&gt; [[Int]] -&gt; [[Int]]
+</span><a href="Data.Graph.Scc.html#topSccCycles"><span class="hs-identifier hs-var hs-var">topSccCycles</span></a></span></span><span> </span><span id="local-6989586621679112830"><span class="annot"><span class="annottext">Array Int [Int]
+</span><a href="#local-6989586621679112830"><span class="hs-identifier hs-var">graph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; Bool) -&gt; [[Int]] -&gt; [[Int]]
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Bool
-</span><a href="#local-6989586621679111507"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">([[Int]] -&gt; [[Int]]) -&gt; [[Int]] -&gt; [[Int]]
+</span><a href="#local-6989586621679112831"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">([[Int]] -&gt; [[Int]]) -&gt; [[Int]] -&gt; [[Int]]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; [[Int]]
 </span><a href="Data.Graph.Scc.html#topScc"><span class="hs-identifier hs-var">topScc</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111506"><span class="hs-identifier hs-var">graph</span></a></span><span>
+</span><a href="#local-6989586621679112830"><span class="hs-identifier hs-var">graph</span></a></span><span>
 </span><span id="line-76"></span><span>  </span><span class="hs-keyword">where</span><span>
 </span><span id="line-77"></span><span>    </span><span class="hs-comment">-- self-referencial loop only</span><span>
-</span><span id="line-78"></span><span>    </span><span id="local-6989586621679111507"><span class="annot"><span class="annottext">f :: [Int] -&gt; Bool
-</span><a href="#local-6989586621679111507"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-glyph">!</span><span id="local-6989586621679111514"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111514"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111514"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int] -&gt; Bool
+</span><span id="line-78"></span><span>    </span><span id="local-6989586621679112831"><span class="annot"><span class="annottext">f :: [Int] -&gt; Bool
+</span><a href="#local-6989586621679112831"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-glyph">!</span><span id="local-6989586621679112838"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112838"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679112838"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int] -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Array Int [Int]
-</span><a href="#local-6989586621679111506"><span class="hs-identifier hs-var">graph</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
+</span><a href="#local-6989586621679112830"><span class="hs-identifier hs-var">graph</span></a></span><span> </span><span class="annot"><span class="annottext">Array Int [Int] -&gt; Int -&gt; [Int]
 forall (a :: * -&gt; * -&gt; *) e i.
 (IArray a e, Ix i) =&gt;
 a i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679111514"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-79"></span><span>    </span><span class="annot"><a href="#local-6989586621679111507"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679112838"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><a href="#local-6989586621679112831"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">[Int]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
 </span><span id="line-80"></span><span>

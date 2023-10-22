@@ -16,6 +16,34 @@ twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
 -- | Bit set tricks
 module Data.BitSet
 
+-- | Retrieves the most significant bit.
+--   
+--   <pre>
+--   &gt;&gt;&gt; msbOf 0
+--   -1
+--   
+--   &gt;&gt;&gt; msbOf maxBound
+--   62
+--   
+--   &gt;&gt;&gt; msbOf $ 4 + 2 + 1
+--   2
+--   </pre>
+msbOf :: Int -> Int
+
+-- | Retrieves the least significant bit.
+--   
+--   <pre>
+--   &gt;&gt;&gt; lsbOf 0
+--   64
+--   
+--   &gt;&gt;&gt; lsbOf maxBound
+--   0
+--   
+--   &gt;&gt;&gt; lsbOf $ 4 + 2 + 1
+--   0
+--   </pre>
+lsbOf :: Int -> Int
+
 -- | Originally by @yamate11
 powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 
@@ -122,6 +150,9 @@ deleteFindMinMS :: MultiSet -> (Int, MultiSet)
 -- | Unwraps <a>MultiSet</a> into the underlying <tt>IntMap</tt>.
 innerMS :: MultiSet -> IntMap Int
 
+
+-- | Helper methods for creating collections types from <tt>Vector</tt>
+--   types.
 module Data.FromVec
 class FromVec a where {
     type FromVecInput a;
@@ -349,6 +380,18 @@ instance Data.Primitive.Types.Prim a => Data.Vector.Unboxed.Base.Unbox (Data.Sem
 instance (GHC.Num.Num a, GHC.Enum.Bounded a, GHC.Classes.Ord a) => Data.Semiring.Semiring (Data.Semiring.MaxPlus a)
 
 
+-- | Alias to `(Int, [Int])`
+module Data.SizedList
+
+-- | `(length, digitsInDescendingOrder)`
+type SizedList = (Int, [Int])
+compareSL :: SizedList -> SizedList -> Ordering
+maxSL :: SizedList -> SizedList -> SizedList
+nullSL :: SizedList -> Bool
+emptySL :: SizedList
+consSL :: SizedList -> Int -> SizedList
+
+
 -- | Union-find tree
 --   
 --   <h1>Typical problems</h1>
@@ -363,10 +406,17 @@ module Data.UnionFind.Mutable
 --   <pre>
 --   &gt;&gt;&gt; stree &lt;- newMUF 3
 --   
+--   &gt;&gt;&gt; sameMUF stree 0 2
+--   False
+--   
 --   &gt;&gt;&gt; uniteMUF stree 0 2
+--   True
 --   
 --   &gt;&gt;&gt; sameMUF stree 0 2
 --   True
+--   
+--   &gt;&gt;&gt; uniteMUF stree 0 2
+--   False
 --   </pre>
 newtype MUnionFind s
 MUnionFind :: MVector s MUFNode -> MUnionFind s
@@ -393,8 +443,8 @@ sameMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 -- | Just an internal helper.
 _unwrapMUFRoot :: MUFNode -> Int
 
--- | Unites two nodes.
-uniteMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> Int -> m ()
+-- | Unites two nodes. Returns <a>True</a> when thry're newly united.
+uniteMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 
 -- | Returns the size of the a node, starting with `1`.
 sizeMUF :: PrimMonad m => MUnionFind (PrimState m) -> Int -> m Int
@@ -411,53 +461,6 @@ fromListSUF :: [(Int, Int)] -> SparseUnionFind
 rootSUF :: SparseUnionFind -> Int -> (Int, Int)
 sameSUF :: SparseUnionFind -> Int -> Int -> Bool
 uniteSUF :: SparseUnionFind -> Int -> Int -> SparseUnionFind
-
-
--- | <a>Ix</a>-based API over <tt>vector</tt>.
-module Data.Vector.IxVector
-
--- | N-dimensional <tt>Vector</tt> or <tt>MVector</tt> with <a>Ix</a>.
-data IxVector i v
-IxVector :: !(i, i) -> !v -> IxVector i v
-[boundsIV] :: IxVector i v -> !(i, i)
-[vecIV] :: IxVector i v -> !v
-
--- | Primary <a>IxVector</a> type notation.
-type IxUVector i a = IxVector i (Vector a)
-
--- | Primary <a>IxVector</a> type notation.
-type IxMUVector i s a = IxVector i (MVector s a)
-
--- | Partial <a>IxVector</a> accessor
-(@!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
-
--- | Partial unsafe <a>IxVector</a> accessor
-(@!!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
-
--- | Total <a>IxVector</a> accessor
-(@!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
-
--- | Total unsafe <a>IxVector</a> accessor
-(@!!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
-
--- | Reads a value from <a>IxVector</a>.
-readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
-unsafeReadIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
-
--- | Writes a value to <a>IxVector</a>.
-writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
-unsafeWriteIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
-modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
-unsafeModifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
-modifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
-unsafeModifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
-swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
-unsafeSwapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
-
--- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
-imos2DIV :: IxVector (Int, Int) (Vector Int) -> IxVector (Int, Int) (Vector Int)
-instance (GHC.Classes.Eq i, GHC.Classes.Eq v) => GHC.Classes.Eq (Data.Vector.IxVector.IxVector i v)
-instance (GHC.Show.Show i, GHC.Show.Show v) => GHC.Show.Show (Data.Vector.IxVector.IxVector i v)
 
 
 -- | Obsolute. TODO: Delete.
@@ -520,6 +523,31 @@ unDigits :: Integral n => n -> [n] -> n
 --   REMARK: It returns `[]` when given `[0]`. Be sure to convert `[]` to
 --   `[0]` if necessary.
 convertBase :: Integral a => a -> a -> [a] -> [a]
+
+
+-- | Digits by <tt>Vector</tt>
+module Math.DigitsVector
+
+-- | <pre>
+--   &gt;&gt;&gt; toDigitsVU 3 ((3^0)*1 + (3^1)*2 + (3^2)*1)
+--   [1,2,1]
+--   </pre>
+toDigitsVU :: Int -> Int -> Vector Int
+
+-- | <pre>
+--   &gt;&gt;&gt; toNDigitsVU 3 3 ((3^0)*1 + (3^1)*0 + (3^2)*0)
+--   [1,0,0]
+--   </pre>
+toNDigitsVU :: Int -> Int -> Int -> Vector Int
+
+-- | <pre>
+--   &gt;&gt;&gt; unDigitsVU 3 (VU.fromList [1,2,1]) == ((3^0)*1 + (3^1)*2 + (3^2)*1)
+--   True
+--   
+--   &gt;&gt;&gt; unDigitsVU 3 (toDigitsVU 3 ((3^0)*1 + (3^1)*2 + (3^2)*1)) == ((3^0)*1 + (3^1)*2 + (3^2)*1)
+--   True
+--   </pre>
+unDigitsVU :: Int -> Vector Int -> Int
 
 
 -- | The number of divisor is smaller than &lt;math&gt;. See also:
@@ -591,7 +619,7 @@ module Math.Exgcd
 --   Note that &lt;math&gt;: &lt;math&gt;
 exgcd :: Integral a => a -> a -> (a, a, a)
 
--- | Just for showing how to use <a>exgcd</a> to calculate the modular
+-- | Example for showing how to use <a>exgcd</a> to calculate the modular
 --   multicative inverse.
 invModGcd :: Integral a => a -> a -> Maybe a
 
@@ -631,17 +659,10 @@ primes :: [Int]
 -- | Returns <tt>[(prime, count)]</tt>
 primeFactors :: Int -> [(Int, Int)]
 
-
--- | Debug utilities
-module ToyLib.Debug
-
--- | For use with <tt>dbgS</tt>
-class ShowGrid a
-showGrid :: ShowGrid a => a -> String
-instance (Data.Vector.Generic.Base.Vector v a, GHC.Show.Show a) => ToyLib.Debug.ShowGrid (Data.Vector.IxVector.IxVector (GHC.Types.Int, GHC.Types.Int) (v a))
-
 module ToyLib.Macro
 dbg :: Show a => a -> ()
+dbgId :: Show a => a -> a
+note :: (Show s, Show a) => s -> a -> a
 dbgAssert :: Bool -> a -> a
 
 
@@ -705,6 +726,7 @@ foldForMMS :: Monad m => a -> Stream m b -> (a -> b -> m a) -> m a
 --   [[1,2,3],[4,5,6],[7]]
 --   </pre>
 chunksOfVG :: Vector v a => Int -> v a -> Vector (v a)
+swapDupeVU :: Vector (Int, Int) -> Vector (Int, Int)
 
 -- | List-like range syntax for <tt>vector</tt>.
 --   
@@ -775,6 +797,74 @@ traceSubMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ((i, i), (i, i)) ->
 -- | Inaccurate, but fast <a>Int</a> square root. TODO: Fast and accurate
 --   implementation
 isqrt :: Int -> Int
+
+
+-- | Handy, more restricted <a>Ix</a> with reverse conversion, fast monadic
+--   iteration and unboxing.
+module Data.Unindex
+class RangeMS a
+rangeMS2 :: (RangeMS a, Monad m) => (a, a) -> Stream m a
+class (Ix i, Unbox i) => Unindex i
+unindex :: Unindex i => (i, i) -> Int -> i
+instance Data.Unindex.Unindex GHC.Types.Int
+instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int)
+instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+instance Data.Unindex.RangeMS GHC.Types.Int
+instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
+
+
+-- | <a>Ix</a>-based API over <tt>vector</tt>.
+module Data.Vector.IxVector
+
+-- | N-dimensional <tt>Vector</tt> or <tt>MVector</tt> with <a>Ix</a>.
+data IxVector i v
+IxVector :: !(i, i) -> !v -> IxVector i v
+[boundsIV] :: IxVector i v -> !(i, i)
+[vecIV] :: IxVector i v -> !v
+
+-- | Primary <a>IxVector</a> type notation.
+type IxUVector i a = IxVector i (Vector a)
+
+-- | Primary <a>IxVector</a> type notation.
+type IxMUVector i s a = IxVector i (MVector s a)
+
+-- | Partial <a>IxVector</a> accessor
+(@!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
+
+-- | Partial unsafe <a>IxVector</a> accessor
+(@!!) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> a
+
+-- | Total <a>IxVector</a> accessor
+(@!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
+
+-- | Total unsafe <a>IxVector</a> accessor
+(@!!?) :: (Ix i, Vector v a) => IxVector i (v a) -> i -> Maybe a
+mapIV :: (Unbox a, Unbox b) => (a -> b) -> IxVector i (Vector a) -> IxVector i (Vector b)
+imapIV :: (Unindex i, Unbox a, Unbox b) => (i -> a -> b) -> IxVector i (Vector a) -> IxVector i (Vector b)
+zipWithIV :: (Unbox a, Unbox b, Unbox c) => (a -> b -> c) -> IxVector i (Vector a) -> IxVector i (Vector b) -> IxVector i (Vector c)
+
+-- | Altertnative to <tt>accumulate</tt> for <a>IxVector</a> that share the
+--   same bounds.
+accumulateIV :: (Ix i, Unbox i, Unbox a, Unbox b) => (a -> b -> a) -> IxVector i (Vector a) -> IxVector i (Vector (i, b)) -> IxVector i (Vector a)
+
+-- | Reads a value from <a>IxVector</a>.
+readIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+unsafeReadIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+
+-- | Writes a value to <a>IxVector</a>.
+writeIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+unsafeWriteIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+modifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+unsafeModifyIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+modifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
+unsafeModifyMIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
+swapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+unsafeSwapIV :: (Ix i, PrimMonad m, MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+
+-- | WARNING: Can you really allocate/run &lt;math&gt; algorithm?
+imos2DIV :: IxVector (Int, Int) (Vector Int) -> IxVector (Int, Int) (Vector Int)
+instance (GHC.Classes.Eq i, GHC.Classes.Eq v) => GHC.Classes.Eq (Data.Vector.IxVector.IxVector i v)
+instance (GHC.Show.Show i, GHC.Show.Show v) => GHC.Show.Show (Data.Vector.IxVector.IxVector i v)
 
 
 -- | Super dirty slow IO
@@ -922,23 +1012,21 @@ instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.
 instance (ToyLib.IO.ReadBS a1, ToyLib.IO.ReadBS a2, ToyLib.IO.ReadBS a3, ToyLib.IO.ReadBS a4, ToyLib.IO.ReadBS a5, ToyLib.IO.ReadBS a6) => ToyLib.IO.ReadBS (a1, a2, a3, a4, a5, a6)
 
 
--- | 01-BFS
-module ToyLib.BFS01
-bfs01_grid4_typical043 :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
+-- | Debug utilities
+module ToyLib.Debug
 
+-- | For use with <tt>dbgS</tt>
+class ShowGrid a
+showGrid :: ShowGrid a => a -> String
 
--- | Handy, more restricted <a>Ix</a> with reverse conversion, fast monadic
---   iteration and unboxing.
-module Data.Unindex
-class RangeMS a
-rangeMS2 :: (RangeMS a, Monad m) => (a, a) -> Stream m a
-class (Ix i, Unbox i) => Unindex i
-unindex :: Unindex i => (i, i) -> Int -> i
-instance Data.Unindex.Unindex GHC.Types.Int
-instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int)
-instance Data.Unindex.Unindex (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
-instance Data.Unindex.RangeMS GHC.Types.Int
-instance Data.Unindex.RangeMS (GHC.Types.Int, GHC.Types.Int)
+-- | <a>$</a> with <a>dbgId</a>
+($$) :: Show a => (a -> b) -> a -> b
+infixr 0 $$
+
+-- | <a>.</a> with <a>dbgId</a>
+(.$) :: Show b => (b -> c) -> (a -> b) -> a -> c
+infixr 9 .$
+instance (Data.Vector.Generic.Base.Vector v a, GHC.Show.Show a) => ToyLib.Debug.ShowGrid (Data.Vector.IxVector.IxVector (GHC.Types.Int, GHC.Types.Int) (v a))
 
 
 -- | Typical DP utilities
@@ -949,11 +1037,18 @@ module ToyLib.DP
 -- | Variant of <a>constructN</a>.
 constructFor :: (Unbox a, Unbox b) => a -> Vector b -> (Vector a -> b -> a) -> Vector a
 
--- | <tt>relaxMany !f !vec0 !input !expander</tt> ~ <tt>VG.accumulate f
+-- | <tt>accumulate</tt> variant with <a>concatMap</a>-like expander. Be
+--   wanrned that *the <tt>input</tt> is consumed in-place*. Run like
+--   <tt>relaxMany vec0 (VU.force vec0) $ x -&gt; ..</tt> if it needs to be
+--   cloned.
+--   
+--   <tt>relaxMany !f !vec0 !input !expander</tt> ~ <tt>VG.accumulate f
 --   vec0 $ VG.concatMap expander input</tt>
 relaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
 
--- | <a>relaxMany</a> with index input.
+-- | <a>relaxMany</a> with index input. Be wanrned that *the <tt>input</tt>
+--   is consumed in-place*. Run like <tt>relaxMany vec0 (VU.force vec0) $ x
+--   -&gt; ..</tt> if it needs to be cloned.
 irelaxMany :: (Vector v a, Vector v (Int, a), Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
 
 -- | Monoid variant of <a>relaxMany</a>
@@ -995,6 +1090,14 @@ tspDP :: Int -> IxUVector (Int, Int) Int -> Vector Int
 --   pattern though)</li>
 --   </ul>
 enumerateBitSets :: Int -> [[Int]]
+
+-- | The input must be one-based
+lcs :: Vector Int -> Int
+
+
+-- | 01-BFS
+module ToyLib.BFS01
+bfs01_grid4_typical043 :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
 
 
 -- | Lazy segment tree, where we can perform operation over range.
@@ -1046,8 +1149,7 @@ newLazySTree :: forall v a op m. (MVector v a, Monoid a, MonoidAction op a, Unbo
 newLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => Int -> m (LazySegmentTree MVector a op (PrimState m))
 newLazySTreeVU :: forall a op m. (Unbox a, Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => Int -> m (LazySegmentTree MVector a op (PrimState m))
 
--- | Creates <a>LazySegmentTree</a> with initial leaf values. FIXME: Use
---   <a>mempty</a> for $i &gt;= n$.
+-- | Creates <a>LazySegmentTree</a> with initial leaf values.
 generateLazySTree :: forall v a op m. (MVector v a, Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree v a op (PrimState m))
 generateLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree MVector a op (PrimState m))
 generateLazySTreeVU :: forall a op m. (Unbox a, Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree MVector a op (PrimState m))
@@ -1071,7 +1173,9 @@ _propOpMonoidsToLeaf :: (MVector v a, MonoidAction op a, Eq op, Unbox op, PrimMo
 _evalToRoot :: (MVector v a, Monoid a, MonoidAction op a, Unbox op, PrimMonad m) => LazySegmentTree v a op (PrimState m) -> Int -> m ()
 
 
--- | I'm using <tt>Array Int [Int]</tt> as a primary <a>Graph</a> data
+-- | Old adjacency list-based graph module.
+--   
+--   It's using <tt>Array Int [Int]</tt> as the primary <a>Graph</a> data
 --   storage.
 module Data.Graph
 
@@ -1667,7 +1771,10 @@ dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
 
 -- | Also consider using union-find tree.
 componentsVecSG :: Ix i => SparseGraph i w -> i -> IxVector i (Vector Bool)
-bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (Vector Int)
+
+-- | <i>O(V+E)</i> breadth-first search. Unreachable vertices have length
+--   of <tt>-1</tt>.
+bfsSG :: (Show i, Unindex i) => SparseGraph i w -> i -> IxVector i (Vector Int)
 bfsGrid317E_MBuffer :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
 
 -- | Dijkstra: $O((E+V) log {V})$
@@ -1680,6 +1787,12 @@ dfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> Maybe [Edge]
 -- | Returns a list of a route in reverse order (a route from end to
 --   start).
 treeDfsPathSG :: Unindex i => SparseGraph i w -> i -> i -> [Edge]
+
+-- | Topological sort
+--   
+--   Non-referenced vertices come first: &gt;&gt;&gt; let !gr = buildUSG
+--   ((0, 4) :: (Int, Int)) $ VU.fromList ([(0, 1), (0, 2), (2, 3)] ::
+--   [(Int, Int)]) &gt;&gt;&gt; topSortSG gr [4,0,2,3,1]
 topSortSG :: SparseGraph i w -> [Vertex]
 
 -- | Partial running of <tt>scc</tt> over topologically sorted vertices,
