@@ -1,18 +1,11 @@
-#!/usr/bin/env stack
-{- stack script --resolver lts-21.6
---package array --package bytestring --package containers --package extra
---package hashable --package unordered-containers --package heaps --package utility-ht
---package vector --package vector-algorithms --package primitive
---package transformers
-
---ghc-options "-D DEBUG"
--}
-
 {- ORMOLU_DISABLE -}
 
 {-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
-{-# LANGUAGE PatternSynonyms, QuantifiedConstraints, RecordWildCards, StandaloneDeriving, StrictData #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
+{-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies #-}
+
+-- TODO: overloaded lists (not working for the union-find module?)
+-- {-# LANGUAGE OverloadedLists, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 
 {-# LANGUAGE CPP #-}
 
@@ -55,6 +48,8 @@ import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
 import System.Exit (exitSuccess)
 import System.IO
+import System.Random
+import System.Random.Stateful
 import Text.Printf
 
 {- ORMOLU_DISABLE -}
