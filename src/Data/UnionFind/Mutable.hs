@@ -15,6 +15,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed.Base as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 
 -- {{{ Dense, mutable union-Find tree
 
@@ -63,7 +64,7 @@ newMUF !n = MUnionFind <$> VUM.replicate n (MUFRoot 1)
 
 -- | Returns the root node index.
 {-# INLINE rootMUF #-}
-rootMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
+rootMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 rootMUF uf@(MUnionFind !vec) i = do
   !node <- VUM.unsafeRead vec i
   case node of
@@ -76,7 +77,7 @@ rootMUF uf@(MUnionFind !vec) i = do
 
 -- | Returns all root vertices.
 {-# INLINE groupsMUF #-}
-groupsMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
+groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
 groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (VGM.length vec)]
   where
     step !is !i = do
@@ -85,7 +86,7 @@ groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (VGM.length vec)
 
 -- | Checks if the two nodes are under the same root.
 {-# INLINE sameMUF #-}
-sameMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
+sameMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 sameMUF !uf !x !y = liftM2 (==) (rootMUF uf x) (rootMUF uf y)
 
 -- | Just an internal helper.
@@ -95,7 +96,7 @@ _unwrapMUFRoot (MUFChild !_) = error "tried to unwrap child as UF root"
 
 -- | Unites two nodes. Returns `True` when thry're newly united.
 {-# INLINE uniteMUF #-}
-uniteMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
+uniteMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 uniteMUF uf@(MUnionFind !vec) !x !y = do
   !px <- rootMUF uf x
   !py <- rootMUF uf y
@@ -110,7 +111,7 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
 
 -- | Returns the size of the a node, starting with `1`.
 {-# INLINE sizeMUF #-}
-sizeMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
+sizeMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 sizeMUF uf@(MUnionFind !vec) !x = do
   !px <- rootMUF uf x
   _unwrapMUFRoot <$> VUM.unsafeRead vec px
