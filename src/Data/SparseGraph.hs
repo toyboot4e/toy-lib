@@ -188,7 +188,7 @@ componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ 
     !start = index boundsSG startIx :: Vertex
 
 -- | /O(V+E)/ breadth-first search. Unreachable vertices have length of @-1@.
-bfsSG :: (Show i, Unindex i) => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
+bfsSG :: Unindex i => SparseGraph i w -> i -> IxVector i (VU.Vector Int)
 bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ VU.create $ do
   let !undef = -1 :: Int
   !dist <- VUM.replicate nVertsSG undef
@@ -241,25 +241,36 @@ bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
     !dyxs = VU.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 -- | Dijkstra: $O((E+V) \log {V})$
+--
+-- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
 djSG :: forall i w. (Unindex i, Num w, Ord w, VU.Unbox w) => SparseGraph i w -> w -> i -> VU.Vector w
 djSG gr@SparseGraph {..} !undef !startIx = VU.create $ do
   !dist <- VUM.replicate nVertsSG undef
 
-  let !heap0 = H.singleton $ H.Entry 0 (index boundsSG startIx)
+  let !vStart = index boundsSG startIx
+  let !heap0 = H.singleton $ H.Entry 0 vStart
+  VUM.write dist vStart 0
+
   flip fix heap0 $ \loop heap -> case H.uncons heap of
     Nothing -> return ()
-    Just (entry@(H.Entry cost v1), heap') -> do
-      (== undef) <$> VUM.read dist v1 >>= \case
-        False -> loop heap'
-        True -> do
-          VUM.write dist v1 cost
-          !vws <- VU.filterM (fmap (== undef) . VUM.read dist . fst) $ gr `adjW` v1
-          loop $ VU.foldl' (\h (!v2, !w) -> H.insert (merge entry (H.Entry w v2)) h) heap' vws
+    Just (H.Entry !w1 !v1, heap') -> do
+      (w1 >) <$> VUM.read dist v1 >>= \case
+        -- more efficient path was already visited
+        True -> loop heap'
+        False -> do
+          loop <=< (\f -> VU.foldM' f heap' (gr `adjW` v1)) $ \h (!v2, !dw2) -> do
+            !w2 <- VUM.read dist v2
+            let !w2' = merge w1 dw2
+            if w2 == undef || w2' < w2
+              then do
+                VUM.write dist v2 w2'
+                return $ H.insert (H.Entry w2' v2) h
+              else return h
 
   return dist
   where
-    merge :: H.Entry w Vertex -> H.Entry w Vertex -> H.Entry w Vertex
-    merge (H.Entry !cost1 !_v1) (H.Entry !cost2 !v2) = H.Entry (cost1 + cost2) v2
+    merge :: w -> w -> w
+    merge = (+)
 
 -- TODO: BFS with path (route?) restoration
 
