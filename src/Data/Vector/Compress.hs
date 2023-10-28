@@ -4,9 +4,10 @@ import Algorithm.BinarySearch
 import Data.List.Extra (nubSort)
 import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
+import GHC.Stack (HasCallStack)
 
 -- | One dimensional index compression: xs -> (indexer, xs')
-compressVU :: VU.Vector Int -> (VU.Vector Int, VU.Vector Int)
+compressVU :: HasCallStack => VU.Vector Int -> (VU.Vector Int, VU.Vector Int)
 compressVU xs = (indexer, VU.map (fromJust . fst . f) xs)
   where
     !indexer = VU.fromList $ nubSort $ VU.toList xs

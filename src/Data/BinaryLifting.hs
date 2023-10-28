@@ -11,6 +11,7 @@ import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
+import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
 import ToyLib.Prelude (rangeVG)
 
@@ -25,7 +26,7 @@ newBinLift !op0 = BinaryLifting ops
     !ops = VG.iterateN (pred 63) (\ !op -> op <> op) op0
 
 -- | Calculates `BinaryLifting` of the given semigroup
-newBinLiftV :: Semigroup s => s -> BinaryLifting V.Vector s
+newBinLiftV :: (Semigroup s) => s -> BinaryLifting V.Vector s
 newBinLiftV = newBinLift
 
 -- | Calculates `BinaryLifting` of the given semigroup
@@ -34,7 +35,7 @@ newBinLiftVU = newBinLift
 
 -- | Binarily lifted version of `stimesMonoid`.
 -- WARNING: Usually `sactBL` is much cheaper for semigroup actions with a boxed type.
-stimesBL :: (Semigroup s, VG.Vector v s) => BinaryLifting v s -> s -> Int -> s
+stimesBL :: (HasCallStack, Semigroup s, VG.Vector v s) => BinaryLifting v s -> s -> Int -> s
 stimesBL (BinaryLifting !ops) !s0 !n = VU.foldl' step s0 (VU.enumFromN 0 62)
   where
     step !m !i
@@ -43,11 +44,11 @@ stimesBL (BinaryLifting !ops) !s0 !n = VU.foldl' step s0 (VU.enumFromN 0 62)
 
 -- | Binarily lifted version of `stimesMonoid`.
 -- WARNING: Usually `sactBL` is much cheaper for semigroup actions with a boxed type.
-mtimesBL :: (Monoid m, VG.Vector v m) => BinaryLifting v m -> Int -> m
+mtimesBL :: (HasCallStack, Monoid m, VG.Vector v m) => BinaryLifting v m -> Int -> m
 mtimesBL !bin !n = stimesBL bin mempty n
 
 -- | Binarily lifted semigroup action application.
-sactBL :: (SemigroupAction s a, VG.Vector v s) => BinaryLifting v s -> a -> Int -> a
+sactBL :: (HasCallStack, SemigroupAction s a, VG.Vector v s) => BinaryLifting v s -> a -> Int -> a
 sactBL (BinaryLifting !ops) !acc0 !nAct = VU.foldl' step acc0 (rangeVG 0 62)
   where
     step !acc !nBit
@@ -55,7 +56,7 @@ sactBL (BinaryLifting !ops) !acc0 !nAct = VU.foldl' step acc0 (rangeVG 0 62)
       | otherwise = acc
 
 -- | Alias of `sactBL` for monoid action.
-mactBL :: (MonoidAction m a, VG.Vector v m) => BinaryLifting v m -> a -> Int -> a
+mactBL :: (HasCallStack, MonoidAction m a, VG.Vector v m) => BinaryLifting v m -> a -> Int -> a
 mactBL = sactBL
 
 -- | Old binary lifting implementation without typeclasses. TODO: Remove
@@ -69,7 +70,7 @@ newDoublingV :: a -> (a -> a) -> V.Vector a
 newDoublingV = newDoubling
 
 -- | Old binary lifting implementation without typeclasses. TODO: Remove
-applyDoubling :: (VG.Vector v op) => v op -> a -> (a -> op -> a) -> Int -> a
+applyDoubling :: (HasCallStack, VG.Vector v op) => v op -> a -> (a -> op -> a) -> Int -> a
 applyDoubling !opers !x0 !act !n = foldl' step x0 [0 .. 62]
   where
     !_ = dbgAssert $ VG.length opers == 63

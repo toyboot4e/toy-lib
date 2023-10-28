@@ -6,6 +6,7 @@ import Control.Exception (assert)
 import Control.Monad.Primitive
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 
 data Buffer s a = Buffer
   { bufferVars :: !(VUM.MVector s Int),
@@ -132,7 +133,7 @@ viewBack Buffer {bufferVars, internalBuffer} = do
     else return Nothing
 {-# INLINE viewBack #-}
 
-pushFront :: (VU.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushFront :: (HasCallStack, VU.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushFront Buffer {bufferVars, internalBuffer} x = do
   f <- VUM.unsafeRead bufferVars _bufferFrontPos
   VUM.unsafeWrite bufferVars _bufferFrontPos (f - 1)
@@ -140,7 +141,7 @@ pushFront Buffer {bufferVars, internalBuffer} x = do
     VUM.unsafeWrite internalBuffer (f - 1) x
 {-# INLINE pushFront #-}
 
-pushBack :: (VU.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushBack :: (HasCallStack, VU.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushBack Buffer {bufferVars, internalBuffer, internalBufferSize} x = do
   b <- VUM.unsafeRead bufferVars _bufferBackPos
   VUM.unsafeWrite bufferVars _bufferBackPos (b + 1)
@@ -149,7 +150,7 @@ pushBack Buffer {bufferVars, internalBuffer, internalBufferSize} x = do
 {-# INLINE pushBack #-}
 
 pushFronts ::
-  (VU.Unbox a, PrimMonad m) =>
+  (HasCallStack, VU.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
   VU.Vector a ->
   m ()
@@ -162,7 +163,7 @@ pushFronts Buffer {bufferVars, internalBuffer} vec = do
 {-# INLINE pushFronts #-}
 
 pushBacks ::
-  (VU.Unbox a, PrimMonad m) =>
+  (HasCallStack, VU.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
   VU.Vector a ->
   m ()

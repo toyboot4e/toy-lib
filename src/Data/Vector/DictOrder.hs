@@ -10,6 +10,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import GHC.Exts
 import Math.PowMod (factMods)
+import GHC.Stack (HasCallStack)
 
 -- {{{ Dictionary orders
 
@@ -21,7 +22,7 @@ prevPermutationVec =
 
 -- | Returns 1-based dictionary order for the given array.
 -- WARNING: Use 0-based indices for the input.
-dictOrderModuloVec :: (VG.Vector v Int) => v Int -> Int -> Int
+dictOrderModuloVec :: (HasCallStack, VG.Vector v Int) => v Int -> Int -> Int
 dictOrderModuloVec xs modulo = runST $ do
   !stree <- newSTreeVU (+) (VG.length xs + 1) (0 :: Int)
 

@@ -5,7 +5,6 @@
 -- - [EDPC W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
 --
 -- TODO: Add `set` / `get`, as in [ac-library](https://github.com/atcoder/ac-library/blob/master/atcoder/lazysegtree.hpp)
-
 module Data.SegmentTree.Lazy where
 
 import Control.Monad
@@ -17,6 +16,7 @@ import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 import ToyLib.Macro
 import ToyLib.Prelude (forMS_, rangeMS, rangeMSR)
 
@@ -76,7 +76,7 @@ newLazySTreeVU = newLazySTree
 -- | Creates `LazySegmentTree` with initial leaf values.
 generateLazySTree ::
   forall v a op m.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
@@ -104,10 +104,10 @@ generateLazySTree !n !f = do
     childL !vertex = shiftL vertex 1
     childR !vertex = shiftL vertex 1 .|. 1
 
-generateLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
+generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
 generateLazySTreeV = generateLazySTree
 
-generateLazySTreeVU :: forall a op m. (VU.Unbox a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VUM.MVector a op (PrimState m))
+generateLazySTreeVU :: forall a op m. (HasCallStack, VU.Unbox a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VUM.MVector a op (PrimState m))
 generateLazySTreeVU = generateLazySTree
 
 -- | Appends the lazy operator monoid monoids over some span of the lazy segment tree.
@@ -168,7 +168,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 -- TODO: I used the top-down queries for the strict segment tree. Which is preferable?
 queryLazySTree ::
   forall v a m op.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -217,7 +217,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (VGM.MVector v a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -248,7 +248,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
 _evalToRoot ::
-  (VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()

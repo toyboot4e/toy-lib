@@ -13,6 +13,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 
 -- {{{ Tree folding from a root node
 
@@ -27,7 +28,7 @@ foldTree !tree !root !sact !acc0At !toM = inner (-1) root
 
 -- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
-scanTreeVG :: (VG.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
+scanTreeVG :: (HasCallStack, VG.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
 scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
   !dp <- VGM.unsafeNew nVerts
 
@@ -42,11 +43,11 @@ scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
     !nVerts = rangeSize $! bounds tree
 
 -- | Type-restricted `scanTreeVG`.
-scanTreeVU :: VU.Unbox a => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> VU.Vector a
+scanTreeVU :: (HasCallStack, VU.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> VU.Vector a
 scanTreeVU = scanTreeVG
 
 -- | Type-restricted `scanTreeVG`.
-scanTreeV :: Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
+scanTreeV :: HasCallStack => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
 scanTreeV = scanTreeVG
 
 -- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
@@ -54,7 +55,7 @@ scanTreeV = scanTreeVG
 --
 -- = Typical problems
 -- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
-foldTreeAll :: (VU.Unbox a, VU.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> VU.Vector a
+foldTreeAll :: (HasCallStack, VU.Unbox a, VU.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> VU.Vector a
 foldTreeAll !tree !acc0At !toM =
   -- Calculate tree DP for one root vertex
   let !treeDp = scanTreeVG tree root0 mact acc0At toM

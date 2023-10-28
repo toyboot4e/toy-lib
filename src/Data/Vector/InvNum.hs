@@ -11,9 +11,10 @@ import Data.Vector.Compress (compressVU)
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Unboxed as VU
 import ToyLib.Prelude (foldForMVG)
+import GHC.Stack (HasCallStack)
 
 -- | Calculates the inversion number. Be sure to compress the input vector!
-invNumVG :: Int -> (VG.Vector v Int) => v Int -> Int
+invNumVG :: HasCallStack => Int -> (VG.Vector v Int) => v Int -> Int
 invNumVG xMax xs = runST $ do
   !stree <- newSTreeVU (+) (xMax + 1) (0 :: Int)
 
@@ -31,7 +32,7 @@ invNumVG xMax xs = runST $ do
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
-compressInvNumVG :: VU.Vector Int -> Int
+compressInvNumVG :: HasCallStack => VU.Vector Int -> Int
 compressInvNumVG xs = invNumVG (pred (VU.length xs')) xs'
   where
     !xs' = snd $ compressVU xs

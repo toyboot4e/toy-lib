@@ -13,9 +13,10 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Prelude (repM_)
+import GHC.Stack (HasCallStack)
 
 -- 01-BFS: zero cost with same direction.
-bfs01_grid4_typical043 :: IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
+bfs01_grid4_typical043 :: HasCallStack => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
 bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
   -- vec @! (dir, y, x)
   !vec <- IxVector boundsExt <$> VUM.replicate (4 * nVerts) undef

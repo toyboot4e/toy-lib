@@ -17,6 +17,7 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import ToyLib.Macro
 import ToyLib.Prelude
+import GHC.Stack (HasCallStack)
 
 -- {{{ LCA (basic)
 
@@ -62,7 +63,7 @@ lcaCache !nVerts !graph !root = (toParent, depths, toParentN)
 
 -- | Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.
-lca :: LcaCache -> Int -> Int -> (Int, Int)
+lca :: HasCallStack => LcaCache -> Int -> Int -> (Int, Int)
 lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths VU.! vLCA)
   where
     -- depths
@@ -82,7 +83,7 @@ lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths VU.! vLCA)
     !vLCA = parentN v1' dLCA
 
 -- | Gets the length between given two vertices with the help of LCA.
-lcaLen :: LcaCache -> Int -> Int -> Int
+lcaLen :: HasCallStack => LcaCache -> Int -> Int -> Int
 lcaLen cache@(!_, !depths, !_) !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
       !d1 = depths VU.! v1
@@ -132,7 +133,7 @@ foldLcaCache !nVerts !graph !root !edgeValueOf = (cache, foldCache)
                 p -> op <> (ops VU.! p)
 
 -- | `foldLcaCache` specific for `Array Vertex [(Vertex, a)]`.
-foldLcaCache2 :: forall a m. (Monoid m, VU.Unbox m) => Array Int [(Vertex, a)] -> (a -> m) -> FoldLcaCache m
+foldLcaCache2 :: forall a m. (HasCallStack, Monoid m, VU.Unbox m) => Array Int [(Vertex, a)] -> (a -> m) -> FoldLcaCache m
 foldLcaCache2 !tree !toMonoid = foldLcaCache nVerts adj root getValue
   where
     !root = 0 :: Vertex
@@ -143,7 +144,7 @@ foldLcaCache2 !tree !toMonoid = foldLcaCache nVerts adj root getValue
     getValue !v !p = toMonoid . snd . fromJust . find ((== p) . fst) $ tree ! v
 
 -- | Calculates the folding value of the path between two vertices in a tree.
-foldViaLca :: forall m. (Monoid m, VU.Unbox m) => FoldLcaCache m -> Int -> Int -> m
+foldViaLca :: forall m. (HasCallStack, Monoid m, VU.Unbox m) => FoldLcaCache m -> Int -> Int -> m
 foldViaLca (cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
       -- !_ = dbg ((v1, d1), (v2, d2), (v, d), a1, a2, a1 <> a2)

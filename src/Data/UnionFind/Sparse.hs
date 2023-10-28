@@ -2,6 +2,7 @@ module Data.UnionFind.Sparse where
 
 import Data.List (foldl')
 import qualified Data.IntMap.Strict as IM
+import GHC.Stack (HasCallStack)
 
 -- {{{ Sparse, immutable union-find tree
 
@@ -15,7 +16,7 @@ newSUF = IM.empty
 fromListSUF :: [(Int, Int)] -> SparseUnionFind
 fromListSUF = foldl' (uncurry . uniteSUF) newSUF
 
-rootSUF :: SparseUnionFind -> Int -> (Int, Int)
+rootSUF :: HasCallStack => SparseUnionFind -> Int -> (Int, Int)
 rootSUF !uf !i
   | IM.notMember i uf = (i, 1)
   | j < 0 = (i, -j)
@@ -23,10 +24,10 @@ rootSUF !uf !i
   where
     j = uf IM.! i
 
-sameSUF :: SparseUnionFind -> Int -> Int -> Bool
+sameSUF :: HasCallStack => SparseUnionFind -> Int -> Int -> Bool
 sameSUF !uf !i !j = fst (rootSUF uf i) == fst (rootSUF uf j)
 
-uniteSUF :: SparseUnionFind -> Int -> Int -> SparseUnionFind
+uniteSUF :: HasCallStack => SparseUnionFind -> Int -> Int -> SparseUnionFind
 uniteSUF !uf !i !j
   | a == b = uf
   | r >= s = IM.insert a (negate $! r + s) $ IM.insert b a uf

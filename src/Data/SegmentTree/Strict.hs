@@ -5,6 +5,7 @@ import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 
 -- {{{ Segment tree
 
@@ -98,12 +99,12 @@ modifySTree tree@(SegmentTree !_ !vec) !f !i = do
 
 -- | (Internal) Updates an `SegmentTree` element (node or leaf) value and their parents up to top root.
 -- REMARK: It's faster to not INLINE the recursive function:
-_updateElement :: (VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
+_updateElement :: (HasCallStack, VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 _updateElement (SegmentTree !_ !vec) 0 !value = do
   VGM.unsafeWrite vec 0 value
 _updateElement tree@(SegmentTree !f !vec) !i !value = do
   VGM.unsafeWrite vec i value
-  case ((i - 1) `div` 2) of
+  case (i - 1) `div` 2 of
     -- REMARK: (-1) `div` 2 == -1
     -- TODO: This case never happens, right?
     (-1) -> return ()
@@ -114,7 +115,7 @@ _updateElement tree@(SegmentTree !f !vec) !i !value = do
 
 -- | Retrieves the folding result over the inclusive range `[l, r]` from `SegmentTree`.
 {-# INLINE querySTree #-}
-querySTree :: forall v a m. (VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
+querySTree :: forall v a m. (HasCallStack, VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
 querySTree (SegmentTree !f !vec) (!lo, !hi)
   | lo > hi = return Nothing
   | otherwise = inner 0 (0, initialHi)

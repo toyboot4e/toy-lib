@@ -6,16 +6,17 @@ module ToyLib.DP where
 import Control.Monad.ST
 import Data.BitSet (powersetVU)
 import Data.Bits
-import Data.Maybe
 import Data.Bool (bool)
 import Data.Ix
+import Data.Maybe
+import Data.SegmentTree.Strict
 import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import Data.Vector.IxVector
-import Data.SegmentTree.Strict
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
+import GHC.Stack (HasCallStack)
 import ToyLib.Prelude (rangeVU, repM_)
 
 -- | Variant of `VU.constructN`.
@@ -34,7 +35,7 @@ constructFor !x0 !input !f = VU.create $ do
 -- in-place*. Run like @relaxMany vec0 (VU.force vec0) $ \x -> ..@ if it needs to be cloned.
 --
 -- @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
-relaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
+relaxMany :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
 relaxMany !relax !vec0 !input !expander = VG.create $ do
   !vec <- VG.unsafeThaw vec0
 
@@ -46,7 +47,7 @@ relaxMany !relax !vec0 !input !expander = VG.create $ do
 
 -- | `relaxMany` with index input. Be wanrned that *the @input@ is consumed in-place*. Run like
 -- @relaxMany vec0 (VU.force vec0) $ \x -> ..@ if it needs to be cloned.
-irelaxMany :: (VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
+irelaxMany :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
 irelaxMany !relax !vec0 !input !expander = VG.create $ do
   !vec <- VG.unsafeThaw vec0
 
@@ -68,7 +69,7 @@ relaxMany' !vec0 !input !expander = VU.create $ do
   return vec
 
 {-# INLINE pushBasedConstructN #-}
-pushBasedConstructN :: (VG.Vector v a, VG.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
+pushBasedConstructN :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
 pushBasedConstructN !relax !vec0 !expander = VG.create $ do
   !vec <- VG.unsafeThaw vec0
 
@@ -147,7 +148,7 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
            in inner res (set' : acc) (rest' .&. complement set')
 
 -- | The input must be one-based
-lcs :: VU.Vector Int -> Int
+lcs :: HasCallStack => VU.Vector Int -> Int
 lcs !xs = runST $ do
   !stree <- newSTreeVU max (VG.length xs) (0 :: Int)
 

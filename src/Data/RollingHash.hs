@@ -3,7 +3,6 @@
 --
 -- I suspect if slices longer than the orignal string can be calculated without panic in my
 -- implementation.
-
 module Data.RollingHash where
 
 import Control.Monad.Trans.State.Strict hiding (get)
@@ -42,7 +41,7 @@ instance TypeInt HashInt where
   typeInt _ = 100
 
 -- | Creates a rolling hash of given string.
-newRH :: forall p. TypeInt p => String -> RollingHash HashInt p
+newRH :: forall p. (TypeInt p) => String -> RollingHash HashInt p
 newRH !source = RollingHash n bn hashSum_
   where
     !p = typeInt (Proxy @p)
