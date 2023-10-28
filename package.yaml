@@ -87,6 +87,7 @@ dependencies:
 - heaps
 - utility-ht
 - primitive
+- random
 - transformers
 - unordered-containers
 - vector

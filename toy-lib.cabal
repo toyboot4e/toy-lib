@@ -56,6 +56,7 @@ library
       Data.Vector.DictOrder
       Data.Vector.InvNum
       Data.Vector.IxVector
+      Heuristic.Randoms
       Math.Bits
       Math.Digits
       Math.DigitsVector
@@ -132,6 +133,7 @@ library
     , hashable
     , heaps
     , primitive
+    , random
     , transformers
     , unordered-containers
     , utility-ht
@@ -205,6 +207,7 @@ executable toy-lib-exe
     , heaps
     , primitive
     , process
+    , random
     , template-haskell
     , temporary
     , toy-lib
@@ -280,6 +283,7 @@ test-suite toy-lib-test
     , hashable
     , heaps
     , primitive
+    , random
     , toy-lib
     , transformers
     , unordered-containers
