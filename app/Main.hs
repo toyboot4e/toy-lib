@@ -9,7 +9,7 @@ import qualified Data.List as L
 import Data.List.Extra (stripSuffix)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import qualified Language.Haskell.Exts as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
@@ -137,7 +137,7 @@ generateLibrary ghc2021Extensions parsedFiles =
   where
     topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
     topSortSourceFiles input =
-      let edges = VU.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
+      let edges = U.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
           gr = buildUSG (0, pred (length input)) edges
           vs = topSortSG gr
        in map (input !!) vs

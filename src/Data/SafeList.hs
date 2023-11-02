@@ -3,7 +3,7 @@
 module Data.SafeList where
 
 import qualified Data.Vector as V
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as VG
 
 -- | Safelist
@@ -167,8 +167,8 @@ instance (Ord a) => SafeList (V.Vector a) where
     | otherwise = VG.maximum xs
 
 -- | The implementation is same as the one for `V.Vector`.
-instance (VU.Unbox a, Ord a) => SafeList (VU.Vector a) where
-  type SafeListElem (VU.Vector a) = a
+instance (U.Unbox a, Ord a) => SafeList (U.Vector a) where
+  type SafeListElem (U.Vector a) = a
 
   headMay xs
     | VG.null xs = Nothing

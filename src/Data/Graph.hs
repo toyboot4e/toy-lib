@@ -17,8 +17,8 @@ import Data.List (foldl')
 import Data.Maybe
 import qualified Data.Sequence as Seq
 import Data.Tuple.Extra (both)
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Prelude (add2, foldForM)
 
 -- | Adjacency list representation of a graph with node type parameter `a`.
@@ -31,20 +31,20 @@ type Vertex = Int
 type WGraph a = Array Int [H.Entry a Vertex]
 
 -- | Collects distances from one vertex to every other using BFS, returning a vector.
-bfsVec :: Graph Int -> Int -> VU.Vector Int
-bfsVec graph start = VU.create $ do
+bfsVec :: Graph Int -> Int -> U.Vector Int
+bfsVec graph start = U.create $ do
   let !undef = -1 :: Int
-  !vis <- VUM.replicate (rangeSize $ bounds graph) undef
+  !vis <- UM.replicate (rangeSize $ bounds graph) undef
 
   let inner !depth !vs
         | IS.null vs = return ()
         | otherwise = do
             let vs' = IS.toList vs
             forM_ vs' $ \v -> do
-              VUM.unsafeWrite vis v depth
+              UM.unsafeWrite vis v depth
 
             !next <- fmap (IS.fromList . concat) $ forM vs' $ \v -> do
-              filterM (fmap (== undef) . VUM.unsafeRead vis) $ graph ! v
+              filterM (fmap (== undef) . UM.unsafeRead vis) $ graph ! v
 
             inner (succ depth) next
 
@@ -177,7 +177,7 @@ bfsGrid01 !start !isBlock = runSTUArray $ do
                       then return $ nextItem Seq.<| acc
                       else return $ acc Seq.|> nextItem
             where
-              (!y, !x) = add2 (y0, x0) (dyxs VU.! iDir)
+              (!y, !x) = add2 (y0, x0) (dyxs U.! iDir)
               !d'
                 | iDir == iDir0 = d0
                 | otherwise = succ d0
@@ -189,7 +189,7 @@ bfsGrid01 !start !isBlock = runSTUArray $ do
     !undef = -1 :: Int
     !bounds_ = bounds isBlock
     (!h, !w) = both succ . snd $! bounds isBlock
-    !dyxs = VU.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 -- | DFS where all the reachable vertices from one vertex are collcetd.
 components :: Graph Int -> Int -> IS.IntSet
@@ -229,33 +229,33 @@ dfsEveryPathT072 !gr !start = runST $ do
 
 -- | Checks a Simple Undirected Graph and returns markings of cycle vertices.
 -- TODO: Test if it works as expected.
-cyclesSUG :: Array Vertex [Vertex] -> VU.Vector Bool
-cyclesSUG !graph = VU.create $ do
-  !degs <- VUM.replicate nVerts (0 :: Int)
+cyclesSUG :: Array Vertex [Vertex] -> U.Vector Bool
+cyclesSUG !graph = U.create $ do
+  !degs <- UM.replicate nVerts (0 :: Int)
 
   forM_ (assocs graph) $ \(!v1, !v2s) -> do
     forM_ v2s $ \v2 -> do
-      VUM.modify degs succ v1
-      VUM.modify degs succ v2
+      UM.modify degs succ v1
+      UM.modify degs succ v2
 
-  !heap0 <- H.fromList <$> filterM (fmap (== 1) . VUM.read degs) [0 .. pred nVerts]
-  !isCycleVert <- VUM.replicate nVerts True
+  !heap0 <- H.fromList <$> filterM (fmap (== 1) . UM.read degs) [0 .. pred nVerts]
+  !isCycleVert <- UM.replicate nVerts True
 
   flip fix heap0 $ \loop !heap -> case H.uncons heap of
     Nothing -> return ()
     Just (!v1, !heap') -> do
-      VUM.write degs 0 v1
-      VUM.write isCycleVert v1 False
+      UM.write degs 0 v1
+      UM.write isCycleVert v1 False
       loop <=< foldForM heap' (graph ! v1) $ \heap'' v2 -> do
-        !deg <- VUM.read degs v2
+        !deg <- UM.read degs v2
         case deg of
           0 -> return heap''
           1 -> error "cycleSUD: degree 1 to degree 1?"
           2 -> do
-            VUM.modify degs pred v2
+            UM.modify degs pred v2
             return $ H.insert v2 heap''
           _ -> do
-            VUM.modify degs pred v2
+            UM.modify degs pred v2
             return heap''
 
   return isCycleVert
@@ -297,19 +297,19 @@ revWGraph !graph = accumArray @Array (flip (:)) [] (bounds graph) $ concatMap re
     revF (!v1, !v2s) = map (\(H.Entry !priority !v2) -> (v2, H.Entry priority v1)) v2s
 
 -- | Dijkstra backed by a vector.
-djVec :: forall a. (Num a, Ord a, VU.Unbox a) => WGraph a -> Int -> a -> VU.Vector a
-djVec !graph !start !undef = VU.create $ do
-  !vis <- VUM.replicate nVerts undef
+djVec :: forall a. (Num a, Ord a, U.Unbox a) => WGraph a -> Int -> a -> U.Vector a
+djVec !graph !start !undef = U.create $ do
+  !vis <- UM.replicate nVerts undef
 
   let inner !heap = case H.uncons heap of
         Nothing -> return ()
         Just (entry@(H.Entry cost v), heap') -> do
-          !isNew <- (== undef) <$> VUM.read vis v
+          !isNew <- (== undef) <$> UM.read vis v
           if not isNew
             then inner heap'
             else do
-              VUM.write vis v cost
-              !vs <- map (merge entry) <$> filterM (fmap (== undef) . VUM.read vis . H.payload) (graph ! v)
+              UM.write vis v cost
+              !vs <- map (merge entry) <$> filterM (fmap (== undef) . UM.read vis . H.payload) (graph ! v)
               inner $! foldl' (flip H.insert) heap' vs
 
   inner (H.singleton $ H.Entry 0 start)
@@ -321,5 +321,5 @@ djVec !graph !start !undef = VU.create $ do
     merge (H.Entry !cost1 !_v1) (H.Entry !cost2 !v2) = H.Entry (cost1 + cost2) v2
 
 -- | Runs Dijkstra's algorithm over a reversed graph of given graph.
-revDjVec :: WGraph Int -> Int -> VU.Vector Int
+revDjVec :: WGraph Int -> Int -> U.Vector Int
 revDjVec !graph !start = djVec (revWGraph graph) start (-1)

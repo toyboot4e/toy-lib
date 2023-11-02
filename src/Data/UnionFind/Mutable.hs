@@ -13,8 +13,8 @@ import Control.Monad.ST (RealWorld)
 import qualified Data.IntSet as IS
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Unboxed.Base as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 -- {{{ Dense, mutable union-Find tree
@@ -30,7 +30,7 @@ import GHC.Stack (HasCallStack)
 -- True
 -- >>> uniteMUF stree 0 2
 -- False
-newtype MUnionFind s = MUnionFind (VUM.MVector s MUFNode)
+newtype MUnionFind s = MUnionFind (UM.MVector s MUFNode)
 
 type IOUnionFind = MUnionFind RealWorld
 
@@ -39,7 +39,7 @@ type STUnionFind s = MUnionFind s
 -- | `MUFChild parent | MUFRoot size`.
 data MUFNode = MUFChild {-# UNPACK #-} !Int | MUFRoot {-# UNPACK #-} !Int
 
-instance VU.IsoUnbox MUFNode (Bool, Int) where
+instance U.IsoUnbox MUFNode (Bool, Int) where
   {-# INLINE toURepr #-}
   toURepr (MUFChild !x) = (True, x)
   toURepr (MUFRoot !x) = (False, x)
@@ -47,32 +47,32 @@ instance VU.IsoUnbox MUFNode (Bool, Int) where
   fromURepr (True, !x) = MUFChild x
   fromURepr (False, !x) = MUFRoot x
 
-newtype instance VU.MVector s MUFNode = MV_MUFNode (VUM.MVector s (Bool, Int))
+newtype instance U.MVector s MUFNode = MV_MUFNode (UM.MVector s (Bool, Int))
 
-newtype instance VU.Vector MUFNode = V_MUFNode (VU.Vector (Bool, Int))
+newtype instance U.Vector MUFNode = V_MUFNode (U.Vector (Bool, Int))
 
-deriving via (MUFNode `VU.As` (Bool, Int)) instance VGM.MVector VUM.MVector MUFNode
+deriving via (MUFNode `U.As` (Bool, Int)) instance VGM.MVector UM.MVector MUFNode
 
-deriving via (MUFNode `VU.As` (Bool, Int)) instance VG.Vector VU.Vector MUFNode
+deriving via (MUFNode `U.As` (Bool, Int)) instance VG.Vector U.Vector MUFNode
 
-instance VU.Unbox MUFNode
+instance U.Unbox MUFNode
 
 -- | Creates a new Union-Find tree of the given size.
 {-# INLINE newMUF #-}
 newMUF :: (PrimMonad m) => Int -> m (MUnionFind (PrimState m))
-newMUF !n = MUnionFind <$> VUM.replicate n (MUFRoot 1)
+newMUF !n = MUnionFind <$> UM.replicate n (MUFRoot 1)
 
 -- | Returns the root node index.
 {-# INLINE rootMUF #-}
 rootMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 rootMUF uf@(MUnionFind !vec) i = do
-  !node <- VUM.unsafeRead vec i
+  !node <- UM.unsafeRead vec i
   case node of
     MUFRoot _ -> return i
     MUFChild p -> do
       !r <- rootMUF uf p
       -- NOTE(perf): path compression (move the queried node to just under the root, recursivelly)
-      VUM.unsafeWrite vec i (MUFChild r)
+      UM.unsafeWrite vec i (MUFChild r)
       return r
 
 -- | Returns all root vertices.
@@ -101,12 +101,12 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
   !px <- rootMUF uf x
   !py <- rootMUF uf y
   when (px /= py) $ do
-    !sx <- _unwrapMUFRoot <$> VUM.unsafeRead vec px
-    !sy <- _unwrapMUFRoot <$> VUM.unsafeRead vec py
+    !sx <- _unwrapMUFRoot <$> UM.unsafeRead vec px
+    !sy <- _unwrapMUFRoot <$> UM.unsafeRead vec py
     -- NOTE(perf): union by rank (choose smaller one for root)
     let (!par, !chld) = if sx < sy then (px, py) else (py, px)
-    VUM.unsafeWrite vec chld (MUFChild par)
-    VUM.unsafeWrite vec par (MUFRoot $! sx + sy)
+    UM.unsafeWrite vec chld (MUFChild par)
+    UM.unsafeWrite vec par (MUFRoot $! sx + sy)
   return $ px /= py
 
 -- | Returns the size of the a node, starting with `1`.
@@ -114,11 +114,11 @@ uniteMUF uf@(MUnionFind !vec) !x !y = do
 sizeMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 sizeMUF uf@(MUnionFind !vec) !x = do
   !px <- rootMUF uf x
-  _unwrapMUFRoot <$> VUM.unsafeRead vec px
+  _unwrapMUFRoot <$> UM.unsafeRead vec px
 
 {-# INLINE clearMUF #-}
 clearMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 clearMUF (MUnionFind !vec) = do
-  VUM.set vec (MUFRoot 1)
+  UM.set vec (MUFRoot 1)
 
 -- }}}

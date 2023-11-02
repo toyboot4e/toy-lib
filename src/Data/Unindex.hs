@@ -3,7 +3,7 @@ module Data.Unindex where
 
 import Data.Ix
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude (rangeMS)
 
 class RangeMS a where
@@ -21,7 +21,7 @@ instance RangeMS (Int, Int) where
         | y <= y1 = return $! MS.Yield (y, x) (y + 1, x0)
         | otherwise = return MS.Done
 
-class (Ix i, VU.Unbox i) => Unindex i where
+class (Ix i, U.Unbox i) => Unindex i where
   -- TODO: Fusing
   -- https://wiki.haskell.org/GHC/Using_rules
   unindex :: (i, i) -> Int -> i

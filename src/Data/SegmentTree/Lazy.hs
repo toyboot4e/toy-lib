@@ -14,8 +14,8 @@ import Data.Bits
 import Data.SemigroupAction
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro
 import ToyLib.Prelude (forMS_, rangeMS, rangeMSR)
@@ -51,32 +51,32 @@ import ToyLib.Prelude (forMS_, rangeMS, rangeMSR)
 -- = Invariant
 --
 -- - New operators always come from right: @oldOp <> newOp@
-data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(VUM.MVector s op) !Int
+data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLazySTree ::
   forall v a op m.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
+  (VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
 newLazySTree !n = do
   !as <- VGM.replicate n2 mempty
-  !ops <- VUM.replicate n2 mempty
+  !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
   where
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
-newLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree VM.MVector a op (PrimState m))
+newLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree VM.MVector a op (PrimState m))
 newLazySTreeV = newLazySTree
 
-newLazySTreeVU :: forall a op m. (VU.Unbox a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree VUM.MVector a op (PrimState m))
+newLazySTreeVU :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
 newLazySTreeVU = newLazySTree
 
 -- | Creates `LazySegmentTree` with initial leaf values.
 generateLazySTree ::
   forall v a op m.
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
@@ -95,7 +95,7 @@ generateLazySTree !n !f = do
     !r <- VGM.read as (childR i)
     VGM.write as i (l <> r)
 
-  !ops <- VUM.replicate n2 mempty
+  !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
   where
     -- TODO: use bit operations
@@ -104,17 +104,17 @@ generateLazySTree !n !f = do
     childL !vertex = shiftL vertex 1
     childR !vertex = shiftL vertex 1 .|. 1
 
-generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
+generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
 generateLazySTreeV = generateLazySTree
 
-generateLazySTreeVU :: forall a op m. (HasCallStack, VU.Unbox a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VUM.MVector a op (PrimState m))
+generateLazySTreeVU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLazySTreeVU = generateLazySTree
 
 -- | Appends the lazy operator monoid monoids over some span of the lazy segment tree.
 -- These values are just stored and performed over the nodes when queried.
 updateLazySTree ::
   forall v a op m.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -136,7 +136,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 
   return ()
   where
-    !nVerts = VUM.length ops
+    !nVerts = UM.length ops
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
@@ -150,7 +150,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           !l' <-
             if isRightChild l
               then do
-                VUM.modify ops (<> op) l
+                UM.modify ops (<> op) l
                 return $ succ l
               else return l
 
@@ -158,7 +158,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
             -- NOTE: I'm using inclusive range
             if isLeftChild r
               then do
-                VUM.modify ops (<> op) r
+                UM.modify ops (<> op) r
                 return $ pred r
               else return r
 
@@ -168,7 +168,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 -- TODO: I used the top-down queries for the strict segment tree. Which is preferable?
 queryLazySTree ::
   forall v a m op.
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -198,7 +198,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                !la' <- mact <$!> VUM.read ops l <*> VGM.read as l
+                !la' <- mact <$!> UM.read ops l <*> VGM.read as l
                 return (succ l, lAcc <> la')
               else return (l, lAcc)
 
@@ -206,7 +206,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                !ra' <- mact <$!> VUM.read ops r <*> VGM.read as r
+                !ra' <- mact <$!> UM.read ops r <*> VGM.read as r
                 return (pred r, ra' <> rAcc)
               else return (r, rAcc)
 
@@ -217,7 +217,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (HasCallStack, VGM.MVector v a, MonoidAction op a, Eq op, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -229,16 +229,16 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
     let !vertex = nthParent leafVertex iParent
 
     -- When there's some lazy evaluation value, propagate them to their children and evaluate the vertex:
-    !op <- VUM.read ops vertex
+    !op <- UM.read ops vertex
     when (op /= mempty) $ do
       -- Propagate the operator monoid to the children:
       -- REMARK: The propagated operator always comes from the right.
-      VUM.modify ops (<> op) $! childL vertex
-      VUM.modify ops (<> op) $! childR vertex
+      UM.modify ops (<> op) $! childL vertex
+      UM.modify ops (<> op) $! childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
       VGM.modify as (mact op) vertex
-      VUM.write ops vertex mempty
+      UM.write ops vertex mempty
   where
     !nVerts = VGM.length as
     nthParent !leafVertex !nth = shiftR leafVertex nth
@@ -248,7 +248,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
 _evalToRoot ::
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, VU.Unbox op, PrimMonad m) =>
+  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -260,8 +260,8 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- mact <$> VUM.read ops (childL vertex) <*> VGM.read as (childL vertex)
-    !aR' <- mact <$> VUM.read ops (childR vertex) <*> VGM.read as (childR vertex)
+    !aL' <- mact <$> UM.read ops (childL vertex) <*> VGM.read as (childL vertex)
+    !aR' <- mact <$> UM.read ops (childR vertex) <*> VGM.read as (childR vertex)
     VGM.write as vertex $! aL' <> aR'
   where
     !nVerts = VGM.length as

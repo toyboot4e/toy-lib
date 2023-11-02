@@ -6,7 +6,7 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Array.IArray
 import Data.List (foldl')
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- {{{ Topological sort / SCC
 
@@ -18,15 +18,15 @@ import qualified Data.Vector.Unboxed.Mutable as VUM
 topSort :: Array Int [Int] -> [Int]
 topSort !graph = runST $ do
   let !bounds_ = bounds graph
-  !vis <- VUM.replicate (succ $ rangeSize bounds_) False
+  !vis <- UM.replicate (succ $ rangeSize bounds_) False
 
   let dfsM !acc !v = do
-        !b <- VUM.unsafeRead vis (index bounds_ v)
+        !b <- UM.unsafeRead vis (index bounds_ v)
         if b
           then return acc
           else do
-            VUM.unsafeWrite vis (index bounds_ v) True
-            !vs <- filterM (fmap not . VUM.unsafeRead vis . index bounds_) $ graph ! v
+            UM.unsafeWrite vis (index bounds_ v) True
+            !vs <- filterM (fmap not . UM.unsafeRead vis . index bounds_) $ graph ! v
             -- Create postorder output:
             (v :) <$> foldM dfsM acc vs
 
@@ -34,17 +34,17 @@ topSort !graph = runST $ do
 
 -- | Partial running of `scc` over topologically sorted vertices, but for some connected components
 -- only.
-topScc1 :: forall m. (PrimMonad m) => Array Int [Int] -> VUM.MVector (PrimState m) Bool -> Int -> m [Int]
+topScc1 :: forall m. (PrimMonad m) => Array Int [Int] -> UM.MVector (PrimState m) Bool -> Int -> m [Int]
 topScc1 !graph' !vis !v0 = do
   let !bounds_ = bounds graph'
 
   let dfsM !acc !v = do
-        !b <- VUM.unsafeRead vis (index bounds_ v)
+        !b <- UM.unsafeRead vis (index bounds_ v)
         if b
           then return acc
           else do
-            VUM.unsafeWrite vis (index bounds_ v) True
-            !vs <- filterM (fmap not . VUM.unsafeRead vis . index bounds_) $ graph' ! v
+            UM.unsafeWrite vis (index bounds_ v) True
+            !vs <- filterM (fmap not . UM.unsafeRead vis . index bounds_) $ graph' ! v
             -- Create preorder output:
             (v :) <$> foldM dfsM acc vs
 
@@ -67,7 +67,7 @@ topScc graph = collectSccPreorder $ topSort graph
     collectSccPreorder :: [Int] -> [[Int]]
     collectSccPreorder !topVerts = runST $ do
       let !bounds_ = bounds graph'
-      !vis <- VUM.replicate (succ $ rangeSize bounds_) False
+      !vis <- UM.replicate (succ $ rangeSize bounds_) False
       filter (not . null) <$> mapM (topScc1 graph' vis) topVerts
 
 -- | Collects cycles using `scc`.

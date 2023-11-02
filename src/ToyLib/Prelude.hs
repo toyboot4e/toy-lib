@@ -12,7 +12,7 @@ import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import Debug.Trace
 
 -- {{{ Prelude utilities
@@ -70,7 +70,7 @@ foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 -- | = Test
--- >>> chunksOfVG 3 $ VU.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
+-- >>> chunksOfVG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
 chunksOfVG :: (VG.Vector v a) => Int -> v a -> V.Vector (v a)
 chunksOfVG k xs0 = V.unfoldrExactN n step xs0
@@ -78,8 +78,8 @@ chunksOfVG k xs0 = V.unfoldrExactN n step xs0
     n = (VG.length xs0 + k - 1) `div` k
     step xs = (VG.take k xs, VG.drop k xs)
 
-swapDupeVU :: VU.Vector (Int, Int) -> VU.Vector (Int, Int)
-swapDupeVU = VU.concatMap (\vs -> VU.fromListN 2 [vs, swap vs])
+swapDupeVU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
+swapDupeVU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- }}}
 
@@ -87,7 +87,7 @@ swapDupeVU = VU.concatMap (\vs -> VU.fromListN 2 [vs, swap vs])
 
 -- | List-like range syntax for `vector`.
 --
--- >>> rangeVG @VU.Vector 3 5
+-- >>> rangeVG @U.Vector 3 5
 -- [3,4,5]
 {-# INLINE rangeVG #-}
 rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
@@ -100,12 +100,12 @@ rangeV = rangeVG
 
 -- | Type-constrained `rangeVG`.
 {-# INLINE rangeVU #-}
-rangeVU :: Int -> Int -> VU.Vector Int
+rangeVU :: Int -> Int -> U.Vector Int
 rangeVU = rangeVG
 
 -- | Easier reverse range syntax for `vector`.
 --
--- >>> rangeVGR @VU.Vector 3 5
+-- >>> rangeVGR @U.Vector 3 5
 -- [5,4,3]
 {-# INLINE rangeVGR #-}
 rangeVGR :: (VG.Vector v Int) => Int -> Int -> v Int
@@ -118,7 +118,7 @@ rangeVR = rangeVGR
 
 -- | Type-constrained `rangeVGR`.
 {-# INLINE rangeVUR #-}
-rangeVUR :: Int -> Int -> VU.Vector Int
+rangeVUR :: Int -> Int -> U.Vector Int
 rangeVUR = rangeVGR
 
 -- | @cojna (`stream`)
@@ -164,9 +164,9 @@ repRM_ !l !r !act = inner r
       | otherwise = act i >> inner (pred i)
 
 -- | @constructN@ with initial value for index zero.
-constructN0 :: (VU.Unbox a) => a -> Int -> (VU.Vector a -> a) -> VU.Vector a
-constructN0 !x0 !n !f = VU.constructN n $ \vec ->
-  if VU.null vec
+constructN0 :: (U.Unbox a) => a -> Int -> (U.Vector a -> a) -> U.Vector a
+constructN0 !x0 !n !f = U.constructN n $ \vec ->
+  if U.null vec
     then x0
     else f vec
 

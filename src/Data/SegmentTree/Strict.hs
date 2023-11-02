@@ -3,8 +3,8 @@ module Data.SegmentTree.Strict where
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 -- {{{ Segment tree
@@ -64,7 +64,7 @@ newSTreeV = newSTreeVG
 
 -- | Creates an unboxed segment tree.
 {-# INLINE newSTreeVU #-}
-newSTreeVU :: (VU.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree VUM.MVector (PrimState m) a)
+newSTreeVU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
 newSTreeVU = newSTreeVG
 
 -- | Sets all the internal values of a segment tree to the given value which has to be zero.

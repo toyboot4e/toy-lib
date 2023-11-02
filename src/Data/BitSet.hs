@@ -5,7 +5,7 @@ import Control.Monad
 import Data.Bits
 import Data.List (unfoldr)
 import Data.Tuple.Extra (dupe)
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 
 -- | Retrieves the most significant bit.
 --
@@ -51,8 +51,8 @@ powerset !a = a : unfoldr f a
 --
 -- >>> powersetVU (7 :: Int)
 -- [7,6,5,4,3,2,1,0]
-powersetVU :: (Bits a, Num a, VU.Unbox a) => a -> VU.Vector a
-powersetVU !x0 = VU.unfoldrExactN n f x0
+powersetVU :: (Bits a, Num a, U.Unbox a) => a -> U.Vector a
+powersetVU !x0 = U.unfoldrExactN n f x0
   where
     !n = bit (popCount x0)
     f !x = (x, (x - 1) .&. x0)

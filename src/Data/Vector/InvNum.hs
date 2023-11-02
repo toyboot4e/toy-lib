@@ -9,7 +9,7 @@ import Data.Maybe
 import Data.SegmentTree.Strict
 import Data.Vector.Compress (compressVU)
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude (foldForMVG)
 import GHC.Stack (HasCallStack)
 
@@ -32,7 +32,7 @@ invNumVG xMax xs = runST $ do
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
-compressInvNumVG :: HasCallStack => VU.Vector Int -> Int
-compressInvNumVG xs = invNumVG (pred (VU.length xs')) xs'
+compressInvNumVG :: HasCallStack => U.Vector Int -> Int
+compressInvNumVG xs = invNumVG (pred (U.length xs')) xs'
   where
     !xs' = snd $ compressVU xs

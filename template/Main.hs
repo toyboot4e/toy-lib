@@ -85,13 +85,13 @@ import qualified Data.Ix.Enum as HT
 import qualified Data.List.HT as HT -- `groupBy`, but with adjacent elements
 
 -- vector
-import qualified Data.Vector.Fusion.Bundle as VFB
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Base as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Fusion.Bundle as FB
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
 
@@ -104,7 +104,7 @@ import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Algorithms.Search as VAS
 
 -- containers
-import qualified Data.Graph as G
+import qualified Data.Graph as Gr
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map.Strict as M
 import qualified Data.IntSet as IS

@@ -13,10 +13,10 @@ import Data.Semigroup
 import Data.SemigroupAction
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Base as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import Math.PowMod (invModF)
 
 -- | Type level constant `Int` value.
@@ -26,7 +26,7 @@ class TypeInt a where
 
 -- | `Int` with automatic moudlo arithmetic performed.
 newtype ModInt p = ModInt {getModInt :: Int}
-  deriving (Eq, VP.Prim)
+  deriving (Eq, P.Prim)
   deriving newtype (Ord, Read, Show, Real)
 
 instance (TypeInt p) => Num (ModInt p) where
@@ -54,12 +54,12 @@ instance (TypeInt p) => Enum (ModInt p) where
 instance (TypeInt p) => SemigroupAction (Product (ModInt p)) (ModInt p) where
   sact (Product !x1) !x2 = x1 * x2
 
-newtype instance VU.MVector s (ModInt p) = MV_ModInt (VP.MVector s (ModInt p))
+newtype instance U.MVector s (ModInt p) = MV_ModInt (P.MVector s (ModInt p))
 
-newtype instance VU.Vector (ModInt p) = V_ModInt (VP.Vector (ModInt p))
+newtype instance U.Vector (ModInt p) = V_ModInt (P.Vector (ModInt p))
 
-deriving via (VU.UnboxViaPrim (ModInt p)) instance VGM.MVector VUM.MVector (ModInt p)
+deriving via (U.UnboxViaPrim (ModInt p)) instance VGM.MVector UM.MVector (ModInt p)
 
-deriving via (VU.UnboxViaPrim (ModInt p)) instance VG.Vector VU.Vector (ModInt p)
+deriving via (U.UnboxViaPrim (ModInt p)) instance VG.Vector U.Vector (ModInt p)
 
-instance VU.Unbox (ModInt p)
+instance U.Unbox (ModInt p)

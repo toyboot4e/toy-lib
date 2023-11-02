@@ -11,8 +11,8 @@ import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 -- {{{ Tree folding from a root node
@@ -43,7 +43,7 @@ scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
     !nVerts = rangeSize $! bounds tree
 
 -- | Type-restricted `scanTreeVG`.
-scanTreeVU :: (HasCallStack, VU.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> VU.Vector a
+scanTreeVU :: (HasCallStack, U.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> U.Vector a
 scanTreeVU = scanTreeVG
 
 -- | Type-restricted `scanTreeVG`.
@@ -55,24 +55,24 @@ scanTreeV = scanTreeVG
 --
 -- = Typical problems
 -- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
-foldTreeAll :: (HasCallStack, VU.Unbox a, VU.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> VU.Vector a
+foldTreeAll :: (HasCallStack, U.Unbox a, U.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> U.Vector a
 foldTreeAll !tree !acc0At !toM =
   -- Calculate tree DP for one root vertex
   let !treeDp = scanTreeVG tree root0 mact acc0At toM
-      !rootDp = VU.create $ do
+      !rootDp = U.create $ do
         -- Calculate tree DP for every vertex as a root:
-        !dp <- VUM.unsafeNew nVerts
+        !dp <- UM.unsafeNew nVerts
         flip fix (-1, op0, root0) $ \runRootDp (!parent, !parentOp, !v1) -> do
-          let !children = VU.fromList . filter (/= parent) $! tree ! v1
-          let !opL = VU.scanl' (\op v2 -> (op <>) . toM $! treeDp VU.! v2) op0 children
-          let !opR = VU.scanr' (\v2 op -> (<> op) . toM $! treeDp VU.! v2) op0 children
+          let !children = U.fromList . filter (/= parent) $! tree ! v1
+          let !opL = U.scanl' (\op v2 -> (op <>) . toM $! treeDp U.! v2) op0 children
+          let !opR = U.scanr' (\v2 op -> (<> op) . toM $! treeDp U.! v2) op0 children
 
           -- save
-          let !x1 = (parentOp <> VU.last opL) `mact` acc0At v1
-          VUM.write dp v1 x1
+          let !x1 = (parentOp <> U.last opL) `mact` acc0At v1
+          UM.write dp v1 x1
 
-          flip VU.imapM_ children $ \ !i2 !v2 -> do
-            let !lrOp = (opL VU.! i2) <> (opR VU.! succ i2)
+          flip U.imapM_ children $ \ !i2 !v2 -> do
+            let !lrOp = (opL U.! i2) <> (opR U.! succ i2)
             let !v1Acc = (parentOp <> lrOp) `mact` acc0At v2
             runRootDp (v1, toM v1Acc, v2)
 

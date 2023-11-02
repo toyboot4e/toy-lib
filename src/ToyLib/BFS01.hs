@@ -10,16 +10,16 @@ import Data.Buffer
 import Data.Ix
 import Data.Tuple.Extra (both)
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Prelude (repM_)
 import GHC.Stack (HasCallStack)
 
 -- 01-BFS: zero cost with same direction.
 bfs01_grid4_typical043 :: HasCallStack => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
-bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
+bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ U.create $ do
   -- vec @! (dir, y, x)
-  !vec <- IxVector boundsExt <$> VUM.replicate (4 * nVerts) undef
+  !vec <- IxVector boundsExt <$> UM.replicate (4 * nVerts) undef
 
   let !redundantSpace = 0
   !deque <- newBufferAsDeque (redundantSpace + 4 * nVerts)
@@ -31,7 +31,7 @@ bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
   let extract !w0 vExt0@(!iDir0, !y0, !x0) = do
         !wReserved0 <- readIV vec vExt0
         when (w0 == wReserved0) $ do
-          VU.iforM_ dirs $ \iDir (!dy, !dx) -> do
+          U.iforM_ dirs $ \iDir (!dy, !dx) -> do
             let !v = (y0 + dy, x0 + dx)
             when (inRange bounds_ v && not (isBlock @! v)) $ do
               let !w = bool (w0 + 1) w0 (iDir == iDir0)
@@ -58,4 +58,4 @@ bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ VU.create $ do
     !bounds_ = boundsIV isBlock
     !boundsExt = ((0, 0, 0), (3, height - 1, width - 1))
     !nVerts = rangeSize bounds_
-    !dirs = VU.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    !dirs = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]

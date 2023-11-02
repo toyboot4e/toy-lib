@@ -13,8 +13,8 @@ import Data.Maybe
 import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Macro
 import ToyLib.Prelude
 import GHC.Stack (HasCallStack)
@@ -22,37 +22,37 @@ import GHC.Stack (HasCallStack)
 -- {{{ LCA (basic)
 
 -- | Vector for retrieving the parent vertex.
-newtype ToParent = ToParent (VU.Vector Vertex)
+newtype ToParent = ToParent (U.Vector Vertex)
 
 instance Semigroup ToParent where
-  (ToParent !vec1) <> (ToParent !vec2) = ToParent $ VU.map f vec2
+  (ToParent !vec1) <> (ToParent !vec2) = ToParent $ U.map f vec2
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
       f (-1) = -1
-      f i = vec1 VU.! i
+      f i = vec1 U.! i
 
 instance SemigroupAction ToParent Vertex where
-  sact (ToParent !vec) !i = vec VU.! i
+  sact (ToParent !vec) !i = vec U.! i
 
 -- `(parents, depths, parents')`
-type LcaCache = (ToParent, VU.Vector Int, BinaryLifting V.Vector ToParent)
+type LcaCache = (ToParent, U.Vector Int, BinaryLifting V.Vector ToParent)
 
 -- | Returns `(parents, depths)` who maps vertices to the corresponding information.
 -- REMARK: Use 0-based index for the graph vertices.
 -- TODO: Consider using `Maybe Int` instead for easier `Monoid` integration
-treeDepthInfo :: Int -> (Int -> [Int]) -> Int -> (ToParent, VU.Vector Int)
+treeDepthInfo :: Int -> (Int -> [Int]) -> Int -> (ToParent, U.Vector Int)
 treeDepthInfo !nVerts !graph !root = runST $ do
-  !parents <- VUM.replicate nVerts (-1 :: Int)
-  !depths <- VUM.replicate nVerts (-1 :: Int)
+  !parents <- UM.replicate nVerts (-1 :: Int)
+  !depths <- UM.replicate nVerts (-1 :: Int)
 
   flip fix (0 :: Int, -1 :: Int, [root]) $ \loop (!depth, !parent, !vs) -> do
     forM_ vs $ \v -> do
-      VUM.unsafeWrite depths v depth
-      VUM.unsafeWrite parents v parent
+      UM.unsafeWrite depths v depth
+      UM.unsafeWrite parents v parent
       let !vs' = filter (/= parent) $ graph v
       loop (succ depth, v, vs')
 
-  (,) <$> (ToParent <$> VU.unsafeFreeze parents) <*> VU.unsafeFreeze depths
+  (,) <$> (ToParent <$> U.unsafeFreeze parents) <*> U.unsafeFreeze depths
 
 -- | Returns `LcaCache`, i.e., `(parents, depths, parents')`.
 lcaCache :: Int -> (Vertex -> [Vertex]) -> Vertex -> LcaCache
@@ -64,11 +64,11 @@ lcaCache !nVerts !graph !root = (toParent, depths, toParentN)
 -- | Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.
 lca :: HasCallStack => LcaCache -> Int -> Int -> (Int, Int)
-lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths VU.! vLCA)
+lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
   where
     -- depths
-    !d1 = depths VU.! v1
-    !d2 = depths VU.! v2
+    !d1 = depths U.! v1
+    !d2 = depths U.! v2
 
     parentN = sactBL toParentN
 
@@ -86,8 +86,8 @@ lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths VU.! vLCA)
 lcaLen :: HasCallStack => LcaCache -> Int -> Int -> Int
 lcaLen cache@(!_, !depths, !_) !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
-      !d1 = depths VU.! v1
-      !d2 = depths VU.! v2
+      !d1 = depths U.! v1
+      !d2 = depths U.! v2
    in (d1 - d) + (d2 - d)
 
 -- }}}
@@ -95,7 +95,7 @@ lcaLen cache@(!_, !depths, !_) !v1 !v2 =
 -- {{{ Tree path folding
 
 -- | `ToParent` with monoid concatanation.
-newtype ToParentM m = ToParentM (Int, VU.Vector m)
+newtype ToParentM m = ToParentM (Int, U.Vector m)
 
 -- instance Semigroup
 
@@ -103,37 +103,37 @@ newtype ToParentM m = ToParentM (Int, VU.Vector m)
 -- FIXME: Stop the manual folding / binary lifting. Idea: monad?
 
 -- | `LcaCache` with monoid folding on path.
-type FoldLcaCache m = (LcaCache, V.Vector (VU.Vector m))
+type FoldLcaCache m = (LcaCache, V.Vector (U.Vector m))
 
 -- | Returns `FoldLcaCache` that can be used for calculating the folding value of path between two
 -- vertices.
 --
 -- - graph: Vertex -> [Vertex]
 -- - edgeValueOf: child -> parent -> m
-foldLcaCache :: forall m. (Monoid m, VU.Unbox m) => Int -> (Vertex -> [Vertex]) -> Vertex -> (Vertex -> Vertex -> m) -> FoldLcaCache m
+foldLcaCache :: forall m. (Monoid m, U.Unbox m) => Int -> (Vertex -> [Vertex]) -> Vertex -> (Vertex -> Vertex -> m) -> FoldLcaCache m
 foldLcaCache !nVerts !graph !root !edgeValueOf = (cache, foldCache)
   where
     !cache@(!parents, !_, BinaryLifting !parents') = lcaCache nVerts graph root
-    foldCache :: V.Vector (VU.Vector m)
+    foldCache :: V.Vector (U.Vector m)
     !foldCache = V.map snd $! newDoubling toParent appendArray
       where
         -- Monoid value when going up one parent vertex:
-        !toParent = (0, VU.map f (rangeVG 0 (pred nVerts)))
+        !toParent = (0, U.map f (rangeVG 0 (pred nVerts)))
           where
             f v = case parents `sact` v of
               (-1) -> mempty
               p -> edgeValueOf v p
 
         -- Folding function for the binary lifting technique:
-        appendArray (!iBit, !ops) = (succ iBit, VU.imap f ops)
+        appendArray (!iBit, !ops) = (succ iBit, U.imap f ops)
           where
             f !v0 !op =
               case (parents' V.! iBit) `sact` v0 of
                 (-1) -> op
-                p -> op <> (ops VU.! p)
+                p -> op <> (ops U.! p)
 
 -- | `foldLcaCache` specific for `Array Vertex [(Vertex, a)]`.
-foldLcaCache2 :: forall a m. (HasCallStack, Monoid m, VU.Unbox m) => Array Int [(Vertex, a)] -> (a -> m) -> FoldLcaCache m
+foldLcaCache2 :: forall a m. (HasCallStack, Monoid m, U.Unbox m) => Array Int [(Vertex, a)] -> (a -> m) -> FoldLcaCache m
 foldLcaCache2 !tree !toMonoid = foldLcaCache nVerts adj root getValue
   where
     !root = 0 :: Vertex
@@ -144,12 +144,12 @@ foldLcaCache2 !tree !toMonoid = foldLcaCache nVerts adj root getValue
     getValue !v !p = toMonoid . snd . fromJust . find ((== p) . fst) $ tree ! v
 
 -- | Calculates the folding value of the path between two vertices in a tree.
-foldViaLca :: forall m. (HasCallStack, Monoid m, VU.Unbox m) => FoldLcaCache m -> Int -> Int -> m
+foldViaLca :: forall m. (HasCallStack, Monoid m, U.Unbox m) => FoldLcaCache m -> Int -> Int -> m
 foldViaLca (cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
       -- !_ = dbg ((v1, d1), (v2, d2), (v, d), a1, a2, a1 <> a2)
-      !d1 = depths VU.! v1
-      !d2 = depths VU.! v2
+      !d1 = depths U.! v1
+      !d2 = depths U.! v2
       !a1 = foldParentN v1 (d1 - d)
       !a2 = foldParentN v2 (d2 - d)
    in a1 <> a2
@@ -160,9 +160,9 @@ foldViaLca (cache@(!_, !depths, BinaryLifting !parents'), !ops') !v1 !v2 =
     foldParentN !v0 !nthParent = snd $ V.ifoldl' step (v0, mempty) input
       where
         !input = V.zip parents' ops'
-        step :: (Vertex, m) -> Int -> (ToParent, VU.Vector m) -> (Vertex, m)
+        step :: (Vertex, m) -> Int -> (ToParent, U.Vector m) -> (Vertex, m)
         step (!v, !acc) !iBit (!parents, !ops)
-          | testBit nthParent iBit = (parents `sact` v, acc <> (ops VU.! v))
+          | testBit nthParent iBit = (parents `sact` v, acc <> (ops U.! v))
           | otherwise = (v, acc)
 
 -- }}}

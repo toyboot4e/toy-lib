@@ -8,10 +8,10 @@ module Data.Semiring where
 
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Base as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Semiring @(s, <+>, <.>)`. Sometimes called "deoid" (double monoid).
 class Semiring s where
@@ -37,18 +37,18 @@ foldT = VG.foldl' (<.>) sone
 
 -- | Max-Plus semiring
 newtype MaxPlus a = MaxPlus {getMaxPlus :: a}
-  deriving (VP.Prim)
+  deriving (P.Prim)
   deriving newtype (Eq, Ord, Show)
 
-newtype instance VU.MVector s (MaxPlus a) = MV_MaxPlus (VP.MVector s (MaxPlus a))
+newtype instance U.MVector s (MaxPlus a) = MV_MaxPlus (P.MVector s (MaxPlus a))
 
-newtype instance VU.Vector (MaxPlus a) = V_MaxPlus (VP.Vector (MaxPlus a))
+newtype instance U.Vector (MaxPlus a) = V_MaxPlus (P.Vector (MaxPlus a))
 
-deriving via (VU.UnboxViaPrim (MaxPlus a)) instance (VP.Prim a) => VGM.MVector VUM.MVector (MaxPlus a)
+deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => VGM.MVector UM.MVector (MaxPlus a)
 
-deriving via (VU.UnboxViaPrim (MaxPlus a)) instance (VP.Prim a) => VG.Vector VU.Vector (MaxPlus a)
+deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => VG.Vector U.Vector (MaxPlus a)
 
-instance (VP.Prim a) => VU.Unbox (MaxPlus a)
+instance (P.Prim a) => U.Unbox (MaxPlus a)
 
 instance (Num a, Bounded a, Ord a) => Semiring (MaxPlus a) where
   {-# INLINE (<+>) #-}
@@ -67,18 +67,18 @@ instance (Num a, Bounded a, Ord a) => Semiring (MaxPlus a) where
 
 -- | Min-Plus semiring
 newtype MinPlus a = MinPlus {getMinPlus :: a}
-  deriving (VP.Prim)
+  deriving (P.Prim)
   deriving newtype (Eq, Ord, Show)
 
-newtype instance VU.MVector s (MinPlus a) = MV_MinPlus (VP.MVector s (MinPlus a))
+newtype instance U.MVector s (MinPlus a) = MV_MinPlus (P.MVector s (MinPlus a))
 
-newtype instance VU.Vector (MinPlus a) = V_MinPlus (VP.Vector (MinPlus a))
+newtype instance U.Vector (MinPlus a) = V_MinPlus (P.Vector (MinPlus a))
 
-deriving via (VU.UnboxViaPrim (MinPlus a)) instance (VP.Prim a) => VGM.MVector VUM.MVector (MinPlus a)
+deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => VGM.MVector UM.MVector (MinPlus a)
 
-deriving via (VU.UnboxViaPrim (MinPlus a)) instance (VP.Prim a) => VG.Vector VU.Vector (MinPlus a)
+deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => VG.Vector U.Vector (MinPlus a)
 
-instance (VP.Prim a) => VU.Unbox (MinPlus a)
+instance (P.Prim a) => U.Unbox (MinPlus a)
 
 instance (Num a, Bounded a, Ord a) => Semiring (MinPlus a) where
   {-# INLINE (<+>) #-}
@@ -97,28 +97,28 @@ instance (Num a, Bounded a, Ord a) => Semiring (MinPlus a) where
 
 -- | Boolean semiring
 newtype Boolean = Boolean {getBoolean :: Bool}
-  -- deriving (VP.Prim)
+  -- deriving (P.Prim)
   deriving newtype (Eq, Ord, Show)
 
 -- NOTE: For some reason, the `primitive` package does not implement `Prim` for `Bool`.
 -- I guess that's why `bitvec` exists: <https://github.com/Bodigrim/bitvec>
 --
 -- Here's some indirection to get `Unbox` implementation..
-instance VU.IsoUnbox Boolean Bool where
+instance U.IsoUnbox Boolean Bool where
   {-# INLINE toURepr #-}
   toURepr (Boolean b) = b
   {-# INLINE fromURepr #-}
   fromURepr = Boolean
 
-newtype instance VU.MVector s Boolean = MV_Foo (VU.MVector s Bool)
+newtype instance U.MVector s Boolean = MV_Foo (U.MVector s Bool)
 
-newtype instance VU.Vector Boolean = V_Foo (VU.Vector Bool)
+newtype instance U.Vector Boolean = V_Foo (U.Vector Bool)
 
-deriving via (Boolean `VU.As` Bool) instance VGM.MVector VUM.MVector Boolean
+deriving via (Boolean `U.As` Bool) instance VGM.MVector UM.MVector Boolean
 
-deriving via (Boolean `VU.As` Bool) instance VG.Vector VU.Vector Boolean
+deriving via (Boolean `U.As` Bool) instance VG.Vector U.Vector Boolean
 
-instance VU.Unbox Boolean
+instance U.Unbox Boolean
 
 instance Semiring Boolean where
   {-# INLINE (<+>) #-}

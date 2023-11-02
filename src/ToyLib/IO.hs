@@ -15,7 +15,7 @@
 --
 -- Vectors are `ReadBS` and they can also be embedded in the end of a tuple:
 --
--- >>> convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, VU.Vector Int)
+-- >>> convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, U.Vector Int)
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.IO where
 
@@ -32,8 +32,8 @@ import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import System.IO (stdout)
 import ToyLib.Prelude (repM_)
 
@@ -59,14 +59,14 @@ class ReadBS a where
   default convertBS :: (Read a) => BS.ByteString -> a
   convertBS = read . BS.unpack
 
-  -- | For use with `VU.unfoldrExactN`.
+  -- | For use with `U.unfoldrExactN`.
   {-# INLINE readBS #-}
   readBS :: BS.ByteString -> (a, BS.ByteString)
   readBS !bs =
     let (!bs1, !bs2) = BS.break isSpace bs
      in (convertBS bs1, bs2)
 
-  -- | For use with `VU.unfoldr`.
+  -- | For use with `U.unfoldr`.
   {-# INLINE readMayBS #-}
   readMayBS :: BS.ByteString -> Maybe (a, BS.ByteString)
   readMayBS !bs
@@ -107,7 +107,7 @@ instance ReadBS BS.ByteString where
   {-# INLINE convertBS #-}
   convertBS = id
 
-instance (ReadBS a, VU.Unbox a) => ReadBS (VU.Vector a) where
+instance (ReadBS a, U.Unbox a) => ReadBS (U.Vector a) where
   {-# INLINE convertBS #-}
   convertBS = convertVG
   readBS = (,BS.empty) . convertVG
@@ -257,16 +257,16 @@ intsV :: IO (V.Vector Int)
 intsV = intsVG
 
 -- | Reads one line as a vector of integers.
-intsVU :: IO (VU.Vector Int)
+intsVU :: IO (U.Vector Int)
 intsVU = intsVG
 
-digitsVU :: IO (VU.Vector Int)
-digitsVU = VU.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
+digitsVU :: IO (U.Vector Int)
+digitsVU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
 intsRestVG :: (VG.Vector v Int) => IO (v Int)
 intsRestVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
 
-intsRestVU :: IO (VU.Vector Int)
+intsRestVU :: IO (U.Vector Int)
 intsRestVU = intsRestVG
 
 -- | Creates a graph from 1-based vertices
@@ -282,8 +282,8 @@ getGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints2
 --
 -- >>> convertNBS @Int (3 * 3) $ V.map BS.pack $ V.fromList ["1 2 3", "4 5 6", "7 8 9"]
 -- [1,2,3,4,5,6,7,8,9]
-convertNBS :: forall a. (VU.Unbox a, ReadBS a) => Int -> V.Vector BS.ByteString -> VU.Vector a
-convertNBS !n !bss = VU.unfoldrExactN n step $ fromJust (V.uncons bss)
+convertNBS :: forall a. (U.Unbox a, ReadBS a) => Int -> V.Vector BS.ByteString -> U.Vector a
+convertNBS !n !bss = U.unfoldrExactN n step $ fromJust (V.uncons bss)
   where
     step :: (BS.ByteString, V.Vector BS.ByteString) -> (a, (BS.ByteString, V.Vector BS.ByteString))
     step (!cur, !rest)
@@ -297,32 +297,32 @@ convertNBS !n !bss = VU.unfoldrExactN n step $ fromJust (V.uncons bss)
 
 -- | Reads @h@ lines of stdin and converts them as HxW **whitespace-delimited `ByteString`** and
 -- converts them into a flat vector of type @a@.
-getHW :: (VU.Unbox a, ReadBS a) => Int -> Int -> IO (VU.Vector a)
+getHW :: (U.Unbox a, ReadBS a) => Int -> Int -> IO (U.Vector a)
 getHW !h !w = convertNBS (h * w) <$> V.replicateM h BS.getLine
 
 -- | Reads @h@ lines of stdin and converts them into a IxVector reading as HxW
 -- **whitespace-separated** input.
-getGrid :: Int -> Int -> IO (IxVector (Int, Int) (VU.Vector Int))
+getGrid :: Int -> Int -> IO (IxVector (Int, Int) (U.Vector Int))
 getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW h w
 
 -- | Converts @n` lines of `ByteString` into a flat vector.
 --
--- >>> VU.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
+-- >>> U.map (== '#') . convertCharsHW $ V.map BS.pack $ V.fromList ["#.#", ".#."]
 -- [True,False,True,False,True,False]
-convertCharsHW :: V.Vector BS.ByteString -> VU.Vector Char
-convertCharsHW !bss = VU.create $ do
-  !vec <- VUM.unsafeNew (h * w)
+convertCharsHW :: V.Vector BS.ByteString -> U.Vector Char
+convertCharsHW !bss = U.create $ do
+  !vec <- UM.unsafeNew (h * w)
   V.iforM_ bss $ \y bs ->
     repM_ 0 (w - 1) $ \x -> do
       let !char = BS.index bs x
-      VUM.unsafeWrite vec (w * y + x) char
+      UM.unsafeWrite vec (w * y + x) char
   return vec
   where
     !w = BS.length (V.head bss)
     !h = V.length bss
 
 -- | See `convertCharsHW`.
-charsH :: Int -> IO (VU.Vector Char)
+charsH :: Int -> IO (U.Vector Char)
 charsH !h = convertCharsHW <$> V.replicateM h BS.getLine
 
 -- Obsolute

@@ -4,7 +4,7 @@ module Data.SemigroupAction where
 
 import Data.Monoid
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import ToyLib.Macro
 
 -- {{{ Semigroup action and binary lifting
@@ -27,15 +27,15 @@ instance SemigroupAction (Product Int) Int where
 --
 -- = Typical problems
 -- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
-newtype Permutation = Permutation (VU.Vector Int)
+newtype Permutation = Permutation (U.Vector Int)
   deriving (Show, Eq)
 
 instance Semigroup Permutation where
-  (Permutation vec1) <> (Permutation vec2) = Permutation $! VU.map (vec1 VU.!) vec2
+  (Permutation vec1) <> (Permutation vec2) = Permutation $! U.map (vec1 U.!) vec2
     where
       !_ = dbgAssert (VG.length vec1 == VG.length vec2)
 
 instance SemigroupAction Permutation Int where
-  sact (Permutation !vec) !i = vec VU.! i
+  sact (Permutation !vec) !i = vec U.! i
 
 -- }}}

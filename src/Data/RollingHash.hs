@@ -12,7 +12,7 @@ import Data.Maybe
 import Data.ModInt
 import Data.Proxy
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 
 -- {{{ Rolling hash
 
@@ -29,8 +29,8 @@ import qualified Data.Vector.Unboxed as VU
 data RollingHash b p = RollingHash
   { sourceLength :: !Int,
     -- | \$\{B^i mod p\}_{i \elem [0, n)}$
-    dimensions :: !(VU.Vector Int),
-    hashSum :: !(VU.Vector Int)
+    dimensions :: !(U.Vector Int),
+    hashSum :: !(U.Vector Int)
   }
   deriving (Show, Eq)
 
@@ -47,8 +47,8 @@ newRH !source = RollingHash n bn hashSum_
     !p = typeInt (Proxy @p)
     !b = typeInt (Proxy @HashInt)
     !n = length source
-    !bn = VU.iterateN (succ n) (\lastB -> b * lastB `mod` p) (1 :: Int)
-    !hashSum_ = evalState (VU.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ VU.fromList source) (0 :: Int)
+    !bn = U.iterateN (succ n) (\lastB -> b * lastB `mod` p) (1 :: Int)
+    !hashSum_ = evalState (U.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ U.fromList source) (0 :: Int)
       where
         f :: Char -> Int -> (Int, Int)
         f !ch !lastX = dupe $! (lastX * b + ord ch) `mod` p
@@ -72,9 +72,9 @@ sliceRH (RollingHash !_ !bn !s) !i0 !i1
   | i0 > i1 = emptyHS
   | otherwise =
       let !len = i1 - i0 + 1
-          !s1 = s VU.! i1
-          !s0 = fromMaybe 0 $ s VU.!? pred i0
-          !value = (s1 - (bn VU.! len) * s0) `mod` p
+          !s1 = s U.! i1
+          !s0 = fromMaybe 0 $ s U.!? pred i0
+          !value = (s1 - (bn U.! len) * s0) `mod` p
        in HashSlice value len
   where
     !p = typeInt (Proxy @p)
@@ -84,7 +84,7 @@ consHS :: forall b p. (TypeInt p) => RollingHash b p -> HashSlice p -> HashSlice
 consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSlice value len
   where
     !p = typeInt (Proxy @p)
-    !value = ((bn VU.! l1) * v0 + v1) `mod` p
+    !value = ((bn U.! l1) * v0 + v1) `mod` p
     !len = l0 + l1
 
 -- | Creates an empty rolling hash slice.

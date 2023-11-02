@@ -10,8 +10,8 @@ import Data.Tuple.Extra (first)
 import Data.Unindex
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
 import ToyLib.Macro (dbgAssert)
 import GHC.Stack (HasCallStack)
@@ -21,10 +21,10 @@ data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
   deriving (Show, Eq)
 
 -- | Primary `IxVector` type notation.
-type IxUVector i a = IxVector i (VU.Vector a)
+type IxUVector i a = IxVector i (U.Vector a)
 
 -- | Primary `IxVector` type notation.
-type IxMUVector i s a = IxVector i (VUM.MVector s a)
+type IxMUVector i s a = IxVector i (UM.MVector s a)
 
 -- | Partial `IxVector` accessor
 {-# INLINE (@!) #-}
@@ -52,27 +52,27 @@ type IxMUVector i s a = IxVector i (VUM.MVector s a)
   | inRange boundsIV i = Just (VG.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
 
-mapIV :: (VU.Unbox a, VU.Unbox b) => (a -> b) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b)
-mapIV !f !vec = IxVector bnd $ VU.map f (vecIV vec)
+mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
+mapIV !f !vec = IxVector bnd $ U.map f (vecIV vec)
   where
     !bnd = boundsIV vec
 
-imapIV :: (Unindex i, VU.Unbox a, VU.Unbox b) => (i -> a -> b) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b)
-imapIV !f !vec = IxVector bnd $ VU.imap wrapper (vecIV vec)
+imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
+imapIV !f !vec = IxVector bnd $ U.imap wrapper (vecIV vec)
   where
     !bnd = boundsIV vec
     wrapper i = f (unindex bnd i)
 
-zipWithIV :: (VU.Unbox a, VU.Unbox b, VU.Unbox c) => (a -> b -> c) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector b) -> IxVector i (VU.Vector c)
-zipWithIV !f !vec1 !vec2 = IxVector bnd $ VU.zipWith f (vecIV vec1) (vecIV vec2)
+zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b) -> IxVector i (U.Vector c)
+zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
   where
     !bnd = boundsIV vec1
 
 -- | Altertnative to `accumulate` for `IxVector` that share the same bounds.
-accumulateIV :: (Ix i, VU.Unbox i, VU.Unbox a, VU.Unbox b) => (a -> b -> a) -> IxVector i (VU.Vector a) -> IxVector i (VU.Vector (i, b)) -> IxVector i (VU.Vector a)
+accumulateIV :: (Ix i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
 accumulateIV !f !vec0 !commands =
-  let !input1d = VU.map (first (index bnd)) (vecIV commands)
-      !vec1d = VU.accumulate f (vecIV vec0) input1d
+  let !input1d = U.map (first (index bnd)) (vecIV commands)
+      !vec1d = U.accumulate f (vecIV vec0) input1d
    in IxVector bnd vec1d
   where
     !bnd = boundsIV vec0
@@ -129,9 +129,9 @@ unsafeSwapIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState
 unsafeSwapIV IxVector {..} !i1 !i2 = VGM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
 
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
-imos2DIV :: HasCallStack => IxVector (Int, Int) (VU.Vector Int) -> IxVector (Int, Int) (VU.Vector Int)
-imos2DIV seeds@IxVector {boundsIV} = IxVector boundsIV $ VU.create $ do
-  !vec <- IxVector boundsIV <$> VU.thaw (vecIV seeds)
+imos2DIV :: HasCallStack => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)
+imos2DIV seeds@IxVector {boundsIV} = IxVector boundsIV $ U.create $ do
+  !vec <- IxVector boundsIV <$> U.thaw (vecIV seeds)
 
   let (!minY, !minX) = fst boundsIV
 

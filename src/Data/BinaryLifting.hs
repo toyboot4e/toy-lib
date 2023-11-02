@@ -10,7 +10,7 @@ import Data.List
 import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
 import ToyLib.Prelude (rangeVG)
@@ -30,13 +30,13 @@ newBinLiftV :: (Semigroup s) => s -> BinaryLifting V.Vector s
 newBinLiftV = newBinLift
 
 -- | Calculates `BinaryLifting` of the given semigroup
-newBinLiftVU :: (Semigroup s, VU.Unbox s) => s -> BinaryLifting VU.Vector s
+newBinLiftVU :: (Semigroup s, U.Unbox s) => s -> BinaryLifting U.Vector s
 newBinLiftVU = newBinLift
 
 -- | Binarily lifted version of `stimesMonoid`.
 -- WARNING: Usually `sactBL` is much cheaper for semigroup actions with a boxed type.
 stimesBL :: (HasCallStack, Semigroup s, VG.Vector v s) => BinaryLifting v s -> s -> Int -> s
-stimesBL (BinaryLifting !ops) !s0 !n = VU.foldl' step s0 (VU.enumFromN 0 62)
+stimesBL (BinaryLifting !ops) !s0 !n = U.foldl' step s0 (U.enumFromN 0 62)
   where
     step !m !i
       | testBit n i = m <> ops VG.! i
@@ -49,7 +49,7 @@ mtimesBL !bin !n = stimesBL bin mempty n
 
 -- | Binarily lifted semigroup action application.
 sactBL :: (HasCallStack, SemigroupAction s a, VG.Vector v s) => BinaryLifting v s -> a -> Int -> a
-sactBL (BinaryLifting !ops) !acc0 !nAct = VU.foldl' step acc0 (rangeVG 0 62)
+sactBL (BinaryLifting !ops) !acc0 !nAct = U.foldl' step acc0 (rangeVG 0 62)
   where
     step !acc !nBit
       | testBit nAct nBit = (ops VG.! nBit) `sact` acc

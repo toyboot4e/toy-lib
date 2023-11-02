@@ -10,11 +10,11 @@ import Control.Monad.Primitive
 import Data.Primitive.MutVar
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
-import qualified Data.Vector.Unboxed as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Dense, mutable multi set.
-data MultiSetVec s = MultiSetVec (MutVar s Int) (VUM.MVector s Int)
+data MultiSetVec s = MultiSetVec (MutVar s Int) (UM.MVector s Int)
 
 -- | Monadic `show` over `MultiSetVec`.
 showMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m String
@@ -24,7 +24,7 @@ showMSV (MultiSetVec !nRef !mVec) = do
   return $ show (n, vec)
 
 newMSV :: (PrimMonad m) => Int -> m (MultiSetVec (PrimState m))
-newMSV !capacity = MultiSetVec <$> newMutVar (0 :: Int) <*> VUM.replicate capacity (0 :: Int)
+newMSV !capacity = MultiSetVec <$> newMutVar (0 :: Int) <*> UM.replicate capacity (0 :: Int)
 
 -- -- | WARNING: Any read/write will result im runtime error. Use `clearMSV` if it's accessed again.
 -- emptyMSV :: (PrimMonad m) => m (MultiSetVec (PrimState m))
@@ -35,10 +35,10 @@ clearMSV (MultiSetVec !nRef !mVec) = do
   writeMutVar nRef 0
   VGM.set mVec 0
 
-fromVecMSV :: (PrimMonad m) => Int -> VU.Vector Int -> m (MultiSetVec (PrimState m))
+fromVecMSV :: (PrimMonad m) => Int -> U.Vector Int -> m (MultiSetVec (PrimState m))
 fromVecMSV !capacity !xs = do
   !msv <- newMSV capacity
-  VU.forM_ xs (incMSV msv)
+  U.forM_ xs (incMSV msv)
   return msv
 
 countMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m Int
@@ -87,6 +87,6 @@ maxMSV (MultiSetVec !nRef !mVec) =
       !vec <- VG.unsafeFreeze mVec
       return . fmap (\i -> (i, vec VG.! i)) $ VG.findIndexR (> 0) vec
 
-unsafeFreezeMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Int, VU.Vector Int)
-unsafeFreezeMSV (MultiSetVec !nRef !mVec) = (,) <$> readMutVar nRef <*> VU.unsafeFreeze mVec
+unsafeFreezeMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Int, U.Vector Int)
+unsafeFreezeMSV (MultiSetVec !nRef !mVec) = (,) <$> readMutVar nRef <*> U.unsafeFreeze mVec
 

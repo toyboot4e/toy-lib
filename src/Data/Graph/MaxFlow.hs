@@ -13,8 +13,8 @@ import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as VM
-import qualified Data.Vector.Unboxed.Base as VU
-import qualified Data.Vector.Unboxed.Mutable as VUM
+import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- {{{ Maximum flow (Ford-Fulkerson algorithm)
 
@@ -35,21 +35,21 @@ data RNEdge = RNEdge
   }
   deriving (Show)
 
-instance VU.IsoUnbox RNEdge (Int, Int, Int) where
+instance U.IsoUnbox RNEdge (Int, Int, Int) where
   {-# INLINE toURepr #-}
   toURepr (RNEdge !x1 !x2 !x3) = (x1, x2, x3)
   {-# INLINE fromURepr #-}
   fromURepr (!x1, !x2, !x3) = RNEdge x1 x2 x3
 
-newtype instance VU.MVector s RNEdge = MV_RNEdge (VUM.MVector s (Int, Int, Int))
+newtype instance U.MVector s RNEdge = MV_RNEdge (UM.MVector s (Int, Int, Int))
 
-newtype instance VU.Vector RNEdge = V_RNEdge (VU.Vector (Int, Int, Int))
+newtype instance U.Vector RNEdge = V_RNEdge (U.Vector (Int, Int, Int))
 
-deriving via (RNEdge `VU.As` (Int, Int, Int)) instance VGM.MVector VUM.MVector RNEdge
+deriving via (RNEdge `U.As` (Int, Int, Int)) instance VGM.MVector UM.MVector RNEdge
 
-deriving via (RNEdge `VU.As` (Int, Int, Int)) instance VG.Vector VU.Vector RNEdge
+deriving via (RNEdge `U.As` (Int, Int, Int)) instance VG.Vector U.Vector RNEdge
 
-instance VU.Unbox RNEdge
+instance U.Unbox RNEdge
 
 -- | @Vertex -> [RNEdge]@.
 --
@@ -62,7 +62,7 @@ type ResidualNetwork = VM.IOVector (IM.IntMap RNEdge)
 buildRN :: Int -> [(Int, (Int, Int))] -> IO ResidualNetwork
 buildRN !nVerts !edges = do
   !rn <- VM.replicate nVerts IM.empty
-  -- TODO: consider using `VU.accumlate` instead?
+  -- TODO: consider using `U.accumlate` instead?
   forM_ edges $ \(!v1, (!v2, !cap_)) -> do
     addEdgeRN rn v1 v2 cap_
   return rn

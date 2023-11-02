@@ -29,7 +29,7 @@ import Data.Ix
 import Data.List.Extra (nubSort)
 import Data.Maybe
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude
 
 -- TODO: Use typeclass for getting middle and detecting end
@@ -125,11 +125,11 @@ bsearchF64R :: (Double, Double) -> Double -> (Double -> Bool) -> Maybe Double
 bsearchF64R !a !b !c = fst $! bsearchF64 a b c
 
 -- | One dimensional index compression: xs -> (nubSorted, indices)
-compressList :: [Int] -> (VU.Vector Int, [Int])
+compressList :: [Int] -> (U.Vector Int, [Int])
 compressList xs = (indices, map (fromJust . fst . f) xs)
   where
-    !indices = VU.fromList $ nubSort xs
-    f !x = bsearch (0, pred (VU.length indices)) $ \i -> indices VU.! i <= x
+    !indices = U.fromList $ nubSort xs
+    f !x = bsearch (0, pred (U.length indices)) $ \i -> indices U.! i <= x
 
 -- | Retrieves square root of an `Int`.
 isqrtSlow :: Int -> Int
