@@ -24,7 +24,7 @@ prevPermutationVec =
 -- WARNING: Use 0-based indices for the input.
 dictOrderModuloVec :: (HasCallStack, G.Vector v Int) => v Int -> Int -> Int
 dictOrderModuloVec xs modulo = runST $ do
-  !stree <- newSTreeVU (+) (G.length xs + 1) (0 :: Int)
+  !stree <- newSTreeU (+) (G.length xs + 1) (0 :: Int)
 
   -- Pre-calculate factorial numbers:
   let !facts = factMods (G.length xs) modulo

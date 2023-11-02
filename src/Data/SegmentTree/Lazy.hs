@@ -70,8 +70,8 @@ newLazySTree !n = do
 newLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree VM.MVector a op (PrimState m))
 newLazySTreeV = newLazySTree
 
-newLazySTreeVU :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
-newLazySTreeVU = newLazySTree
+newLazySTreeU :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
+newLazySTreeU = newLazySTree
 
 -- | Creates `LazySegmentTree` with initial leaf values.
 generateLazySTree ::
@@ -107,8 +107,8 @@ generateLazySTree !n !f = do
 generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
 generateLazySTreeV = generateLazySTree
 
-generateLazySTreeVU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
-generateLazySTreeVU = generateLazySTree
+generateLazySTreeU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
+generateLazySTreeU = generateLazySTree
 
 -- | Appends the lazy operator monoid monoids over some span of the lazy segment tree.
 -- These values are just stored and performed over the nodes when queried.

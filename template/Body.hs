@@ -1,6 +1,6 @@
 main :: IO ()
 main = do
   !n <- ints1
-  !xs <- intsVU
+  !xs <- intsU
 
   putStrLn "TODO"

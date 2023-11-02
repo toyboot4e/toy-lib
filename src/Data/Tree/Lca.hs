@@ -118,7 +118,7 @@ foldLcaCache !nVerts !graph !root !edgeValueOf = (cache, foldCache)
     !foldCache = V.map snd $! newDoubling toParent appendArray
       where
         -- Monoid value when going up one parent vertex:
-        !toParent = (0, U.map f (rangeVG 0 (pred nVerts)))
+        !toParent = (0, U.map f (rangeG 0 (pred nVerts)))
           where
             f v = case parents `sact` v of
               (-1) -> mempty

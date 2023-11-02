@@ -7,18 +7,18 @@ module Data.Vector.InvNum where
 import Control.Monad.ST (runST)
 import Data.Maybe
 import Data.SegmentTree.Strict
-import Data.Vector.Compress (compressVU)
+import Data.Vector.Compress (compressU)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-import ToyLib.Prelude (foldForMVG)
+import ToyLib.Prelude (foldForMG)
 import GHC.Stack (HasCallStack)
 
 -- | Calculates the inversion number. Be sure to compress the input vector!
-invNumVG :: HasCallStack => Int -> (G.Vector v Int) => v Int -> Int
-invNumVG xMax xs = runST $ do
-  !stree <- newSTreeVU (+) (xMax + 1) (0 :: Int)
+invNumG :: HasCallStack => Int -> (G.Vector v Int) => v Int -> Int
+invNumG xMax xs = runST $ do
+  !stree <- newSTreeU (+) (xMax + 1) (0 :: Int)
 
-  foldForMVG (0 :: Int) xs $ \acc x -> do
+  foldForMG (0 :: Int) xs $ \acc x -> do
     -- count pre-inserted numbers bigger than this:
     -- let !_ = dbg (x, (succ x, xMax))
     !s <-
@@ -32,7 +32,7 @@ invNumVG xMax xs = runST $ do
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
-compressInvNumVG :: HasCallStack => U.Vector Int -> Int
-compressInvNumVG xs = invNumVG (pred (U.length xs')) xs'
+compressInvNumG :: HasCallStack => U.Vector Int -> Int
+compressInvNumG xs = invNumG (pred (U.length xs')) xs'
   where
-    !xs' = snd $ compressVU xs
+    !xs' = snd $ compressU xs

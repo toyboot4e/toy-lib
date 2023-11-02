@@ -45,7 +45,7 @@ divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
 powModCache :: Int -> Int -> (Int, U.Vector Int)
 powModCache !base !modulo = (modulo, doubling)
   where
-    -- doubling = U.scanl' (\ !x _ -> x * x `rem` modulo) base $ rangeVG (1 :: Int) 62
+    -- doubling = U.scanl' (\ !x _ -> x * x `rem` modulo) base $ rangeG (1 :: Int) 62
     doubling = newDoubling base (\x -> x * x `rem` modulo)
 
 -- | Calculates \(base^power\) (mod p) from a cache.

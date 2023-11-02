@@ -4,7 +4,7 @@
 module ToyLib.DP where
 
 import Control.Monad.ST
-import Data.BitSet (powersetVU)
+import Data.BitSet (powersetU)
 import Data.Bits
 import Data.Bool (bool)
 import Data.Ix
@@ -17,7 +17,7 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-import ToyLib.Prelude (rangeVU, repM_)
+import ToyLib.Prelude (rangeU, repM_)
 
 -- | Variant of `U.constructN`.
 constructFor :: (U.Unbox a, U.Unbox b) => a -> U.Vector b -> (U.Vector a -> b -> a) -> U.Vector a
@@ -82,10 +82,10 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
   return vec
 
 -- | Returns non-zero two spans over the given inclusive range @[l, r]@.
--- >>> spansVU 3 6
+-- >>> spansU 3 6
 -- [((3,3),(4,6)),((3,4),(5,6)),((3,5),(6,6))]
-spansVU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
-spansVU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeVU 1 (r - l)
+spansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
+spansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeU 1 (r - l)
 
 -- | `U.constructN` for `IxVector`
 constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxVector i (U.Vector a) -> i -> a) -> IxVector i (U.Vector a)
@@ -139,7 +139,7 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
   where
     inner :: [[Int]] -> [Int] -> Int -> [[Int]]
     inner !results !acc 0 = acc : results
-    inner !results !acc !rest = U.foldl' step results (powersetVU rest')
+    inner !results !acc !rest = U.foldl' step results (powersetU rest')
       where
         !lsb = countTrailingZeros rest
         !rest' = clearBit rest lsb
@@ -150,7 +150,7 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
 -- | The input must be one-based
 lcs :: (HasCallStack) => U.Vector Int -> Int
 lcs !xs = runST $ do
-  !stree <- newSTreeVU max (G.length xs) (0 :: Int)
+  !stree <- newSTreeU max (G.length xs) (0 :: Int)
 
   U.forM_ xs $ \x -> do
     !n0 <- fromMaybe 0 <$> querySTree stree (0, x - 1)

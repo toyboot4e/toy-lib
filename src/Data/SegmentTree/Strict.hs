@@ -50,9 +50,9 @@ data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 -- | Creates a new segment tree for `n` leaves.
 -- REMARK: Always give a zero value. It fills all the nodes including parent nodes, and the parent
 -- nodes are not updated.
-{-# INLINE newSTreeVG #-}
-newSTreeVG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
-newSTreeVG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
+{-# INLINE newSTreeG #-}
+newSTreeG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
+newSTreeG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
   where
     !nVerts = until (>= 2 * nLeaves) (* 2) 2
     -- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
@@ -60,17 +60,17 @@ newSTreeVG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
 -- | Creates a boxed segment tree.
 {-# INLINE newSTreeV #-}
 newSTreeV :: PrimMonad m => (a -> a -> a) -> Int -> a -> m (SegmentTree VM.MVector (PrimState m) a)
-newSTreeV = newSTreeVG
+newSTreeV = newSTreeG
 
 -- | Creates an unboxed segment tree.
-{-# INLINE newSTreeVU #-}
-newSTreeVU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
-newSTreeVU = newSTreeVG
+{-# INLINE newSTreeU #-}
+newSTreeU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
+newSTreeU = newSTreeG
 
 -- | Sets all the internal values of a segment tree to the given value which has to be zero.
 --
 -- REMARK: It takes lots of time. Consider a much more efficient resettiong strategy such as
--- re-inserting zeros to used slots, or maybe use | `compressInvNumVG` when you just need
+-- re-inserting zeros to used slots, or maybe use | `compressInvNumG` when you just need
 -- inversion number.
 resetSTree :: (GM.MVector v a, PrimMonad m) => (SegmentTree v (PrimState m) a) -> a -> m ()
 resetSTree (SegmentTree !_ !vec) !zero = GM.set vec zero

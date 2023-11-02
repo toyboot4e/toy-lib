@@ -49,10 +49,10 @@ powerset !a = a : unfoldr f a
 
 -- | Returns a powerset of @x0@ in descending order.
 --
--- >>> powersetVU (7 :: Int)
+-- >>> powersetU (7 :: Int)
 -- [7,6,5,4,3,2,1,0]
-powersetVU :: (Bits a, Num a, U.Unbox a) => a -> U.Vector a
-powersetVU !x0 = U.unfoldrExactN n f x0
+powersetU :: (Bits a, Num a, U.Unbox a) => a -> U.Vector a
+powersetU !x0 = U.unfoldrExactN n f x0
   where
     !n = bit (popCount x0)
     f !x = (x, (x - 1) .&. x0)

@@ -57,29 +57,29 @@ infixr 9 .!
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
 foldFor !s0 !xs !f = foldl' f s0 xs
 
-foldForVG :: (G.Vector v a) => b -> v a -> (b -> a -> b) -> b
-foldForVG !s0 !xs !f = G.foldl' f s0 xs
+foldForG :: (G.Vector v a) => b -> v a -> (b -> a -> b) -> b
+foldForG !s0 !xs !f = G.foldl' f s0 xs
 
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForM !s0 !xs !m = foldM m s0 xs
 
-foldForMVG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
-foldForMVG !s0 !xs !m = G.foldM' m s0 xs
+foldForMG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
+foldForMG !s0 !xs !m = G.foldM' m s0 xs
 
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 -- | = Test
--- >>> chunksOfVG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
+-- >>> chunksOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
-chunksOfVG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
-chunksOfVG k xs0 = V.unfoldrExactN n step xs0
+chunksOfG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
+chunksOfG k xs0 = V.unfoldrExactN n step xs0
   where
     n = (G.length xs0 + k - 1) `div` k
     step xs = (G.take k xs, G.drop k xs)
 
-swapDupeVU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
-swapDupeVU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
+swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
+swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- }}}
 
@@ -87,39 +87,39 @@ swapDupeVU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- | List-like range syntax for `vector`.
 --
--- >>> rangeVG @U.Vector 3 5
+-- >>> rangeG @U.Vector 3 5
 -- [3,4,5]
-{-# INLINE rangeVG #-}
-rangeVG :: (G.Vector v Int) => Int -> Int -> v Int
-rangeVG !i !j = G.enumFromN i (succ j - i)
+{-# INLINE rangeG #-}
+rangeG :: (G.Vector v Int) => Int -> Int -> v Int
+rangeG !i !j = G.enumFromN i (succ j - i)
 
--- | Type-constrained `rangeVG`.
+-- | Type-constrained `rangeG`.
 {-# INLINE rangeV #-}
 rangeV :: Int -> Int -> V.Vector Int
-rangeV = rangeVG
+rangeV = rangeG
 
--- | Type-constrained `rangeVG`.
-{-# INLINE rangeVU #-}
-rangeVU :: Int -> Int -> U.Vector Int
-rangeVU = rangeVG
+-- | Type-constrained `rangeG`.
+{-# INLINE rangeU #-}
+rangeU :: Int -> Int -> U.Vector Int
+rangeU = rangeG
 
 -- | Easier reverse range syntax for `vector`.
 --
--- >>> rangeVGR @U.Vector 3 5
+-- >>> rangeGR @U.Vector 3 5
 -- [5,4,3]
-{-# INLINE rangeVGR #-}
-rangeVGR :: (G.Vector v Int) => Int -> Int -> v Int
-rangeVGR !i !j = G.enumFromStepN j (-1) (succ j - i)
+{-# INLINE rangeGR #-}
+rangeGR :: (G.Vector v Int) => Int -> Int -> v Int
+rangeGR !i !j = G.enumFromStepN j (-1) (succ j - i)
 
--- | Type-constrained `rangeVGR`.
+-- | Type-constrained `rangeGR`.
 {-# INLINE rangeVR #-}
 rangeVR :: Int -> Int -> V.Vector Int
-rangeVR = rangeVGR
+rangeVR = rangeGR
 
--- | Type-constrained `rangeVGR`.
-{-# INLINE rangeVUR #-}
-rangeVUR :: Int -> Int -> U.Vector Int
-rangeVUR = rangeVGR
+-- | Type-constrained `rangeGR`.
+{-# INLINE rangeUR #-}
+rangeUR :: Int -> Int -> U.Vector Int
+rangeUR = rangeGR
 
 -- | @cojna (`stream`)
 {-# INLINE [1] rangeMS #-}

@@ -4,7 +4,7 @@
 --
 -- = Main procedures
 --
--- `ints2`, `intsW`, `get`, `digitsVU`, `getGrid` and `charsH`.
+-- `ints2`, `intsW`, `get`, `digitsU`, `getGrid` and `charsH`.
 --
 -- = `ReadBS` and `get`
 --
@@ -109,16 +109,16 @@ instance ReadBS BS.ByteString where
 
 instance (ReadBS a, U.Unbox a) => ReadBS (U.Vector a) where
   {-# INLINE convertBS #-}
-  convertBS = convertVG
-  readBS = (,BS.empty) . convertVG
+  convertBS = convertG
+  readBS = (,BS.empty) . convertG
   readMayBS !bs
     | BS.null bs = Nothing
     | otherwise = Just (readBS bs)
 
 instance (ReadBS a) => ReadBS (V.Vector a) where
   {-# INLINE convertBS #-}
-  convertBS = convertVG
-  readBS = (,BS.empty) . convertVG
+  convertBS = convertG
+  readBS = (,BS.empty) . convertG
   readMayBS !bs
     | BS.null bs = Nothing
     | otherwise = Just (readBS bs)
@@ -214,12 +214,12 @@ instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => R
     Just ((x1, x2, x3, x4, x5, x6), bs6)
 
 -- | Converrts the given `ByteString` as a vector of @a@.
-convertVG :: (ReadBS a, G.Vector v a) => BS.ByteString -> v a
-convertVG = G.unfoldr (readMayBS . BS.dropWhile isSpace)
+convertG :: (ReadBS a, G.Vector v a) => BS.ByteString -> v a
+convertG = G.unfoldr (readMayBS . BS.dropWhile isSpace)
 
 -- | Converts the given `ByteString` as a vector of @a@ with @n@ elements.
-convertNVG :: (ReadBS a, G.Vector v a) => Int -> BS.ByteString -> v a
-convertNVG !n = G.unfoldrExactN n (readBS . BS.dropWhile isSpace)
+convertNG :: (ReadBS a, G.Vector v a) => Int -> BS.ByteString -> v a
+convertNG !n = G.unfoldrExactN n (readBS . BS.dropWhile isSpace)
 
 -- Input/getter
 
@@ -250,24 +250,24 @@ intsW :: (G.Vector v Int) => Int -> IO (v Int)
 intsW !w = G.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 -- | Reads one line as an integer.
-intsVG :: (G.Vector v Int) => IO (v Int)
-intsVG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
+intsG :: (G.Vector v Int) => IO (v Int)
+intsG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 intsV :: IO (V.Vector Int)
-intsV = intsVG
+intsV = intsG
 
 -- | Reads one line as a vector of integers.
-intsVU :: IO (U.Vector Int)
-intsVU = intsVG
+intsU :: IO (U.Vector Int)
+intsU = intsG
 
-digitsVU :: IO (U.Vector Int)
-digitsVU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
+digitsU :: IO (U.Vector Int)
+digitsU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
-intsRestVG :: (G.Vector v Int) => IO (v Int)
-intsRestVG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
+intsRestG :: (G.Vector v Int) => IO (v Int)
+intsRestG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
 
-intsRestVU :: IO (U.Vector Int)
-intsRestVU = intsRestVG
+intsRestU :: IO (U.Vector Int)
+intsRestU = intsRestG
 
 -- | Creates a graph from 1-based vertices
 getGraph :: Int -> Int -> IO (Array Int [Int])

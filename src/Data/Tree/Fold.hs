@@ -28,8 +28,8 @@ foldTree !tree !root !sact !acc0At !toM = inner (-1) root
 
 -- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
-scanTreeVG :: (HasCallStack, G.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
-scanTreeVG !tree !root !sact !acc0At !toM = G.create $ do
+scanTreeG :: (HasCallStack, G.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
+scanTreeG !tree !root !sact !acc0At !toM = G.create $ do
   !dp <- GM.unsafeNew nVerts
 
   !_ <- flip fix (-1, root) $ \runTreeDp (!parent, !v1) -> do
@@ -42,13 +42,13 @@ scanTreeVG !tree !root !sact !acc0At !toM = G.create $ do
   where
     !nVerts = rangeSize $! bounds tree
 
--- | Type-restricted `scanTreeVG`.
-scanTreeVU :: (HasCallStack, U.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> U.Vector a
-scanTreeVU = scanTreeVG
+-- | Type-restricted `scanTreeG`.
+scanTreeU :: (HasCallStack, U.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> U.Vector a
+scanTreeU = scanTreeG
 
--- | Type-restricted `scanTreeVG`.
+-- | Type-restricted `scanTreeG`.
 scanTreeV :: HasCallStack => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
-scanTreeV = scanTreeVG
+scanTreeV = scanTreeG
 
 -- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
 -- REMARK: `mempty` is used for initial operator value.
@@ -58,7 +58,7 @@ scanTreeV = scanTreeVG
 foldTreeAll :: (HasCallStack, U.Unbox a, U.Unbox m, MonoidAction m a) => Array Vertex [Vertex] -> (Vertex -> a) -> (a -> m) -> U.Vector a
 foldTreeAll !tree !acc0At !toM =
   -- Calculate tree DP for one root vertex
-  let !treeDp = scanTreeVG tree root0 mact acc0At toM
+  let !treeDp = scanTreeG tree root0 mact acc0At toM
       !rootDp = U.create $ do
         -- Calculate tree DP for every vertex as a root:
         !dp <- UM.unsafeNew nVerts

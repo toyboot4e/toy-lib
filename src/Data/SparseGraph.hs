@@ -28,7 +28,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (add2, rangeMS, rangeVU)
+import ToyLib.Prelude (add2, rangeMS, rangeU)
 
 type Edge = (Vertex, Vertex)
 
@@ -358,7 +358,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
   where
     !vws = U.zip adjacentsSG edgeWeightsSG
     -- TODO: Faster?
-    !edges' = flip U.concatMap (rangeVU 0 (pred nVertsSG)) $ \v1 ->
+    !edges' = flip U.concatMap (rangeU 0 (pred nVertsSG)) $ \v1 ->
       let !o1 = U.unsafeIndex offsetsSG v1
           !o2 = U.unsafeIndex offsetsSG (v1 + 1)
           !vw2s = U.unsafeSlice o1 (o2 - o1) vws
