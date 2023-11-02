@@ -3,7 +3,7 @@
 module Data.SemigroupAction where
 
 import Data.Monoid
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import ToyLib.Macro
 
@@ -33,7 +33,7 @@ newtype Permutation = Permutation (U.Vector Int)
 instance Semigroup Permutation where
   (Permutation vec1) <> (Permutation vec2) = Permutation $! U.map (vec1 U.!) vec2
     where
-      !_ = dbgAssert (VG.length vec1 == VG.length vec2)
+      !_ = dbgAssert (G.length vec1 == G.length vec2)
 
 instance SemigroupAction Permutation Int where
   sact (Permutation !vec) !i = vec U.! i

@@ -30,7 +30,7 @@ import Data.List (unfoldr)
 import Data.Maybe
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -214,12 +214,12 @@ instance (ReadBS a1, ReadBS a2, ReadBS a3, ReadBS a4, ReadBS a5, ReadBS a6) => R
     Just ((x1, x2, x3, x4, x5, x6), bs6)
 
 -- | Converrts the given `ByteString` as a vector of @a@.
-convertVG :: (ReadBS a, VG.Vector v a) => BS.ByteString -> v a
-convertVG = VG.unfoldr (readMayBS . BS.dropWhile isSpace)
+convertVG :: (ReadBS a, G.Vector v a) => BS.ByteString -> v a
+convertVG = G.unfoldr (readMayBS . BS.dropWhile isSpace)
 
 -- | Converts the given `ByteString` as a vector of @a@ with @n@ elements.
-convertNVG :: (ReadBS a, VG.Vector v a) => Int -> BS.ByteString -> v a
-convertNVG !n = VG.unfoldrExactN n (readBS . BS.dropWhile isSpace)
+convertNVG :: (ReadBS a, G.Vector v a) => Int -> BS.ByteString -> v a
+convertNVG !n = G.unfoldrExactN n (readBS . BS.dropWhile isSpace)
 
 -- Input/getter
 
@@ -246,12 +246,12 @@ ints6 = get
 
 -- vectors
 
-intsW :: (VG.Vector v Int) => Int -> IO (v Int)
-intsW !w = VG.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
+intsW :: (G.Vector v Int) => Int -> IO (v Int)
+intsW !w = G.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 -- | Reads one line as an integer.
-intsVG :: (VG.Vector v Int) => IO (v Int)
-intsVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
+intsVG :: (G.Vector v Int) => IO (v Int)
+intsVG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 intsV :: IO (V.Vector Int)
 intsV = intsVG
@@ -263,8 +263,8 @@ intsVU = intsVG
 digitsVU :: IO (U.Vector Int)
 digitsVU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
-intsRestVG :: (VG.Vector v Int) => IO (v Int)
-intsRestVG = VG.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
+intsRestVG :: (G.Vector v Int) => IO (v Int)
+intsRestVG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
 
 intsRestVU :: IO (U.Vector Int)
 intsRestVU = intsRestVG
@@ -392,13 +392,13 @@ printBSB :: (ShowBSB a) => a -> IO ()
 printBSB = putBSB . showBSB
 
 -- | See `unwordsBSB` as example.
-concatBSB :: (VG.Vector v a) => (a -> BSB.Builder) -> v a -> BSB.Builder
-concatBSB f = VG.foldr' ((<>) . f) mempty
+concatBSB :: (G.Vector v a) => (a -> BSB.Builder) -> v a -> BSB.Builder
+concatBSB f = G.foldr' ((<>) . f) mempty
 
-unwordsBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
+unwordsBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
 unwordsBSB = concatBSB ((<> BSB.string7 " ") . showBSB)
 
-unlinesBSB :: (ShowBSB a, VG.Vector v a) => v a -> BSB.Builder
+unlinesBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
 unlinesBSB = concatBSB showLnBSB
 
 yn :: Bool -> String

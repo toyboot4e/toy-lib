@@ -9,8 +9,8 @@ import Data.Graph (Vertex)
 import Data.List (foldl')
 import Data.SemigroupAction
 import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
@@ -28,14 +28,14 @@ foldTree !tree !root !sact !acc0At !toM = inner (-1) root
 
 -- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
-scanTreeVG :: (HasCallStack, VG.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
-scanTreeVG !tree !root !sact !acc0At !toM = VG.create $ do
-  !dp <- VGM.unsafeNew nVerts
+scanTreeVG :: (HasCallStack, G.Vector v a) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> v a
+scanTreeVG !tree !root !sact !acc0At !toM = G.create $ do
+  !dp <- GM.unsafeNew nVerts
 
   !_ <- flip fix (-1, root) $ \runTreeDp (!parent, !v1) -> do
     let !v2s = filter (/= parent) $! tree ! v1
     !x1 <- foldM (\acc v2 -> (`sact` acc) . toM <$> runTreeDp (v1, v2)) (acc0At v1) v2s
-    VGM.write dp v1 x1
+    GM.write dp v1 x1
     return x1
 
   return dp

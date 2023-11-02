@@ -11,7 +11,7 @@ import Data.List
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Debug.Trace
 
@@ -57,14 +57,14 @@ infixr 9 .!
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
 foldFor !s0 !xs !f = foldl' f s0 xs
 
-foldForVG :: (VG.Vector v a) => b -> v a -> (b -> a -> b) -> b
-foldForVG !s0 !xs !f = VG.foldl' f s0 xs
+foldForVG :: (G.Vector v a) => b -> v a -> (b -> a -> b) -> b
+foldForVG !s0 !xs !f = G.foldl' f s0 xs
 
 foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
 foldForM !s0 !xs !m = foldM m s0 xs
 
-foldForMVG :: (PrimMonad m, VG.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
-foldForMVG !s0 !xs !m = VG.foldM' m s0 xs
+foldForMVG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
+foldForMVG !s0 !xs !m = G.foldM' m s0 xs
 
 foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
@@ -72,11 +72,11 @@ foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 -- | = Test
 -- >>> chunksOfVG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
-chunksOfVG :: (VG.Vector v a) => Int -> v a -> V.Vector (v a)
+chunksOfVG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
 chunksOfVG k xs0 = V.unfoldrExactN n step xs0
   where
-    n = (VG.length xs0 + k - 1) `div` k
-    step xs = (VG.take k xs, VG.drop k xs)
+    n = (G.length xs0 + k - 1) `div` k
+    step xs = (G.take k xs, G.drop k xs)
 
 swapDupeVU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
 swapDupeVU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
@@ -90,8 +90,8 @@ swapDupeVU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 -- >>> rangeVG @U.Vector 3 5
 -- [3,4,5]
 {-# INLINE rangeVG #-}
-rangeVG :: (VG.Vector v Int) => Int -> Int -> v Int
-rangeVG !i !j = VG.enumFromN i (succ j - i)
+rangeVG :: (G.Vector v Int) => Int -> Int -> v Int
+rangeVG !i !j = G.enumFromN i (succ j - i)
 
 -- | Type-constrained `rangeVG`.
 {-# INLINE rangeV #-}
@@ -108,8 +108,8 @@ rangeVU = rangeVG
 -- >>> rangeVGR @U.Vector 3 5
 -- [5,4,3]
 {-# INLINE rangeVGR #-}
-rangeVGR :: (VG.Vector v Int) => Int -> Int -> v Int
-rangeVGR !i !j = VG.enumFromStepN j (-1) (succ j - i)
+rangeVGR :: (G.Vector v Int) => Int -> Int -> v Int
+rangeVGR !i !j = G.enumFromStepN j (-1) (succ j - i)
 
 -- | Type-constrained `rangeVGR`.
 {-# INLINE rangeVR #-}

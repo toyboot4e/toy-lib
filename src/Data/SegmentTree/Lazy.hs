@@ -12,7 +12,7 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
 import Data.Bits
 import Data.SemigroupAction
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -56,11 +56,11 @@ data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLazySTree ::
   forall v a op m.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  (GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
 newLazySTree !n = do
-  !as <- VGM.replicate n2 mempty
+  !as <- GM.replicate n2 mempty
   !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
   where
@@ -76,24 +76,24 @@ newLazySTreeVU = newLazySTree
 -- | Creates `LazySegmentTree` with initial leaf values.
 generateLazySTree ::
   forall v a op m.
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
 generateLazySTree !n !f = do
-  !as <- VGM.unsafeNew n2
+  !as <- GM.unsafeNew n2
 
   -- Create leaves:
   forMS_ (rangeMS 1 nLeaves) $ \i -> do
     if i <= n
-      then VGM.write as (nLeaves + i - 1) $! f (pred i)
-      else VGM.write as (nLeaves + i - 1) mempty
+      then GM.write as (nLeaves + i - 1) $! f (pred i)
+      else GM.write as (nLeaves + i - 1) mempty
 
   -- Create parents:
   forMS_ (rangeMSR 1 (pred nLeaves)) $ \i -> do
-    !l <- VGM.read as (childL i)
-    !r <- VGM.read as (childR i)
-    VGM.write as i (l <> r)
+    !l <- GM.read as (childL i)
+    !r <- GM.read as (childR i)
+    GM.write as i (l <> r)
 
   !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
@@ -114,7 +114,7 @@ generateLazySTreeVU = generateLazySTree
 -- These values are just stored and performed over the nodes when queried.
 updateLazySTree ::
   forall v a op m.
-  (VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -168,7 +168,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 -- TODO: I used the top-down queries for the strict segment tree. Which is preferable?
 queryLazySTree ::
   forall v a m op.
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -183,7 +183,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
       !rVertex = iRLeaf + nVerts `div` 2
   glitchLoopQuery lVertex rVertex mempty mempty
   where
-    !nVerts = VGM.length as
+    !nVerts = GM.length as
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
@@ -198,7 +198,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                !la' <- mact <$!> UM.read ops l <*> VGM.read as l
+                !la' <- mact <$!> UM.read ops l <*> GM.read as l
                 return (succ l, lAcc <> la')
               else return (l, lAcc)
 
@@ -206,7 +206,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                !ra' <- mact <$!> UM.read ops r <*> VGM.read as r
+                !ra' <- mact <$!> UM.read ops r <*> GM.read as r
                 return (pred r, ra' <> rAcc)
               else return (r, rAcc)
 
@@ -217,7 +217,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (HasCallStack, VGM.MVector v a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -237,10 +237,10 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
       UM.modify ops (<> op) $! childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
-      VGM.modify as (mact op) vertex
+      GM.modify as (mact op) vertex
       UM.write ops vertex mempty
   where
-    !nVerts = VGM.length as
+    !nVerts = GM.length as
     nthParent !leafVertex !nth = shiftR leafVertex nth
     childL !vertex = shiftL vertex 1
     childR !vertex = shiftL vertex 1 .|. 1
@@ -248,7 +248,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
 _evalToRoot ::
-  (HasCallStack, VGM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -260,11 +260,11 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- mact <$> UM.read ops (childL vertex) <*> VGM.read as (childL vertex)
-    !aR' <- mact <$> UM.read ops (childR vertex) <*> VGM.read as (childR vertex)
-    VGM.write as vertex $! aL' <> aR'
+    !aL' <- mact <$> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
+    !aR' <- mact <$> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
+    GM.write as vertex $! aL' <> aR'
   where
-    !nVerts = VGM.length as
+    !nVerts = GM.length as
     nthParent !leafVertex !nth = shiftR leafVertex nth
     childL !vertex = shiftL vertex 1
     childR !vertex = shiftL vertex 1 .|. 1

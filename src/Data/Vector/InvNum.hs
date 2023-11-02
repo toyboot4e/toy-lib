@@ -8,13 +8,13 @@ import Control.Monad.ST (runST)
 import Data.Maybe
 import Data.SegmentTree.Strict
 import Data.Vector.Compress (compressVU)
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude (foldForMVG)
 import GHC.Stack (HasCallStack)
 
 -- | Calculates the inversion number. Be sure to compress the input vector!
-invNumVG :: HasCallStack => Int -> (VG.Vector v Int) => v Int -> Int
+invNumVG :: HasCallStack => Int -> (G.Vector v Int) => v Int -> Int
 invNumVG xMax xs = runST $ do
   !stree <- newSTreeVU (+) (xMax + 1) (0 :: Int)
 

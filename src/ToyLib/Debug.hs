@@ -2,7 +2,7 @@
 -- | Debug utilities
 module ToyLib.Debug where
 
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import ToyLib.Macro
 
@@ -10,7 +10,7 @@ import ToyLib.Macro
 class ShowGrid a where
   showGrid :: a -> String
 
-instance (VG.Vector v a, Show a) => ShowGrid (IxVector (Int, Int) (v a)) where
+instance (G.Vector v a, Show a) => ShowGrid (IxVector (Int, Int) (v a)) where
   showGrid !grid = unlines $ map f [y0 .. y1]
     where
       ((!y0, !x0), (!y1, !x1)) = boundsIV grid

@@ -4,7 +4,7 @@ module Data.SafeList where
 
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 
 -- | Safelist
 class SafeList v where
@@ -135,70 +135,70 @@ instance (Ord a) => SafeList (V.Vector a) where
   type SafeListElem (V.Vector a) = a
 
   headMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.unsafeHead xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.unsafeHead xs
 
   lastMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.unsafeLast xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.unsafeLast xs
 
   headOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.unsafeHead xs
+    | G.null xs = x0
+    | otherwise = G.unsafeHead xs
 
   lastOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.unsafeLast xs
+    | G.null xs = x0
+    | otherwise = G.unsafeLast xs
 
   minimumMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.minimum xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.minimum xs
 
   maximumMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.maximum xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.maximum xs
 
   minimumOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.minimum xs
+    | G.null xs = x0
+    | otherwise = G.minimum xs
 
   maximumOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.maximum xs
+    | G.null xs = x0
+    | otherwise = G.maximum xs
 
 -- | The implementation is same as the one for `V.Vector`.
 instance (U.Unbox a, Ord a) => SafeList (U.Vector a) where
   type SafeListElem (U.Vector a) = a
 
   headMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.unsafeHead xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.unsafeHead xs
 
   lastMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.unsafeLast xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.unsafeLast xs
 
   headOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.unsafeHead xs
+    | G.null xs = x0
+    | otherwise = G.unsafeHead xs
 
   lastOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.unsafeLast xs
+    | G.null xs = x0
+    | otherwise = G.unsafeLast xs
 
   minimumMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.minimum xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.minimum xs
 
   maximumMay xs
-    | VG.null xs = Nothing
-    | otherwise = Just $ VG.maximum xs
+    | G.null xs = Nothing
+    | otherwise = Just $ G.maximum xs
 
   minimumOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.minimum xs
+    | G.null xs = x0
+    | otherwise = G.minimum xs
 
   maximumOr x0 xs
-    | VG.null xs = x0
-    | otherwise = VG.maximum xs
+    | G.null xs = x0
+    | otherwise = G.maximum xs
 

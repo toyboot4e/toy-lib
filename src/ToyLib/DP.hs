@@ -11,8 +11,8 @@ import Data.Ix
 import Data.Maybe
 import Data.SegmentTree.Strict
 import Data.Unindex
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -34,26 +34,26 @@ constructFor !x0 !input !f = U.create $ do
 -- | `accumulate` variant with `concatMap`-like expander. Be wanrned that *the @input@ is consumed
 -- in-place*. Run like @relaxMany vec0 (U.force vec0) $ \x -> ..@ if it needs to be cloned.
 --
--- @relaxMany !f !vec0 !input !expander@ ~ @VG.accumulate f vec0 $ VG.concatMap expander input@
-relaxMany :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
-relaxMany !relax !vec0 !input !expander = VG.create $ do
-  !vec <- VG.unsafeThaw vec0
+-- @relaxMany !f !vec0 !input !expander@ ~ @G.accumulate f vec0 $ G.concatMap expander input@
+relaxMany :: (HasCallStack, G.Vector v a, G.Vector v (Int, a), G.Vector v b) => (a -> a -> a) -> v a -> v b -> (b -> v (Int, a)) -> v a
+relaxMany !relax !vec0 !input !expander = G.create $ do
+  !vec <- G.unsafeThaw vec0
 
-  VG.forM_ input $ \x -> do
-    VG.forM_ (expander x) $ \(!i, !x') -> do
-      VGM.modify vec (`relax` x') i
+  G.forM_ input $ \x -> do
+    G.forM_ (expander x) $ \(!i, !x') -> do
+      GM.modify vec (`relax` x') i
 
   return vec
 
 -- | `relaxMany` with index input. Be wanrned that *the @input@ is consumed in-place*. Run like
 -- @relaxMany vec0 (U.force vec0) $ \x -> ..@ if it needs to be cloned.
-irelaxMany :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a), VG.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
-irelaxMany !relax !vec0 !input !expander = VG.create $ do
-  !vec <- VG.unsafeThaw vec0
+irelaxMany :: (HasCallStack, G.Vector v a, G.Vector v (Int, a), G.Vector v b) => (a -> a -> a) -> v a -> v b -> (Int -> b -> v (Int, a)) -> v a
+irelaxMany !relax !vec0 !input !expander = G.create $ do
+  !vec <- G.unsafeThaw vec0
 
-  VG.iforM_ input $ \ix x -> do
-    VG.forM_ (expander ix x) $ \(!i, !x') -> do
-      VGM.modify vec (`relax` x') i
+  G.iforM_ input $ \ix x -> do
+    G.forM_ (expander ix x) $ \(!i, !x') -> do
+      GM.modify vec (`relax` x') i
 
   return vec
 
@@ -69,15 +69,15 @@ relaxMany' !vec0 !input !expander = U.create $ do
   return vec
 
 {-# INLINE pushBasedConstructN #-}
-pushBasedConstructN :: (HasCallStack, VG.Vector v a, VG.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
-pushBasedConstructN !relax !vec0 !expander = VG.create $ do
-  !vec <- VG.unsafeThaw vec0
+pushBasedConstructN :: (HasCallStack, G.Vector v a, G.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
+pushBasedConstructN !relax !vec0 !expander = G.create $ do
+  !vec <- G.unsafeThaw vec0
 
-  repM_ 0 (VGM.length vec - 1) $ \iFrom -> do
+  repM_ 0 (GM.length vec - 1) $ \iFrom -> do
     -- REMARK: Because this is a push-based DP, the value for the interested index is already known.
-    !freezed <- VG.unsafeFreeze (VGM.take (iFrom + 1) vec)
-    VG.forM_ (expander iFrom freezed) $ \(!iTo, !x') -> do
-      VGM.modify vec (`relax` x') iTo
+    !freezed <- G.unsafeFreeze (GM.take (iFrom + 1) vec)
+    G.forM_ (expander iFrom freezed) $ \(!iTo, !x') -> do
+      GM.modify vec (`relax` x') iTo
 
   return vec
 
@@ -89,8 +89,8 @@ spansVU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeVU 1 (r 
 
 -- | `U.constructN` for `IxVector`
 constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxVector i (U.Vector a) -> i -> a) -> IxVector i (U.Vector a)
-constructIV !rng !f = IxVector rng $ VG.constructN (rangeSize rng) $ \vec ->
-  let !i = unindex rng (VG.length vec)
+constructIV !rng !f = IxVector rng $ G.constructN (rangeSize rng) $ \vec ->
+  let !i = unindex rng (G.length vec)
    in f (IxVector rng vec) i
 
 -- | Span-based DP with preset index patterns.
@@ -108,7 +108,7 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
 -- = Typical problems
 -- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
 tspDP :: Int -> IxUVector (Int, Int) Int -> U.Vector Int
-tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case VG.length vec `divMod` nVerts of
+tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `divMod` nVerts of
   -- initial states
   (!s, !vTo) | s == bit vTo -> 0 :: Int
   -- non-reachable states
@@ -148,12 +148,12 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
            in inner res (set' : acc) (rest' .&. complement set')
 
 -- | The input must be one-based
-lcs :: HasCallStack => U.Vector Int -> Int
+lcs :: (HasCallStack) => U.Vector Int -> Int
 lcs !xs = runST $ do
-  !stree <- newSTreeVU max (VG.length xs) (0 :: Int)
+  !stree <- newSTreeVU max (G.length xs) (0 :: Int)
 
   U.forM_ xs $ \x -> do
     !n0 <- fromMaybe 0 <$> querySTree stree (0, x - 1)
     insertSTree stree x (n0 + 1)
 
-  fromJust <$> querySTree stree (0, VG.length xs - 1)
+  fromJust <$> querySTree stree (0, G.length xs - 1)

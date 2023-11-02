@@ -10,8 +10,8 @@ import Data.Bifunctor
 import Data.Graph (Vertex)
 import qualified Data.IntMap.Strict as IM
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed.Base as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -45,9 +45,9 @@ newtype instance U.MVector s RNEdge = MV_RNEdge (UM.MVector s (Int, Int, Int))
 
 newtype instance U.Vector RNEdge = V_RNEdge (U.Vector (Int, Int, Int))
 
-deriving via (RNEdge `U.As` (Int, Int, Int)) instance VGM.MVector UM.MVector RNEdge
+deriving via (RNEdge `U.As` (Int, Int, Int)) instance GM.MVector UM.MVector RNEdge
 
-deriving via (RNEdge `U.As` (Int, Int, Int)) instance VG.Vector U.Vector RNEdge
+deriving via (RNEdge `U.As` (Int, Int, Int)) instance G.Vector U.Vector RNEdge
 
 instance U.Unbox RNEdge
 

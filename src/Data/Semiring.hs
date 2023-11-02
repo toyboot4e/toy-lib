@@ -6,8 +6,8 @@
 -- | `Semiring`
 module Data.Semiring where
 
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Base as U
@@ -28,12 +28,12 @@ class Semiring s where
   sone :: s
 
 -- | Fold using the `<+>` (plus) opreator.
-foldP :: (Semiring a, VG.Vector v a) => v a -> a
-foldP = VG.foldl' (<+>) szero
+foldP :: (Semiring a, G.Vector v a) => v a -> a
+foldP = G.foldl' (<+>) szero
 
 -- | Fold using the `<.>` (times) opreator.
-foldT :: (Semiring a, VG.Vector v a) => v a -> a
-foldT = VG.foldl' (<.>) sone
+foldT :: (Semiring a, G.Vector v a) => v a -> a
+foldT = G.foldl' (<.>) sone
 
 -- | Max-Plus semiring
 newtype MaxPlus a = MaxPlus {getMaxPlus :: a}
@@ -44,9 +44,9 @@ newtype instance U.MVector s (MaxPlus a) = MV_MaxPlus (P.MVector s (MaxPlus a))
 
 newtype instance U.Vector (MaxPlus a) = V_MaxPlus (P.Vector (MaxPlus a))
 
-deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => VGM.MVector UM.MVector (MaxPlus a)
+deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => GM.MVector UM.MVector (MaxPlus a)
 
-deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => VG.Vector U.Vector (MaxPlus a)
+deriving via (U.UnboxViaPrim (MaxPlus a)) instance (P.Prim a) => G.Vector U.Vector (MaxPlus a)
 
 instance (P.Prim a) => U.Unbox (MaxPlus a)
 
@@ -74,9 +74,9 @@ newtype instance U.MVector s (MinPlus a) = MV_MinPlus (P.MVector s (MinPlus a))
 
 newtype instance U.Vector (MinPlus a) = V_MinPlus (P.Vector (MinPlus a))
 
-deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => VGM.MVector UM.MVector (MinPlus a)
+deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => GM.MVector UM.MVector (MinPlus a)
 
-deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => VG.Vector U.Vector (MinPlus a)
+deriving via (U.UnboxViaPrim (MinPlus a)) instance (P.Prim a) => G.Vector U.Vector (MinPlus a)
 
 instance (P.Prim a) => U.Unbox (MinPlus a)
 
@@ -114,9 +114,9 @@ newtype instance U.MVector s Boolean = MV_Foo (U.MVector s Bool)
 
 newtype instance U.Vector Boolean = V_Foo (U.Vector Bool)
 
-deriving via (Boolean `U.As` Bool) instance VGM.MVector UM.MVector Boolean
+deriving via (Boolean `U.As` Bool) instance GM.MVector UM.MVector Boolean
 
-deriving via (Boolean `U.As` Bool) instance VG.Vector U.Vector Boolean
+deriving via (Boolean `U.As` Bool) instance G.Vector U.Vector Boolean
 
 instance U.Unbox Boolean
 

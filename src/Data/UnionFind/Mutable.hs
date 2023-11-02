@@ -11,8 +11,8 @@ import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST (RealWorld)
 import qualified Data.IntSet as IS
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed.Base as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
@@ -51,9 +51,9 @@ newtype instance U.MVector s MUFNode = MV_MUFNode (UM.MVector s (Bool, Int))
 
 newtype instance U.Vector MUFNode = V_MUFNode (U.Vector (Bool, Int))
 
-deriving via (MUFNode `U.As` (Bool, Int)) instance VGM.MVector UM.MVector MUFNode
+deriving via (MUFNode `U.As` (Bool, Int)) instance GM.MVector UM.MVector MUFNode
 
-deriving via (MUFNode `U.As` (Bool, Int)) instance VG.Vector U.Vector MUFNode
+deriving via (MUFNode `U.As` (Bool, Int)) instance G.Vector U.Vector MUFNode
 
 instance U.Unbox MUFNode
 
@@ -78,7 +78,7 @@ rootMUF uf@(MUnionFind !vec) i = do
 -- | Returns all root vertices.
 {-# INLINE groupsMUF #-}
 groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
-groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (VGM.length vec)]
+groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (GM.length vec)]
   where
     step !is !i = do
       !root <- rootMUF uf i

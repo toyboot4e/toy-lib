@@ -8,8 +8,8 @@ module Data.MultiSetVec where
 
 import Control.Monad.Primitive
 import Data.Primitive.MutVar
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
@@ -20,7 +20,7 @@ data MultiSetVec s = MultiSetVec (MutVar s Int) (UM.MVector s Int)
 showMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m String
 showMSV (MultiSetVec !nRef !mVec) = do
   !n <- readMutVar nRef
-  !vec <- VG.unsafeFreeze mVec
+  !vec <- G.unsafeFreeze mVec
   return $ show (n, vec)
 
 newMSV :: (PrimMonad m) => Int -> m (MultiSetVec (PrimState m))
@@ -33,7 +33,7 @@ newMSV !capacity = MultiSetVec <$> newMutVar (0 :: Int) <*> UM.replicate capacit
 clearMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m ()
 clearMSV (MultiSetVec !nRef !mVec) = do
   writeMutVar nRef 0
-  VGM.set mVec 0
+  GM.set mVec 0
 
 fromVecMSV :: (PrimMonad m) => Int -> U.Vector Int -> m (MultiSetVec (PrimState m))
 fromVecMSV !capacity !xs = do
@@ -48,26 +48,26 @@ nullMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m Bool
 nullMSV = fmap (== 0) . countMSV
 
 readMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> Int -> m Int
-readMSV (MultiSetVec !_ !mVec) = VGM.read mVec
+readMSV (MultiSetVec !_ !mVec) = GM.read mVec
 
 incMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> Int -> m ()
 incMSV (MultiSetVec !nRef !mVec) k =
-  VGM.read mVec k >>= \case
+  GM.read mVec k >>= \case
     0 -> do
       modifyMutVar' nRef succ
-      VGM.write mVec k 1
+      GM.write mVec k 1
     !nk -> do
-      VGM.write mVec k (nk + 1)
+      GM.write mVec k (nk + 1)
 
 decMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> Int -> m ()
 decMSV (MultiSetVec !nRef !mVec) k =
-  VGM.read mVec k >>= \case
+  GM.read mVec k >>= \case
     0 -> return ()
     1 -> do
       modifyMutVar' nRef pred
-      VGM.write mVec k 0
+      GM.write mVec k 0
     !nk -> do
-      VGM.write mVec k (nk - 1)
+      GM.write mVec k (nk - 1)
 
 -- | $O(n)$ Find minimum key element
 minMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
@@ -75,8 +75,8 @@ minMSV (MultiSetVec !nRef !mVec) =
   readMutVar nRef >>= \case
     0 -> return Nothing
     _ -> do
-      !vec <- VG.unsafeFreeze mVec
-      return . fmap (\i -> (i, vec VG.! i)) $ VG.findIndex (> 0) vec
+      !vec <- G.unsafeFreeze mVec
+      return . fmap (\i -> (i, vec G.! i)) $ G.findIndex (> 0) vec
 
 -- | $O(n)$ Find maximum key element
 maxMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
@@ -84,8 +84,8 @@ maxMSV (MultiSetVec !nRef !mVec) =
   readMutVar nRef >>= \case
     0 -> return Nothing
     _ -> do
-      !vec <- VG.unsafeFreeze mVec
-      return . fmap (\i -> (i, vec VG.! i)) $ VG.findIndexR (> 0) vec
+      !vec <- G.unsafeFreeze mVec
+      return . fmap (\i -> (i, vec G.! i)) $ G.findIndexR (> 0) vec
 
 unsafeFreezeMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Int, U.Vector Int)
 unsafeFreezeMSV (MultiSetVec !nRef !mVec) = (,) <$> readMutVar nRef <*> U.unsafeFreeze mVec

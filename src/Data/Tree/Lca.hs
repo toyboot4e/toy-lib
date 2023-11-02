@@ -12,7 +12,7 @@ import Data.List (find)
 import Data.Maybe
 import Data.SemigroupAction
 import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Macro
@@ -27,7 +27,7 @@ newtype ToParent = ToParent (U.Vector Vertex)
 instance Semigroup ToParent where
   (ToParent !vec1) <> (ToParent !vec2) = ToParent $ U.map f vec2
     where
-      !_ = dbgAssert (VG.length vec1 == VG.length vec2)
+      !_ = dbgAssert (G.length vec1 == G.length vec2)
       f (-1) = -1
       f i = vec1 U.! i
 

@@ -22,7 +22,7 @@ import Data.Maybe
 import Data.Tree.Lca (LcaCache, ToParent (..))
 import Data.Unindex
 import qualified Data.Vector.Fusion.Stream.Monadic as MS
-import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -292,7 +292,7 @@ dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
         if v1 == end
           then return $ Just stack
           else do
-            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case VG.uncons v2s of
+            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
                 (<|>) <$> loop (succ depth, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
@@ -309,7 +309,7 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
     if v1 == end
       then return $ Just stack
       else do
-        flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case VG.uncons v2s of
+        flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
           Nothing -> return Nothing
           Just (!v2, !v2s') -> do
             (<|>) <$> loop (succ depth, v1, v2, (v1, v2) : stack) <*> visitNeighbors v2s'

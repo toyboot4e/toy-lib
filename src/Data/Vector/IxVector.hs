@@ -8,8 +8,8 @@ import Control.Monad.Primitive
 import Data.Ix
 import Data.Tuple.Extra (first)
 import Data.Unindex
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
@@ -28,28 +28,28 @@ type IxMUVector i s a = IxVector i (UM.MVector s a)
 
 -- | Partial `IxVector` accessor
 {-# INLINE (@!) #-}
-(@!) :: (HasCallStack, Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
-(@!) IxVector {..} i = vecIV VG.! index boundsIV i
+(@!) :: (HasCallStack, Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
+(@!) IxVector {..} i = vecIV G.! index boundsIV i
 
 -- | Partial unsafe `IxVector` accessor
 {-# INLINE (@!!) #-}
-(@!!) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> a
-(@!!) IxVector {..} i = VG.unsafeIndex vecIV (unsafeIndex boundsIV i)
+(@!!) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
+(@!!) IxVector {..} i = G.unsafeIndex vecIV (unsafeIndex boundsIV i)
 
 -- | Total `IxVector` accessor
 {-# INLINE (@!?) #-}
-(@!?) :: (HasCallStack, Ix i, VG.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(@!?) :: (HasCallStack, Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
 (@!?) IxVector {..} i
   -- NOTE: `index` panics on out of range
-  | inRange boundsIV i = Just (vecIV VG.! index boundsIV i)
+  | inRange boundsIV i = Just (vecIV G.! index boundsIV i)
   | otherwise = Nothing
 
 -- | Total unsafe `IxVector` accessor
 {-# INLINE (@!!?) #-}
-(@!!?) :: (Ix i, VG.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(@!!?) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
 (@!!?) IxVector {..} i
   -- NOTE: `index` panics on out of range
-  | inRange boundsIV i = Just (VG.unsafeIndex vecIV (unsafeIndex boundsIV i))
+  | inRange boundsIV i = Just (G.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
 
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
@@ -81,52 +81,52 @@ accumulateIV !f !vec0 !commands =
 -- TOOD: `ixmapIV` and rotation examples
 
 -- TODO: `createIx` where we freeze the `IxVector`
--- createIx :: (VG.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
+-- createIx :: (G.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
 -- createIx = runST
 
 -- replicateIVM
 
 -- | Reads a value from `IxVector`.
 {-# INLINE readIV #-}
-readIV :: (HasCallStack, Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
-readIV IxVector {..} i = VGM.read vecIV (index boundsIV i)
+readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
 
 {-# INLINE unsafeReadIV #-}
-unsafeReadIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
-unsafeReadIV IxVector {..} i = VGM.unsafeRead vecIV (unsafeIndex boundsIV i)
+unsafeReadIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+unsafeReadIV IxVector {..} i = GM.unsafeRead vecIV (unsafeIndex boundsIV i)
 
 -- | Writes a value to `IxVector`.
 {-# INLINE writeIV #-}
-writeIV :: (HasCallStack, Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
-writeIV IxVector {..} i = VGM.write vecIV (index boundsIV i)
+writeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+writeIV IxVector {..} i = GM.write vecIV (index boundsIV i)
 
 {-# INLINE unsafeWriteIV #-}
-unsafeWriteIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
-unsafeWriteIV IxVector {..} i = VGM.unsafeWrite vecIV (unsafeIndex boundsIV i)
+unsafeWriteIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+unsafeWriteIV IxVector {..} i = GM.unsafeWrite vecIV (unsafeIndex boundsIV i)
 
 {-# INLINE modifyIV #-}
-modifyIV :: (HasCallStack, Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
-modifyIV IxVector {..} !alter i = VGM.modify vecIV alter (index boundsIV i)
+modifyIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+modifyIV IxVector {..} !alter i = GM.modify vecIV alter (index boundsIV i)
 
 {-# INLINE unsafeModifyIV #-}
-unsafeModifyIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
-unsafeModifyIV IxVector {..} !alter i = VGM.unsafeModify vecIV alter (unsafeIndex boundsIV i)
+unsafeModifyIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
+unsafeModifyIV IxVector {..} !alter i = GM.unsafeModify vecIV alter (unsafeIndex boundsIV i)
 
 {-# INLINE modifyMIV #-}
-modifyMIV :: (HasCallStack, Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
-modifyMIV IxVector {..} !alter i = VGM.modifyM vecIV alter (index boundsIV i)
+modifyMIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
+modifyMIV IxVector {..} !alter i = GM.modifyM vecIV alter (index boundsIV i)
 
 {-# INLINE unsafeModifyMIV #-}
-unsafeModifyMIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
-unsafeModifyMIV IxVector {..} !alter i = VGM.unsafeModifyM vecIV alter (unsafeIndex boundsIV i)
+unsafeModifyMIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
+unsafeModifyMIV IxVector {..} !alter i = GM.unsafeModifyM vecIV alter (unsafeIndex boundsIV i)
 
 {-# INLINE swapIV #-}
-swapIV :: (HasCallStack, Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
-swapIV IxVector {..} !i1 !i2 = VGM.swap vecIV (index boundsIV i1) (index boundsIV i2)
+swapIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+swapIV IxVector {..} !i1 !i2 = GM.swap vecIV (index boundsIV i1) (index boundsIV i2)
 
 {-# INLINE unsafeSwapIV #-}
-unsafeSwapIV :: (Ix i, PrimMonad m, VGM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
-unsafeSwapIV IxVector {..} !i1 !i2 = VGM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
+unsafeSwapIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
+unsafeSwapIV IxVector {..} !i1 !i2 = GM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
 
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2DIV :: HasCallStack => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)

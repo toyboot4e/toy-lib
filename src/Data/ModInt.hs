@@ -11,8 +11,8 @@ import Data.Proxy
 import qualified Data.Ratio as Ratio
 import Data.Semigroup
 import Data.SemigroupAction
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Base as U
@@ -58,8 +58,8 @@ newtype instance U.MVector s (ModInt p) = MV_ModInt (P.MVector s (ModInt p))
 
 newtype instance U.Vector (ModInt p) = V_ModInt (P.Vector (ModInt p))
 
-deriving via (U.UnboxViaPrim (ModInt p)) instance VGM.MVector UM.MVector (ModInt p)
+deriving via (U.UnboxViaPrim (ModInt p)) instance GM.MVector UM.MVector (ModInt p)
 
-deriving via (U.UnboxViaPrim (ModInt p)) instance VG.Vector U.Vector (ModInt p)
+deriving via (U.UnboxViaPrim (ModInt p)) instance G.Vector U.Vector (ModInt p)
 
 instance U.Unbox (ModInt p)

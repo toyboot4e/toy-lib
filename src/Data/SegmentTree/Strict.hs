@@ -1,7 +1,7 @@
 module Data.SegmentTree.Strict where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -51,8 +51,8 @@ data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 -- REMARK: Always give a zero value. It fills all the nodes including parent nodes, and the parent
 -- nodes are not updated.
 {-# INLINE newSTreeVG #-}
-newSTreeVG :: (VGM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
-newSTreeVG !f !nLeaves !zero = SegmentTree f <$> VGM.replicate nVerts zero
+newSTreeVG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
+newSTreeVG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
   where
     !nVerts = until (>= 2 * nLeaves) (* 2) 2
     -- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
@@ -72,58 +72,58 @@ newSTreeVU = newSTreeVG
 -- REMARK: It takes lots of time. Consider a much more efficient resettiong strategy such as
 -- re-inserting zeros to used slots, or maybe use | `compressInvNumVG` when you just need
 -- inversion number.
-resetSTree :: (VGM.MVector v a, PrimMonad m) => (SegmentTree v (PrimState m) a) -> a -> m ()
-resetSTree (SegmentTree !_ !vec) !zero = VGM.set vec zero
+resetSTree :: (GM.MVector v a, PrimMonad m) => (SegmentTree v (PrimState m) a) -> a -> m ()
+resetSTree (SegmentTree !_ !vec) !zero = GM.set vec zero
 
 -- | Updates an `SegmentTree` leaf value and their parents up to top root.
 {-# INLINE insertSTree #-}
-insertSTree :: (VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
+insertSTree :: (GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 insertSTree tree@(SegmentTree !_ !vec) !i !value = _updateElement tree i' value
   where
     -- length == 2 * (the number of the leaves)
-    !offset = VGM.length vec `div` 2 - 1
+    !offset = GM.length vec `div` 2 - 1
     -- leaf index
     !i' = i + offset
 
 -- | Updates an `SegmentTree` leaf value and their parents up to top root.
 {-# INLINE modifySTree #-}
-modifySTree :: (VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
+modifySTree :: (GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree tree@(SegmentTree !_ !vec) !f !i = do
-  !v <- f <$> VGM.unsafeRead vec i'
+  !v <- f <$> GM.unsafeRead vec i'
   _updateElement tree i' v
   where
     -- length == 2 * (the number of the leaves)
-    !offset = VGM.length vec `div` 2 - 1
+    !offset = GM.length vec `div` 2 - 1
     -- leaf index
     !i' = i + offset
 
 -- | (Internal) Updates an `SegmentTree` element (node or leaf) value and their parents up to top root.
 -- REMARK: It's faster to not INLINE the recursive function:
-_updateElement :: (HasCallStack, VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
+_updateElement :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 _updateElement (SegmentTree !_ !vec) 0 !value = do
-  VGM.unsafeWrite vec 0 value
+  GM.unsafeWrite vec 0 value
 _updateElement tree@(SegmentTree !f !vec) !i !value = do
-  VGM.unsafeWrite vec i value
+  GM.unsafeWrite vec i value
   case (i - 1) `div` 2 of
     -- REMARK: (-1) `div` 2 == -1
     -- TODO: This case never happens, right?
     (-1) -> return ()
     !iParent -> do
-      !c1 <- VGM.unsafeRead vec $! iParent * 2 + 1
-      !c2 <- VGM.unsafeRead vec $! iParent * 2 + 2
+      !c1 <- GM.unsafeRead vec $! iParent * 2 + 1
+      !c2 <- GM.unsafeRead vec $! iParent * 2 + 2
       _updateElement tree iParent $! f c1 c2
 
 -- | Retrieves the folding result over the inclusive range `[l, r]` from `SegmentTree`.
 {-# INLINE querySTree #-}
-querySTree :: forall v a m. (HasCallStack, VGM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
+querySTree :: forall v a m. (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
 querySTree (SegmentTree !f !vec) (!lo, !hi)
   | lo > hi = return Nothing
   | otherwise = inner 0 (0, initialHi)
   where
-    !initialHi = VGM.length vec `div` 2 - 1
+    !initialHi = GM.length vec `div` 2 - 1
     inner :: Int -> (Int, Int) -> m (Maybe a)
     inner !i (!l, !h)
-      | lo <= l && h <= hi = Just <$> VGM.unsafeRead vec i
+      | lo <= l && h <= hi = Just <$> GM.unsafeRead vec i
       | h < lo || hi < l = return Nothing
       | otherwise = do
           let !d = (h - l) `div` 2
