@@ -36,17 +36,14 @@ TODO
 
 ## Project setting notes
 
-### `stack.yaml`
+### Installation
 
-Disable Nix pureity for NixOS, where Nix integration seems to be enabled by default:
+- GHC 9.4.5 (corresponds to [lts-21.7](https://www.stackage.org/lts-21.7))
+  Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)
+- HLS 2.2.0
+  See [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html)
 
-```yaml
-nix:
-  # Let `toy-lib-exe` find `stack` in user `PATH`:
-  pure: false
-```
-
-### `package.yaml`
+### `toy-lib.cabal`
 
 No exports are assumed, as they're bundled into one file (`Main.hs`):
 
@@ -58,29 +55,31 @@ ghc-options:
 We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand it, but all the extensions enabled by `GHC2021` are enabled as `default-extensisons`:
 
 ```yaml
-language: Haskell2010
+default-language: Haskell2010
 
 default-extensions:
 - BangPatterns
 # and lots more
 ```
 
-### `hacddock`
+### `doctest`
 
-- Run `stack test` for running [`doctest`] over [`haddock`] doctests.
-- Run `stack haddock toy-lib:lib --fast` to build local library documentation. Add `--open` to it for opening it on your browser.
-  - TODO: Include it in `stack test` or project-specific command?
+Run [`doctest`] via REPL:
+
+```sh
+$ cabal repl --with-ghc=doctest --repl-options='-w -Wdefault'
+```
 
 [`doctest`]: https://github.com/sol/doctest
-[`haddock`]: https://haskell-haddock.readthedocs.io/en/latest/
 
-### GHC version
+### `haddock`
 
-GHC 9.4.5, [lts-21.6](https://www.stackage.org/lts-21.6).
+Run [`haddock`] from command line:
 
-### Incremental builds?
-
-TODO
+```sh
+$ cabal haddock
+$ cabal haddock --open
+```
 
 ### Limitations
 

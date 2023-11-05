@@ -4,7 +4,7 @@
 
 module ToyLib.Macro where
 
--- When run as a stack script, `dbg` expands to `traceShow`.
+-- When run as script, `dbg` expands to `traceShow`.
 -- Otherwise it's an empty function.
 #ifdef DEBUG
 dbg :: Show a => a -> ()
