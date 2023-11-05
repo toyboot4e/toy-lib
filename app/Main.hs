@@ -4,13 +4,13 @@
 module Main (main) where
 
 import Control.Monad
-import Data.SparseGraph
-import qualified Data.List as L
+import Data.List qualified as L
 import Data.List.Extra (stripSuffix)
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 import Data.Maybe
-import qualified Data.Vector.Unboxed as U
-import qualified Language.Haskell.Exts as H
+import Data.SparseGraph
+import Data.Vector.Unboxed qualified as U
+import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Exit (exitFailure)
@@ -35,7 +35,7 @@ main = do
     (path,) <$> parseFile ghc2021Extensions path
   let (!failures, !successes) = partitionParseResults parsedFiles
 
-  when ((not . null) failures) $ do
+  unless (null failures) $ do
     forM_ failures print
     exitFailure
 
@@ -163,7 +163,7 @@ generateLibrary ghc2021Extensions parsedFiles =
         minify :: H.Module l -> String
         minify (H.Module _ _ _ _ !decls) = L.intercalate ";" (map (hack . H.prettyPrintWithMode pphsMode) decls)
           where
-            -- | `deriving newtype` is not handled correctly by `haskell-src-exts`.
+            -- \| `deriving newtype` is not handled correctly by `haskell-src-exts`.
             -- Here we remove newline characters, but there's some needless many spaces before `deriving newtype`:
             hack :: String -> String
             hack = filter (/= '\n')
