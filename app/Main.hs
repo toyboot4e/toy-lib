@@ -174,7 +174,7 @@ pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 
 generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [(FilePath, String)] -> String -> String -> String -> String
 generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body =
-  unlines [header, pre, disableFormat, exts, imports', "", macros, toylib', enableFormat, post, "", body]
+  unlines [header, pre, disableFormat, exts, imports', rules, macros', toylib', enableFormat, post, "", body]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"
@@ -186,6 +186,10 @@ generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body
 
     pre = "-- {{{ toy-lib: https://github.com/toyboot4e/toy-lib"
     post = "-- }}}"
+    rules = "{-# RULES \"Force inline VAI.sort\" VAI.sort = VAI.sortBy compare #-}"
+
+    -- remove newline character
+    macros' = init macros
 
     disableFormat = "{- ORMOLU_DISABLE -}"
     enableFormat = "{- ORMOLU_ENABLE -}"
