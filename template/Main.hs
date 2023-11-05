@@ -16,6 +16,7 @@
 module Template () where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Exception (assert)
 import Control.Monad
 import Control.Monad.Fix
