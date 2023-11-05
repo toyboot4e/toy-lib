@@ -177,16 +177,16 @@ constructN0 !x0 !n !f = U.constructN n $ \vec ->
 -- Option - Maybe cheatsheet
 -- https://notes.iveselov.info/programming/cheatsheet-rust-option-vs-haskell-maybe
 
--- compress deduplicates sorted list, nub deduplicates non-sorted list
--- TODO: std?
-compress :: Eq a => [a] -> [a]
-compress [] = []
-compress (x : xs) = x : compress (dropWhile (== x) xs)
-
 -- | Runs the given function `n` times.
+-- {-# INLINE times #-}
+-- times :: Int -> (a -> a) -> a -> a
+-- times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
 {-# INLINE times #-}
 times :: Int -> (a -> a) -> a -> a
-times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
+times !n !f !s0 = inner 0 s0
+  where
+    inner i !s | i == n = s
+    inner i !s = inner (i + 1) $! f s
 
 -- -- | Returns combinations of the list taking n values.
 -- -- | For example, binary combinations are got by `combination 2 [0..8]`.
