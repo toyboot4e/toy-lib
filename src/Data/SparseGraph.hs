@@ -58,7 +58,7 @@ data SparseGraph i w = SparseGraph
 --
 -- TODO: Faster implementation
 {-# INLINE buildUSG #-}
-buildUSG :: (HasCallStack, Unindex i) => (i, i) -> U.Vector (i, i) -> SparseGraph i ()
+buildUSG :: (Unindex i) => (i, i) -> U.Vector (i, i) -> SparseGraph i ()
 buildUSG !boundsSG !edges =
   buildRawSG boundsSG $ U.map (\(!i1, !i2) -> (ix i1, ix i2, ())) edges
   where
@@ -66,14 +66,14 @@ buildUSG !boundsSG !edges =
 
 -- | Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
-buildWSG :: (HasCallStack, Unindex i, UM.Unbox w) => (i, i) -> U.Vector (i, i, w) -> SparseGraph i w
+buildWSG :: (Unindex i, UM.Unbox w) => (i, i) -> U.Vector (i, i, w) -> SparseGraph i w
 buildWSG !boundsSG !edges =
   buildRawSG boundsSG $ U.map (\(!i1, !i2, !w) -> (ix i1, ix i2, w)) edges
   where
     ix = index boundsSG
 
 {-# INLINE buildRawSG #-}
-buildRawSG :: (HasCallStack, Unindex i, UM.Unbox w) => (i, i) -> U.Vector (Vertex, Vertex, w) -> SparseGraph i w
+buildRawSG :: (Unindex i, UM.Unbox w) => (i, i) -> U.Vector (Vertex, Vertex, w) -> SparseGraph i w
 buildRawSG !boundsSG !edges =
   let !nEdgesSG = U.length edges
       !nVertsSG = rangeSize boundsSG
@@ -101,7 +101,7 @@ buildRawSG !boundsSG !edges =
 
 -- | Retrieves adjacent vertices.
 {-# INLINE adj #-}
-adj :: (HasCallStack) => SparseGraph i w -> Vertex -> U.Vector Vertex
+adj :: SparseGraph i w -> Vertex -> U.Vector Vertex
 adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
   where
     !o1 = U.unsafeIndex offsetsSG v
@@ -109,7 +109,7 @@ adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
 
 -- | Returns @(EdgeId, Vertex)@ paris. Hardly used.
 {-# INLINE eAdj #-}
-eAdj :: (HasCallStack) => SparseGraph i w -> Vertex -> U.Vector (EdgeId, Vertex)
+eAdj :: SparseGraph i w -> Vertex -> U.Vector (EdgeId, Vertex)
 eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
   where
     -- eAdjRaw SparseGraph {..} v = U.imap (\e v -> (e + o1, v)) vs
@@ -120,14 +120,14 @@ eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
 
 -- | Retrieves adjacent vertex indices.
 {-# INLINE adjIx #-}
-adjIx :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> U.Vector i
+adjIx :: (Unindex i) => SparseGraph i w -> i -> U.Vector i
 adjIx gr i = U.map (unindex (boundsSG gr)) $ adj gr v
   where
     !v = index (boundsSG gr) i
 
 -- | Retrieves adjacent vertices with weights.
 {-# INLINE adjW #-}
-adjW :: (HasCallStack, U.Unbox w) => SparseGraph i w -> Vertex -> U.Vector (Vertex, w)
+adjW :: (U.Unbox w) => SparseGraph i w -> Vertex -> U.Vector (Vertex, w)
 adjW SparseGraph {..} v = U.zip vs ws
   where
     !o1 = U.unsafeIndex offsetsSG v
@@ -137,12 +137,12 @@ adjW SparseGraph {..} v = U.zip vs ws
 
 -- | Retrieves adjacent vertex indices with weights.
 {-# INLINE adjWIx #-}
-adjWIx :: (HasCallStack, Unindex i, U.Unbox w) => SparseGraph i w -> i -> U.Vector (i, w)
+adjWIx :: (Unindex i, U.Unbox w) => SparseGraph i w -> i -> U.Vector (i, w)
 adjWIx gr i = U.map (first (unindex (boundsSG gr))) $ adjW gr v
   where
     !v = index (boundsSG gr) i
 
-dfsSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
+dfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVertsSG undef
@@ -157,7 +157,7 @@ dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   return dist
 
 -- | Just a template. Typical problem: [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
-dfsEveryPathSG :: (HasCallStack) => SparseGraph Int Int -> Int -> Int
+dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
 dfsEveryPathSG gr@SparseGraph {..} !start = runST $ do
   !vis <- UM.replicate nVertsSG False
 
@@ -171,8 +171,8 @@ dfsEveryPathSG gr@SparseGraph {..} !start = runST $ do
     return $ max d1 maxDistance
 
 -- | Also consider using union-find tree.
-componentsVecSG :: (HasCallStack, Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
-componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
+componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
+componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   !vis <- UM.replicate nVertsSG False
 
   flip fix start $ \loop v1 -> do
@@ -180,7 +180,7 @@ componentsVecSG !gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ d
     let !v2s = gr `adj` v1
     U.forM_ v2s $ \v2 -> do
       !visited <- UM.read vis v2
-      when (not visited) $ do
+      unless visited $ do
         loop v2
 
   return vis
@@ -243,7 +243,7 @@ bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
 -- | Dijkstra: $O((E+V) \log {V})$
 --
 -- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
-djSG :: forall i w. (HasCallStack, Unindex i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> i -> U.Vector w
+djSG :: forall i w. (Unindex i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> i -> U.Vector w
 djSG gr@SparseGraph {..} !undef !startIx = U.create $ do
   !dist <- UM.replicate nVertsSG undef
 
@@ -275,7 +275,7 @@ djSG gr@SparseGraph {..} !undef !startIx = U.create $ do
 -- TODO: BFS with path (route?) restoration
 
 -- | Returns a list of a route in reverse order (a route from end to start).
-dfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> Maybe [Edge]
+dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Edge]
 dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVertsSG undef
@@ -323,7 +323,7 @@ treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
 -- >>> let !gr = buildUSG ((0, 4) :: (Int, Int)) $ U.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
 -- >>> topSortSG gr
 -- [4,0,2,3,1]
-topSortSG :: (HasCallStack) => SparseGraph i w -> [Vertex]
+topSortSG :: SparseGraph i w -> [Vertex]
 topSortSG gr@SparseGraph {..} = runST $ do
   !vis <- UM.replicate nVertsSG False
 
@@ -340,7 +340,7 @@ topSortSG gr@SparseGraph {..} = runST $ do
 
 -- | Partial running of `scc` over topologically sorted vertices, but for some connected components
 -- only.
-topScc1SG :: forall i w m. (HasCallStack, PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
+topScc1SG :: forall i w m. (PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
 topScc1SG !gr' !vis !v0 = do
   flip fix ([], v0) $ \loop (!acc, !v) -> do
     UM.unsafeRead vis v >>= \case
@@ -353,7 +353,7 @@ topScc1SG !gr' !vis !v0 = do
 
 -- | Creates a reverse graph.
 -- TODO: return weightned graph
-revSG :: (HasCallStack, Unindex i, U.Unbox w) => SparseGraph i w -> SparseGraph i w
+revSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> SparseGraph i w
 revSG SparseGraph {..} = buildRawSG boundsSG edges'
   where
     !vws = U.zip adjacentsSG edgeWeightsSG
@@ -366,7 +366,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
 
 -- | Collectes strongly connected components, topologically sorted.
 -- Upstream vertices come first, e.g., @(v1 - v2) -> v3 -> v4@.
-topSccSG :: (HasCallStack, Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
+topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
 topSccSG gr = collectSccPreorderSG $ topSortSG gr
   where
     !gr' = revSG gr
@@ -377,7 +377,7 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
 
 -- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
-treeDepthInfoSG :: (HasCallStack) => SparseGraph Int w -> Int -> (ToParent, U.Vector Int)
+treeDepthInfoSG :: SparseGraph Int w -> Int -> (ToParent, U.Vector Int)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.replicate nVerts (-1 :: Int)
   !depths <- UM.replicate nVerts (-1 :: Int)
@@ -394,7 +394,7 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
     !nVerts = rangeSize boundsSG
 
 -- | LCA component. Returns `LcaCache`, i.e., `(parents, depths, parents')`.
-lcaCacheSG :: (HasCallStack) => SparseGraph Int w -> Vertex -> LcaCache
+lcaCacheSG :: SparseGraph Int w -> Vertex -> LcaCache
 lcaCacheSG !gr !root = (toParent, depths, toParentN)
   where
     (!toParent, !depths) = treeDepthInfoSG gr root
