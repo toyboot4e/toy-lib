@@ -22,7 +22,9 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive
 import Control.Monad.ST
-import Control.Monad.Trans.State.Strict hiding (get)
+import Control.Monad.State.Class
+import Control.Monad.Trans (MonadTrans, lift)
+import Control.Monad.Trans.State.Strict (State, StateT, runState, evalState, execState, runStateT, evalStateT, execStateT)
 import Data.Bifunctor
 import Data.Bits
 import Data.Bool (bool)

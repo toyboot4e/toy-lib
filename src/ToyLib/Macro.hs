@@ -10,6 +10,9 @@ module ToyLib.Macro where
 dbg :: Show a => a -> ()
 dbg !x = let !_ = traceShow x () in ()
 
+dbgS :: String -> ()
+dbgS !s = let !_ = trace s () in ()
+
 dbgId :: Show a => a -> a
 dbgId !x = let !_ = traceShow x () in x
 
@@ -23,6 +26,9 @@ dbgAssert True _ = ()
 #else
 dbg :: Show a => a -> ()
 dbg _ = ()
+
+dbgS :: String -> ()
+dbgS _ = ()
 
 dbgId :: Show a => a -> a
 dbgId = id

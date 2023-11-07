@@ -5,7 +5,8 @@
 -- implementation.
 module Data.RollingHash where
 
-import Control.Monad.Trans.State.Strict hiding (get)
+import Control.Monad.State.Class
+import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
 import Data.List (foldl')
 import Data.Maybe
