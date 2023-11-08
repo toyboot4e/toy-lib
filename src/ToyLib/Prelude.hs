@@ -188,6 +188,11 @@ times !n !f !s0 = inner 0 s0
     inner i !s | i == n = s
     inner i !s = inner (i + 1) $! f s
 
+interleave :: [a] -> [a] -> [a]
+interleave xs [] = xs
+interleave [] ys = ys
+interleave (x : xs) (y : ys) = x : y : interleave xs ys
+
 -- -- | Returns combinations of the list taking n values.
 -- -- | For example, binary combinations are got by `combination 2 [0..8]`.
 -- -- | REMARK: This is slow. Prefer list comprehension like `x <- [1 .. n], y <- [x + 1 .. n]m ..]`.
