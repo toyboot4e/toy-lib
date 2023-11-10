@@ -29,10 +29,21 @@ import Data.Ix
 import Data.List.Extra (nubSort)
 import Data.Maybe
 import Data.Tuple.Extra hiding (first, second)
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude
 
 -- TODO: Use typeclass for getting middle and detecting end
+
+-- | `bsearchL` over a vector
+bsearchLG :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe a
+bsearchLG !vec !p = (vec G.!) <$> bsearchL (0, G.length vec - 1) (p . (vec G.!))
+
+-- | `bsearchL` over a vector, searching for a specific value.
+bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe a
+bsearchExact !vec f !xref = case bsearchL (0, G.length vec - 1) ((<= xref) . f . (vec G.!)) of
+  Just !x | f (vec G.! x) == xref -> Just (vec G.! x)
+  _ -> Nothing
 
 -- | Pure binary search.
 {-# INLINE bsearch #-}
