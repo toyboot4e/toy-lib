@@ -180,15 +180,10 @@ constructN0 !x0 !n !f = U.constructN n $ \vec ->
 -- | Runs the given function `n` times.
 {-# INLINE times #-}
 times :: Int -> (a -> a) -> a -> a
-times !n !f !s0 = snd $! until ((== n) . fst) (bimap succ f) (0 :: Int, s0)
-
--- Recursive version was a bit slower on my benchmark
--- {-# INLINE times #-}
--- times :: Int -> (a -> a) -> a -> a
--- times !n !f !s0 = inner 0 s0
---   where
---     inner i !s | i == n = s
---     inner i !s = inner (i + 1) $! f s
+times !n !f !s0 = inner 0 s0
+  where
+    inner i !s | i == n = s
+    inner i !s = inner (i + 1) $! f s
 
 interleave :: [a] -> [a] -> [a]
 interleave xs [] = xs
