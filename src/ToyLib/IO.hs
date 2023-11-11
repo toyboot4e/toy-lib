@@ -22,6 +22,7 @@ module ToyLib.IO where
 import Control.Monad
 import Data.Array.IArray
 import Data.Bifunctor (first, second)
+import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
@@ -403,10 +404,10 @@ unlinesBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
 unlinesBSB = concatBSB showLnBSB
 
 yn :: Bool -> String
-yn b = if b then "Yes" else "No"
+yn = bool "No" "Yes"
 
 ynBSB :: Bool -> BSB.Builder
-ynBSB b = if b then BSB.string8 "Yes" else BSB.string8 "No"
+ynBSB = bool (BSB.string8 "No") (BSB.string8 "Yes")
 
 printYn :: Bool -> IO ()
 printYn = putLnBSB . ynBSB
