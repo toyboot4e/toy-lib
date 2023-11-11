@@ -172,6 +172,7 @@ library
   exposed-modules:
     Algorithm.BinarySearch
     Algorithm.Imos
+    Algorithm.Mo
     Algorithm.TwoPointers
     Data.BinaryLifting
     Data.BitSet
