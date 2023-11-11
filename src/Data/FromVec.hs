@@ -1,7 +1,6 @@
--- | Helper methods for creating collections types from @Vector@ types.
-
 {-# LANGUAGE TypeFamilies #-}
 
+-- | Helper methods for creating collections types from @Vector@ types.
 module Data.FromVec where
 
 import qualified Data.Heap as H

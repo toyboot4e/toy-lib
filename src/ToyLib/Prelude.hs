@@ -27,7 +27,7 @@ flipOrder = \case
   LT -> GT
   EQ -> EQ
 
-square :: Num a => a -> a
+square :: (Num a) => a -> a
 square !x = x * x
 
 {-# INLINE modifyArray #-}
@@ -52,6 +52,7 @@ modifyArray !ary !f !i = do
 {-# INLINE (.!) #-}
 (.!) :: (b -> c) -> (a -> b) -> a -> c
 (.!) = (.) . ($!)
+
 infixr 9 .!
 
 foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
@@ -66,7 +67,7 @@ foldForM !s0 !xs !m = foldM m s0 xs
 foldForMG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMG !s0 !xs !m = G.foldM' m s0 xs
 
-foldForMMS :: Monad m => a -> MS.Stream m b -> (a -> b -> m a) -> m a
+foldForMMS :: (Monad m) => a -> MS.Stream m b -> (a -> b -> m a) -> m a
 foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 -- | = Test
@@ -148,7 +149,7 @@ forMS_ :: (Monad m) => MS.Stream m Int -> (Int -> m ()) -> m ()
 forMS_ = flip MS.mapM_
 
 {-# INLINE repM_ #-}
-repM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+repM_ :: (Monad m) => Int -> Int -> (Int -> m ()) -> m ()
 repM_ !l !r !act = inner l
   where
     inner !i
@@ -156,7 +157,7 @@ repM_ !l !r !act = inner l
       | otherwise = act i >> inner (succ i)
 
 {-# INLINE repRM_ #-}
-repRM_ :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+repRM_ :: (Monad m) => Int -> Int -> (Int -> m ()) -> m ()
 repRM_ !l !r !act = inner r
   where
     inner !i

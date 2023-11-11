@@ -1,9 +1,8 @@
 -- | Multi set backed by `IntMap`.
-
 module Data.MultiSet where
 
-import Data.List (foldl')
 import qualified Data.IntMap.Strict as IM
+import Data.List (foldl')
 
 -- {{{ Multiset
 

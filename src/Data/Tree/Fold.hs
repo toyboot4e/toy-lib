@@ -1,5 +1,4 @@
 -- | Tree folding.
-
 module Data.Tree.Fold where
 
 import Control.Monad
@@ -47,7 +46,7 @@ scanTreeU :: (HasCallStack, U.Unbox a) => Array Vertex [Vertex] -> Vertex -> (m 
 scanTreeU = scanTreeG
 
 -- | Type-restricted `scanTreeG`.
-scanTreeV :: HasCallStack => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
+scanTreeV :: (HasCallStack) => Array Vertex [Vertex] -> Vertex -> (m -> a -> a) -> (Vertex -> a) -> (a -> m) -> V.Vector a
 scanTreeV = scanTreeG
 
 -- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.

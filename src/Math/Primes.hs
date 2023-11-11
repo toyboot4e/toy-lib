@@ -1,5 +1,4 @@
 -- | Prime number enumeration and prime factorization.
-
 module Math.Primes where
 
 import Data.List (group)
@@ -23,7 +22,7 @@ primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tai
     union xs [] = xs
     union [] ys = ys
 
-    unionAll :: Ord a => [[a]] -> [a]
+    unionAll :: (Ord a) => [[a]] -> [a]
     unionAll ((x : xs) : t) = x : union xs (unionAll $ pairs t)
       where
         pairs ((x : xs) : ys : t) = (x : union xs ys) : pairs t

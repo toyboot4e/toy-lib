@@ -7,7 +7,7 @@ import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude (rangeMS)
 
 class RangeMS a where
-  rangeMS2 :: Monad m => (a, a) -> MS.Stream m a
+  rangeMS2 :: (Monad m) => (a, a) -> MS.Stream m a
 
 instance RangeMS Int where
   rangeMS2 (!l, !r) = rangeMS l r
@@ -42,4 +42,3 @@ instance Unindex (Int, Int, Int) where
         (!dz, !yx) = zyx `quotRem` (h * w)
         (!dy, !dx) = yx `quotRem` w
      in (z0 + dz, y0 + dy, x0 + dx)
-

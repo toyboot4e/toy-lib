@@ -13,8 +13,8 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
-import ToyLib.Macro (dbgAssert)
 import GHC.Stack (HasCallStack)
+import ToyLib.Macro (dbgAssert)
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
@@ -129,7 +129,7 @@ unsafeSwapIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState 
 unsafeSwapIV IxVector {..} !i1 !i2 = GM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
 
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
-imos2DIV :: HasCallStack => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)
+imos2DIV :: (HasCallStack) => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)
 imos2DIV seeds@IxVector {boundsIV} = IxVector boundsIV $ U.create $ do
   !vec <- IxVector boundsIV <$> U.thaw (vecIV seeds)
 

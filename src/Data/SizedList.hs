@@ -1,5 +1,4 @@
-
--- | Alias to `(Int, [Int])`
+-- | Alias to `(Int, [Int])`.
 module Data.SizedList where
 
 -- | `(length, digitsInDescendingOrder)`

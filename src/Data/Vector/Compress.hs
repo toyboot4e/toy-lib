@@ -1,3 +1,4 @@
+-- | Index compression.
 module Data.Vector.Compress where
 
 import Algorithm.BinarySearch
@@ -7,7 +8,7 @@ import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 
 -- | One dimensional index compression: xs -> (indexer, xs')
-compressU :: HasCallStack => U.Vector Int -> (U.Vector Int, U.Vector Int)
+compressU :: (HasCallStack) => U.Vector Int -> (U.Vector Int, U.Vector Int)
 compressU xs = (indexer, U.map (fromJust . fst . f) xs)
   where
     !indexer = U.fromList $ nubSort $ U.toList xs

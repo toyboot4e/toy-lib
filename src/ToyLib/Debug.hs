@@ -48,4 +48,3 @@ dbgSTreeAll (SegmentTree _ mVec) = do
       let !vec' = G.take len . G.drop (len - 1) $ vec
       let !_ = dbgS $ "> " ++ show vec'
       loop (n + 1, 2 * len)
-

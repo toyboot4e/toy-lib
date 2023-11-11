@@ -2,7 +2,6 @@
 --
 -- - NOTE: It's slow. Prefer Dijkstra when possible.
 -- - TODO: Faster, general implementation.
-
 module Data.Graph.FloydWarshall where
 
 import Control.Monad

@@ -69,7 +69,7 @@ decMSV (MultiSetVec !nRef !mVec) k =
     !nk -> do
       GM.write mVec k (nk - 1)
 
--- | $O(n)$ Find minimum key element
+-- | /O(n)/ Find minimum key element
 minMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 minMSV (MultiSetVec !nRef !mVec) =
   readMutVar nRef >>= \case
@@ -78,7 +78,7 @@ minMSV (MultiSetVec !nRef !mVec) =
       !vec <- G.unsafeFreeze mVec
       return . fmap (\i -> (i, vec G.! i)) $ G.findIndex (> 0) vec
 
--- | $O(n)$ Find maximum key element
+-- | /O(n)/ Find maximum key element
 maxMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 maxMSV (MultiSetVec !nRef !mVec) =
   readMutVar nRef >>= \case
@@ -89,4 +89,3 @@ maxMSV (MultiSetVec !nRef !mVec) =
 
 unsafeFreezeMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Int, U.Vector Int)
 unsafeFreezeMSV (MultiSetVec !nRef !mVec) = (,) <$> readMutVar nRef <*> U.unsafeFreeze mVec
-

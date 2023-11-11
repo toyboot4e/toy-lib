@@ -2,7 +2,6 @@
 --
 -- = Typical problems
 -- - [Typical 026 - Independent Set on a Tree (★ 4)](https://atcoder.jp/contests/typical90/tasks/typical90_z)
-
 module Data.Graph.Digraph where
 
 import Data.Array.IArray
@@ -41,4 +40,3 @@ colorize !graph !colors0 = dfs True (colors0, Just ([], []))
     applyColor !color !v (Just !acc)
       | color = Just $ first (v :) acc
       | otherwise = Just $ second (v :) acc
-

@@ -1,5 +1,4 @@
 -- | TODO, Combine ModInt as Modulo module.
-
 module Math.PowMod where
 
 import Data.BinaryLifting

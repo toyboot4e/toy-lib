@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
+-- | Dictionary orders.
 module Data.Vector.DictOrder where
 
 import Control.Monad (void)
@@ -9,10 +10,8 @@ import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import GHC.Exts
-import Math.PowMod (factMods)
 import GHC.Stack (HasCallStack)
-
--- {{{ Dictionary orders
+import Math.PowMod (factMods)
 
 prevPermutationVec :: (Ord e, G.Vector v e, G.Vector v (Down e)) => v e -> v e
 prevPermutationVec =
@@ -52,5 +51,3 @@ dictOrderModuloVec xs modulo = runST $ do
     return inc
 
   return $! succ $! G.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts
-
--- }}}

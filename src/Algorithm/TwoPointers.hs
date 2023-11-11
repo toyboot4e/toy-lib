@@ -1,3 +1,4 @@
+-- | Two pointers
 module Algorithm.TwoPointers where
 
 import Data.Bifunctor (second)
@@ -16,3 +17,5 @@ twoPointers !n !check = inner (0, 0)
     peekCheck (!_, !r) | r == pred n = False
     peekCheck (!l, !r) = check (l, succ r)
 
+-- TODO: take both left and right and use one for popping
+-- TODO: vector version

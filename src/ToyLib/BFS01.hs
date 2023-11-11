@@ -12,11 +12,11 @@ import Data.Tuple.Extra (both)
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import ToyLib.Prelude (repM_)
 import GHC.Stack (HasCallStack)
+import ToyLib.Prelude (repM_)
 
 -- 01-BFS: zero cost with same direction.
-bfs01_grid4_typical043 :: HasCallStack => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
+bfs01_grid4_typical043 :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
 bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ U.create $ do
   -- vec @! (dir, y, x)
   !vec <- IxVector boundsExt <$> UM.replicate (4 * nVerts) undef

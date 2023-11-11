@@ -1,8 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Data.Vector.InvNum where
-
 -- | Inversion number calculation with `SegmentTree`
+module Data.Vector.InvNum where
 
 import Control.Monad.ST (runST)
 import Data.Maybe
@@ -10,11 +9,11 @@ import Data.SegmentTree.Strict
 import Data.Vector.Compress (compressU)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-import ToyLib.Prelude (foldForMG)
 import GHC.Stack (HasCallStack)
+import ToyLib.Prelude (foldForMG)
 
 -- | Calculates the inversion number. Be sure to compress the input vector!
-invNumG :: HasCallStack => Int -> (G.Vector v Int) => v Int -> Int
+invNumG :: (HasCallStack) => Int -> (G.Vector v Int) => v Int -> Int
 invNumG xMax xs = runST $ do
   !stree <- newSTreeU (+) (xMax + 1) (0 :: Int)
 
@@ -32,7 +31,7 @@ invNumG xMax xs = runST $ do
 
 -- | Calculates the inversion number after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
-compressInvNumG :: HasCallStack => U.Vector Int -> Int
+compressInvNumG :: (HasCallStack) => U.Vector Int -> Int
 compressInvNumG xs = invNumG (pred (U.length xs')) xs'
   where
     !xs' = snd $ compressU xs

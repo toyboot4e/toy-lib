@@ -1,3 +1,4 @@
+-- | Least common ancestor and folding via that.
 module Data.Tree.Lca where
 
 import Algorithm.BinarySearch
@@ -15,9 +16,9 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
 import ToyLib.Macro
 import ToyLib.Prelude
-import GHC.Stack (HasCallStack)
 
 -- {{{ LCA (basic)
 
@@ -63,7 +64,7 @@ lcaCache !nVerts !graph !root = (toParent, depths, toParentN)
 
 -- | Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.
-lca :: HasCallStack => LcaCache -> Int -> Int -> (Int, Int)
+lca :: (HasCallStack) => LcaCache -> Int -> Int -> (Int, Int)
 lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
   where
     -- depths
@@ -83,7 +84,7 @@ lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
     !vLCA = parentN v1' dLCA
 
 -- | Gets the length between given two vertices with the help of LCA.
-lcaLen :: HasCallStack => LcaCache -> Int -> Int -> Int
+lcaLen :: (HasCallStack) => LcaCache -> Int -> Int -> Int
 lcaLen cache@(!_, !depths, !_) !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
       !d1 = depths U.! v1

@@ -1,10 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
 
+-- | Safe, total functions.
 module Data.SafeList where
 
 import qualified Data.Vector as V
-import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Unboxed as U
 
 -- | Safelist
 class SafeList v where
@@ -67,7 +68,7 @@ instance (Ord a) => SafeList [a] where
   type SafeListElem [a] = a
 
   headMay [] = Nothing
-  headMay (x:_) = Just x
+  headMay (x : _) = Just x
 
   lastMay [] = Nothing
   lastMay xs = Just $ last xs
@@ -201,4 +202,3 @@ instance (U.Unbox a, Ord a) => SafeList (U.Vector a) where
   maximumOr x0 xs
     | G.null xs = x0
     | otherwise = G.maximum xs
-

@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Semiring`
+-- | `Semiring`.
 module Data.Semiring where
 
 import qualified Data.Vector.Generic as G

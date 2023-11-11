@@ -29,4 +29,3 @@ unDigitsU :: Int -> U.Vector Int -> Int
 unDigitsU !base !xs = fst $ U.foldl' step (0 :: Int, 1 :: Int) xs
   where
     step (!acc, !d) !i = (acc + d * i, base * d)
-

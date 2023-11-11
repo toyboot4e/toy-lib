@@ -1,11 +1,10 @@
-module Algorithm.Mo where
-
 -- | Mo's algorithm
 --
 -- REMARK: Be sure to @{-# INLINE #-}@ the user-defined functions!
 --
 -- = Typical problems
 -- - [ABC 293 G - Triple Index](https://atcoder.jp/contests/abc293/tasks/abc293_g)
+module Algorithm.Mo where
 
 import Control.Monad.Primitive (PrimMonad)
 import qualified Data.Vector.Algorithms.Intro as VAI
@@ -56,4 +55,3 @@ runMo !xs !lrs !onIns !onRem !s0 = do
 
       UM.write result iLr n'
       return ((l, r), n')
-

@@ -1,3 +1,4 @@
+-- | Strict segment tree
 module Data.SegmentTree.Strict where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -55,11 +56,12 @@ newSTreeG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (Se
 newSTreeG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
   where
     !nVerts = until (>= 2 * nLeaves) (* 2) 2
-    -- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
+
+-- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
 
 -- | Creates a boxed segment tree.
 {-# INLINE newSTreeV #-}
-newSTreeV :: PrimMonad m => (a -> a -> a) -> Int -> a -> m (SegmentTree VM.MVector (PrimState m) a)
+newSTreeV :: (PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree VM.MVector (PrimState m) a)
 newSTreeV = newSTreeG
 
 -- | Creates an unboxed segment tree.

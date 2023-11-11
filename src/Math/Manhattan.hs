@@ -4,7 +4,6 @@
 --
 -- - [Typical 036 - Max Manhattan Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_aj)
 -- - [Typical 070 - Plant Planning (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_br)
-
 module Math.Manhattan where
 
 -- | Rotates @(x, y)@ pair in 45 degree and scales \(\sqrt 2\). Note that @x@ comes first in the
@@ -22,4 +21,3 @@ module Math.Manhattan where
 -- - [Typical 036 - Max Manhattan Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_aj)
 rot45 :: (Int, Int) -> (Int, Int)
 rot45 (!x, !y) = (x - y, x + y)
-

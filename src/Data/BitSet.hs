@@ -1,4 +1,4 @@
--- | Bit set tricks
+-- | Bit set tricks.
 module Data.BitSet where
 
 import Control.Monad
