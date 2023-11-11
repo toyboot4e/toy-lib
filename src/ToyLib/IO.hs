@@ -4,9 +4,9 @@
 --
 -- = Main procedures
 --
--- `ints2`, `intsW`, `parse`, `digitsU`, `getGrid` and `charsH`.
+-- `ints2`, `intsW`, `auto`, `digitsU`, `getGrid` and `charsH`.
 --
--- = `ReadBS` and `parse`
+-- = `ReadBS` and `auto`
 --
 -- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
 --
@@ -225,26 +225,26 @@ convertNG !n = G.unfoldrExactN n (readBS . BS.dropWhile isSpace)
 -- Input/getter
 
 -- | Parses one line via the `ReadBS` class.
-parse :: (ReadBS a) => IO a
-parse = convertBS <$> BS.getLine
+auto :: (ReadBS a) => IO a
+auto = convertBS <$> BS.getLine
 
 ints1 :: IO Int
-ints1 = parse
+ints1 = auto
 
 ints2 :: IO (Int, Int)
-ints2 = parse
+ints2 = auto
 
 ints3 :: IO (Int, Int, Int)
-ints3 = parse
+ints3 = auto
 
 ints4 :: IO (Int, Int, Int, Int)
-ints4 = parse
+ints4 = auto
 
 ints5 :: IO (Int, Int, Int, Int, Int)
-ints5 = parse
+ints5 = auto
 
 ints6 :: IO (Int, Int, Int, Int, Int, Int)
-ints6 = parse
+ints6 = auto
 
 -- vectors
 
