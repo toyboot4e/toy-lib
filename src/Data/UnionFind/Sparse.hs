@@ -3,7 +3,7 @@ module Data.UnionFind.Sparse where
 -- | Sparse Union-Find implementation
 --
 -- = Typical problems
--- - [D - Do use hexagon grid](https://atcoder.jp/contests/abc269/tasks/abc269_d)
+-- - [ABC 269 D - Do use hexagon grid](https://atcoder.jp/contests/abc269/tasks/abc269_d)
 
 import qualified Data.IntMap.Strict as IM
 import Data.List (foldl')
