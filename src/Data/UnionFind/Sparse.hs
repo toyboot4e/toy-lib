@@ -1,9 +1,8 @@
-module Data.UnionFind.Sparse where
-
 -- | Sparse Union-Find implementation
 --
 -- = Typical problems
 -- - [ABC 269 D - Do use hexagon grid](https://atcoder.jp/contests/abc269/tasks/abc269_d)
+module Data.UnionFind.Sparse where
 
 import qualified Data.IntMap.Strict as IM
 import Data.List (foldl')
@@ -26,34 +25,31 @@ insertSUF !x !uf = IM.insert x (-1) uf
 
 -- | From edges
 fromListSUF :: [(Int, Int)] -> SparseUnionFind
-fromListSUF = foldl' (uncurry . uniteSUF) newSUF
+fromListSUF = foldl' (\uf (!i, !j) -> uniteSUF i j uf) newSUF
 
 -- | From edges
 fromVecSUF :: U.Vector (Int, Int) -> SparseUnionFind
-fromVecSUF = U.foldl' (uncurry . uniteSUF) newSUF
+fromVecSUF = U.foldl' (\uf (!i, !j) -> uniteSUF i j uf) newSUF
 
 -- | Returns (root, size)
-rootSUF :: (HasCallStack) => SparseUnionFind -> Int -> (Int, Int)
-rootSUF !uf !i
+rootSUF :: (HasCallStack) => Int -> SparseUnionFind -> (Int, Int)
+rootSUF !i !uf
   | IM.notMember i uf = (i, 1)
   | j < 0 = (i, -j)
-  | otherwise = rootSUF uf j
+  | otherwise = rootSUF j uf
   where
     j = uf IM.! i
 
-sameSUF :: (HasCallStack) => SparseUnionFind -> Int -> Int -> Bool
-sameSUF !uf !i !j = fst (rootSUF uf i) == fst (rootSUF uf j)
+sameSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> Bool
+sameSUF !i !j !uf = fst (rootSUF i uf) == fst (rootSUF j uf)
 
-uniteSUF :: (HasCallStack) => SparseUnionFind -> Int -> Int -> SparseUnionFind
-uniteSUF !uf !i !j
+uniteSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
+uniteSUF !i !j !uf
   | a == b = uf
   | r >= s = IM.insert a (negate $! r + s) $ IM.insert b a uf
   | otherwise = IM.insert b (negate $! r + s) $ IM.insert a b uf
   where
-    (!a, !r) = rootSUF uf i
-    (!b, !s) = rootSUF uf j
-
-uniteSUF2 :: HasCallStack => Int -> Int -> SparseUnionFind -> SparseUnionFind
-uniteSUF2 !i !j !uf = uniteSUF uf i j
+    (!a, !r) = rootSUF i uf
+    (!b, !s) = rootSUF j uf
 
 -- }}}
