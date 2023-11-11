@@ -20,6 +20,7 @@ import Control.DeepSeq
 import Control.Exception (assert)
 import Control.Monad
 import Control.Monad.Fix
+import Control.Monad.IO.Class
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.State.Class
