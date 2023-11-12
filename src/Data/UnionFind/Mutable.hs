@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | Union-find tree
+-- | Union-Find tree
 --
 -- = Typical problems
 -- - [Typical 012 - Red Painting (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_l)
@@ -17,18 +17,18 @@ import qualified Data.Vector.Unboxed.Base as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
--- {{{ Dense, mutable union-Find tree
+-- {{{ Dense, mutable Union-Find tree
 
--- | Dense, mutable union-find tree (originally by `@pel`)
+-- | Dense, mutable Union-Find tree (originally by `@pel`)
 --
 -- >>> stree <- newMUF 3
 -- >>> sameMUF stree 0 2
 -- False
--- >>> uniteMUF stree 0 2
+-- >>> unifyMUF stree 0 2
 -- True
 -- >>> sameMUF stree 0 2
 -- True
--- >>> uniteMUF stree 0 2
+-- >>> unifyMUF stree 0 2
 -- False
 newtype MUnionFind s = MUnionFind (UM.MVector s MUFNode)
 
@@ -94,16 +94,17 @@ _unwrapMUFRoot :: MUFNode -> Int
 _unwrapMUFRoot (MUFRoot !s) = s
 _unwrapMUFRoot (MUFChild !_) = error "tried to unwrap child as UF root"
 
--- | Unites two nodes. Returns `True` when thry're newly united.
-{-# INLINE uniteMUF #-}
-uniteMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
-uniteMUF uf@(MUnionFind !vec) !x !y = do
+-- | Unifies two nodes. Returns `True` when thry're newly unified.
+{-# INLINE unifyMUF #-}
+unifyMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
+unifyMUF uf@(MUnionFind !vec) !x !y = do
   !px <- rootMUF uf x
   !py <- rootMUF uf y
   when (px /= py) $ do
     !sx <- _unwrapMUFRoot <$> UM.unsafeRead vec px
     !sy <- _unwrapMUFRoot <$> UM.unsafeRead vec py
-    -- NOTE(perf): union by rank (choose smaller one for root)
+    -- NOTE(perf): Union by size (choose smaller one for root).
+    -- Another, more proper optimization would be union by rank (depth).
     let (!par, !chld) = if sx < sy then (px, py) else (py, px)
     UM.unsafeWrite vec chld (MUFChild par)
     UM.unsafeWrite vec par (MUFRoot $! sx + sy)

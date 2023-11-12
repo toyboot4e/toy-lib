@@ -25,11 +25,11 @@ insertSUF !x !uf = IM.insert x (-1) uf
 
 -- | From edges
 fromListSUF :: [(Int, Int)] -> SparseUnionFind
-fromListSUF = foldl' (\uf (!i, !j) -> uniteSUF i j uf) newSUF
+fromListSUF = foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 
 -- | From edges
 fromVecSUF :: U.Vector (Int, Int) -> SparseUnionFind
-fromVecSUF = U.foldl' (\uf (!i, !j) -> uniteSUF i j uf) newSUF
+fromVecSUF = U.foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 
 -- | Returns (root, size)
 rootSUF :: (HasCallStack) => Int -> SparseUnionFind -> (Int, Int)
@@ -43,8 +43,8 @@ rootSUF !i !uf
 sameSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> Bool
 sameSUF !i !j !uf = fst (rootSUF i uf) == fst (rootSUF j uf)
 
-uniteSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
-uniteSUF !i !j !uf
+unifySUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
+unifySUF !i !j !uf
   | a == b = uf
   | r >= s = IM.insert a (negate $! r + s) $ IM.insert b a uf
   | otherwise = IM.insert b (negate $! r + s) $ IM.insert a b uf
