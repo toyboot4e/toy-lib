@@ -31,8 +31,8 @@ sortMo !maxL !lrs = U.modify (VAI.sortBy compareF) (U.generate q id)
 
 -- | Runs Mo's algorithm: /O(N * \sqrt Q).
 {-# INLINE runMo #-}
-runMo :: (PrimMonad m, U.Unbox x, U.Unbox a) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> a -> m (U.Vector a)
-runMo !xs !lrs !onIns !onRem !s0 = do
+runMo :: (PrimMonad m, U.Unbox x, U.Unbox a) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> a -> m (U.Vector a)
+runMo !xs !lrs !onInsL !onInsR !onRemL !onRemR !s0 = do
   !result <- UM.unsafeNew q
   U.foldM'_ (step result) ((0 :: Int, -1 :: Int), s0) (sortMo maxL lrs)
   U.unsafeFreeze result
@@ -43,15 +43,12 @@ runMo !xs !lrs !onIns !onRem !s0 = do
     step result ((!l0, !r0), !n0) iLr = do
       let (!l, !r) = lrs U.! iLr
       !n' <- do
-        -- insertionsL
-        !n1 <- U.foldM' onIns n0 (U.backpermute xs (rangeU l (l0 - 1)))
-        -- insertionsR
-        !n2 <- U.foldM' onIns n1 (U.backpermute xs (rangeU (r0 + 1) r))
-        -- removalsL
-        !n3 <- U.foldM' onRem n2 (U.backpermute xs (rangeU l0 (l - 1)))
-        -- removalsR
-        !n4 <- U.foldM' onRem n3 (U.backpermute xs (rangeU (r + 1) r0))
+        !n1 <- U.foldM' onInsL n0 (U.backpermute xs (rangeU l (l0 - 1)))
+        !n2 <- U.foldM' onInsR n1 (U.backpermute xs (rangeU (r0 + 1) r))
+        !n3 <- U.foldM' onRemL n2 (U.backpermute xs (rangeU l0 (l - 1)))
+        !n4 <- U.foldM' onRemR n3 (U.backpermute xs (rangeU (r + 1) r0))
         return n4
 
       UM.write result iLr n'
       return ((l, r), n')
+
