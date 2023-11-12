@@ -198,6 +198,7 @@ library
     Data.Tree.Lca
     Data.Unindex
     Data.UnionFind.Mutable
+    Data.UnionFind.Potencial
     Data.UnionFind.Sparse
     Data.Vector.Compress
     Data.Vector.DictOrder
