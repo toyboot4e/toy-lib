@@ -86,6 +86,11 @@ swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- {{{ Libary complements
 
+-- | `G.slice` via inclusive range @[l, r]@.
+{-# INLINE slice #-}
+slice :: (G.Vector v a) => Int -> Int -> v a -> v a
+slice !l !r !vec = G.slice l (max 0 (r - l + 1)) vec
+
 -- | List-like range syntax for `vector`.
 --
 -- >>> rangeG @U.Vector 3 5
@@ -192,8 +197,8 @@ interleave [] ys = ys
 interleave (x : xs) (y : ys) = x : y : interleave xs ys
 
 -- -- | Returns combinations of the list taking n values.
--- -- | For example, binary combinations are got by `combination 2 [0..8]`.
--- -- | REMARK: This is slow. Prefer list comprehension like `x <- [1 .. n], y <- [x + 1 .. n]m ..]`.
+-- -- For example, binary combinations are got by `combination 2 [0..8]`.
+-- -- REMARK: This is slow. Prefer list comprehension like `x <- [1 .. n], y <- [x + 1 .. n]m ..]`.
 -- combinations :: Int -> [a] -> [[a]]
 -- combinations !len !elements = comb len (length elements) elements
 --   where
