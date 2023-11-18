@@ -38,6 +38,7 @@ type STUnionFind s = MUnionFind s
 
 -- | `MUFChild parent | MUFRoot size`.
 data MUFNode = MUFChild {-# UNPACK #-} !Int | MUFRoot {-# UNPACK #-} !Int
+  deriving (Eq, Show)
 
 instance U.IsoUnbox MUFNode (Bool, Int) where
   {-# INLINE toURepr #-}

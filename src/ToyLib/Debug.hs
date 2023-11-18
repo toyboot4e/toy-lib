@@ -5,6 +5,7 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.SegmentTree.Strict
+import Data.UnionFind.Mutable
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -31,6 +32,15 @@ infixr 0 $$
 g .$ f = \a -> let !b = dbgId (f a) in g b
 
 infixr 9 .$
+
+dbgUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
+dbgUF (MUnionFind vec) = dbgUM vec
+
+dbgUM :: (Show (v a), G.Vector v a, PrimMonad m) => (G.Mutable v) (PrimState m) a -> m ()
+dbgUM vec = do
+  !xs' <- G.unsafeFreeze vec
+  let !_ = dbg xs'
+  return ()
 
 dbgSTree :: (Show (v a), GM.MVector (G.Mutable v) a, G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTree (SegmentTree _ mVec) = do
