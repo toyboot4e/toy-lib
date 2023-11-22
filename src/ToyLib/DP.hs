@@ -87,6 +87,16 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 spansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
 spansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeU 1 (r - l)
 
+-- | >>> iwispansu 3 6
+-- [((3,2),(4,6)),((3,3),(5,6)),((3,4),(6,6)),((3,5),(7,6))]
+iwiSpansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
+iwiSpansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len + 1, r))) $ rangeU 0 (r - l)
+
+-- | >>> iwiSpansU' 3 6
+-- [((3,2),3,(4,6)),((3,3),4,(5,6)),((3,4),5,(6,6)),((3,5),6,(7,6))]
+iwiSpansU' :: Int -> Int -> U.Vector ((Int, Int), Int, (Int, Int))
+iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r))) $ rangeU 0 (r - l)
+
 -- | `U.constructN` for `IxVector`
 constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxVector i (U.Vector a) -> i -> a) -> IxVector i (U.Vector a)
 constructIV !rng !f = IxVector rng $ G.constructN (rangeSize rng) $ \vec ->
