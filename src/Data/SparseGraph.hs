@@ -188,13 +188,17 @@ componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
     !start = index boundsSG startIx :: Vertex
 
 -- | /O(V+E)/ breadth-first search. Unreachable vertices have length of @-1@.
-bfsSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
-bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
-  let !undef = -1 :: Int
-  !dist <- UM.replicate nVertsSG undef
-  !queue <- newBufferAsQueue (nEdgesSG + 1)
+bfsSG :: (HasCallStack, Ix i, U.Unbox i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
+bfsSG gr@SparseGraph {..} !startIx =
+  IxVector boundsSG $
+    genericBFS (gr `adj`) nVertsSG nEdgesSG (index boundsSG startIx)
 
-  let !start = index boundsSG startIx
+genericBFS :: (HasCallStack) => (Int -> U.Vector Int) -> Int -> Int -> Int -> U.Vector Int
+genericBFS !gr !nVerts !nEdges !start = U.create $ do
+  let !undef = -1 :: Int
+  !dist <- UM.replicate nVerts undef
+  !queue <- newBufferAsQueue (nEdges + 1)
+
   pushBack queue start
   UM.unsafeWrite dist start (0 :: Int)
 
@@ -204,7 +208,7 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
       Nothing -> return ()
       Just !v1 -> do
         !d1 <- UM.unsafeRead dist v1
-        U.forM_ (gr `adj` v1) $ \v2 -> do
+        U.forM_ (gr v1) $ \v2 -> do
           !lastD <- UM.unsafeRead dist v2
           when (lastD == undef) $ do
             UM.unsafeWrite dist v2 (d1 + 1)
@@ -214,6 +218,7 @@ bfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
 
   return dist
 
+-- | TODO: Re-implement with `genericBfs`
 bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
 bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
   !vis <- IxVector bounds_ <$> UM.replicate (rangeSize bounds_) undef
@@ -243,13 +248,19 @@ bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
 -- | Dijkstra: $O((E+V) \log {V})$
 --
 -- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
-djSG :: forall i w. (Unindex i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> i -> U.Vector w
-djSG gr@SparseGraph {..} !undef !startIx = U.create $ do
-  !dist <- UM.replicate nVertsSG undef
+djSG :: forall i w. (Ix i, U.Unbox i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> U.Vector i -> IxUVector i w
+djSG gr@SparseGraph {..} !undef !is0 =
+  IxVector boundsSG $
+    genericDj (gr `adjW`) nVertsSG undef (U.map (index boundsSG) is0)
 
-  let !vStart = index boundsSG startIx
-  let !heap0 = H.singleton $ H.Entry 0 vStart
-  UM.write dist vStart 0
+-- TODO: compare the speed of `djSG` via the generic verison
+genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> w -> U.Vector Int -> U.Vector w
+genericDj !gr !nVerts !undef !vs0 = U.create $ do
+  !dist <- UM.replicate nVerts undef
+
+  let !heap0 = H.fromList $ map (H.Entry 0) (U.toList vs0) :: H.Heap (H.Entry w Int)
+  U.forM_ vs0 $ \v -> do
+    UM.write dist v 0
 
   flip fix heap0 $ \loop heap -> case H.uncons heap of
     Nothing -> return ()
@@ -258,7 +269,7 @@ djSG gr@SparseGraph {..} !undef !startIx = U.create $ do
         -- more efficient path was already visited
         True -> loop heap'
         False -> do
-          loop <=< (\f -> U.foldM' f heap' (gr `adjW` v1)) $ \h (!v2, !dw2) -> do
+          loop <=< (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
             !w2 <- UM.read dist v2
             let !w2' = merge w1 dw2
             if w2 == undef || w2' < w2
