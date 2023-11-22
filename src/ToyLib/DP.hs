@@ -104,6 +104,7 @@ constructIV !rng !f = IxVector rng $ G.constructN (rangeSize rng) $ \vec ->
    in f (IxVector rng vec) i
 
 -- | Span-based DP with preset index patterns.
+-- REMARK: @@sofar @! (l, r)@@
 spanDP :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (U.Vector a)
 spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
   if spanLen == 0 || spanL >= (n + 1 - spanLen)

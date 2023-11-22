@@ -36,7 +36,8 @@ instance (TypeInt p) => Num (ModInt p) where
   signum _ = 1
   fromInteger = ModInt . fromInteger
 
--- FIXME: Use `KnownNat`
+-- FIXME: Use @KnownNat@
+-- TODO: prefer @recip@?
 instance (TypeInt p) => Fractional (ModInt p) where
   -- \| Reciprocal of x (inverse of x).
   -- REMARK: This is TOO slow. Do cache when possible.
