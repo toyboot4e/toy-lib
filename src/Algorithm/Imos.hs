@@ -41,15 +41,15 @@ imos2DRev !bounds_ !seeds = runSTUArray $ do
 
   -- row scan
   -- forM_ (reverse $ range bounds_) $ \(!y, !x) -> do
-  forMS_ (rangeMSR minX maxX) $ \x -> do
-    forMS_ (rangeMSR minY maxY) $ \y -> do
+  forM_ [maxX, maxX - 1 .. minX] $ \x -> do
+    forM_ [maxY, maxY - 1 .. minY] $ \y -> do
       !v <- if x == maxX then return 0 else readArray arr (y, x + 1)
       let !diff = seeds ! (y, x)
       writeArray arr (y, x) $! v + diff
 
   -- column scan
-  forMS_ (rangeMSR minX maxX) $ \x -> do
-    forMS_ (rangeMSR minY maxY) $ \y -> do
+  forM_ [maxX, maxX - 1 .. minX] $ \x -> do
+    forM_ [maxY, maxY - 1 .. minY] $ \y -> do
       !v <- if y == maxY then return 0 else readArray arr (y + 1, x)
       !diff <- readArray arr (y, x)
       writeArray arr (y, x) $! v + diff

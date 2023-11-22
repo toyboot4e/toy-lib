@@ -127,32 +127,6 @@ rangeVR = rangeGR
 rangeUR :: Int -> Int -> U.Vector Int
 rangeUR = rangeGR
 
--- | @cojna (`stream`)
-{-# INLINE [1] rangeMS #-}
-rangeMS :: (Monad m) => Int -> Int -> MS.Stream m Int
-rangeMS !l !r = MS.Stream step l
-  where
-    {-# INLINE [0] step #-}
-    step x
-      | x <= r = return $ MS.Yield x (x + 1)
-      | otherwise = return MS.Done
-
--- | @cojna (`streamR`)
-{-# INLINE [1] rangeMSR #-}
-rangeMSR :: (Monad m) => Int -> Int -> MS.Stream m Int
-rangeMSR !l !r = MS.Stream step r
-  where
-    {-# INLINE [0] step #-}
-    step x
-      | x >= l = return $ MS.Yield x (x - 1)
-      | otherwise = return MS.Done
-
--- | `forM` over monadic stream in the vector package.
--- | NOTE: This is for side effects only. I don't know how to use `MS.mapM` yet.
-{-# INLINE forMS_ #-}
-forMS_ :: (Monad m) => MS.Stream m Int -> (Int -> m ()) -> m ()
-forMS_ = flip MS.mapM_
-
 {-# INLINE repM_ #-}
 repM_ :: (Monad m) => Int -> Int -> (Int -> m ()) -> m ()
 repM_ !l !r !act = inner l

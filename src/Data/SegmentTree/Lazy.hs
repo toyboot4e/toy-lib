@@ -18,12 +18,10 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro
-import ToyLib.Prelude (forMS_, rangeMS, rangeMSR)
 
 -- {{{ Lazy segment tree
 
--- TODO: Do we need to duplicate `SegmentTree` and `LazySegmentTree`?
--- TODO: Use generic vector type.. or not.
+-- TODO: Do we have to duplicate `SegmentTree` and `LazySegmentTree`?
 -- TODO: We're assuming commutative operator monoid in LazySegmentTree, right?
 -- TODO: Vertex -> Node
 
@@ -84,13 +82,13 @@ generateLazySTree !n !f = do
   !as <- GM.unsafeNew n2
 
   -- Create leaves:
-  forMS_ (rangeMS 1 nLeaves) $ \i -> do
+  forM_ [1 .. nLeaves] $ \i -> do
     if i <= n
       then GM.write as (nLeaves + i - 1) $! f (pred i)
       else GM.write as (nLeaves + i - 1) mempty
 
   -- Create parents:
-  forMS_ (rangeMSR 1 (pred nLeaves)) $ \i -> do
+  forM_ [1 .. pred nLeaves] $ \i -> do
     !l <- GM.read as (childL i)
     !r <- GM.read as (childR i)
     GM.write as i (l <> r)
@@ -225,7 +223,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
   let !leafVertex = iLeaf + nVerts `div` 2
 
   -- From parent vertex to the parent of the leaf vertex:
-  forMS_ (rangeMSR 1 (pred height)) $ \iParent -> do
+  forM_ [1 .. pred height] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
 
     -- When there's some lazy evaluation value, propagate them to their children and evaluate the vertex:
@@ -255,7 +253,7 @@ _evalToRoot ::
 _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
   let !leafVertex = iLeaf + nVerts `div` 2
 
-  forMS_ (rangeMS 1 (pred height)) $ \iParent -> do
+  forM_ [1 .. pred height] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 

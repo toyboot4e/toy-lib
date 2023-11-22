@@ -24,7 +24,7 @@ newFW (!getCost, !zeroCost, !maxCost) !nVerts !edges = do
   !dp <- UM.replicate (nVerts * nVerts) maxCost
 
   -- diagnonal components
-  forMS_ (rangeMS 0 (pred nVerts)) $ \ !v ->
+  forM_ [0 .. pred nVerts] $ \ !v ->
     UM.unsafeWrite dp (ix (v, v)) zeroCost
 
   -- directly connected vertices

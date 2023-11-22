@@ -28,7 +28,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (add2, rangeMS, rangeU)
+import ToyLib.Prelude (add2, rangeU)
 
 type Edge = (Vertex, Vertex)
 
@@ -347,7 +347,7 @@ topSortSG gr@SparseGraph {..} = runST $ do
             -- Create postorder output:
             (v :) <$> U.foldM' dfsM acc vs
 
-  MS.foldM' dfsM [] (rangeMS 0 (pred nVertsSG))
+  U.foldM' dfsM [] (rangeU 0 (pred nVertsSG))
 
 -- | Partial running of `scc` over topologically sorted vertices, but for some connected components
 -- only.
