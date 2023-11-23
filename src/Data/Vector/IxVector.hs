@@ -5,6 +5,7 @@ module Data.Vector.IxVector where
 
 import Control.Monad (forM_)
 import Control.Monad.Primitive
+import Control.Monad.ST
 import Data.Ix
 import Data.Tuple.Extra (first)
 import Data.Unindex
@@ -80,9 +81,8 @@ accumulateIV !f !vec0 !commands =
 
 -- TOOD: `ixmapIV` and rotation examples
 
--- TODO: `createIx` where we freeze the `IxVector`
--- createIx :: (G.Vector v a, Ix i) => (forall s. ST s (Mutable v s a)) -> IxVector i (v a)
--- createIx = runST
+createIV :: (G.Vector v a) => (i, i) -> (forall s. ST s (G.Mutable v s a)) -> IxVector i (v a)
+createIV !bnd !st = IxVector bnd $ G.create st
 
 -- replicateIVM
 
