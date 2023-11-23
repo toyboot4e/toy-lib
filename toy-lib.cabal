@@ -214,7 +214,6 @@ library
     Math.Matrix
     Math.PowMod
     Math.Primes
-    ToyLib.BFS01
     ToyLib.Debug
     ToyLib.DP
     ToyLib.IO
