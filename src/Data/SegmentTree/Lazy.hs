@@ -72,13 +72,13 @@ newLazySTreeU :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox
 newLazySTreeU = newLazySTree
 
 -- | Creates `LazySegmentTree` with initial leaf values.
-generateLazySTree ::
+generateLazySTreeG ::
   forall v a op m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
-generateLazySTree !n !f = do
+generateLazySTreeG !n !f = do
   !as <- GM.unsafeNew n2
 
   -- Create leaves:
@@ -88,7 +88,7 @@ generateLazySTree !n !f = do
       else GM.write as (nLeaves + i - 1) mempty
 
   -- Create parents:
-  forM_ [1 .. pred nLeaves] $ \i -> do
+  forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
     !l <- GM.read as (childL i)
     !r <- GM.read as (childR i)
     GM.write as i (l <> r)
@@ -103,10 +103,10 @@ generateLazySTree !n !f = do
     childR !vertex = shiftL vertex 1 .|. 1
 
 generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
-generateLazySTreeV = generateLazySTree
+generateLazySTreeV = generateLazySTreeG
 
 generateLazySTreeU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
-generateLazySTreeU = generateLazySTree
+generateLazySTreeU = generateLazySTreeG
 
 -- | Appends the lazy operator monoid monoids over some span of the lazy segment tree.
 -- These values are just stored and performed over the nodes when queried.
@@ -223,7 +223,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
   let !leafVertex = iLeaf + nVerts `div` 2
 
   -- From parent vertex to the parent of the leaf vertex:
-  forM_ [1 .. pred height] $ \iParent -> do
+  forM_ [height - 1, height - 2 .. 1] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
 
     -- When there's some lazy evaluation value, propagate them to their children and evaluate the vertex:
