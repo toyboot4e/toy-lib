@@ -35,10 +35,20 @@ import ToyLib.Prelude
 
 -- TODO: Use typeclass for getting middle and detecting end
 
+-- | `bsearch` over a vector.
+{-# INLINE bsearchG #-}
+bsearchG :: (G.Vector v a) => v a -> (a -> Bool) -> (Maybe a, Maybe a)
+bsearchG !vec !p = both (fmap (vec G.!)) $ bsearch (0, G.length vec - 1) (p . (vec G.!))
+
 -- | `bsearchL` over a vector.
 {-# INLINE bsearchLG #-}
 bsearchLG :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe a
 bsearchLG !vec !p = (vec G.!) <$> bsearchL (0, G.length vec - 1) (p . (vec G.!))
+
+-- | `bsearchR` over a vector.
+{-# INLINE bsearchRG #-}
+bsearchRG :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe a
+bsearchRG !vec !p = (vec G.!) <$> bsearchR (0, G.length vec - 1) (p . (vec G.!))
 
 -- | `bsearchL` over a vector, searching for a specific value. FIXME: It's slower than `bsearchLG`.
 {-# INLINE bsearchExact #-}
