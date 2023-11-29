@@ -1,5 +1,8 @@
 -- | Lazy segment tree, where we can perform operation over range.
 --
+-- = Algebra
+-- - (Op * Acc) <> (Op * Acc) = (Op <> Op) (Acc <> Acc)
+--
 -- = Typical problems
 -- - [Typical 029 - Long Bricks (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ac)
 -- - [EDPC W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
@@ -11,6 +14,7 @@ import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
 import Data.Bits
+import Data.Ix (inRange)
 import Data.SemigroupAction
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
@@ -119,13 +123,17 @@ updateLazySTree ::
   op ->
   m ()
 updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
+  let !_ =
+        dbgAssert (inRange (0, nLeaves - 1) iLLeaf && inRange (0, nLeaves - 1) iRLeaf) $
+          "updateLazySTree: wrong range " ++ show (iLLeaf, iRLeaf)
+
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
   _propOpMonoidsToLeaf stree iLLeaf
   _propOpMonoidsToLeaf stree iRLeaf
 
   -- 2. Propagate the given lazy operator monoids to the corresponding largest segments:
-  let !lVertex = iLLeaf + nVerts `div` 2
-      !rVertex = iRLeaf + nVerts `div` 2
+  let !lVertex = iLLeaf + nLeaves
+      !rVertex = iRLeaf + nLeaves
   glitchLoopUpdate lVertex rVertex
 
   -- 3. Evaluate the parent vertices:
@@ -134,7 +142,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 
   return ()
   where
-    !nVerts = UM.length ops
+    !nLeaves = UM.length ops `div` 2
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
@@ -163,7 +171,6 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           -- go up to the parent segment
           glitchLoopUpdate (shiftR l' 1) (shiftR r' 1)
 
--- TODO: I used the top-down queries for the strict segment tree. Which is preferable?
 queryLazySTree ::
   forall v a m op.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -172,16 +179,20 @@ queryLazySTree ::
   Int ->
   m a
 queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
+  let !_ =
+        dbgAssert (inRange (0, nLeaves - 1) iLLeaf && inRange (0, nLeaves - 1) iRLeaf) $
+          "queryLazySTree: wrong range " ++ show (iLLeaf, iRLeaf)
+
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
   _propOpMonoidsToLeaf stree iLLeaf
   _propOpMonoidsToLeaf stree iRLeaf
 
   -- 2. Return concatanated result:
-  let !lVertex = iLLeaf + nVerts `div` 2
-      !rVertex = iRLeaf + nVerts `div` 2
+  let !lVertex = iLLeaf + nLeaves
+      !rVertex = iRLeaf + nLeaves
   glitchLoopQuery lVertex rVertex mempty mempty
   where
-    !nVerts = GM.length as
+    !nLeaves = GM.length as `div` 2
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
