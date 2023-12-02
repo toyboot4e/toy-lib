@@ -97,6 +97,13 @@ createIV !bnd !st = IxVector bnd $ G.create st
 readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
 
+-- | Reads a value from `IxVector`.
+{-# INLINE readMayIV #-}
+readMayIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
+readMayIV IxVector {..} i
+  | not (inRange boundsIV i) = return Nothing
+  | otherwise = Just <$> GM.read vecIV (index boundsIV i)
+
 {-# INLINE unsafeReadIV #-}
 unsafeReadIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 unsafeReadIV IxVector {..} i = GM.unsafeRead vecIV (unsafeIndex boundsIV i)
