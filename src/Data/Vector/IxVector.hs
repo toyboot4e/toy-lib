@@ -54,23 +54,27 @@ type IxMUVector i s a = IxVector i (UM.MVector s a)
   | inRange boundsIV i = Just (G.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
 
+{-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 mapIV !f !vec = IxVector bnd $ U.map f (vecIV vec)
   where
     !bnd = boundsIV vec
 
+{-# INLINE imapIV #-}
 imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 imapIV !f !vec = IxVector bnd $ U.imap wrapper (vecIV vec)
   where
     !bnd = boundsIV vec
     wrapper i = f (unindex bnd i)
 
+{-# INLINE zipWithIV #-}
 zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b) -> IxVector i (U.Vector c)
 zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
   where
     !bnd = boundsIV vec1
 
 -- | Altertnative to `accumulate` for `IxVector` that share the same bounds.
+{-# INLINE accumulateIV #-}
 accumulateIV :: (Ix i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
 accumulateIV !f !vec0 !commands =
   let !input1d = U.map (first (index bnd)) (vecIV commands)
@@ -82,6 +86,7 @@ accumulateIV !f !vec0 !commands =
 
 -- TOOD: `ixmapIV` and rotation examples
 
+{-# INLINE createIV #-}
 createIV :: (G.Vector v a) => (i, i) -> (forall s. ST s (G.Mutable v s a)) -> IxVector i (v a)
 createIV !bnd !st = IxVector bnd $ G.create st
 
@@ -99,6 +104,7 @@ createIV !bnd !st = IxVector bnd $ G.create st
 --
 -- = Typical problems
 -- - [ABC 331 D - Tile Pattern](https://atcoder.jp/contests/abc331/tasks/abc331_d)
+{-# INLINE csum2D #-}
 csum2D :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
 csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case unindex bnd (G.length sofar) of
   (0, _) -> 0
@@ -122,6 +128,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
 -- = = # # #
 -- = = # # #
 -- @
+{-# INLINE (@+!) #-}
 (@+!) :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
 (@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
   where
