@@ -6,8 +6,9 @@ module Data.Vector.IxVector where
 import Control.Monad (forM_)
 import Control.Monad.Primitive
 import Control.Monad.ST
+import Data.Bifunctor (first, second)
 import Data.Ix
-import Data.Tuple.Extra (first)
+import Data.Tuple.Extra (both)
 import Data.Unindex
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -91,6 +92,48 @@ createIV !bnd !st = IxVector bnd $ G.create st
 -- counstructIV bnd f = U.generate (rangeSize bnd) (f . index bns)
 
 -- replicateIVM
+
+-- | Calculates two-dimensional cummulative sum.
+--
+-- NOTE: Returns a 2D graph with one-based index with a zero row and a column inserted.
+--
+-- = Typical problems
+-- - [ABC 331 D - Tile Pattern](https://atcoder.jp/contests/abc331/tasks/abc331_d)
+csum2D :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
+csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case unindex bnd (G.length sofar) of
+  (0, _) -> 0
+  (_, 0) -> 0
+  (!y, !x) -> v0 + fromY + fromX - fromD
+    where
+      -- NOTE: Use zero-based indices on original graph access
+      v0 = gr @! (y - 1, x - 1)
+      fromY = IxVector bnd sofar @! (y - 1, x)
+      fromX = IxVector bnd sofar @! (y, x - 1)
+      fromD = IxVector bnd sofar @! (y - 1, x - 1)
+  where
+    -- Insert the zero row and the column:
+    !bnd = second (both (+ 1)) (boundsIV gr)
+
+-- | Returns cummulative sum in the given 2D range.
+-- @
+-- - - * * *
+-- - - * * *
+-- = = # # #
+-- = = # # #
+-- = = # # #
+-- @
+(@+!) :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
+(@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
+  where
+    -- NOTE: Using one-based indices sinces zeros are inserted
+    -- From top left to @#@
+    !s1 = csum @! (y2 + 1, x2 + 1)
+    -- From top left to @*@
+    !s2 = csum @! (y1, x2 + 1)
+    -- From top left to @=@
+    !s3 = csum @! (y2 + 1, x1)
+    -- From top left to @-@
+    !s4 = csum @! (y1, x1)
 
 -- | Reads a value from `IxVector`.
 {-# INLINE readIV #-}
