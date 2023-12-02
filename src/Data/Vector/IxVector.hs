@@ -84,6 +84,12 @@ accumulateIV !f !vec0 !commands =
 createIV :: (G.Vector v a) => (i, i) -> (forall s. ST s (G.Mutable v s a)) -> IxVector i (v a)
 createIV !bnd !st = IxVector bnd $ G.create st
 
+-- generateIV :: (Index i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
+-- generateIV bnd f = U.generate (rangeSize bnd) (f . index bns)
+
+-- counstructIV :: (Index i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
+-- counstructIV bnd f = U.generate (rangeSize bnd) (f . index bns)
+
 -- replicateIVM
 
 -- | Reads a value from `IxVector`.

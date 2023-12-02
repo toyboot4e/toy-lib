@@ -138,6 +138,8 @@ tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `d
 
 -- | Enumerates all possible bitsets that composes @bit n - 1@.
 --
+-- REMARK: It returns a null list at the end (be sure to call @init@ to remove it).
+--
 -- >>> enumerateBitSets 4
 -- [[8,4,2,1],[12,2,1],[8,6,1],[4,10,1],[14,1],[8,4,3],[12,3],[8,2,5],[10,5],[8,7],[4,2,9],[6,9],[4,11],[2,13],[15],[]]
 --
