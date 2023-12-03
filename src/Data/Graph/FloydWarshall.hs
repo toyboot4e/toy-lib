@@ -10,7 +10,6 @@ import Data.Graph (Vertex)
 import Data.Ix
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import ToyLib.Prelude
 
 -- {{{ Every shortest path (Floyd-Warshall algorithm)
 

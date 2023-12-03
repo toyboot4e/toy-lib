@@ -11,7 +11,6 @@ module Algorithm.Mo where
 
 import Control.Monad.Primitive (PrimMonad)
 import Control.Monad.ST (runST)
-import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import Data.Bool (bool)
 import qualified Data.Vector.Generic as G

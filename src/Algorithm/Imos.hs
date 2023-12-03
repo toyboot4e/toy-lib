@@ -6,7 +6,6 @@ import Data.Array.IArray
 import Data.Array.MArray
 import Data.Array.ST
 import Data.Array.Unboxed (UArray)
-import ToyLib.Prelude
 
 -- {{{ imos 2D
 
