@@ -189,12 +189,12 @@ componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
     !start = index boundsSG startIx :: Vertex
 
 -- | /O(V+E)/ breadth-first search. Unreachable vertices have length of @-1@.
-bfsSG :: (HasCallStack, Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
+bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 bfsSG gr@SparseGraph {..} !startIx =
   IxVector boundsSG $
     genericBfs (gr `adj`) nVertsSG nEdgesSG (index boundsSG startIx)
 
-genericBfs :: (HasCallStack) => (Int -> U.Vector Int) -> Int -> Int -> Int -> U.Vector Int
+genericBfs :: (Int -> U.Vector Int) -> Int -> Int -> Int -> U.Vector Int
 genericBfs !gr !nVerts !nEdges !start = U.create $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVerts undef

@@ -19,17 +19,13 @@
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.IO where
 
-import Control.Monad
-import Data.Array.IArray
-import Data.Bifunctor (first, second)
+import Data.Bifunctor (first)
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
-import qualified Data.Heap as H
 import Data.List (unfoldr)
 import Data.Maybe
-import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
@@ -313,30 +309,6 @@ convertCharsHW !bss = U.create $ do
 -- | See `convertCharsHW`.
 charsH :: Int -> IO (U.Vector Char)
 charsH !h = convertCharsHW <$> V.replicateM h BS.getLine
-
--- Obsolute
-
--- | `concat` two-item tuples
-concat2 :: [(a, a)] -> [a]
-concat2 [] = []
-concat2 ((!x, !y) : xys) = x : y : concat2 xys
-
-concatMap2 :: (a -> (b, b)) -> [a] -> [b]
-concatMap2 !f = concat2 . map f
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph :: Int -> Int -> IO (Array Int [H.Entry Int Int])
-getWGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints
-  where
-    accGraph = accumArray @Array (flip (:)) [] (1, nVerts)
-    toInput = concatMap2 $ \[!a, !b, !cost] -> ((a, H.Entry cost b), (b, H.Entry cost a))
-
--- | Creates a weightend graph from 1-based vertices
-getWGraph0 :: Int -> Int -> IO (Array Int [H.Entry Int Int])
-getWGraph0 !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints
-  where
-    accGraph = accumArray @Array (flip (:)) [] (0, pred nVerts)
-    toInput = concatMap2 $ \[!a, !b, !cost] -> ((pred a, H.Entry cost (pred b)), (pred b, H.Entry cost (pred a)))
 
 -- Output
 
