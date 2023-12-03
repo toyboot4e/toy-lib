@@ -105,7 +105,7 @@ createIV !bnd !st = IxVector bnd $ G.create st
 -- = Typical problems
 -- - [ABC 331 D - Tile Pattern](https://atcoder.jp/contests/abc331/tasks/abc331_d)
 {-# INLINE csum2D #-}
-csum2D :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
+csum2D :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
 csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case unindex bnd (G.length sofar) of
   (0, _) -> 0
   (_, 0) -> 0
@@ -129,7 +129,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
 -- = = # # #
 -- @
 {-# INLINE (@+!) #-}
-(@+!) :: (Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
+(@+!) :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
 (@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
   where
     -- NOTE: Using one-based indices sinces zeros are inserted
