@@ -265,19 +265,6 @@ intsU = intsG
 digitsU :: IO (U.Vector Int)
 digitsU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> BS.getLine
 
-intsRestG :: (G.Vector v Int) => IO (v Int)
-intsRestG = G.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getContents
-
-intsRestU :: IO (U.Vector Int)
-intsRestU = intsRestG
-
--- | Creates a graph from 1-based vertices
-getGraph :: Int -> Int -> IO (Array Int [Int])
-getGraph !nVerts !nEdges = accGraph . toInput <$> replicateM nEdges ints2
-  where
-    accGraph = accumArray @Array (flip (:)) [] (1, nVerts)
-    toInput = concatMap2 $ second swap . dupe
-
 -- Multi lines
 
 -- | Converts @n@ lines of **whitespace-delimited `ByteString`** into a flat vector of type @a@.
