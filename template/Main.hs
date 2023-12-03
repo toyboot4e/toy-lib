@@ -124,7 +124,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet as HS
 
 -- quickcheck
-import Test.QuickCheck qualified as QC
+import qualified Test.QuickCheck as QC
 
 {- ORMOLU_ENABLE -}
 
