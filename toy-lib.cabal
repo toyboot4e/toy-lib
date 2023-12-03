@@ -201,6 +201,7 @@ library
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse
     Data.Vector.Compress
+    Data.Vector.CSum
     Data.Vector.DictOrder
     Data.Vector.InvNum
     Data.Vector.IxVector
