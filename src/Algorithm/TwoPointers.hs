@@ -1,21 +1,33 @@
--- | Two pointers
+-- | Two pointers method
 module Algorithm.TwoPointers where
 
-import Data.Bifunctor (second)
+import Data.List (unfoldr)
+import qualified Data.Vector.Unboxed as U
 
 -- | Returns inclusive ranges that satisfy the given `check`.
--- FIXME: Use a simpler, cheaper implementation
-twoPointers :: Int -> ((Int, Int) -> Bool) -> [(Int, Int)]
-twoPointers !n !check = inner (0, 0)
+twoPointers :: Int -> (Int -> Int -> Bool) -> [(Int, Int)]
+twoPointers !n !p = unfoldr (uncurry f) s0
   where
-    inner (!l, !_) | l >= n = []
-    inner (!l, !r)
-      | check (l, r) =
-          let (!l', !r') = until (not . peekCheck) (second succ) (l, r)
-           in (l', r') : inner (succ l', max l' r')
-      | otherwise = inner (succ l, max (succ l) r)
-    peekCheck (!_, !r) | r == pred n = False
-    peekCheck (!l, !r) = check (l, succ r)
+    -- the inners are the same as @twoPointersU@:
+    !s0 = (0, 0) :: (Int, Int)
+    f l r
+      | l == n = Nothing
+      | not (p l r) = f (l + 1) (max (l + 1) r)
+      | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
+        where
+          -- run peek check and advance
+          r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
--- TODO: take both left and right and use one for popping
--- TODO: vector version
+-- | Returns inclusive ranges that satisfy the given `check`.
+twoPointersU :: Int -> (Int -> Int -> Bool) -> U.Vector (Int, Int)
+twoPointersU !n !p = U.unfoldr (uncurry f) s0
+  where
+    !s0 = (0, 0) :: (Int, Int)
+    f l r
+      | l == n = Nothing
+      | not (p l r) = f (l + 1) (max (l + 1) r)
+      | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
+        where
+          -- run peek check and advance
+          r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
+
