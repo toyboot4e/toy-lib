@@ -15,7 +15,7 @@ twoPointers !n !p = unfoldr (uncurry f) s0
       | not (p l r) = f (l + 1) (max (l + 1) r)
       | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
         where
-          -- run peek check and advance
+          -- run peek check and advance on success
           r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
 -- | Returns inclusive ranges that satisfy the given `check`.
@@ -28,6 +28,6 @@ twoPointersU !n !p = U.unfoldr (uncurry f) s0
       | not (p l r) = f (l + 1) (max (l + 1) r)
       | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
         where
-          -- run peek check and advance
+          -- run peek check and advance on success
           r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
