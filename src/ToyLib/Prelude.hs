@@ -208,8 +208,8 @@ combs k as@(!_ : xs)
 
 -- {{{ Tuples
 
-swapDupe :: (a, a) -> ((a, a), (a, a))
-swapDupe = second swap . dupe
+swapDupe :: (a, a) -> [(a, a)]
+swapDupe (!x1, !x2) = [(x1, x2), (x2, x1)]
 
 add2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 add2 (!y, !x) = bimap (y +) (x +)
