@@ -4,7 +4,7 @@
 --
 -- = Main procedures
 --
--- `ints2`, `intsW`, `auto`, `digitsU`, `getGrid` and `charsH`.
+-- `ints2`, `intsW`, `auto`, `digitsU`, `getMat` and `charsH`.
 --
 -- = `ReadBS` and `auto`
 --
@@ -287,8 +287,8 @@ getHW !h !w = convertNBS (h * w) <$> V.replicateM h BS.getLine
 
 -- | Reads @h@ lines of stdin and converts them into a IxVector reading as HxW
 -- **whitespace-separated** input.
-getGrid :: Int -> Int -> IO (IxVector (Int, Int) (U.Vector Int))
-getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW h w
+getMat :: Int -> Int -> IO (IxVector (Int, Int) (U.Vector Int))
+getMat !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW h w
 
 -- | Converts @n` lines of `ByteString` into a flat vector.
 --
