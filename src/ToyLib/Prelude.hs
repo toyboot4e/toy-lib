@@ -157,13 +157,17 @@ constructN0 !x0 !n !f = U.constructN n $ \vec ->
 -- Option - Maybe cheatsheet
 -- https://notes.iveselov.info/programming/cheatsheet-rust-option-vs-haskell-maybe
 
--- | Runs the given function `n` times.
+-- | Applies the given function `n` times.
+-- >>> -- 2 ^ 3
+-- >>> times 3 (* 2) (1 :: Int)
+-- 8
 {-# INLINE times #-}
 times :: Int -> (a -> a) -> a -> a
-times !n !f !s0 = inner 0 s0
+times !n !f = inner 0
   where
-    inner i !s | i == n = s
-    inner i !s = inner (i + 1) $! f s
+    inner i !s
+      | i == n = s
+      | otherwise = inner (i + 1) $! f s
 
 interleave :: [a] -> [a] -> [a]
 interleave xs [] = xs

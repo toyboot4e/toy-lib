@@ -87,7 +87,7 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 spansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
 spansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeU 1 (r - l)
 
--- | >>> iwispansu 3 6
+-- | >>> iwiSpansU 3 6
 -- [((3,2),(4,6)),((3,3),(5,6)),((3,4),(6,6)),((3,5),(7,6))]
 iwiSpansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
 iwiSpansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len + 1, r))) $ rangeU 0 (r - l)
@@ -113,6 +113,11 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
       if spanLen == 1
         then onOne spanL
         else f vec (spanLen, spanL)
+
+-- | >>> unBitSet 4 5
+-- [0,2]
+unBitSet :: Int -> Int -> U.Vector Int
+unBitSet n bits = U.filter (testBit bits) (U.generate n id)
 
 -- | Typical set-based DP.
 --
