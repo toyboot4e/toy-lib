@@ -10,7 +10,6 @@ import Data.Bifunctor
 import Data.List
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
-import qualified Data.Vector.Fusion.Stream.Monadic as MS
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Debug.Trace
@@ -66,9 +65,6 @@ foldForM !s0 !xs !m = foldM m s0 xs
 
 foldForMG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMG !s0 !xs !m = G.foldM' m s0 xs
-
-foldForMMS :: (Monad m) => a -> MS.Stream m b -> (a -> b -> m a) -> m a
-foldForMMS !s0 !xs !f = MS.foldM' f s0 xs
 
 -- | = Test
 -- >>> chunksOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
