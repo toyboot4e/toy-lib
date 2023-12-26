@@ -111,6 +111,10 @@ unifyMUF uf@(MUnionFind !vec) !x !y = do
     UM.unsafeWrite vec par (MUFRoot $! sx + sy)
   return $ px /= py
 
+{-# INLINE unifyMUF_ #-}
+unifyMUF_ :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m ()
+unifyMUF_ uf x y = void $ unifyMUF uf x y
+
 -- | Returns the size of the a node, starting with `1`.
 {-# INLINE sizeMUF #-}
 sizeMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int

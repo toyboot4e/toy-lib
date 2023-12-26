@@ -3,6 +3,7 @@ module Data.Buffer where
 
 import Control.Applicative
 import Control.Exception (assert)
+import Control.Monad (void)
 import Control.Monad.Primitive
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -103,6 +104,10 @@ popFront Buffer {bufferVars, internalBuffer} = do
     else return Nothing
 {-# INLINE popFront #-}
 
+popFront_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
+popFront_ = void . popFront
+{-# INLINE popFront_ #-}
+
 viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewFront Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -122,6 +127,10 @@ popBack Buffer {bufferVars, internalBuffer} = do
       pure <$> UM.unsafeRead internalBuffer (b - 1)
     else return Nothing
 {-# INLINE popBack #-}
+
+popBack_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
+popBack_ = void . popBack
+{-# INLINE popBack_ #-}
 
 viewBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewBack Buffer {bufferVars, internalBuffer} = do
