@@ -66,15 +66,6 @@ foldForM !s0 !xs !m = foldM m s0 xs
 foldForMG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
 foldForMG !s0 !xs !m = G.foldM' m s0 xs
 
--- | = Test
--- >>> chunksOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
--- [[1,2,3],[4,5,6],[7]]
-chunksOfG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
-chunksOfG k xs0 = V.unfoldrExactN n step xs0
-  where
-    n = (G.length xs0 + k - 1) `div` k
-    step xs = (G.take k xs, G.drop k xs)
-
 swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
 swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 

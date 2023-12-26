@@ -203,6 +203,7 @@ library
     Data.Vector.Compress
     Data.Vector.CSum
     Data.Vector.DictOrder
+    Data.Vector.Extra
     Data.Vector.InvNum
     Data.Vector.IxVector
     Heuristic.Randoms
