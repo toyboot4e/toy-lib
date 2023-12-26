@@ -194,7 +194,7 @@ bfsSG gr@SparseGraph {..} !startIx =
   IxVector boundsSG $
     genericBfs (gr `adj`) nVertsSG (index boundsSG startIx)
 
-genericBfs :: (Int -> U.Vector Int) -> Int -> Int -> Int -> U.Vector Int
+genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !start = U.create $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVerts undef
