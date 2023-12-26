@@ -192,13 +192,13 @@ componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 bfsSG gr@SparseGraph {..} !startIx =
   IxVector boundsSG $
-    genericBfs (gr `adj`) nVertsSG nEdgesSG (index boundsSG startIx)
+    genericBfs (gr `adj`) nVertsSG (index boundsSG startIx)
 
 genericBfs :: (Int -> U.Vector Int) -> Int -> Int -> Int -> U.Vector Int
-genericBfs !gr !nVerts !nEdges !start = U.create $ do
+genericBfs !gr !nVerts !start = U.create $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVerts undef
-  !queue <- newBufferAsQueue (nEdges + 1)
+  !queue <- newBufferAsQueue nVerts
 
   pushBack queue start
   UM.unsafeWrite dist start (0 :: Int)
