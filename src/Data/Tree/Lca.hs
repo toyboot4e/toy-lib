@@ -1,7 +1,7 @@
 -- | Least common ancestor and folding via that.
 module Data.Tree.Lca where
 
-import Algorithm.BinarySearch
+import Algorithm.Bisect
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.ST
@@ -78,7 +78,7 @@ lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
     !v2' = parentN (if d1 > d2 then v1 else v2) (abs $ d1 - d2)
 
     -- find the depth of the lowest common ancestor:
-    !dLCA = fromJust . snd $ bsearch (0, min d1 d2) $ \d ->
+    !dLCA = fromJust . snd $ bisect (0, min d1 d2) $ \d ->
       parentN v1' d /= parentN v2' d
 
     !vLCA = parentN v1' dLCA

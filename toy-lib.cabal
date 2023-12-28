@@ -170,11 +170,11 @@ library
   -- updated with `cabal-fmt -i toy-lib.cabal`:
   -- cabal-fmt: expand src
   exposed-modules:
-    Algorithm.BinarySearch
+    Algorithm.Bisect
     Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
-    Data.BinaryLifting
+    Data.Bisect
     Data.BitSet
     Data.Buffer
     Data.FromVec
