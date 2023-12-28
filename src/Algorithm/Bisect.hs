@@ -1,9 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
--- | \(O(log N)\) binary search for sorted items in an inclusive range (from left to right only).
+-- | \(O(log N)\) bisection method for sorted items in an inclusive range (from left to right only).
 --
--- `bisect` returns an @(ok, ng)@ index pair at the boundary. `bsearchL` and `bsearchR` returns
--- one of the pair. `bsearchM` is a monadic variant of `bisect`.
+-- `bisect` returns an @(ok, ng)@ index pair at the boundary. `bisectL` and `bisectR` returns
+-- one of the pair. `bisectM` is a monadic variant of `bisect`.
 --
 -- = Example
 --
@@ -21,7 +21,7 @@
 -- :}
 -- (Just 5,Just 6)
 --
--- `bsearchL` returns @Just 5@ and `bsearchR` returns @Just 6@.
+-- `bisectL` returns @Just 5@ and `bisectR` returns @Just 6@.
 module Algorithm.Bisect where
 
 import Data.Functor.Identity
@@ -48,7 +48,7 @@ bsearchL !vec !p = bisectL (0, G.length vec - 1) (p . (vec G.!))
 bsearchR :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
 bsearchR !vec !p = bisectR (0, G.length vec - 1) (p . (vec G.!))
 
--- | `bsearchL` over a vector, searching for a specific value. FIXME: It's slower than `bsearchLG`.
+-- | `bsearchL` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
 {-# INLINE bsearchExact #-}
 bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe Int
 bsearchExact !vec f !xref = case bisectL (0, G.length vec - 1) ((<= xref) . f . (vec G.!)) of
