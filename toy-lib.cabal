@@ -194,6 +194,7 @@ library
     Data.Semiring
     Data.SizedList
     Data.SparseGraph
+    Data.SuperGraph
     Data.Tree.Fold
     Data.Tree.Lca
     Data.Unindex
