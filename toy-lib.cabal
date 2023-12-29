@@ -174,7 +174,7 @@ library
     Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
-    Data.Bisect
+    Data.BinaryLifting
     Data.BitSet
     Data.Buffer
     Data.FromVec
