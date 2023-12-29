@@ -415,6 +415,40 @@ createBfsTreeSG gr@SparseGraph {..} !startIx = U.create $ do
   where
     !start = index boundsSG startIx
 
+-- | /O((E+V) \log {V})/ Dijkstra's algorithm. Returns a vector of @(parent, distance)@. The source
+-- vertex or unrechable  vertices are given `-1` as their parent.
+--
+-- ghci> createDjTreeSG (gr `adjW`) 4 (-1 :: Int) (U.fromList [0])
+-- [(-1,0),(0,1),(1,2),(2,3)]
+createDjTreeSG :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> w -> U.Vector Int -> U.Vector (Vertex, w)
+createDjTreeSG !gr !nVerts !undef !vs0 = U.create $ do
+  !dist <- UM.replicate nVerts (-1, undef)
+
+  let !heap0 = H.fromList $ map (H.Entry 0) (U.toList vs0) :: H.Heap (H.Entry w Int)
+  U.forM_ vs0 $ \v -> do
+    UM.write dist v (-1, 0)
+
+  flip fix heap0 $ \loop heap -> case H.uncons heap of
+    Nothing -> return ()
+    Just (H.Entry !w1 !v1, heap') -> do
+      ((w1 >) . snd) <$> UM.read dist v1 >>= \case
+        -- more efficient path was already visited
+        True -> loop heap'
+        False -> do
+          loop <=< (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
+            (!_, !w2) <- UM.read dist v2
+            let !w2' = merge w1 dw2
+            if w2 == undef || w2' < w2
+              then do
+                UM.write dist v2 (v1, w2')
+                return $ H.insert (H.Entry w2' v2) h
+              else return h
+
+  return dist
+  where
+    merge :: w -> w -> w
+    merge = (+)
+
 -- | Given a vector of vertex parents, restores path from the source to a sink.
 restoreParentTreePath :: U.Vector Vertex -> Vertex -> [Vertex]
 restoreParentTreePath !ps !sink = inner [sink] sink
