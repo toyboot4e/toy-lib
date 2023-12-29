@@ -98,10 +98,12 @@ data AdhocDistGraph m w = AdhocDistGraph
   }
 
 -- | Default value for `onMarkADG`
+{-# INLINE onMarkADGDefault #-}
 onMarkADGDefault :: (PrimMonad m) => AdhocDistGraph m w -> Vertex -> (Vertex, w) -> m ()
 onMarkADGDefault _ _ _ = return ()
 
 -- | Default value for `onUnmarkADG`
+{-# INLINE onUnmarkADGDefault #-}
 onUnmarkADGDefault :: (PrimMonad m) => AdhocDistGraph m w -> Vertex -> (Vertex, w) -> m ()
 onUnmarkADGDefault _ _ _ = return ()
 
