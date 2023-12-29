@@ -57,7 +57,9 @@ dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v)
 dbgSTree (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
   -- REMARK: I'm using 0-based index and it has 2^n - 1 vertices
-  let !_ = dbg (G.drop (G.length vec `div` 2 - 1) vec)
+  -- TODO: drop non used slots?
+  let !leaves = G.drop (G.length vec `div` 2 - 1) vec
+  let !_ = dbg leaves
   return ()
 
 dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
