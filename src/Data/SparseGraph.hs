@@ -362,50 +362,59 @@ genericDj !gr !nVerts !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
--- TODO: BFS with path (route?) restoration
+-- TODO: BFS with path restoration
 
--- | Returns a list of a route in reverse order (a route from end to start).
-dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Edge]
-dfsPathSG gr@SparseGraph {..} !startIx !endIx = runST $ do
+-- | Returns a path from source to the sink in reverse order.
+-- Note that it is NOT not the shortest path:
+--
+-- >>> reverse <$> dfsPathSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
+-- Just [0,1,2,3]
+dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Vertex]
+dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVertsSG undef
 
-  flip fix (0 :: Int, start, []) $ \loop (!depth, !v1, !stack) -> do
+  flip fix (0 :: Int, source, []) $ \loop (!depth, !v1, !stack) -> do
     !lastD1 <- UM.read dist v1
-    when (lastD1 == undef) $ do
-      UM.write dist v1 depth
 
-    -- TODO: allow multi-way if with `toy-lib` bundler
     if lastD1 /= undef
       then return Nothing
-      else
-        if v1 == end
-          then return $ Just stack
+      else do
+        UM.write dist v1 depth
+        if v1 == sink
+          then return $ Just (v1 : stack)
           else do
+            -- visit neighbors one by one, but stop soon on end.
             flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
-                (<|>) <$> loop (succ depth, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
+                -- DFS or next neighbor
+                (<|>) <$> loop (succ depth, v2, v1 : stack) <*> visitNeighbors v2s'
   where
-    !start = index boundsSG startIx
-    !end = index boundsSG endIx
+    !source = index boundsSG sourceIx
+    !sink = index boundsSG sinkIx
 
--- | Returns a list of a route in reverse order (a route from end to start).
-treeDfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> [Edge]
-treeDfsPathSG gr@SparseGraph {..} !startIx !endIx = fromJust $ runST $ do
+-- | Returns a list of a route in reverse order (a route from sink to source).
+-- Note that it is NOT not the shortest path:
+--
+-- >>> reverse $ treeDfsPathSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
+-- [0,1,2,3]
+treeDfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> [Vertex]
+treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
   let !undef = -1 :: Int
 
-  flip fix (0 :: Int, undef, start, []) $ \loop (!depth, !parent, !v1, !stack) -> do
-    if v1 == end
-      then return $ Just stack
+  flip fix (undef, source, []) $ \loop (!parent, !v1, !stack) -> do
+    if v1 == sink
+      then return $ Just (v1 : stack)
       else do
         flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
           Nothing -> return Nothing
           Just (!v2, !v2s') -> do
-            (<|>) <$> loop (succ depth, v1, v2, (v1, v2) : stack) <*> visitNeighbors v2s'
+            -- DFS or next neighbor
+            (<|>) <$> loop (v1, v2, v1 : stack) <*> visitNeighbors v2s'
   where
-    !start = index boundsSG startIx
-    !end = index boundsSG endIx
+    !source = index boundsSG sourceIx
+    !sink = index boundsSG sinkIx
 
 -- | Topological sort
 --
