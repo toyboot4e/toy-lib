@@ -4,6 +4,9 @@
 
 module ToyLib.Macro where
 
+-- Required when `DEBUG` macro is defined.
+import Debug.Trace
+
 -- When run as script, `dbg` expands to `traceShow`.
 -- Otherwise it's an empty function.
 #ifdef DEBUG
