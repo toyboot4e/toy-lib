@@ -69,6 +69,10 @@ foldForMG !s0 !xs !m = G.foldM' m s0 xs
 swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
 swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
+-- | Converts undirected edges into directed edges.
+swapDupeW :: U.Vector (Int, Int, Int) -> U.Vector (Int, Int, Int)
+swapDupeW = U.concatMap (\(!v1, !v2, !d) -> U.fromListN 2 [(v1, v2, d), (v2, v1, d)])
+
 -- }}}
 
 -- {{{ Libary complements

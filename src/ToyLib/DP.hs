@@ -119,7 +119,7 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
 unBitSet :: Int -> Int -> U.Vector Int
 unBitSet n bits = U.filter (testBit bits) (U.generate n id)
 
--- | Typical set-based DP.
+-- | Typical set-based DP (traveling salesman problem).
 --
 -- = Typical problems
 -- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
