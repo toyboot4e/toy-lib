@@ -374,22 +374,22 @@ dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVertsSG undef
 
-  flip fix (0 :: Int, source, []) $ \loop (!depth, !v1, !stack) -> do
-    !lastD1 <- UM.read dist v1
-
-    if lastD1 /= undef
-      then return Nothing
-      else do
-        UM.write dist v1 depth
-        if v1 == sink
-          then return $ Just (v1 : stack)
+  let loop !depth !v1 !stack = do
+        !lastD1 <- UM.read dist v1
+        if lastD1 /= undef
+          then return Nothing
           else do
-            -- visit neighbors one by one, but stop soon on end.
-            flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
-              Nothing -> return Nothing
-              Just (!v2, !v2s') -> do
-                -- DFS or next neighbor
-                (<|>) <$> loop (succ depth, v2, v1 : stack) <*> visitNeighbors v2s'
+            UM.write dist v1 depth
+            if v1 == sink
+              then return $ Just (v1 : stack)
+              else do
+                flip fix (gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
+                  Nothing -> return Nothing
+                  Just (!v2, !v2s') -> do
+                    -- DFS or next neighbor
+                    (<|>) <$> loop (succ depth) v2 (v1 : stack) <*> visitNeighbors v2s'
+
+  loop (0 :: Int) source []
   where
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
@@ -403,15 +403,17 @@ treeDfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> [Vert
 treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
   let !undef = -1 :: Int
 
-  flip fix (undef, source, []) $ \loop (!parent, !v1, !stack) -> do
-    if v1 == sink
-      then return $ Just (v1 : stack)
-      else do
-        flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
-          Nothing -> return Nothing
-          Just (!v2, !v2s') -> do
-            -- DFS or next neighbor
-            (<|>) <$> loop (v1, v2, v1 : stack) <*> visitNeighbors v2s'
+  let loop !parent !v1 !stack = do
+        if v1 == sink
+          then return $ Just (v1 : stack)
+          else do
+            flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
+              Nothing -> return Nothing
+              Just (!v2, !v2s') -> do
+                -- DFS or next neighbor
+                (<|>) <$> loop v1 v2 (v1 : stack) <*> visitNeighbors v2s'
+
+  loop undef source []
   where
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
