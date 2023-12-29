@@ -258,6 +258,10 @@ genericBfs01 !bndExt !gr !starts = IxVector bndExt $ U.create $ do
   return $ vecIV vec
 
 -- | /O((E+V) \log {V})/ Dijkstra's algorithm.
+--
+-- >>> let gr = buildWSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1, 1 :: Int), (1, 2, 1), (1, 3, 100), (2, 3, 1)])
+-- >>> vecIV $ djSG gr (-1 :: Int) (U.singleton 0)
+-- [0,1,2,3]
 djSG :: forall i w. (Ix i, U.Unbox i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> U.Vector i -> IxUVector i w
 djSG gr@SparseGraph {..} !undef !is0 =
   IxVector boundsSG $
@@ -352,7 +356,6 @@ treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
   where
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
-
 
 -- | /O(V+E)/ depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
