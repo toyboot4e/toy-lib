@@ -1,9 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- | `vector`-based sparse graph implementation (weightened or unweightened).
---
--- Heavily inspired by @cojna/iota@.
+-- | `vector`-based sparse graph implementation. Heavily inspired by @cojna/iota@.
 module Data.SparseGraph where
 
 import Control.Applicative
@@ -38,7 +36,7 @@ type WEdgeWith w = (Vertex, Vertex, w)
 
 type EdgeId = Int
 
--- | CSR (compressed sparse row) representation of a graph (weightened or unweightened)
+-- | CSR (compressed sparse row) representation of a graph, weightened or unweightened.
 data SparseGraph i w = SparseGraph
   { -- | Vertex index boundary.
     boundsSG :: !(i, i),
@@ -56,8 +54,6 @@ data SparseGraph i w = SparseGraph
   deriving (Show)
 
 -- | Builds an unweightned `SparseGraph`.
---
--- TODO: Faster implementation
 {-# INLINE buildUSG #-}
 buildUSG :: (Unindex i) => (i, i) -> U.Vector (i, i) -> SparseGraph i ()
 buildUSG !boundsSG !edges =
@@ -113,8 +109,6 @@ adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
 eAdj :: SparseGraph i w -> Vertex -> U.Vector (EdgeId, Vertex)
 eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
   where
-    -- eAdjRaw SparseGraph {..} v = U.imap (\e v -> (e + o1, v)) vs
-
     !o1 = U.unsafeIndex offsetsSG v
     !o2 = U.unsafeIndex offsetsSG (v + 1)
     !vs = U.unsafeSlice o1 (o2 - o1) adjacentsSG
@@ -143,6 +137,12 @@ adjWIx gr i = U.map (first (unindex (boundsSG gr))) $ adjW gr v
   where
     !v = index (boundsSG gr) i
 
+----------------------------------------------------------------------------------------------------
+-- DFS / BFS / 01-BFS / Dijkstra
+----------------------------------------------------------------------------------------------------
+
+-- | /O(V+E)/ Depth-first search. Returns a vector of distances to each vertex. Unreachable
+-- vertices are given distance of `-1`.
 dfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   let !undef = -1 :: Int
@@ -157,7 +157,10 @@ dfsSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
 
   return dist
 
--- | Just a template. Typical problem: [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
+-- | /O(V+E)/ Depth-first search. Just a template.
+--
+-- = Typical problems
+-- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
 dfsEveryPathSG :: SparseGraph Int Int -> Int -> Int
 dfsEveryPathSG gr@SparseGraph {..} !start = runST $ do
   !vis <- UM.replicate nVertsSG False
@@ -171,7 +174,7 @@ dfsEveryPathSG gr@SparseGraph {..} !start = runST $ do
     UM.write vis v1 False
     return $ max d1 maxDistance
 
--- | Also consider using union-find tree.
+-- | /O(V+E)/ Marks connected vertices. Also consider using union-find tree.
 componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
 componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   !vis <- UM.replicate nVertsSG False
@@ -188,12 +191,13 @@ componentsVecSG gr@SparseGraph {..} !startIx = IxVector boundsSG $ U.create $ do
   where
     !start = index boundsSG startIx :: Vertex
 
--- | /O(V+E)/ breadth-first search. Unreachable vertices have length of @-1@.
+-- | /O(V+E)/ breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 bfsSG gr@SparseGraph {..} !startIx =
   IxVector boundsSG $
     genericBfs (gr `adj`) nVertsSG (index boundsSG startIx)
 
+-- | /O(V+E)/ breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !start = U.create $ do
   let !undef = -1 :: Int
@@ -219,33 +223,7 @@ genericBfs !gr !nVerts !start = U.create $ do
 
   return dist
 
--- | TODO: Re-implement with `genericBfs`
-bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
-bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
-  !vis <- IxVector bounds_ <$> UM.replicate (rangeSize bounds_) undef
-  !queue <- newBufferAsQueue (rangeSize bounds_)
-
-  pushBack queue start
-  writeIV vis start 0
-
-  fix $ \loop ->
-    popFront queue >>= \case
-      Nothing -> return ()
-      Just !yx1 -> do
-        !d <- readIV vis yx1
-        U.forM_ (nexts yx1) $ \yx2 -> do
-          whenM ((== undef) <$> readIV vis yx2) $ do
-            writeIV vis yx2 (d + 1)
-            pushBack queue yx2
-        loop
-
-  U.unsafeFreeze $ vecIV vis
-  where
-    !undef = -1 :: Int
-    !bounds_ = boundsIV isBlock
-    nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
-    !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
+-- | /O(V+E)/ 01-BFS. Unreachable vertices are given distance of @-1@.
 genericBfs01 :: (Ix i, U.Unbox i) => (i, i) -> (i -> U.Vector (i, Int)) -> U.Vector i -> IxUVector i Int
 genericBfs01 !bndExt !gr !starts = IxVector bndExt $ U.create $ do
   let !undef = -1 :: Int
@@ -279,60 +257,15 @@ genericBfs01 !bndExt !gr !starts = IxVector bndExt $ U.create $ do
 
   return $ vecIV vec
 
--- 01-BFS: zero cost with same direction.
-bfs01_grid4_typical043 :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
-bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ U.create $ do
-  -- vec @! (dir, y, x)
-  !vec <- IxVector boundsExt <$> UM.replicate (4 * nVerts) undef
-
-  let !redundantSpace = 0
-  !deque <- newBufferAsDeque (redundantSpace + 4 * nVerts)
-  forM_ [0 .. 3] $ \iDir -> do
-    let !vExt = (iDir, fst start, snd start)
-    pushFront deque (0 :: Int, vExt)
-    writeIV vec vExt (0 :: Int)
-
-  let extract !w0 vExt0@(!iDir0, !y0, !x0) = do
-        !wReserved0 <- readIV vec vExt0
-        when (w0 == wReserved0) $ do
-          U.iforM_ dirs $ \iDir (!dy, !dx) -> do
-            let !v = (y0 + dy, x0 + dx)
-            when (inRange bounds_ v && not (isBlock @! v)) $ do
-              let !w = bool (w0 + 1) w0 (iDir == iDir0)
-              let !vExt = (iDir, y0 + dy, x0 + dx)
-              !wReserved <- readIV vec vExt
-              when (wReserved == undef || w < wReserved) $ do
-                writeIV vec vExt w
-                if iDir == iDir0
-                  then pushFront deque (w, vExt)
-                  else pushBack deque (w, vExt)
-
-  -- generic BFS = pop loop
-  fix $ \loop ->
-    popFront deque >>= \case
-      Nothing -> return ()
-      Just (!w, !v) -> do
-        extract w v
-        loop
-
-  return $ vecIV vec
-  where
-    !undef = -1 :: Int
-    (!height, !width) = both succ . snd $ boundsIV isBlock
-    !bounds_ = boundsIV isBlock
-    !boundsExt = ((0, 0, 0), (3, height - 1, width - 1))
-    !nVerts = rangeSize bounds_
-    !dirs = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
--- | Dijkstra: $O((E+V) \log {V})$
---
--- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
+-- | /O((E+V) \log {V})/ Dijkstra's algorithm.
 djSG :: forall i w. (Ix i, U.Unbox i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> U.Vector i -> IxUVector i w
 djSG gr@SparseGraph {..} !undef !is0 =
   IxVector boundsSG $
     genericDj (gr `adjW`) nVertsSG undef (U.map (index boundsSG) is0)
 
--- TODO: compare the speed of `djSG` via the generic verison
+-- | /O((E+V) \log {V})/ Dijkstra's algorithm.
+--
+-- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
 genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> w -> U.Vector Int -> U.Vector w
 genericDj !gr !nVerts !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
@@ -362,12 +295,14 @@ genericDj !gr !nVerts !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
--- TODO: BFS with path restoration
+----------------------------------------------------------------------------------------------------
+-- Path restoration
+----------------------------------------------------------------------------------------------------
 
--- | Returns a path from source to the sink in reverse order.
+-- | Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
--- >>> reverse <$> dfsPathSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
+-- >>> reverse <$> dfsPathSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
 -- Just [0,1,2,3]
 dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Vertex]
 dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
@@ -394,7 +329,7 @@ dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
 
--- | Returns a list of a route in reverse order (a route from sink to source).
+-- | Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
 -- >>> reverse $ treeDfsPathSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
@@ -417,6 +352,82 @@ treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
   where
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
+
+
+-- | /O(V+E)/ depth-first search. Returns a vector of parents. The source vertex or unrechable
+-- vertices are given `-1` as their parent.
+--
+-- >>> createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- [-1,0,1,1]
+--
+-- Retrieve a shortest path:
+-- >>> let ps = createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> restoreParentTreePath ps 3
+-- [0,1,3]
+createDfsTreeSG :: (Unindex i) => SparseGraph i w -> i -> U.Vector Vertex
+createDfsTreeSG gr@SparseGraph {..} !startIx = U.create $ do
+  let !undef = -1 :: Int
+  !prev <- UM.replicate nVertsSG undef
+  !queue <- newBufferAsQueue nVertsSG
+
+  -- REMARK: We're not creating
+  pushBack queue start
+  fix $ \loop -> do
+    popFront queue >>= \case
+      Nothing -> return ()
+      Just !v1 -> do
+        U.forM_ (gr `adj` v1) $ \v2 -> do
+          !p <- UM.unsafeRead prev v2
+          when (p == undef) $ do
+            UM.unsafeWrite prev v2 v1
+            pushBack queue v2
+        loop
+
+  return prev
+  where
+    !start = index boundsSG startIx
+
+-- | /O(V+E)/ breadth-first search. Returns a vector of parents. The source vertex or unrechable
+-- vertices are given `-1` as their parent.
+--
+-- >>> createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- [-1,0,1,1]
+createBfsTreeSG :: (Unindex i) => SparseGraph i w -> i -> U.Vector Vertex
+createBfsTreeSG gr@SparseGraph {..} !startIx = U.create $ do
+  let !undef = -1 :: Int
+  !prev <- UM.replicate nVertsSG undef
+  !queue <- newBufferAsQueue nVertsSG
+
+  -- REMARK: We're not creating
+  pushBack queue start
+  fix $ \loop -> do
+    popFront queue >>= \case
+      Nothing -> return ()
+      Just !v1 -> do
+        U.forM_ (gr `adj` v1) $ \v2 -> do
+          !p <- UM.unsafeRead prev v2
+          when (p == undef) $ do
+            UM.unsafeWrite prev v2 v1
+            pushBack queue v2
+        loop
+
+  return prev
+  where
+    !start = index boundsSG startIx
+
+-- | Given a vector of vertex parents, restores path from the source to a sink.
+restoreParentTreePath :: U.Vector Vertex -> Vertex -> [Vertex]
+restoreParentTreePath !ps !sink = inner [sink] sink
+  where
+    inner path v
+      | p == -1 = path
+      | otherwise = inner (p : path) p
+      where
+        p = ps U.! v
+
+----------------------------------------------------------------------------------------------------
+-- Topological sort and strongly connected components
+----------------------------------------------------------------------------------------------------
 
 -- | Topological sort
 --
@@ -477,6 +488,10 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
       !vis <- UM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
 
+----------------------------------------------------------------------------------------------------
+-- Tree
+----------------------------------------------------------------------------------------------------
+
 -- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
 treeDepthInfoSG :: SparseGraph Int w -> Int -> (ToParent, U.Vector Int)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
@@ -500,3 +515,80 @@ lcaCacheSG !gr !root = (toParent, depths, toParentN)
   where
     (!toParent, !depths) = treeDepthInfoSG gr root
     !toParentN = newBinLift toParent
+
+----------------------------------------------------------------------------------------------------
+-- Notes
+----------------------------------------------------------------------------------------------------
+
+-- | 01-BFS: zero cost with same direction.
+bfs01_grid4_typical043 :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
+bfs01_grid4_typical043 !isBlock !start = IxVector boundsExt $ U.create $ do
+  -- vec @! (dir, y, x)
+  !vec <- IxVector boundsExt <$> UM.replicate (4 * nVerts) undef
+
+  let !redundantSpace = 0
+  !deque <- newBufferAsDeque (redundantSpace + 4 * nVerts)
+  forM_ [0 .. 3] $ \iDir -> do
+    let !vExt = (iDir, fst start, snd start)
+    pushFront deque (0 :: Int, vExt)
+    writeIV vec vExt (0 :: Int)
+
+  let extract !w0 vExt0@(!iDir0, !y0, !x0) = do
+        !wReserved0 <- readIV vec vExt0
+        when (w0 == wReserved0) $ do
+          U.iforM_ dirs $ \iDir (!dy, !dx) -> do
+            let !v = (y0 + dy, x0 + dx)
+            when (inRange bounds_ v && not (isBlock @! v)) $ do
+              let !w = bool (w0 + 1) w0 (iDir == iDir0)
+              let !vExt = (iDir, y0 + dy, x0 + dx)
+              !wReserved <- readIV vec vExt
+              when (wReserved == undef || w < wReserved) $ do
+                writeIV vec vExt w
+                if iDir == iDir0
+                  then pushFront deque (w, vExt)
+                  else pushBack deque (w, vExt)
+
+  -- generic BFS = pop loop
+  fix $ \loop ->
+    popFront deque >>= \case
+      Nothing -> return ()
+      Just (!w, !v) -> do
+        extract w v
+        loop
+
+  return $ vecIV vec
+  where
+    !undef = -1 :: Int
+    (!height, !width) = both succ . snd $ boundsIV isBlock
+    !bounds_ = boundsIV isBlock
+    !boundsExt = ((0, 0, 0), (3, height - 1, width - 1))
+    !nVerts = rangeSize bounds_
+    !dirs = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+-- | TODO: Re-implement with `genericBfs`
+bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
+bfsGrid317E_MBuffer !isBlock !start = IxVector bounds_ $ runST $ do
+  !vis <- IxVector bounds_ <$> UM.replicate (rangeSize bounds_) undef
+  !queue <- newBufferAsQueue (rangeSize bounds_)
+
+  pushBack queue start
+  writeIV vis start 0
+
+  fix $ \loop ->
+    popFront queue >>= \case
+      Nothing -> return ()
+      Just !yx1 -> do
+        !d <- readIV vis yx1
+        U.forM_ (nexts yx1) $ \yx2 -> do
+          whenM ((== undef) <$> readIV vis yx2) $ do
+            writeIV vis yx2 (d + 1)
+            pushBack queue yx2
+        loop
+
+  U.unsafeFreeze $ vecIV vis
+  where
+    !undef = -1 :: Int
+    !bounds_ = boundsIV isBlock
+    nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
+    !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
