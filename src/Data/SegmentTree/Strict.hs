@@ -74,7 +74,7 @@ newSTreeU = newSTreeG
 -- REMARK: It takes lots of time. Consider a much more efficient resettiong strategy such as
 -- re-inserting zeros to used slots, or maybe use | `compressInvNumG` when you just need
 -- inversion number.
-resetSTree :: (GM.MVector v a, PrimMonad m) => (SegmentTree v (PrimState m) a) -> a -> m ()
+resetSTree :: (GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> a -> m ()
 resetSTree (SegmentTree !_ !vec) !zero = GM.set vec zero
 
 -- | Updates an `SegmentTree` leaf value and their parents up to top root.
