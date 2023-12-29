@@ -138,7 +138,7 @@ generateLibrary ghc2021Extensions parsedFiles =
     topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
     topSortSourceFiles input =
       let edges = U.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
-          gr = buildUSG (0, pred (length input)) edges
+          gr = buildSG (0, pred (length input)) edges
           vs = topSortSG gr
        in map (input !!) vs
       where

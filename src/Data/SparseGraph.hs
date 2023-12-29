@@ -53,10 +53,10 @@ data SparseGraph i w = SparseGraph
   }
   deriving (Show)
 
--- | Builds an unweightned `SparseGraph`.
-{-# INLINE buildUSG #-}
-buildUSG :: (Unindex i) => (i, i) -> U.Vector (i, i) -> SparseGraph i ()
-buildUSG !boundsSG !edges =
+-- | Builds an non-weightned `SparseGraph`.
+{-# INLINE buildSG #-}
+buildSG :: (Unindex i) => (i, i) -> U.Vector (i, i) -> SparseGraph i ()
+buildSG !boundsSG !edges =
   buildRawSG boundsSG $ U.map (\(!i1, !i2) -> (ix i1, ix i2, ())) edges
   where
     ix = index boundsSG
@@ -306,7 +306,7 @@ genericDj !gr !nVerts !undef !vs0 = U.create $ do
 -- | Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
--- >>> reverse <$> dfsPathSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
+-- >>> reverse <$> dfsPathSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
 -- Just [0,1,2,3]
 dfsPathSG :: (Unindex i) => SparseGraph i w -> i -> i -> Maybe [Vertex]
 dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
@@ -336,7 +336,7 @@ dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
 -- | Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
--- >>> reverse $ treeDfsPathSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
+-- >>> reverse $ treeDfsPathSG (buildSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
 -- [0,1,2,3]
 treeDfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> [Vertex]
 treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
@@ -360,11 +360,11 @@ treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
 -- | /O(V+E)/ depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
 --
--- >>> createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- [-1,0,1,1]
 --
 -- Retrieve a shortest path:
--- >>> let ps = createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> let ps = createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- >>> restoreParentTreePath ps 3
 -- [0,1,3]
 createDfsTreeSG :: (Unindex i) => SparseGraph i w -> i -> U.Vector Vertex
@@ -393,7 +393,7 @@ createDfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
 -- | /O(V+E)/ breadth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
 --
--- >>> createBfsTreeSG (buildUSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- [-1,0,1,1]
 createBfsTreeSG :: (Unindex i) => SparseGraph i w -> i -> U.Vector Vertex
 createBfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
@@ -469,7 +469,7 @@ restoreParentTreePath !ps !sink = inner [sink] sink
 -- | Topological sort
 --
 -- Non-referenced vertices come first:
--- >>> let !gr = buildUSG ((0, 4) :: (Int, Int)) $ U.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
+-- >>> let !gr = buildSG ((0, 4) :: (Int, Int)) $ U.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
 -- >>> topSortSG gr
 -- [4,0,2,3,1]
 topSortSG :: SparseGraph i w -> [Vertex]
@@ -628,4 +628,3 @@ bfsGrid317E_MBuffer !isBlock !source = IxVector bounds_ $ runST $ do
     !bounds_ = boundsIV isBlock
     nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
     !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
