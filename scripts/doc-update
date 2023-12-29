@@ -1,0 +1,7 @@
+#!/usr/bin/env -S bash -euE
+
+rm -rf gh-pages/*
+# cp -r .stack-work/dist/x86_64-linux-nix/Cabal-3.8.1.0/doc/html/toy-lib/* gh-pages/
+cp -r ./dist-newstyle/build/x86_64-linux/ghc-9.4.5/toy-lib-0.1.0.0/doc/html/toy-lib/* gh-pages
+cd gh-pages && git add . && git push
+

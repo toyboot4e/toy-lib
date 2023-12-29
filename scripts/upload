@@ -1,0 +1,5 @@
+#!/usr/bin/env -S bash -euE
+
+cabal run | tee x.hs
+cp -f ./x.hs ~/dev/hs/abc-hs/_acc/haskell/Main.hs
+
