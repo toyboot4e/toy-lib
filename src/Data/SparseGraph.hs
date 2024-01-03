@@ -15,13 +15,17 @@ import Data.Bifunctor
 import Data.BinaryLifting
 import Data.Bool (bool)
 import Data.Buffer
+import Data.Functor.Identity
 import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import Data.Maybe
+import Data.SemigroupAction
 import Data.Tree.Lca (LcaCache, ToParent (..))
 import Data.Tuple.Extra (both)
 import Data.Unindex
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -552,6 +556,78 @@ lcaCacheSG !gr !root = (toParent, depths, toParentN)
   where
     (!toParent, !depths) = treeDepthInfoSG gr root
     !toParentN = newBinLift toParent
+
+----------------------------------------------------------------------------------------------------
+-- Tree
+----------------------------------------------------------------------------------------------------
+
+foldTreeImpl :: forall m op a w. (Monad m) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a
+foldTreeImpl !tree !root !sact_ !acc0At !toOp !memo = inner (-1) root
+  where
+    inner :: Vertex -> Vertex -> m a
+    inner !parent !v1 = do
+      let !acc0 = acc0At v1
+      !res <- U.foldM' (\acc v2 -> (`sact_` acc) . toOp <$> inner v1 v2) acc0 v2s
+      memo v1 res
+      return res
+      where
+        !v2s = U.filter (/= parent) $ tree `adj` v1
+
+-- | Folds a tree from one root vertex using postorder DFS.
+foldTree :: SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> a
+foldTree !tree !root !sact_ !acc0At !toOp = runIdentity $ foldTreeImpl tree root sact_ acc0At toOp (\_ _ -> return ())
+
+-- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
+-- on every vertex.
+scanTree :: (G.Vector v a) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> v a
+scanTree !tree !root !sact_ !acc0At !toOp = G.create $ do
+  dp <- GM.unsafeNew nVerts
+  !_ <- foldTreeImpl tree root sact_ acc0At toOp $ \v a -> do
+    GM.unsafeWrite dp v a
+  return dp
+  where
+    !nVerts = rangeSize $! boundsSG tree
+
+-- | Type-restricted `scanTree`.
+scanTreeU :: (U.Unbox a) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> U.Vector a
+scanTreeU = scanTree
+
+-- | Type-restricted `scanTree`.
+scanTreeV :: SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> V.Vector a
+scanTreeV = scanTree
+
+-- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
+-- REMARK: `mempty` is used for initial operator value.
+--
+-- = Typical problems
+-- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
+foldTreeAllSG :: forall a op w. (U.Unbox a, U.Unbox op, MonoidAction op a) => SparseGraph Int w -> (Vertex -> a) -> (a -> op) -> U.Vector a
+foldTreeAllSG !tree !acc0At !toOp =
+  -- Calculate tree DP for one root vertex
+  let !treeDp = scanTreeU tree root0 mact acc0At toOp
+      !rootDp = U.create $ do
+        -- Calculate tree DP for every vertex as a root:
+        !dp <- UM.unsafeNew nVerts
+        flip fix (-1, op0, root0) $ \runRootDp (!parent, !parentOp, !v1) -> do
+          let !children = U.filter (/= parent) $ tree `adj` v1
+          let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp U.! v2) op0 children
+          let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp U.! v2) op0 children
+
+          -- save
+          let !x1 = (parentOp <> U.last opL) `mact` acc0At v1
+          UM.write dp v1 x1
+
+          flip U.imapM_ children $ \ !i2 !v2 -> do
+            let !lrOp = (opL U.! i2) <> (opR U.! succ i2)
+            let !v1Acc = (parentOp <> lrOp) `mact` acc0At v2
+            runRootDp (v1, toOp v1Acc, v2)
+
+        return dp
+   in rootDp
+  where
+    !nVerts = rangeSize $ boundsSG tree
+    !root0 = 0 :: Int
+    !op0 = mempty @op
 
 ----------------------------------------------------------------------------------------------------
 -- Notes
