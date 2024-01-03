@@ -1,7 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeFamilies #-}
 
 -- | Graph search with context for every vertex in the super graph.
 --
@@ -79,15 +77,35 @@ data AdhocMethod m w = AdhocMethod
     wfilterAM :: !(AdhocGraph m w -> Vertex -> (Vertex, w) -> m Bool)
   }
 
-{-# INLINE amDefault #-}
-amDefault :: (Applicative m) => AdhocMethod m w
+defaultMarkRootAM :: (PrimMonad m, U.Unbox w) => AdhocGraph m w -> Vertex -> w -> m ()
+defaultMarkRootAM ag v w = do
+  UM.write (distAG ag) v w
+
+defaultMarkAM :: (PrimMonad m, U.Unbox w, Eq w, Num w) => (AdhocGraph m w -> Vertex -> (Vertex, w) -> m ())
+defaultMarkAM ag v1 (!v2, !dw2) = do
+  w1 <- UM.read (distAG ag) v1
+  let !_ = dbgAssert (w1 /= undefAG ag) $ "v1 has undefiend distance: " ++ show v1 ++ " -> " ++ show v2
+  UM.write (distAG ag) v2 $! w1 + dw2
+
+defaultUnmarkAM :: (PrimMonad m, U.Unbox w) => (AdhocGraph m w -> Vertex -> (Vertex, w) -> m ())
+defaultUnmarkAM ag _ (!v2, !_) = do
+  UM.write (distAG ag) v2 (undefAG ag)
+
+defaultWFilterAM :: (PrimMonad m, U.Unbox w, Eq w) => (AdhocGraph m w -> Vertex -> (Vertex, w) -> m Bool)
+defaultWFilterAM ag _ (!v2, !_) = do
+  (== undefAG ag) <$> UM.read (distAG ag) v2
+
+amDefault :: (PrimMonad m, U.Unbox w, Num w, Eq w) => AdhocMethod m w
 amDefault =
   AdhocMethod
-    { markRootAM = \_ _ _ -> pure (),
-      markAM = \_ _ _ -> pure (),
-      unmarkAM = \_ _ _ -> pure (),
-      wfilterAM = \_ _ _ -> error "`wfilterAM` is not set for the `AdhocMethod`."
+    { markRootAM = defaultMarkRootAM,
+      markAM = defaultMarkAM,
+      unmarkAM = defaultUnmarkAM,
+      wfilterAM = defaultWFilterAM
     }
+
+amDefaultInt :: (PrimMonad m) => AdhocMethod m Int
+amDefaultInt = amDefault
 
 data AdhocGraphArgs w = AdhocGraphArgs
   { -- | Initial weights for non-visited vertices.
@@ -124,16 +142,16 @@ agaDefaultInt =
     { undefAGA = -1 :: Int,
       nVertsAGA = 0,
       distAGA = False,
-      visAGA = False,
+      visAGA = True,
       parentAGA = False,
       adjAGA = const U.empty,
       adjWAGA = const U.empty
     }
 
-newAg :: (PrimMonad m, U.Unbox w) => AdhocGraphArgs w -> w -> m (AdhocGraph m w)
-newAg AdhocGraphArgs {..} undef = do
+newAg :: (PrimMonad m, U.Unbox w) => AdhocGraphArgs w -> m (AdhocGraph m w)
+newAg AdhocGraphArgs {..} = do
   !vis <- UM.replicate (bool 0 nVertsAGA visAGA) False
-  !dist <- UM.replicate (bool 0 nVertsAGA distAGA) undef
+  !dist <- UM.replicate (bool 0 nVertsAGA distAGA) undefAGA
   !parent <- UM.replicate (bool 0 nVertsAGA visAGA) (-1 :: Vertex)
   return $ AdhocGraph undefAGA nVertsAGA vis dist parent adjAGA adjWAGA
 
