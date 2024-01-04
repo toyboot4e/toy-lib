@@ -351,7 +351,7 @@ djAG ag@AdhocGraph {..} AdhocMethod {..} source = do
   flip fix heap0 $ \loop !heap -> case H.uncons heap of
     Nothing -> return ()
     Just (H.Entry !w1 !v1, heap') -> do
-      loop <=< (pruneAdjWAG ag v1 w1 >>=) . (`U.foldM'` heap') $ \h (!v2, !dw2) -> do
+      loop <=< ((pruneAdjWAG ag v1 w1 >>=) . (`U.foldM'` heap')) $ \h (!v2, !dw2) -> do
         markAM ag v1 (v2, dw2)
         !w2 <- GM.read distAG v2
         return $ H.insert (H.Entry w2 v2) h
