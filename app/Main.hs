@@ -5,7 +5,7 @@ module Main (main) where
 
 import Control.Monad
 import Data.List qualified as L
-import Data.List.Extra (stripSuffix)
+import Data.List.Extra (stripSuffix, nubSort)
 import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.SparseGraph
@@ -36,6 +36,7 @@ main = do
   let (!failures, !successes) = partitionParseResults parsedFiles
 
   unless (null failures) $ do
+    putStrLn "Failed to parse source files:"
     forM_ failures print
     exitFailure
 
@@ -77,16 +78,10 @@ parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Modu
 parseFile ghc2021Extensions absPath = do
   code <- readFile absPath
 
-  -- Pre-processing CPP:
-  -- TODO: why removing macros?
-  processed <- withTempDirectory "." "toy-lib-cpp" $ \tmpDir -> do
-    let originalPath = tmpDir ++ "/define-removed.hs"
-    let processedPath = tmpDir ++ "/cpp-processed.hs"
-    writeFile originalPath $ removeDefineMacros code
-
-    _exitCode <- rawSystem "stack" ["ghc", "--", "-E", originalPath, "-o", processedPath]
-
-    removeMacros <$> readFile processedPath
+  let processed = code
+  when ("AdhocGraph" `L.isInfixOf` processed) $ do
+    print "GO"
+    putStrLn processed
 
   -- Collect language extensions:
   let extensions = case H.readExtensions processed of
@@ -96,7 +91,7 @@ parseFile ghc2021Extensions absPath = do
   let parseOption =
         H.defaultParseMode
           { H.parseFilename = absPath,
-            H.extensions = extensions ++ ghc2021Extensions
+            H.extensions = nubSort $ extensions ++ ghc2021Extensions
           }
 
   return (extensions, H.parseModuleWithMode parseOption processed)
