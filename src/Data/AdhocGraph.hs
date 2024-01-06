@@ -27,7 +27,7 @@
 -- - [ ] Walk through every path
 --   [C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
 -- - [ ] Come back to the first vertex
-module Data.AdhocGraph () where
+module Data.AdhocGraph where
 
 import Control.Monad
 import Control.Monad.Fix
