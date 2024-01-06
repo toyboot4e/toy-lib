@@ -78,13 +78,8 @@ parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Modu
 parseFile ghc2021Extensions absPath = do
   code <- readFile absPath
 
-  let processed = code
-  when ("AdhocGraph" `L.isInfixOf` processed) $ do
-    print "GO"
-    putStrLn processed
-
   -- Collect language extensions:
-  let extensions = case H.readExtensions processed of
+  let extensions = case H.readExtensions code of
         Just (_, exts) -> exts
         Nothing -> []
 
@@ -94,7 +89,7 @@ parseFile ghc2021Extensions absPath = do
             H.extensions = nubSort $ extensions ++ ghc2021Extensions
           }
 
-  return (extensions, H.parseModuleWithMode parseOption processed)
+  return (extensions, H.parseModuleWithMode parseOption code)
 
 -- | Returns the root directory.
 installPath :: FilePath
