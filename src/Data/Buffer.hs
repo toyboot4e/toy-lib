@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 -- | [Data.Buffer](https://github.com/cojna/iota/blob/master/src/Data/Buffer.hs) taken from [cojna/iota](https://github.com/cojna/iota) (thanks!)
 module Data.Buffer where
 
@@ -5,6 +7,7 @@ import Control.Applicative
 import Control.Exception (assert)
 import Control.Monad (void)
 import Control.Monad.Primitive
+import Data.Ix
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
@@ -182,3 +185,22 @@ pushBacks Buffer {bufferVars, internalBuffer, internalBufferSize} vec = do
   assert (b + n - 1 < internalBufferSize) $ do
     U.unsafeCopy (UM.unsafeSlice b n internalBuffer) vec
 {-# INLINE pushBacks #-}
+
+viewFrontN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
+viewFrontN Buffer {..} i = do
+  !f <- UM.unsafeRead bufferVars _bufferFrontPos
+  !b <- UM.unsafeRead bufferVars _bufferBackPos
+  if inRange (f, b - 1) (f + i)
+    then Just <$> UM.read internalBuffer (f + i)
+    else return Nothing
+{-# INLINE viewFrontN #-}
+
+viewBackN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
+viewBackN Buffer {..} i = do
+  !f <- UM.unsafeRead bufferVars _bufferFrontPos
+  !b <- UM.unsafeRead bufferVars _bufferBackPos
+  if inRange (f, b - 1) (b - 1 - i)
+    then Just <$> UM.read internalBuffer (b - 1 - i)
+    else return Nothing
+{-# INLINE viewBackN #-}
+
