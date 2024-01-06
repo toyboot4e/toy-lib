@@ -14,8 +14,6 @@ import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Exit (exitFailure)
-import System.IO.Temp (withTempDirectory)
-import System.Process (rawSystem)
 
 -- TODO: Refactor
 -- TODO: Filter dependencies and do topological sort
