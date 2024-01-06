@@ -97,12 +97,6 @@ iwiSpansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len + 1, r))) $ rangeU 
 iwiSpansU' :: Int -> Int -> U.Vector ((Int, Int), Int, (Int, Int))
 iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r))) $ rangeU 0 (r - l)
 
--- | `U.constructN` for `IxVector`
-constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxVector i (U.Vector a) -> i -> a) -> IxVector i (U.Vector a)
-constructIV !rng !f = IxVector rng $ G.constructN (rangeSize rng) $ \vec ->
-  let !i = unindex rng (G.length vec)
-   in f (IxVector rng vec) i
-
 -- | Span-based DP with preset index patterns.
 -- REMARK: @@sofar @! (l, r)@@
 spanDP :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (U.Vector a)

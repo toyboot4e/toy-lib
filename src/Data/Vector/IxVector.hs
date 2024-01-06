@@ -84,19 +84,23 @@ accumulateIV !f !vec0 !commands =
     !bnd = boundsIV vec0
     !_ = dbgAssert (boundsIV vec0 == boundsIV commands)
 
--- TOOD: `ixmapIV` and rotation examples
-
 {-# INLINE createIV #-}
 createIV :: (G.Vector v a) => (i, i) -> (forall s. ST s (G.Mutable v s a)) -> IxVector i (v a)
 createIV !bnd !st = IxVector bnd $ G.create st
 
--- generateIV :: (Index i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
--- generateIV bnd f = U.generate (rangeSize bnd) (f . index bns)
+{-# INLINE generateIV #-}
+generateIV :: (Unindex i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
+generateIV bnd f = IxVector bnd $ U.generate (rangeSize bnd) (f . unindex bnd)
 
--- counstructIV :: (Index i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
--- counstructIV bnd f = U.generate (rangeSize bnd) (f . index bns)
+-- | `U.constructN` for `IxVector`
+{-# INLINE constructIV #-}
+constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> a) -> IxUVector i a
+constructIV bnd f = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar ->
+  f (IxVector bnd sofar) $! unindex bnd (G.length sofar)
 
--- replicateIVM
+{-# INLINE unsafeFreezeIV #-}
+unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
+unsafeFreezeIV iv = IxVector (boundsIV iv) <$> G.unsafeFreeze (vecIV iv)
 
 -- | Calculates two-dimensional cummulative sum.
 --
