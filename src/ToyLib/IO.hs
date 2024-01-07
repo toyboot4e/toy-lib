@@ -34,8 +34,6 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import System.IO (stdout)
 import ToyLib.Prelude (repM_)
 
--- import ToyLib.Prelude
-
 -- Input/parser
 
 int :: IO Int
