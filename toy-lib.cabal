@@ -196,6 +196,7 @@ library
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse
     Data.Vector.Compress
+    Data.Vector.Construct
     Data.Vector.CSum
     Data.Vector.DictOrder
     Data.Vector.Extra
