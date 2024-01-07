@@ -491,14 +491,14 @@ topSortSG gr@SparseGraph {..} = runST $ do
 
   U.foldM' dfsM [] (rangeU 0 (pred nVertsSG))
 
--- | Partial running of `scc` over topologically sorted vertices, but for some connected components
+-- | Partial running of `topSccSG` over topologically sorted vertices, but for some connected components
 -- only.
 topScc1SG :: forall i w m. (PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
 topScc1SG !gr' !vis !v0 = do
   flip fix ([], v0) $ \loop (!acc, !v) -> do
     UM.unsafeRead vis v >>= \case
-      False -> return acc
-      True -> do
+      True -> return acc
+      False -> do
         UM.unsafeWrite vis v True
         !vs <- U.filterM (fmap not . UM.unsafeRead vis) $ gr' `adj` v
         -- Create preorder output:

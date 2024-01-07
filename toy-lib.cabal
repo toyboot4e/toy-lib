@@ -190,7 +190,6 @@ library
     Data.Semiring
     Data.SizedList
     Data.SparseGraph
-    Data.Tree.Fold
     Data.Tree.Lca
     Data.Unindex
     Data.UnionFind.Mutable

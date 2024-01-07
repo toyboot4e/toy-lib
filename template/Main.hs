@@ -109,7 +109,7 @@ import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Algorithms.Search as VAS
 
 -- containers
-import qualified Data.Graph as Gr
+import Data.Graph (Vertex)
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map.Strict as M
 import qualified Data.IntSet as IS
