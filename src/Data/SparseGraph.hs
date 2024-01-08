@@ -19,6 +19,7 @@ import Data.Functor.Identity
 import Data.Graph (Vertex)
 import qualified Data.Heap as H
 import Data.Maybe
+import Data.Ord (Down (..))
 import Data.SemigroupAction
 import Data.Tree.Lca (LcaCache, ToParent (..))
 import Data.Tuple.Extra (both)
@@ -737,4 +738,3 @@ abc335e !xs gr@SparseGraph {..} = U.create $ do
               else return h
 
   return dist
-
