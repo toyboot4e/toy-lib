@@ -278,6 +278,9 @@ genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -
 genericDj !gr !nVerts !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
 
+  -- when there's loop:
+  -- !done <- UM.replicate nVertsSG False
+
   let !heap0 = H.fromList $ map (H.Entry 0) (U.toList vs0) :: H.Heap (H.Entry w Int)
   U.forM_ vs0 $ \v -> do
     UM.write dist v 0
@@ -286,7 +289,7 @@ genericDj !gr !nVerts !undef !vs0 = U.create $ do
     Nothing -> return ()
     Just (H.Entry !w1 !v1, heap') -> do
       (w1 >) <$> UM.read dist v1 >>= \case
-        -- more efficient path was already visited
+        -- better path was already visited
         True -> loop heap'
         False -> do
           loop <=< (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
@@ -704,3 +707,34 @@ bfsGrid317E_MBuffer !isBlock !source = IxVector bounds_ $ runST $ do
     !bounds_ = boundsIV isBlock
     nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
     !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+-- | Longest path Dijkstra
+abc335e :: U.Vector Int -> SparseGraph Int () -> U.Vector Int
+abc335e !xs gr@SparseGraph {..} = U.create $ do
+  let !undef = 0 :: Int
+  !dist <- UM.replicate nVertsSG undef
+  !done <- UM.replicate nVertsSG False
+
+  let !heap0 = H.singleton $ H.Entry (xs U.! 0, Down 1) 0
+  UM.write dist 0 (1 :: Int)
+
+  flip fix heap0 $ \loop heap -> case H.uncons heap of
+    Nothing -> return ()
+    Just (H.Entry (!_, Down !w1) !v1, !heap') -> do
+      UM.read done v1 >>= \case
+        -- already visited
+        True -> loop heap'
+        False -> do
+          UM.write done v1 True
+          loop <=< (\f -> U.foldM' f heap' (gr `adj` v1)) $ \h v2 -> do
+            let !w2' = bool (w1 + 1) w1 (xs U.! v1 == xs U.! v2)
+            !b2 <- UM.read done v2
+            !w2 <- UM.read dist v2
+            if not b2 && w2' > w2
+              then do
+                UM.write dist v2 w2'
+                return $ H.insert (H.Entry (xs U.! v2, Down w2') v2) h
+              else return h
+
+  return dist
+

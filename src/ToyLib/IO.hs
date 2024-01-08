@@ -15,7 +15,7 @@
 --
 -- Vectors are `ReadBS` and they can also be embedded in the end of a tuple:
 --
--- >>> convertBS $ BS.pack "1 string 3.5 10 20 30 40" :: (Int, String, Float, U.Vector Int)
+-- >>> convertBS @(Int, String, Float, U.Vector Int) $ BS.pack "1 string 3.5 10 20 30 40"
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.IO where
 
