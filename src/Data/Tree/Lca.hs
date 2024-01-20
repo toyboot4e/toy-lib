@@ -78,7 +78,7 @@ lca (!_, !depths, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
     !v2' = parentN (if d1 > d2 then v1 else v2) (abs $ d1 - d2)
 
     -- find the depth of the lowest common ancestor:
-    !dLCA = fromJust . snd $ bisect (0, min d1 d2) $ \d ->
+    !dLCA = fromJust . snd $ bisect 0 (min d1 d2) $ \d ->
       parentN v1' d /= parentN v2' d
 
     !vLCA = parentN v1' dLCA

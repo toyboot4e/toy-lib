@@ -13,4 +13,4 @@ compressU xs = (indexer, U.map (fromJust . fst . f) xs)
   where
     -- !indexer = U.fromList $ nubSort $ U.toList xs
     !indexer = U.uniq $ U.modify VAI.sort xs
-    f !x = bisect (0, pred $ U.length indexer) $ \i -> indexer U.! i <= x
+    f !x = bisect 0 (pred (U.length indexer)) $ \i -> indexer U.! i <= x
