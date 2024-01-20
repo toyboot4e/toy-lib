@@ -120,6 +120,7 @@ _updateElement tree@(SegmentTree !f !vec) !i !value = do
 querySTree :: forall v a m. (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
 querySTree (SegmentTree !f !vec) (!lo, !hi)
   | lo > hi = return Nothing
+  | lo < 0 || hi >= (GM.length vec `div` 2) = return Nothing
   | otherwise = inner 0 (0, initialHi)
   where
     !initialHi = GM.length vec `div` 2 - 1
