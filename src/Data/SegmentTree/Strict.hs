@@ -117,21 +117,21 @@ _updateElement tree@(SegmentTree !f !vec) !i !value = do
 
 -- | Retrieves the folding result over the inclusive range `[l, r]` from `SegmentTree`.
 {-# INLINE querySTree #-}
-querySTree :: forall v a m. (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (Int, Int) -> m (Maybe a)
-querySTree (SegmentTree !f !vec) (!lo, !hi)
+querySTree :: forall v a m. (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m (Maybe a)
+querySTree (SegmentTree !f !vec) !lo !hi
   | lo > hi = return Nothing
   | lo < 0 || hi >= (GM.length vec `div` 2) = return Nothing
-  | otherwise = inner 0 (0, initialHi)
+  | otherwise = inner 0 0 initialHi
   where
     !initialHi = GM.length vec `div` 2 - 1
-    inner :: Int -> (Int, Int) -> m (Maybe a)
-    inner !i (!l, !h)
+    inner :: Int -> Int -> Int -> m (Maybe a)
+    inner !i !l !h
       | lo <= l && h <= hi = Just <$> GM.unsafeRead vec i
       | h < lo || hi < l = return Nothing
       | otherwise = do
           let !d = (h - l) `div` 2
-          !ansL <- inner (2 * i + 1) (l, l + d)
-          !ansH <- inner (2 * i + 2) (l + d + 1, h)
+          !ansL <- inner (2 * i + 1) l (l + d)
+          !ansH <- inner (2 * i + 2) (l + d + 1) h
           pure . Just $ case (ansL, ansH) of
             (Just !a, Just !b) -> f a b
             (Just !a, _) -> a

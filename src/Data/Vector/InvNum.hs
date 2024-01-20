@@ -23,7 +23,7 @@ invNumG xMax xs = runST $ do
     !s <-
       if x == xMax
         then return 0
-        else fromJust <$> querySTree stree (succ x, xMax)
+        else fromJust <$> querySTree stree (succ x) xMax
 
     -- let !_ = traceShow (x, s, (succ x, pred n)) ()
     modifySTree stree succ x

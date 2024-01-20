@@ -165,7 +165,7 @@ lcs !xs = runST $ do
   !stree <- newSTreeU max (G.length xs) (0 :: Int)
 
   U.forM_ xs $ \x -> do
-    !n0 <- fromMaybe 0 <$> querySTree stree (0, x - 1)
+    !n0 <- fromMaybe 0 <$> querySTree stree 0 (x - 1)
     insertSTree stree x (n0 + 1)
 
-  fromJust <$> querySTree stree (0, G.length xs - 1)
+  fromJust <$> querySTree stree 0 (G.length xs - 1)

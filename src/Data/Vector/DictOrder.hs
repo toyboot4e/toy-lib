@@ -40,7 +40,7 @@ dictOrderModuloVec xs modulo = runST $ do
   -- ```
   -- So each expression is given as `(the number of unused numbers smaller than this) * factMod`.
   !counts <- flip G.imapM xs $ \i x -> do
-    !nUsed <- fromJust <$> querySTree stree (0, x)
+    !nUsed <- fromJust <$> querySTree stree 0 x
     let !nUnused = x - nUsed
     let !factMod = facts G.! (G.length xs - (i + 1))
     let !inc = nUnused * factMod `rem` modulo
