@@ -85,8 +85,11 @@ accumulateIV !f !vec0 !commands =
     !_ = dbgAssert (boundsIV vec0 == boundsIV commands)
 
 {-# INLINE createIV #-}
-createIV :: (G.Vector v a) => (i, i) -> (forall s. ST s (G.Mutable v s a)) -> IxVector i (v a)
-createIV !bnd !st = IxVector bnd $ G.create st
+createIV :: (G.Vector v a) => (forall s. ST s (IxVector i (G.Mutable v s a))) -> IxVector i (v a)
+createIV st = runST $ do
+  iv <- st
+  let bnd = boundsIV iv
+  IxVector bnd <$> G.unsafeFreeze (vecIV iv)
 
 {-# INLINE generateIV #-}
 generateIV :: (Unindex i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
@@ -97,6 +100,18 @@ generateIV bnd f = IxVector bnd $ U.generate (rangeSize bnd) (f . unindex bnd)
 constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> a) -> IxUVector i a
 constructIV bnd f = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar ->
   f (IxVector bnd sofar) $! unindex bnd (G.length sofar)
+
+{-# INLINE thawIV #-}
+thawIV :: (PrimMonad m, G.Vector v a) => IxVector i (v a) -> m (IxVector i (G.Mutable v (PrimState m) a))
+thawIV iv = IxVector (boundsIV iv) <$> G.thaw (vecIV iv)
+
+{-# INLINE unsafeThawIV #-}
+unsafeThawIV :: (PrimMonad m, G.Vector v a) => IxVector i (v a) -> m (IxVector i (G.Mutable v (PrimState m) a))
+unsafeThawIV iv = IxVector (boundsIV iv) <$> G.thaw (vecIV iv)
+
+{-# INLINE freezeIV #-}
+freezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
+freezeIV iv = IxVector (boundsIV iv) <$> G.freeze (vecIV iv)
 
 {-# INLINE unsafeFreezeIV #-}
 unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
