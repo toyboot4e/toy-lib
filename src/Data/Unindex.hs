@@ -25,3 +25,23 @@ instance Unindex (Int, Int, Int) where
         (!dz, !yx) = zyx `quotRem` (h * w)
         (!dy, !dx) = yx `quotRem` w
      in (z0 + dz, y0 + dy, x0 + dx)
+
+instance Unindex (Int, Int, Int, Int) where
+  unindex ((!b3, !b2, !b1, !b0), (!_, !x2, !x1, !x0)) !pos3 =
+    let !w2 = x2 - b2 + 1
+        !w1 = x1 - b1 + 1
+        !w0 = x0 - b0 + 1
+        (!y3, !pos2) = pos3 `quotRem` (w2 * w1 * w0)
+        (!y2, !pos1) = pos2 `quotRem` (w1 * w0)
+        (!y1, !y0) = pos1 `quotRem` w0
+     in (b3 + y3, b2 + y2, b1 + y1, b0 + y0)
+
+instance Unindex ((Int, Int), (Int, Int)) where
+  unindex (((!b3, !b2), (!b1, !b0)), ((!_, !x2), (!x1, !x0))) !pos3 =
+    let !w2 = x2 - b2 + 1
+        !w1 = x1 - b1 + 1
+        !w0 = x0 - b0 + 1
+        (!y3, !pos2) = pos3 `quotRem` (w2 * w1 * w0)
+        (!y2, !pos1) = pos2 `quotRem` (w1 * w0)
+        (!y1, !y0) = pos1 `quotRem` w0
+     in ((b3 + y3, b2 + y2), (b1 + y1, b0 + y0))
