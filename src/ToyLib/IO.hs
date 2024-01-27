@@ -304,9 +304,10 @@ convertCharsHW !bss = U.create $ do
     !w = BS.length (V.head bss)
     !h = V.length bss
 
--- | See `convertCharsHW`.
-charsH :: Int -> IO (U.Vector Char)
-charsH !h = convertCharsHW <$> V.replicateM h BS.getLine
+-- | Reads @h@ lines of stdin and converts them as HxW **whitespace-delimited `ByteString`** and
+-- converts them into a flat vector of type @a@.
+getGrid :: Int -> Int -> IO (IxUVector (Int, Int) Char)
+getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) . convertCharsHW <$> V.replicateM h BS.getLine
 
 -- Output
 
