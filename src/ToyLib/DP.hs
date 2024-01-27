@@ -7,10 +7,8 @@ import Control.Monad.ST
 import Data.BitSet (powersetU)
 import Data.Bits
 import Data.Bool (bool)
-import Data.Ix
 import Data.Maybe
 import Data.SegmentTree.Strict
-import Data.Unindex
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
