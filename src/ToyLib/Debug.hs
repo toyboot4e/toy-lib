@@ -41,8 +41,14 @@ infixr 9 .$
 dbgGrid :: (ShowGrid a) => a -> ()
 dbgGrid !gr = dbgS (showGrid gr)
 
+dbgGridId :: (ShowGrid a) => a -> a
+dbgGridId !gr = let !_ = dbgS (showGrid gr) in gr
+
 dbgGridN :: (ShowGrid a) => Int -> a -> ()
 dbgGridN !len !gr = dbgS (showGridN len gr)
+
+dbgGridNId :: (ShowGrid a) => Int -> a -> a
+dbgGridNId !len !gr = let !_ = dbgS (showGridN len gr) in gr
 
 dbgUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 dbgUF (MUnionFind vec) = dbgUM vec
