@@ -738,3 +738,31 @@ abc335e !xs gr@SparseGraph {..} = U.create $ do
               else return h
 
   return dist
+
+-- | /O(V^3)/ Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
+-- usually like @maxBound `div` 2@.
+--
+-- It's strict about path connection and invalid paths are ignored.
+distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
+distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
+  !vec <- UM.replicate (nVerts * nVerts) undef
+
+  U.forM_ wEdges $ \(!v1, !v2, !w) -> do
+    UM.write vec (index bnd (v1, v2)) w
+
+  -- `forM_ vs repM_
+  forM_ [0 .. nVerts - 1] $ \k -> do
+    forM_ [0 .. nVerts - 1] $ \i -> do
+      forM_ [0 .. nVerts - 1] $ \j -> do
+        !x1 <- UM.read vec (index bnd (i, j))
+        !x2 <- do
+           !tmp1 <- UM.read vec (index bnd (i, k))
+           !tmp2 <- UM.read vec (index bnd (k, j))
+           return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
+        UM.write vec (index bnd (i, j)) $! min x1 x2
+
+  return vec
+  where
+    bnd :: ((Int, Int), (Int, Int))
+    bnd = ((0, 0), (nVerts - 1, nVerts - 1))
+
