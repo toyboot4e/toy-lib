@@ -7,6 +7,7 @@ import Control.Monad.ST
 import Data.BitSet (powersetU)
 import Data.Bits
 import Data.Bool (bool)
+import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
@@ -157,9 +158,9 @@ enumerateBitSets !n = inner [[]] [] (bit n - 1)
           let !set' = set .|. bit lsb
            in inner res (set' : acc) (rest' .&. complement set')
 
--- | The input must be one-based
-lcs :: (HasCallStack) => U.Vector Int -> Int
-lcs !xs = runST $ do
+-- | Longest increasing subsequence. The input must be zero-based.
+lisOf :: (HasCallStack) => U.Vector Int -> Int
+lisOf !xs = runST $ do
   !stree <- newSTreeU max (G.length xs) (0 :: Int)
 
   U.forM_ xs $ \x -> do
@@ -167,3 +168,19 @@ lcs !xs = runST $ do
     insertSTree stree x (n0 + 1)
 
   fromJust <$> querySTree stree 0 (G.length xs - 1)
+
+-- | Longest common sequence.
+lcsOf :: BS.ByteString -> BS.ByteString -> Int
+lcsOf !s !t = U.last . vecIV . constructIV bnd $ \sofar i -> case i of
+  (0, 0) -> 0 :: Int
+  (0, _) -> 0 :: Int
+  (_, 0) -> 0 :: Int
+  (!ls, !lt) -> n1 `max` n2 `max` n3
+    where
+      n1 = sofar @! (ls - 1, lt)
+      n2 = sofar @! (ls, lt - 1)
+      n3
+        | BS.index s (ls - 1) == BS.index t (lt - 1) = sofar @! (ls - 1, lt - 1) + 1
+        | otherwise = 0
+  where
+    bnd = ((0, 0), (BS.length s, BS.length t))
