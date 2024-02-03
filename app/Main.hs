@@ -162,7 +162,7 @@ pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 
 generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> [(FilePath, String)] -> String -> String -> String -> String
 generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body =
-  unlines [header, pre, disableFormat, exts, imports', rules, macros', toylib', enableFormat, post, "", body]
+  unlines [header, pre1, pre2, disableFormat, exts, imports', rules, macros', toylib', enableFormat, post, "", body]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"
@@ -172,7 +172,8 @@ generateTemplate extensions (H.Module _ _ _ imports _) toylib header macros body
     imports' :: String
     imports' = L.intercalate ";" [L.intercalate ";" (map (H.prettyPrintWithMode pphsMode) imports)]
 
-    pre = "-- {{{ toy-lib: https://github.com/toyboot4e/toy-lib"
+    pre1 = "-- {{{ toy-lib: https://github.com/toyboot4e/toy-lib"
+    pre2 = "{-# OPTIONS_GHC -Wno-unused-imports -Wno-unused-top-binds -Wno-orphans #-}"
     post = "-- }}}"
     rules = "{-# RULES \"Force inline VAI.sort\" VAI.sort = VAI.sortBy compare #-}"
 
