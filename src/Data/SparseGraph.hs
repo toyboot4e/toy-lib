@@ -82,7 +82,7 @@ buildRawSG !boundsSG !edges =
       !offsetsSG = U.scanl' (+) 0 $ U.create $ do
         !outDegs <- UM.replicate nVertsSG (0 :: Int)
         U.forM_ edges $ \(!v1, !_, !_) -> do
-          UM.modify outDegs succ v1
+          UM.modify outDegs (+ 1) v1
         return outDegs
 
       !_ = dbgAssert (U.last offsetsSG == nEdgesSG)
