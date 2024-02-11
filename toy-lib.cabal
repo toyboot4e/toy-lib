@@ -178,6 +178,7 @@ library
     Data.BinaryLifting
     Data.BitSet
     Data.Buffer
+    Data.Dinic
     Data.FromVec
     Data.ModInt
     Data.MultiSet
