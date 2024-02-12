@@ -5,12 +5,10 @@ module ToyLib.Prelude where
 import Data.Array.IArray
 import Data.Array.MArray
 import Data.Bifunctor
-import Data.List
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-import Debug.Trace
 
 -- | From more recent GHC
 clamp :: (Ord a) => (a, a) -> a -> a
@@ -24,6 +22,11 @@ flipOrder = \case
 
 square :: (Num a) => a -> a
 square !x = x * x
+
+-- | Inaccurate, but fast `Int` square root.
+-- TODO: Fast and accurate implementation
+isqrt :: Int -> Int
+isqrt = round @Double . sqrt . fromIntegral
 
 {-# INLINE modifyArray #-}
 modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
@@ -54,6 +57,13 @@ ortho4' bnd base = U.filter (inRange bnd) $ U.map (add2 base) ortho4
 {-# INLINE slice #-}
 slice :: (G.Vector v a) => Int -> Int -> v a -> v a
 slice !l !r !vec = G.slice l (max 0 (r - l + 1)) vec
+
+-- | @constructN@ with initial value for index zero.
+constructN0 :: (U.Unbox a) => a -> Int -> (U.Vector a -> a) -> U.Vector a
+constructN0 !x0 !n !f = U.constructN n $ \vec ->
+  if U.null vec
+    then x0
+    else f vec
 
 -- | List-like range syntax for `vector`.
 --
@@ -106,13 +116,6 @@ repRM_ !l !r !act = inner r
     inner !i
       | i < l = return ()
       | otherwise = act i >> inner (pred i)
-
--- | @constructN@ with initial value for index zero.
-constructN0 :: (U.Unbox a) => a -> Int -> (U.Vector a -> a) -> U.Vector a
-constructN0 !x0 !n !f = U.constructN n $ \vec ->
-  if U.null vec
-    then x0
-    else f vec
 
 -- | Applies the given function `n` times.
 -- >>> -- 2 ^ 3
@@ -205,27 +208,3 @@ thd4 (!_, !_, !c, !_) = c
 fth4 :: (a, b, c, d) -> d
 fth4 (!_, !_, !_, !d) = d
 
--- }}}
-
--- {{{ Trace
-
--- TODO: merge them with `dbg` series.
-
-traceMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ()
-traceMat2D !mat = traceSubMat2D mat (bounds mat)
-
-traceSubMat2D :: (IArray a e, Ix i, Show e) => a (i, i) e -> ((i, i), (i, i)) -> ()
-traceSubMat2D !mat ((!y0, !x0), (!yEnd, !xEnd)) =
-  let !_ = foldl' step () (range ys)
-   in ()
-  where
-    !xs = (y0, yEnd)
-    !ys = (x0, xEnd)
-    step !_ !y = traceShow (map (\ !x -> mat ! (y, x)) (range xs)) ()
-
--- }}}
-
--- | Inaccurate, but fast `Int` square root.
--- TODO: Fast and accurate implementation
-isqrt :: Int -> Int
-isqrt = round @Double . sqrt . fromIntegral
