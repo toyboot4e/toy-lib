@@ -376,3 +376,13 @@ printList = putStrLn . unwords . map show
 putList :: (Show a) => [a] -> IO ()
 putList = putStr . unwords . map show
 
+boundsSize2 :: ((Int, Int), (Int, Int)) -> (Int, Int)
+boundsSize2 ((!y1, !x1), (!y2, !x2)) = (y2 - y1 + 1, x2 - x1 + 1)
+
+printGrid :: IxUVector (Int, Int) Char -> IO ()
+printGrid gr = do
+  let !rows = V.unfoldrExactN h (U.splitAt w) (vecIV gr)
+  V.forM_ rows $ putStrLn . U.toList
+  where
+    (!h, !w) = boundsSize2 (boundsIV gr)
+

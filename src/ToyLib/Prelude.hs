@@ -43,9 +43,12 @@ swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 swapDupeW :: U.Vector (Int, Int, Int) -> U.Vector (Int, Int, Int)
 swapDupeW = U.concatMap (\(!v1, !v2, !d) -> U.fromListN 2 [(v1, v2, d), (v2, v1, d)])
 
--- }}}
+ortho4 :: U.Vector (Int, Int)
+ortho4 = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
--- {{{ Libary complements
+{-# INLINE ortho4' #-}
+ortho4' :: ((Int, Int), (Int, Int)) -> (Int, Int) -> U.Vector (Int, Int)
+ortho4' bnd base = U.filter (inRange bnd) $ U.map (add2 base) ortho4
 
 -- | `G.slice` via inclusive range @[l, r]@.
 {-# INLINE slice #-}
