@@ -175,6 +175,7 @@ library
     Algorithm.Mo
     Algorithm.TwoPointers
     Data.AdhocGraph
+    Data.BinaryHeap
     Data.BinaryLifting
     Data.BitSet
     Data.Buffer
