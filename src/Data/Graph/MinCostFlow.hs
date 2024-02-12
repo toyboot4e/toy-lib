@@ -131,7 +131,7 @@ runMinCostFlow !src !sink !targetFlow dinic@MinCostFlow {..} = do
       <*> UM.unsafeNew nVertsMCF
       <*> UM.unsafeNew nVertsMCF
 
-  let run (!accCost :: Cost) !restFlow
+  let run !accCost !restFlow
         -- TODO: Is it ok to flow too much?
         | restFlow <= 0 = return $ Just accCost
         | otherwise = do
