@@ -19,6 +19,7 @@
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.IO where
 
+import Control.Monad (forM_)
 import Data.Bifunctor (first)
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
@@ -32,7 +33,6 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import System.IO (stdout)
-import ToyLib.Prelude (repM_)
 
 -- Input/parser
 
@@ -296,7 +296,7 @@ convertCharsHW :: V.Vector BS.ByteString -> U.Vector Char
 convertCharsHW !bss = U.create $ do
   !vec <- UM.unsafeNew (h * w)
   V.iforM_ bss $ \y bs ->
-    repM_ 0 (w - 1) $ \x -> do
+    forM_ [0 .. w - 1] $ \x -> do
       let !char = BS.index bs x
       UM.unsafeWrite vec (w * y + x) char
   return vec

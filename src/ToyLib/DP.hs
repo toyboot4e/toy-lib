@@ -3,6 +3,7 @@
 -- TODO: Refactor `relaxMany` variants.
 module ToyLib.DP where
 
+import Control.Monad (forM_)
 import Control.Monad.ST
 import Data.Bits
 import Data.Bool (bool)
@@ -16,7 +17,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (powersetU)
-import ToyLib.Prelude (rangeU, repM_)
+import ToyLib.Prelude (rangeU)
 
 -- | Variant of `U.constructN`.
 constructFor :: (U.Unbox a, U.Unbox b) => a -> U.Vector b -> (U.Vector a -> b -> a) -> U.Vector a
@@ -72,7 +73,7 @@ pushBasedConstructN :: (HasCallStack, G.Vector v a, G.Vector v (Int, a)) => (a -
 pushBasedConstructN !relax !vec0 !expander = G.create $ do
   !vec <- G.unsafeThaw vec0
 
-  repM_ 0 (GM.length vec - 1) $ \iFrom -> do
+  forM_ [0 .. GM.length vec - 1] $ \iFrom -> do
     -- REMARK: Because this is a push-based DP, the value for the interested index is already known.
     !freezed <- G.unsafeFreeze (GM.take (iFrom + 1) vec)
     G.forM_ (expander iFrom freezed) $ \(!iTo, !x') -> do
