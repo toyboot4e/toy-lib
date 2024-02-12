@@ -4,14 +4,14 @@
 -- | /O(V^2E)/ max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
 -- Just run `maxFlowD` to get the result. All the other functions are used internally.
-module Data.Dinic where
+module Data.Graph.Dinic where
 
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Buffer
-import Data.Graph (Vertex)
+import Data.Graph.Alias (Vertex)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U

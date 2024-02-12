@@ -8,7 +8,7 @@ import Data.List qualified as L
 import Data.List.Extra (stripSuffix, nubSort)
 import Data.Map.Strict qualified as M
 import Data.Maybe
-import Data.SparseGraph
+import Data.Graph.Sparse
 import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)

@@ -174,13 +174,17 @@ library
     Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
-    Data.AdhocGraph
     Data.BinaryHeap
     Data.BinaryLifting
     Data.BitSet
     Data.Buffer
-    Data.Dinic
     Data.FromVec
+    Data.Graph.Adhoc
+    Data.Graph.Alias
+    Data.Graph.Dinic
+    Data.Graph.Misc
+    Data.Graph.Sparse
+    Data.Graph.Tree.Lca
     Data.ModInt
     Data.MultiSet
     Data.MultiSetVec
@@ -191,8 +195,6 @@ library
     Data.SemigroupAction
     Data.Semiring
     Data.SizedList
-    Data.SparseGraph
-    Data.Tree.Lca
     Data.Unindex
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial

@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | `vector`-based sparse graph implementation. Heavily inspired by @cojna/iota@.
-module Data.SparseGraph where
+module Data.Graph.Sparse where
 
 import Control.Applicative
 import Control.Monad
@@ -16,10 +16,10 @@ import Data.BinaryLifting
 import Data.Bool (bool)
 import Data.Buffer
 import Data.Functor.Identity
-import Data.Graph (Vertex)
+import Data.Graph.Alias (Vertex, EdgeId)
 import Data.Maybe
 import Data.SemigroupAction
-import Data.Tree.Lca (LcaCache, ToParent (..))
+import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
 import Data.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -29,14 +29,6 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Macro (dbgAssert)
-import ToyLib.Prelude (add2, rangeU)
-
-type Edge = (Vertex, Vertex)
-
--- | Weightened edge
-type WEdgeWith w = (Vertex, Vertex, w)
-
-type EdgeId = Int
 
 -- | CSR (compressed sparse row) representation of a graph, weightened or unweightened.
 data SparseGraph i w = SparseGraph
@@ -459,7 +451,7 @@ topSortSG gr@SparseGraph {..} = runST $ do
             -- Create postorder output:
             (v :) <$> U.foldM' dfsM acc vs
 
-  U.foldM' dfsM [] (rangeU 0 (pred nVertsSG))
+  U.foldM' dfsM [] (U.generate nVertsSG id)
 
 -- | Partial running of `topSccSG` over topologically sorted vertices, but for some connected components
 -- only.
@@ -481,7 +473,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
   where
     !vws = U.zip adjacentsSG edgeWeightsSG
     -- TODO: Faster?
-    !edges' = flip U.concatMap (rangeU 0 (pred nVertsSG)) $ \v1 ->
+    !edges' = flip U.concatMap (U.generate nVertsSG id) $ \v1 ->
       let !o1 = U.unsafeIndex offsetsSG v1
           !o2 = U.unsafeIndex offsetsSG (v1 + 1)
           !vw2s = U.unsafeSlice o1 (o2 - o1) vws
@@ -500,7 +492,7 @@ topSccSG gr = collectSccPreorderSG $ topSortSG gr
       filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
 
 ----------------------------------------------------------------------------------------------------
--- Tree
+-- Tree (API)
 ----------------------------------------------------------------------------------------------------
 
 -- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
@@ -528,7 +520,7 @@ lcaCacheSG !gr !root = (toParent, depths, toParentN)
     !toParentN = newBinLift toParent
 
 ----------------------------------------------------------------------------------------------------
--- Tree
+-- Tree (impl)
 ----------------------------------------------------------------------------------------------------
 
 foldTreeImpl :: forall m op a w. (Monad m) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a

@@ -27,14 +27,14 @@
 -- - [ ] Walk through every path
 --   [C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
 -- - [ ] Come back to the first vertex
-module Data.AdhocGraph where
+module Data.Graph.Adhoc where
 
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bool (bool)
 import Data.Buffer
-import Data.Graph (Vertex)
+import Data.Graph.Alias (Vertex)
 import qualified Data.Heap as H
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U

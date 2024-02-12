@@ -1,5 +1,5 @@
 -- | Least common ancestor and folding via that.
-module Data.Tree.Lca where
+module Data.Graph.Tree.Lca where
 
 import Algorithm.Bisect
 import Control.Monad
@@ -8,7 +8,7 @@ import Control.Monad.ST
 import Data.Array.IArray
 import Data.BinaryLifting
 import Data.Bits
-import Data.Graph (Vertex)
+import Data.Graph.Alias (Vertex)
 import Data.List (find)
 import Data.Maybe
 import Data.SemigroupAction
