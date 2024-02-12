@@ -181,7 +181,6 @@ library
     Data.FromVec
     Data.Graph.Alias
     Data.Graph.Dinic
-    Data.Graph.Misc
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
     Data.ModInt
