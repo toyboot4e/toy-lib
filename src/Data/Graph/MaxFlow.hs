@@ -6,6 +6,10 @@
 -- | /O(V^2E)/ max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
 -- Just run `maxFlowD` to get the result. All the other functions are used internally.
+--
+-- = Typical problems
+--
+-- - [ABC 205 - F](https://atcoder.jp/contests/abc205/tasks/abc205_f)
 module Data.Graph.MaxFlow where
 
 import Control.Monad
