@@ -90,3 +90,10 @@ powersetU !x0 = U.unfoldrExactN n f x0
   where
     !n = bit (popCount x0)
     f !x = (x, (x - 1) .&. x0)
+
+-- | >>> unBitSet 4 5
+-- [0,2]
+--
+-- TODO: which is faster: unfoldrExactN with count leading zeros.
+unBitSet :: Int -> Int -> U.Vector Int
+unBitSet n bits = U.filter (testBit bits) (U.generate n id)

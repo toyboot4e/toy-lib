@@ -108,11 +108,6 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
         then onOne spanL
         else f vec (spanLen, spanL)
 
--- | >>> unBitSet 4 5
--- [0,2]
-unBitSet :: Int -> Int -> U.Vector Int
-unBitSet n bits = U.filter (testBit bits) (U.generate n id)
-
 -- | Typical set-based DP (traveling salesman problem).
 --
 -- = Typical problems
