@@ -1,5 +1,6 @@
 #!/usr/bin/env -S bash -euE
 
+cabal build
 cabal run | tee x.hs
 cp -f ./x.hs ~/dev/hs/abc-hs/_acc/haskell/Main.hs
 
