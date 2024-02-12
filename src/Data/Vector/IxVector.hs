@@ -26,7 +26,7 @@ data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
 type IxUVector i a = IxVector i (U.Vector a)
 
 -- | Primary `IxVector` type notation.
-type IxMUVector i s a = IxVector i (UM.MVector s a)
+type IxMUVector s i a = IxVector i (UM.MVector s a)
 
 -- | Partial `IxVector` accessor
 {-# INLINE (@!) #-}
