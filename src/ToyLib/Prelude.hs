@@ -2,8 +2,6 @@
 
 module ToyLib.Prelude where
 
-import Control.Monad
-import Control.Monad.Primitive
 import Data.Array.IArray
 import Data.Array.MArray
 import Data.Bifunctor
@@ -13,8 +11,6 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Debug.Trace
-
--- {{{ Prelude utilities
 
 -- | From more recent GHC
 clamp :: (Ord a) => (a, a) -> a -> a
@@ -35,36 +31,10 @@ modifyArray !ary !f !i = do
   !v <- f <$> readArray ary i
   writeArray ary i v
 
--- }}}
-
--- {{{ More extras
-
 -- | Two-variable function compositon.
 {-# INLINE (.:) #-}
 (.:) :: (b -> c) -> (a1 -> a2 -> b) -> (a1 -> a2 -> c)
 (.:) = (.) . (.)
-
--- | Three-variable function compositon.
-{-# INLINE (.:.) #-}
-(.:.) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> (a1 -> a2 -> a3 -> c)
-(.:.) = (.) . (.) . (.)
-
--- | Strict funciton composition.
-{-# INLINE (.!) #-}
-(.!) :: (b -> c) -> (a -> b) -> a -> c
-(.!) = (.) . ($!)
-
-foldFor :: (Foldable t) => b -> t a -> (b -> a -> b) -> b
-foldFor !s0 !xs !f = foldl' f s0 xs
-
-foldForG :: (G.Vector v a) => b -> v a -> (b -> a -> b) -> b
-foldForG !s0 !xs !f = G.foldl' f s0 xs
-
-foldForM :: (Foldable t, Monad m) => b -> t a -> (b -> a -> m b) -> m b
-foldForM !s0 !xs !m = foldM m s0 xs
-
-foldForMG :: (PrimMonad m, G.Vector v a) => b -> v a -> (b -> a -> m b) -> m b
-foldForMG !s0 !xs !m = G.foldM' m s0 xs
 
 swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
 swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
@@ -141,13 +111,6 @@ constructN0 !x0 !n !f = U.constructN n $ \vec ->
     then x0
     else f vec
 
--- }}}
-
--- {{{ cheatsheet
-
--- Option - Maybe cheatsheet
--- https://notes.iveselov.info/programming/cheatsheet-rust-option-vs-haskell-maybe
-
 -- | Applies the given function `n` times.
 -- >>> -- 2 ^ 3
 -- >>> times 3 (* 2) (1 :: Int)
@@ -198,10 +161,6 @@ combs k as@(!_ : xs)
       where
         (!q : qs) = take (n - k + 1) ys
         dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
-
--- }}}
-
--- {{{ Tuples
 
 swapDupe :: (a, a) -> [(a, a)]
 swapDupe (!x1, !x2) = [(x1, x2), (x2, x1)]
