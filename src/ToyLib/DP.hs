@@ -4,7 +4,6 @@
 module ToyLib.DP where
 
 import Control.Monad.ST
-import Data.BitSet (powersetU)
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as BS
@@ -16,6 +15,7 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
+import Math.BitSet (powersetU)
 import ToyLib.Prelude (rangeU, repM_)
 
 -- | Variant of `U.constructN`.
