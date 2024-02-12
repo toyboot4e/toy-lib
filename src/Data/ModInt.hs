@@ -6,8 +6,8 @@
 -- | `Int` with automatic moudlo arithmetic performed. Depends on @Math.PowMod@.
 module Data.ModInt where
 
-import Core.SemigroupAction
 import Data.Coerce
+import Data.Core.SemigroupAction
 import Data.Proxy
 import qualified Data.Ratio as Ratio
 import Data.Semigroup

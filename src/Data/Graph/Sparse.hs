@@ -9,13 +9,13 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
-import Core.SemigroupAction
 import Data.Array.IArray
 import Data.Bifunctor
 import Data.BinaryHeap
 import Data.BinaryLifting
 import Data.Bool (bool)
 import Data.Buffer
+import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (EdgeId, Vertex)
 import Data.Graph.Tree.Lca (LcaCache, ToParent (..))

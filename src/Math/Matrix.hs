@@ -1,9 +1,9 @@
 -- | TODO: Refactor in my way.
 module Math.Matrix where
 
-import Core.SemigroupAction
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
+import Data.Core.SemigroupAction
 import Data.List (foldl1')
 import Data.List.Extra (chunksOf)
 import Data.ModInt (TypeInt, typeInt)

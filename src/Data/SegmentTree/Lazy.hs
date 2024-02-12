@@ -12,9 +12,9 @@ module Data.SegmentTree.Lazy where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Core.SemigroupAction
 import Data.Bifunctor
 import Data.Bits
+import Data.Core.SemigroupAction
 import Data.Ix (inRange)
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM

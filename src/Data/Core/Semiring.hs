@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | `Semiring`.
-module Core.Semiring where
+module Data.Core.Semiring where
 
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM

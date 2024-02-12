@@ -7,8 +7,8 @@ module Data.BinaryLifting where
 
 -- FIXME: refactor to have indices
 
-import Core.SemigroupAction
 import Data.Bits
+import Data.Core.SemigroupAction
 import Data.List
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G

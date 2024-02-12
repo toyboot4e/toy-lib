@@ -9,8 +9,7 @@ import Test.DocTest
 -- $ cabal haddock
 -- $ cabal haddock --open
 
--- | `stack test` where we run `doctest`.
 main :: IO ()
 main = do
-  putStrLn "TEST"
+  doctest ["src"]
 

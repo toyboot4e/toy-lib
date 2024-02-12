@@ -5,10 +5,10 @@ import Algorithm.Bisect
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.ST
-import Core.SemigroupAction
 import Data.Array.IArray
 import Data.BinaryLifting
 import Data.Bits
+import Data.Core.SemigroupAction
 import Data.Graph.Alias (Vertex)
 import Data.List (find)
 import Data.Maybe

@@ -1,5 +1,5 @@
 -- | Semigroup action @*@ is an operator where \(s_2 * (s_1 * a) == (s_2 ⊕ s_1) * a\) holds.
-module Core.SemigroupAction where
+module Data.Core.SemigroupAction where
 
 import Data.Monoid
 import qualified Data.Vector.Generic as G

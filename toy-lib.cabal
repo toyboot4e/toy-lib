@@ -174,11 +174,11 @@ library
     Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
-    Core.SemigroupAction
-    Core.Semiring
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
+    Data.Core.SemigroupAction
+    Data.Core.Semiring
     Data.Graph.Alias
     Data.Graph.Dinic
     Data.Graph.Sparse
