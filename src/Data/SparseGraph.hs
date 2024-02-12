@@ -12,6 +12,7 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Array.IArray
 import Data.Bifunctor
+import Data.BinaryHeap
 import Data.BinaryLifting
 import Data.Bool (bool)
 import Data.Buffer
@@ -270,37 +271,34 @@ genericBfs01 !bndExt !gr !sources = IxVector bndExt $ U.create $ do
 djSG :: forall i w. (Ix i, U.Unbox i, Num w, Ord w, U.Unbox w) => SparseGraph i w -> w -> U.Vector i -> IxUVector i w
 djSG gr@SparseGraph {..} !undef !is0 =
   IxVector boundsSG $
-    genericDj (gr `adjW`) nVertsSG undef (U.map (index boundsSG) is0)
+    genericDj (gr `adjW`) nVertsSG nEdgesSG undef (U.map (index boundsSG) is0)
 
 -- | /O((E+V) \log {V})/ Dijkstra's algorithm.
---
--- Do pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
-genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> w -> U.Vector Int -> U.Vector w
-genericDj !gr !nVerts !undef !vs0 = U.create $ do
+-- Does pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
+genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
+genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
+  !heap <- newMinBinaryHeap (nEdges + 1)
+  -- !last <- UM.replicate nVerts (-1 :: Vertex)
 
-  -- when there's loop:
-  -- !done <- UM.replicate nVertsSG False
-
-  let !heap0 = H.fromList $ map (H.Entry 0) (U.toList vs0) :: H.Heap (H.Entry w Int)
   U.forM_ vs0 $ \v -> do
     UM.write dist v 0
+    insertBH heap (0, v)
 
-  flip fix heap0 $ \loop heap -> case H.uncons heap of
-    Nothing -> return ()
-    Just (H.Entry !w1 !v1, heap') -> do
-      (w1 >) <$> UM.read dist v1 >>= \case
-        -- better path was already visited
-        True -> loop heap'
-        False -> do
-          loop <=< (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
+  fix $ \loop ->
+    deleteFindTopBH heap >>= \case
+      Nothing -> return ()
+      Just (!w1, !v1) -> do
+        !newVisit <- (== w1) <$> UM.read dist v1
+        when newVisit $ do
+          U.forM_ (gr v1) $ \(!v2, !dw2) -> do
             !w2 <- UM.read dist v2
             let !w2' = merge w1 dw2
-            if w2 == undef || w2' < w2
-              then do
-                UM.write dist v2 w2'
-                return $ H.insert (H.Entry w2' v2) h
-              else return h
+            when (w2 == undef || w2' < w2) $ do
+              UM.write dist v2 w2'
+              -- UM.write last v2 v1
+              insertBH heap (w2', v2)
+        loop
 
   return dist
   where
@@ -373,7 +371,7 @@ treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
 --
 -- Retrieve a shortest path:
 -- >>> let ps = createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
--- >>> restoreParentTreePath ps 3
+-- >>> restorePath ps 3
 -- [0,1,3]
 createDfsTreeSG :: (Unindex i) => SparseGraph i w -> i -> U.Vector Vertex
 createDfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
@@ -461,14 +459,17 @@ createDjTreeSG !gr !nVerts !undef !vs0 = U.create $ do
     merge = (+)
 
 -- | Given a vector of vertex parents, restores path from the source to a sink.
-restoreParentTreePath :: U.Vector Vertex -> Vertex -> [Vertex]
-restoreParentTreePath !ps !sink = inner [sink] sink
+--
+-- TODO: restore without reverse?
+restorePath :: U.Vector Vertex -> Vertex -> U.Vector Vertex
+restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
   where
-    inner path v
-      | p == -1 = path
-      | otherwise = inner (p : path) p
+    f !v
+      | v == -2 = Nothing
+      | v' == -1 = Just (v, -2)
+      | otherwise = Just (v, v')
       where
-        p = ps U.! v
+        v' = toParent U.! v
 
 ----------------------------------------------------------------------------------------------------
 -- Topological sort and strongly connected components
@@ -756,13 +757,12 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
       forM_ [0 .. nVerts - 1] $ \j -> do
         !x1 <- UM.read vec (index bnd (i, j))
         !x2 <- do
-           !tmp1 <- UM.read vec (index bnd (i, k))
-           !tmp2 <- UM.read vec (index bnd (k, j))
-           return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
+          !tmp1 <- UM.read vec (index bnd (i, k))
+          !tmp2 <- UM.read vec (index bnd (k, j))
+          return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
         UM.write vec (index bnd (i, j)) $! min x1 x2
 
   return vec
   where
     bnd :: ((Int, Int), (Int, Int))
     bnd = ((0, 0), (nVerts - 1, nVerts - 1))
-
