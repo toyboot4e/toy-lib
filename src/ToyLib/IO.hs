@@ -369,3 +369,10 @@ ynBSB = bool (BSB.string8 "No") (BSB.string8 "Yes")
 
 printYn :: Bool -> IO ()
 printYn = putLnBSB . ynBSB
+
+printList :: (Show a) => [a] -> IO ()
+printList = putStrLn . unwords . map show
+
+putList :: (Show a) => [a] -> IO ()
+putList = putStr . unwords . map show
+
