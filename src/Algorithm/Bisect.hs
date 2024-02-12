@@ -29,7 +29,6 @@ import Data.Ix
 import Data.Maybe
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Generic as G
-import ToyLib.Prelude
 
 -- TODO: Use higher order function for getting middle and detecting end
 
