@@ -38,27 +38,34 @@ g .$ f = \a -> let !b = dbgId (f a) in g b
 
 infixr 9 .$
 
+-- | Shows grid in a human-readable spacing.
 dbgGrid :: (ShowGrid a) => a -> ()
 dbgGrid !gr = dbgS (showGrid gr)
 
+-- | Shows grid in a human-readable spacing.
 dbgGridId :: (ShowGrid a) => a -> a
 dbgGridId !gr = let !_ = dbgS (showGrid gr) in gr
 
+-- | Shows grid with the specified spacing.
 dbgGridN :: (ShowGrid a) => Int -> a -> ()
 dbgGridN !len !gr = dbgS (showGridN len gr)
 
+-- | Shows grid with the specified spacing.
 dbgGridNId :: (ShowGrid a) => Int -> a -> a
 dbgGridNId !len !gr = let !_ = dbgS (showGridN len gr) in gr
 
+-- | Shows the Union-Find vertices.
 dbgUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 dbgUF (MUnionFind vec) = dbgUM vec
 
+-- | Shows the mutable vector.
 dbgUM :: (Show (v a), G.Vector v a, PrimMonad m) => (G.Mutable v) (PrimState m) a -> m ()
 dbgUM vec = do
   !xs' <- G.unsafeFreeze vec
   let !_ = dbg xs'
   return ()
 
+-- | Shows the strict segment tree's leaves.
 dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTree (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
@@ -68,6 +75,7 @@ dbgSTree (SegmentTree _ mVec) = do
   let !_ = dbg leaves
   return ()
 
+-- | Shows the strict segment tree's nodes and leaves.
 dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTreeAll (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
@@ -77,3 +85,6 @@ dbgSTreeAll (SegmentTree _ mVec) = do
       let !vec' = G.take len . G.drop (len - 1) $ vec
       let !_ = dbgS $ "> " ++ show vec'
       loop (n + 1, 2 * len)
+
+-- TODO: dbgLazySTree
+
