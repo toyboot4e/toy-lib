@@ -1,10 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
+-- TODO: rename the module to MaxFlow
+
 -- | /O(V^2E)/ max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
 -- Just run `maxFlowD` to get the result. All the other functions are used internally.
-module Data.Graph.Dinic where
+module Data.Graph.MaxFlow where
 
 import Control.Monad
 import Control.Monad.Fix
@@ -17,65 +19,66 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | The state for Dinic's algorithm
+-- | Max flow calculation information and states.
 --
 -- = Internals
 -- Internally the graph is stored in a CSR (compressed sparse row).
-data Dinic s c = Dinic
-  { nVertsD :: !Int,
-    nEdgesD :: !Int,
+data MaxFlow s c = MaxFlow
+  { nVertsMF :: !Int,
+    nEdgesMF :: !Int,
     -- | Source vertex -> initial edge index. Note that edges are sourted by the starting vertex.
-    offsetsD :: !(U.Vector Int),
+    offsetsMF :: !(U.Vector Int),
     -- | Edge index -> destination vertex.
-    edgeDstD :: !(U.Vector Int),
+    edgeDstMF :: !(U.Vector Int),
     -- | Edge index -> reverse edge index.
-    edgeRevIndexD :: !(U.Vector Int),
+    edgeRevIndexMF :: !(U.Vector Int),
     -- | Edge index -> residual edge capacity.
-    edgeCapD :: !(UM.MVector s c)
+    edgeCapMF :: !(UM.MVector s c)
   }
 
 -- | Mutable states on running Dinic's algorithm.
-data DinicBuffer s c = DinicBuffer
+data MaxFlowBuffer s c = MaxFlowBuffer
   { -- | BFS result.
-    distsD :: !(UM.MVector s Int),
+    distsMF :: !(UM.MVector s Int),
     -- | Queue for BFS
-    queueD :: !(Buffer s Vertex),
+    queueMF :: !(Buffer s Vertex),
     -- | DFS state for iterating through all the neighbors.
-    iterD :: !(UM.MVector s Int)
+    iterMF :: !(UM.MVector s Int)
   }
 
 -- | /O(V^2E)/ max flow algorithm (Dinic's algorithm)
-maxFlowD :: (U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> c
-maxFlowD !nVerts !src !sink !edges = runST $ do
-  !dinic <- buildDinic nVerts edges
-  runDinic src sink dinic
+maxFlow :: (U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> c
+maxFlow !nVerts !src !sink !edges = runST $ do
+  !container <- buildMaxFlow nVerts edges
+  runMaxFlow src sink container
 
-undefD :: Int
-undefD = -1
+undefMF :: Int
+undefMF = -1
 
--- | Builds `Dinic` from edges.
-buildDinic ::
+-- | Builds `MaxFlow` from edges.
+buildMaxFlow ::
   forall c m.
   (U.Unbox c, Num c, PrimMonad m) =>
   Int ->
   U.Vector (Vertex, Vertex, c) ->
-  m (Dinic (PrimState m) c)
-buildDinic !nVertsD !edges = do
-  let !offsetsD = U.scanl' (+) (0 :: Int) $ U.create $ do
-        !degs <- UM.replicate nVertsD (0 :: Int)
+  m (MaxFlow (PrimState m) c)
+buildMaxFlow !nVertsMF !edges = do
+  let !offsetsMF = U.scanl' (+) (0 :: Int) $ U.create $ do
+        !degs <- UM.replicate nVertsMF (0 :: Int)
         G.forM_ edges $ \(!v1, !v2, !_) -> do
           GM.modify degs (+ 1) v1
           GM.modify degs (+ 1) v2
         return degs
 
-  (!edgeDstD, !edgeRevIndexD, !edgeCapD) <- do
-    !edgeDst <- UM.replicate nEdgesD undefD
-    !edgeRevIndex <- UM.replicate nEdgesD undefD
-    !edgeCap <- UM.replicate nEdgesD (0 :: c)
+  (!edgeDstMF, !edgeRevIndexMF, !edgeCapMF) <- do
+    -- TODO: use unsafeNew
+    !edgeDst <- UM.replicate nEdgesMF undefMF
+    !edgeRevIndex <- UM.replicate nEdgesMF undefMF
+    !edgeCap <- UM.replicate nEdgesMF (0 :: c)
 
     -- add the edges and the reverse edges
-    -- TODO: reuse it as `iterD`
-    !edgeCounter <- U.thaw offsetsD
+    -- TODO: reuse it as `iterMF`
+    !edgeCounter <- U.thaw offsetsMF
     G.forM_ edges $ \(!v1, !v2, !cap) -> do
       -- consume the edge index
       !i1 <- GM.read edgeCounter v1
@@ -92,10 +95,10 @@ buildDinic !nVertsD !edges = do
 
     (,,edgeCap) <$> G.unsafeFreeze edgeDst <*> G.unsafeFreeze edgeRevIndex
 
-  return Dinic {..}
+  return MaxFlow {..}
   where
     -- be sure to consider reverse edges
-    !nEdgesD = G.length edges * 2
+    !nEdgesMF = G.length edges * 2
 
 -- TODO: Does `Bounded` work for `Double` for example?
 
@@ -103,106 +106,106 @@ buildDinic !nVertsD !edges = do
 --
 -- = Overview
 -- Dinic's algorithm loops the following steps:
--- 1. `runDinicBfs`: Creates a DAG with BFS.
--- 2. `runDinicDfs`: Adds flow from the source to the sink.
-runDinic ::
+-- 1. `runMaxFlowBfs`: Creates a DAG with BFS.
+-- 2. `runMaxFlowDfs`: Adds flow from the source to the sink.
+runMaxFlow ::
   forall c m.
   (U.Unbox c, Num c, Ord c, Bounded c, PrimMonad m) =>
   Vertex ->
   Vertex ->
-  Dinic (PrimState m) c ->
+  MaxFlow (PrimState m) c ->
   m c
-runDinic !src !sink dinic@Dinic {..} = do
-  bufs@DinicBuffer {..} <-
-    -- distsD, queueD, iterD
-    DinicBuffer
-      <$> UM.unsafeNew nVertsD
-      <*> newBufferAsQueue nVertsD
-      <*> U.thaw offsetsD
+runMaxFlow !src !sink dinic@MaxFlow {..} = do
+  bufs@MaxFlowBuffer {..} <-
+    -- distsD, queueMF, iterMF
+    MaxFlowBuffer
+      <$> UM.unsafeNew nVertsMF
+      <*> newBufferAsQueue nVertsMF
+      <*> U.thaw offsetsMF
 
   flip fix 0 $ \loopBfs !flow -> do
     -- clear BFS buffers
-    GM.set distsD undefD
-    clearBuffer queueD
+    GM.set distsMF undefMF
+    clearBuffer queueMF
     -- run bfs
-    runDinicBfs src sink dinic bufs
+    runMaxFlowBfs src sink dinic bufs
 
-    !distSink <- UM.read distsD sink
-    if distSink == undefD
+    !distSink <- UM.read distsMF sink
+    if distSink == undefMF
       then return flow -- can't increase the flow anymore
       else do
         -- clear dfs buffers
-        U.unsafeCopy iterD offsetsD
+        U.unsafeCopy iterMF offsetsMF
         -- add flow to the `sink` while we can.
         flip fix flow $ \loopDfs f -> do
-          !df <- runDinicDfs src sink maxBound dinic bufs
+          !df <- runMaxFlowDfs src sink maxBound dinic bufs
           if df > 0
             then loopDfs $! f + df
             else loopBfs f
 
 -- | Collect shortest distances from the source vertex using BFS.
-runDinicBfs ::
+runMaxFlowBfs ::
   forall c m.
   (U.Unbox c, Num c, Ord c, PrimMonad m) =>
   Vertex ->
   Vertex ->
-  Dinic (PrimState m) c ->
-  DinicBuffer (PrimState m) c ->
+  MaxFlow (PrimState m) c ->
+  MaxFlowBuffer (PrimState m) c ->
   m ()
-runDinicBfs !src !sink Dinic {..} DinicBuffer {..} = do
-  UM.write distsD src 0
-  pushBack queueD src
+runMaxFlowBfs !src !sink MaxFlow {..} MaxFlowBuffer {..} = do
+  UM.write distsMF src 0
+  pushBack queueMF src
   fix $ \loop ->
-    popFront queueD >>= \case
+    popFront queueMF >>= \case
       Nothing -> return ()
       Just !v1 -> do
         -- TODO: rather, stop on filling sink?
-        !notEnd <- (== undefD) <$> UM.read distsD sink
+        !notEnd <- (== undefMF) <$> UM.read distsMF sink
         when notEnd $ do
-          let !iStart = offsetsD U.! v1
-              !iEnd = offsetsD U.! (v1 + 1)
+          let !iStart = offsetsMF U.! v1
+              !iEnd = offsetsMF U.! (v1 + 1)
 
           -- visit neighbors
-          !dist1 <- UM.read distsD v1
+          !dist1 <- UM.read distsMF v1
           U.forM_ (U.generate (iEnd - iStart) (+ iStart)) $ \i12 -> do
-            let !v2 = edgeDstD U.! i12
-            !cap12 <- UM.read edgeCapD i12
-            !notVisited <- (== undefD) <$> UM.read distsD v2
+            let !v2 = edgeDstMF U.! i12
+            !cap12 <- UM.read edgeCapMF i12
+            !notVisited <- (== undefMF) <$> UM.read distsMF v2
             when (cap12 > 0 && notVisited) $ do
-              UM.write distsD v2 (dist1 + 1)
-              pushBack queueD v2
+              UM.write distsMF v2 (dist1 + 1)
+              pushBack queueMF v2
 
           loop
 
 -- | Modify the flow
-runDinicDfs ::
+runMaxFlowDfs ::
   forall c m.
   (U.Unbox c, Num c, Ord c, PrimMonad m) =>
   Vertex ->
   Vertex ->
   c ->
-  Dinic (PrimState m) c ->
-  DinicBuffer (PrimState m) c ->
+  MaxFlow (PrimState m) c ->
+  MaxFlowBuffer (PrimState m) c ->
   m c
-runDinicDfs !v0 !sink !flow0 Dinic {..} DinicBuffer {..} = runDfs v0 flow0
+runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
   where
     runDfs !v1 !flow
       | v1 == sink = return flow
       | otherwise = fix $ \visitNeighbor -> do
-          -- `iterD` holds neighbor iteration counters
-          !i1 <- UM.read iterD v1
-          if i1 >= offsetsD U.! (v1 + 1)
+          -- `iterMF` holds neighbor iteration counters
+          !i1 <- UM.read iterMF v1
+          if i1 >= offsetsMF U.! (v1 + 1)
             then do
               -- visited all the neighbors. no flow
               return 0
             else do
               -- increment the counter to remember the neighbor iteration state:
-              UM.write iterD v1 (i1 + 1)
+              UM.write iterMF v1 (i1 + 1)
 
               -- go if it can flow
-              let !v2 = edgeDstD U.! i1
-              !cap12 <- UM.read edgeCapD i1
-              !connected <- (<) <$> UM.read distsD v1 <*> UM.read distsD v2
+              let !v2 = edgeDstMF U.! i1
+              !cap12 <- UM.read edgeCapMF i1
+              !connected <- (<) <$> UM.read distsMF v1 <*> UM.read distsMF v2
               if cap12 > 0 && connected
                 then do
                   -- get to the final flow
@@ -216,5 +219,5 @@ runDinicDfs !v0 !sink !flow0 Dinic {..} DinicBuffer {..} = runDfs v0 flow0
                 else visitNeighbor
 
     modifyFlow !i1 !flow = do
-      UM.modify edgeCapD (subtract flow) i1
-      UM.modify edgeCapD (+ flow) (edgeRevIndexD U.! i1)
+      UM.modify edgeCapMF (subtract flow) i1
+      UM.modify edgeCapMF (+ flow) (edgeRevIndexMF U.! i1)

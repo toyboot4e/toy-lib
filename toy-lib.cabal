@@ -180,7 +180,7 @@ library
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.Graph.Alias
-    Data.Graph.Dinic
+    Data.Graph.MaxFlow
     Data.Graph.MinCostFlow
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
