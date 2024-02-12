@@ -18,9 +18,7 @@ import Data.Bool (bool)
 import Data.Buffer
 import Data.Functor.Identity
 import Data.Graph (Vertex)
-import qualified Data.Heap as H
 import Data.Maybe
-import Data.Ord (Down (..))
 import Data.SemigroupAction
 import Data.Tree.Lca (LcaCache, ToParent (..))
 import Data.Tuple.Extra (both)
@@ -274,7 +272,10 @@ djSG gr@SparseGraph {..} !undef !is0 =
     genericDj (gr `adjW`) nVertsSG nEdgesSG undef (U.map (index boundsSG) is0)
 
 -- | /O((E+V) \log {V})/ Dijkstra's algorithm.
+--
 -- Does pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
+--
+-- Note that longest Dijkstra can be implemented by just using a max heap.
 genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
@@ -423,40 +424,6 @@ createBfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
   return prev
   where
     !source = index boundsSG sourceIx
-
--- | /O((E+V) \log {V})/ Dijkstra's algorithm. Returns a vector of @(parent, distance)@. The source
--- vertex or unrechable  vertices are given `-1` as their parent.
---
--- ghci> createDjTreeSG (gr `adjW`) 4 (-1 :: Int) (U.fromList [0])
--- [(-1,0),(0,1),(1,2),(2,3)]
-createDjTreeSG :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> w -> U.Vector Int -> U.Vector (Vertex, w)
-createDjTreeSG !gr !nVerts !undef !vs0 = U.create $ do
-  !dist <- UM.replicate nVerts (-1, undef)
-
-  let !heap0 = H.fromList $ map (H.Entry 0) (U.toList vs0) :: H.Heap (H.Entry w Int)
-  U.forM_ vs0 $ \v -> do
-    UM.write dist v (-1, 0)
-
-  flip fix heap0 $ \loop heap -> case H.uncons heap of
-    Nothing -> return ()
-    Just (H.Entry !w1 !v1, heap') -> do
-      ((w1 >) . snd) <$> UM.read dist v1 >>= \case
-        -- more efficient path was already visited
-        True -> loop heap'
-        False -> do
-          loop <=< (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
-            (!_, !w2) <- UM.read dist v2
-            let !w2' = merge w1 dw2
-            if w2 == undef || w2' < w2
-              then do
-                UM.write dist v2 (v1, w2')
-                return $ H.insert (H.Entry w2' v2) h
-              else return h
-
-  return dist
-  where
-    merge :: w -> w -> w
-    merge = (+)
 
 -- | Given a vector of vertex parents, restores path from the source to a sink.
 --
@@ -634,6 +601,33 @@ foldTreeAllSG !tree !acc0At !toOp =
     !root0 = 0 :: Int
     !op0 = mempty @op
 
+-- | /O(V^3)/ Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
+-- usually like @maxBound `div` 2@.
+--
+-- It's strict about path connection and invalid paths are ignored.
+distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
+distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
+  !vec <- UM.replicate (nVerts * nVerts) undef
+
+  U.forM_ wEdges $ \(!v1, !v2, !w) -> do
+    UM.write vec (index bnd (v1, v2)) w
+
+  -- `forM_ vs repM_
+  forM_ [0 .. nVerts - 1] $ \k -> do
+    forM_ [0 .. nVerts - 1] $ \i -> do
+      forM_ [0 .. nVerts - 1] $ \j -> do
+        !x1 <- UM.read vec (index bnd (i, j))
+        !x2 <- do
+          !tmp1 <- UM.read vec (index bnd (i, k))
+          !tmp2 <- UM.read vec (index bnd (k, j))
+          return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
+        UM.write vec (index bnd (i, j)) $! min x1 x2
+
+  return vec
+  where
+    bnd :: ((Int, Int), (Int, Int))
+    bnd = ((0, 0), (nVerts - 1, nVerts - 1))
+
 ----------------------------------------------------------------------------------------------------
 -- Notes
 ----------------------------------------------------------------------------------------------------
@@ -709,60 +703,3 @@ bfsGrid317E_MBuffer !isBlock !source = IxVector bounds_ $ runST $ do
     !bounds_ = boundsIV isBlock
     nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
     !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
--- | Longest path Dijkstra
-abc335e :: U.Vector Int -> SparseGraph Int () -> U.Vector Int
-abc335e !xs gr@SparseGraph {..} = U.create $ do
-  let !undef = 0 :: Int
-  !dist <- UM.replicate nVertsSG undef
-  !done <- UM.replicate nVertsSG False
-
-  let !heap0 = H.singleton $ H.Entry (xs U.! 0, Down 1) 0
-  UM.write dist 0 (1 :: Int)
-
-  flip fix heap0 $ \loop heap -> case H.uncons heap of
-    Nothing -> return ()
-    Just (H.Entry (!_, Down !w1) !v1, !heap') -> do
-      UM.read done v1 >>= \case
-        -- already visited
-        True -> loop heap'
-        False -> do
-          UM.write done v1 True
-          loop <=< (\f -> U.foldM' f heap' (gr `adj` v1)) $ \h v2 -> do
-            let !w2' = bool (w1 + 1) w1 (xs U.! v1 == xs U.! v2)
-            !b2 <- UM.read done v2
-            !w2 <- UM.read dist v2
-            if not b2 && w2' > w2
-              then do
-                UM.write dist v2 w2'
-                return $ H.insert (H.Entry (xs U.! v2, Down w2') v2) h
-              else return h
-
-  return dist
-
--- | /O(V^3)/ Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
--- usually like @maxBound `div` 2@.
---
--- It's strict about path connection and invalid paths are ignored.
-distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
-distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
-  !vec <- UM.replicate (nVerts * nVerts) undef
-
-  U.forM_ wEdges $ \(!v1, !v2, !w) -> do
-    UM.write vec (index bnd (v1, v2)) w
-
-  -- `forM_ vs repM_
-  forM_ [0 .. nVerts - 1] $ \k -> do
-    forM_ [0 .. nVerts - 1] $ \i -> do
-      forM_ [0 .. nVerts - 1] $ \j -> do
-        !x1 <- UM.read vec (index bnd (i, j))
-        !x2 <- do
-          !tmp1 <- UM.read vec (index bnd (i, k))
-          !tmp2 <- UM.read vec (index bnd (k, j))
-          return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
-        UM.write vec (index bnd (i, j)) $! min x1 x2
-
-  return vec
-  where
-    bnd :: ((Int, Int), (Int, Int))
-    bnd = ((0, 0), (nVerts - 1, nVerts - 1))
