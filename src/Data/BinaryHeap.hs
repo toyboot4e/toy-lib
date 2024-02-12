@@ -1,16 +1,23 @@
 {-# LANGUAGE RecordWildCards #-}
 
--- | Ultra fast binary heap taken from [cojna/iota](https://github.com/cojna/iota). Thanks!
+-- | The ultra fast binary heap taken from [cojna/iota](https://github.com/cojna/iota). Thanks!
+--
 -- = API
--- - Construction
---   - `newMinBinaryHeap`, `buildMinBinaryHeapVia`
---   - `newMaxBinaryHeap`, `buildMaxBinaryHeapVia`
--- - Modification
---  - `insertBH`,
---  - `viewBH`
---  - `deleteFindTopBH`
--- - Reset
---  - `clearBH`
+--
+-- == Construction
+--
+-- - `newMinBinaryHeap`, `buildMinBinaryHeapVia`
+-- - `newMaxBinaryHeap`, `buildMaxBinaryHeapVia`
+--
+-- == Operations and views
+--
+-- - `insertBH`,
+-- - `deleteFindTopBH`
+-- - `viewBH`
+--
+-- == Reset
+--
+-- - `clearBH`
 module Data.BinaryHeap where
 
 import Control.Monad
