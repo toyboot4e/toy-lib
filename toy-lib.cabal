@@ -181,6 +181,7 @@ library
     Data.Core.Semiring
     Data.Graph.Alias
     Data.Graph.Dinic
+    Data.Graph.MinCostFlow
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
     Data.ModInt
