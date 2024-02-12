@@ -6,7 +6,6 @@ module Data.SparseGraph where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Extra (whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -21,7 +20,6 @@ import Data.Graph (Vertex)
 import Data.Maybe
 import Data.SemigroupAction
 import Data.Tree.Lca (LcaCache, ToParent (..))
-import Data.Tuple.Extra (both)
 import Data.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -628,78 +626,3 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
     bnd :: ((Int, Int), (Int, Int))
     bnd = ((0, 0), (nVerts - 1, nVerts - 1))
 
-----------------------------------------------------------------------------------------------------
--- Notes
-----------------------------------------------------------------------------------------------------
-
--- | 01-BFS: zero cost with same direction.
-bfs01_grid4_typical043 :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int, Int) Int
-bfs01_grid4_typical043 !isBlock !source = IxVector boundsExt $ U.create $ do
-  -- vec @! (dir, y, x)
-  !vec <- IxVector boundsExt <$> UM.replicate (4 * nVerts) undef
-
-  let !redundantSpace = 0
-  !deque <- newBufferAsDeque (redundantSpace + 4 * nVerts)
-  forM_ [0 .. 3] $ \iDir -> do
-    let !vExt = (iDir, fst source, snd source)
-    pushFront deque (0 :: Int, vExt)
-    writeIV vec vExt (0 :: Int)
-
-  let extract !w0 vExt0@(!iDir0, !y0, !x0) = do
-        !wReserved0 <- readIV vec vExt0
-        when (w0 == wReserved0) $ do
-          U.iforM_ dirs $ \iDir (!dy, !dx) -> do
-            let !v = (y0 + dy, x0 + dx)
-            when (inRange bounds_ v && not (isBlock @! v)) $ do
-              let !w = bool (w0 + 1) w0 (iDir == iDir0)
-              let !vExt = (iDir, y0 + dy, x0 + dx)
-              !wReserved <- readIV vec vExt
-              when (wReserved == undef || w < wReserved) $ do
-                writeIV vec vExt w
-                if iDir == iDir0
-                  then pushFront deque (w, vExt)
-                  else pushBack deque (w, vExt)
-
-  -- generic BFS = pop loop
-  fix $ \loop ->
-    popFront deque >>= \case
-      Nothing -> return ()
-      Just (!w, !v) -> do
-        extract w v
-        loop
-
-  return $ vecIV vec
-  where
-    !undef = -1 :: Int
-    (!height, !width) = both succ . snd $ boundsIV isBlock
-    !bounds_ = boundsIV isBlock
-    !boundsExt = ((0, 0, 0), (3, height - 1, width - 1))
-    !nVerts = rangeSize bounds_
-    !dirs = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
--- | TODO: Re-implement with `genericBfs`
-bfsGrid317E_MBuffer :: (HasCallStack) => IxUVector (Int, Int) Bool -> (Int, Int) -> IxUVector (Int, Int) Int
-bfsGrid317E_MBuffer !isBlock !source = IxVector bounds_ $ runST $ do
-  !vis <- IxVector bounds_ <$> UM.replicate (rangeSize bounds_) undef
-  !queue <- newBufferAsQueue (rangeSize bounds_)
-
-  pushBack queue source
-  writeIV vis source 0
-
-  fix $ \loop ->
-    popFront queue >>= \case
-      Nothing -> return ()
-      Just !yx1 -> do
-        !d <- readIV vis yx1
-        U.forM_ (nexts yx1) $ \yx2 -> do
-          whenM ((== undef) <$> readIV vis yx2) $ do
-            writeIV vis yx2 (d + 1)
-            pushBack queue yx2
-        loop
-
-  U.unsafeFreeze $ vecIV vis
-  where
-    !undef = -1 :: Int
-    !bounds_ = boundsIV isBlock
-    nexts !yx0 = U.filter ((&&) <$> inRange bounds_ <*> not . (isBlock @!)) $ U.map (add2 yx0) dyxs
-    !dyxs = U.fromList [(1, 0), (-1, 0), (0, 1), (0, -1)]
