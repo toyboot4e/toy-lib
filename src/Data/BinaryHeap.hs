@@ -176,10 +176,10 @@ viewBH bh = do
 
 insertBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
-  a ->
   BinaryHeap f (PrimState m) a ->
+  a ->
   m ()
-insertBH x BinaryHeap {..} = do
+insertBH BinaryHeap {..} x = do
   size <- UM.unsafeRead intVarsBH _sizeBH
   UM.unsafeWrite intVarsBH _sizeBH (size + 1)
   UM.unsafeWrite internalVecBH size x
@@ -199,10 +199,10 @@ unsafeDeleteBH BinaryHeap {..} = do
 
 modifyTopBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
-  (a -> a) ->
   BinaryHeap f (PrimState m) a ->
+  (a -> a) ->
   m ()
-modifyTopBH f BinaryHeap {..} = do
+modifyTopBH BinaryHeap {..} f = do
   UM.unsafeModify internalVecBH f 0
   size <- UM.unsafeRead intVarsBH _sizeBH
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size internalVecBH)
