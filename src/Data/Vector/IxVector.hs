@@ -9,7 +9,7 @@ import Control.Monad.ST
 import Data.Bifunctor (first, second)
 import Data.Ix
 import Data.Tuple.Extra (both)
-import Data.Unindex
+import Data.Utils.Unindex
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U

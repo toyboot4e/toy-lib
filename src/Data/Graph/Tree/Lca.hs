@@ -5,13 +5,13 @@ import Algorithm.Bisect
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.ST
+import Core.SemigroupAction
 import Data.Array.IArray
 import Data.BinaryLifting
 import Data.Bits
 import Data.Graph.Alias (Vertex)
 import Data.List (find)
 import Data.Maybe
-import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U

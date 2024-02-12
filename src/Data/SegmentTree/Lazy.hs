@@ -1,4 +1,4 @@
--- | Lazy segment tree, where we can perform operation over range.
+-- | Lazily propageted segment tree, where we can perform operation over range.
 --
 -- = Algebra
 -- - (Op * Acc) <> (Op * Acc) = (Op <> Op) (Acc <> Acc)
@@ -12,10 +12,10 @@ module Data.SegmentTree.Lazy where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Core.SemigroupAction
 import Data.Bifunctor
 import Data.Bits
 import Data.Ix (inRange)
-import Data.SemigroupAction
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U

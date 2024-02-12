@@ -174,10 +174,11 @@ library
     Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
+    Core.SemigroupAction
+    Core.Semiring
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
-    Data.FromVec
     Data.Graph.Alias
     Data.Graph.Dinic
     Data.Graph.Sparse
@@ -189,13 +190,12 @@ library
     Data.SafeList
     Data.SegmentTree.Lazy
     Data.SegmentTree.Strict
-    Data.SemigroupAction
-    Data.Semiring
     Data.SizedList
-    Data.Unindex
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse
+    Data.Utils.FromVec
+    Data.Utils.Unindex
     Data.Vector.Compress
     Data.Vector.Construct
     Data.Vector.CSum

@@ -9,6 +9,7 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
+import Core.SemigroupAction
 import Data.Array.IArray
 import Data.Bifunctor
 import Data.BinaryHeap
@@ -16,11 +17,10 @@ import Data.BinaryLifting
 import Data.Bool (bool)
 import Data.Buffer
 import Data.Functor.Identity
-import Data.Graph.Alias (Vertex, EdgeId)
-import Data.Maybe
-import Data.SemigroupAction
+import Data.Graph.Alias (EdgeId, Vertex)
 import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
-import Data.Unindex
+import Data.Maybe
+import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -617,4 +617,3 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
   where
     bnd :: ((Int, Int), (Int, Int))
     bnd = ((0, 0), (nVerts - 1, nVerts - 1))
-

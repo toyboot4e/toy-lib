@@ -5,9 +5,11 @@
 -- can construct any of \(s^i\) (\(0 <= i < 2^63\)) in a big (63) constant time.
 module Data.BinaryLifting where
 
+-- FIXME: refactor to have indices
+
+import Core.SemigroupAction
 import Data.Bits
 import Data.List
-import Data.SemigroupAction
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U

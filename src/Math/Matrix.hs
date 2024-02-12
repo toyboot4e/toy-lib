@@ -1,13 +1,13 @@
 -- | TODO: Refactor in my way.
 module Math.Matrix where
 
+import Core.SemigroupAction
 import Data.Array.IArray
 import Data.Array.Unboxed (UArray)
 import Data.List (foldl1')
 import Data.List.Extra (chunksOf)
 import Data.ModInt (TypeInt, typeInt)
 import Data.Proxy
-import Data.SemigroupAction
 import Data.Tuple.Extra (dupe)
 import ToyLib.Macro
 import ToyLib.Prelude ((.:))

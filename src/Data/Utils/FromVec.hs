@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Helper methods for creating collections types from @Vector@ types.
-module Data.FromVec where
+module Data.Utils.FromVec where
 
 import qualified Data.Heap as H
 import qualified Data.IntMap.Strict as IM
