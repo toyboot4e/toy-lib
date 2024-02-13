@@ -50,11 +50,38 @@ data MaxFlowBuffer s c = MaxFlowBuffer
     iterMF :: !(UM.MVector s Int)
   }
 
--- | /O(V^2E)/ max flow algorithm (Dinic's algorithm)
+-- | /O(V^2E)/ max flow algorithm (Dinic's algorithm).
 maxFlow :: (U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> c
 maxFlow !nVerts !src !sink !edges = runST $ do
   !container <- buildMaxFlow nVerts edges
   runMaxFlow src sink container
+
+-- | Runs `maxFlow` and retrieves the last state.
+--
+-- TODO: Return a freezed version?
+maxFlow' :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> m (c, MaxFlow (PrimState m) c)
+maxFlow' !nVerts !src !sink !edges = do
+  !container <- buildMaxFlow nVerts edges
+  !flow <- runMaxFlow src sink container
+  return (flow, container)
+
+-- | Handy API for retrieving edge information from the `maxFlow` results.
+--
+-- Be warned that it returns both the forward and the reverse edges.
+edgesMF :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
+edgesMF MaxFlow {..} = do
+  !edgeCap <- U.unsafeFreeze edgeCapMF
+
+  let next (!i12, !v1)
+        | i12 == offsetsMF U.! (v1 + 1) = next (i12, v1 + 1)
+        | otherwise = ((v1, v2, cap, flow), (i12 + 1, v1))
+        where
+          v2 = edgeDstMF U.! i12
+          i21 = edgeRevIndexMF U.! i12
+          flow = edgeCap U.! i21
+          cap = edgeCap U.! i12 + edgeCap U.! i21
+
+  return $ U.unfoldrExactN nEdgesMF next ((0 :: Vertex), 0 :: Int)
 
 undefMF :: Int
 undefMF = -1
