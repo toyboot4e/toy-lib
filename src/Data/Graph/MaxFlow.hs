@@ -27,6 +27,9 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 --
 -- = Internals
 -- Internally the graph is stored in a CSR (compressed sparse row).
+--
+-- = Invariants
+-- - Sum of the capacities of one edge and the reverse edge never changes from the initial value.
 data MaxFlow s c = MaxFlow
   { nVertsMF :: !Int,
     nEdgesMF :: !Int,
@@ -146,9 +149,9 @@ runMaxFlow ::
   Vertex ->
   MaxFlow (PrimState m) c ->
   m c
-runMaxFlow !src !sink dinic@MaxFlow {..} = do
+runMaxFlow !src !sink container@MaxFlow {..} = do
   bufs@MaxFlowBuffer {..} <-
-    -- distsD, queueMF, iterMF
+    -- distsMF, queueMF, iterMF
     MaxFlowBuffer
       <$> UM.unsafeNew nVertsMF
       <*> newBufferAsQueue nVertsMF
@@ -159,7 +162,7 @@ runMaxFlow !src !sink dinic@MaxFlow {..} = do
     GM.set distsMF undefMF
     clearBuffer queueMF
     -- run bfs
-    runMaxFlowBfs src sink dinic bufs
+    runMaxFlowBfs src sink container bufs
 
     !distSink <- UM.read distsMF sink
     if distSink == undefMF
@@ -169,7 +172,7 @@ runMaxFlow !src !sink dinic@MaxFlow {..} = do
         U.unsafeCopy iterMF offsetsMF
         -- add flow to the `sink` while we can.
         flip fix flow $ \loopDfs f -> do
-          !df <- runMaxFlowDfs src sink maxBound dinic bufs
+          !df <- runMaxFlowDfs src sink maxBound container bufs
           if df > 0
             then loopDfs $! f + df
             else loopBfs f
