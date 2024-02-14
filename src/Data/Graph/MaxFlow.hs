@@ -29,7 +29,8 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- Internally the graph is stored in a CSR (compressed sparse row).
 --
 -- = Invariants
--- - Sum of the capacities of one edge and the reverse edge never changes from the initial value.
+-- - Sum of the capacities of one edge and the reverse edge never changes from the initial value
+--   (Exceptions: source and sink).
 data MaxFlow s c = MaxFlow
   { nVertsMF :: !Int,
     nEdgesMF :: !Int,
@@ -54,23 +55,34 @@ data MaxFlowBuffer s c = MaxFlowBuffer
   }
 
 -- | /O(V^2E)/ max flow algorithm (Dinic's algorithm).
-maxFlow :: (U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> c
+maxFlow ::
+  (U.Unbox c, Num c, Ord c, Bounded c) =>
+  Int ->
+  Int ->
+  Int ->
+  U.Vector (Vertex, Vertex, c) ->
+  c
 maxFlow !nVerts !src !sink !edges = runST $ do
-  !container <- buildMaxFlow nVerts edges
-  runMaxFlow src sink container
+  fst <$> maxFlow' nVerts src sink edges
 
 -- | Runs `maxFlow` and retrieves the last state.
 --
 -- TODO: Return a freezed version?
-maxFlow' :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => Int -> Int -> Int -> U.Vector (Vertex, Vertex, c) -> m (c, MaxFlow (PrimState m) c)
+maxFlow' ::
+  (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) =>
+  Int ->
+  Int ->
+  Int ->
+  U.Vector (Vertex, Vertex, c) ->
+  m (c, MaxFlow (PrimState m) c)
 maxFlow' !nVerts !src !sink !edges = do
   !container <- buildMaxFlow nVerts edges
   !flow <- runMaxFlow src sink container
   return (flow, container)
 
--- | Handy API for retrieving edge information from the `maxFlow` results.
+-- | Handy API for retrieving edge information @(v1, v2, cap, flow@ from the `maxFlow` results.
 --
--- Be warned that it returns both the forward and the reverse edges.
+-- Be warned that it contains reverse edges and edge from/to source/sink.
 edgesMF :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
 edgesMF MaxFlow {..} = do
   !edgeCap <- U.unsafeFreeze edgeCapMF

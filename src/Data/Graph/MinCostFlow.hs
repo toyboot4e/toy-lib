@@ -35,7 +35,7 @@ data MinCostFlow s cap = MinCostFlow
   { nVertsMCF :: !Int,
     nEdgesMCF :: !Int,
     -- | Source vertex -> initial edge index. Note that edges are sourted by the starting vertex.
-    offsetMCF :: !(U.Vector Int),
+    offsetsMCF :: !(U.Vector Int),
     -- | Edge index -> destination vertex.
     edgeDstMCF :: !(U.Vector Int),
     -- | Edge index -> reverse edge index.
@@ -48,22 +48,60 @@ data MinCostFlow s cap = MinCostFlow
 
 -- | Mutable states on running MinCostFlow algorithm.
 data MinCostFlowBuffer s cap = MinCostFlowBuffer
-  { -- | Shortest distance search result.
+  { -- | Vertex -> shortest distance search result.
     distsMCF :: !(UM.MVector s Int),
-    -- | Shortest distance + last vertex
+    -- | Vertex -> shortest distance + last vertex
     prevVertMCF :: !(UM.MVector s Vertex),
-    -- | Shortest distance + last edge
+    -- | Vertex -> shortest distance + last edge
     prevEdgeMCF :: !(UM.MVector s EdgeId)
   }
 
 -- | Returns the minimum cost to for getting the flow, or Nothing when impossible.
 --
 -- TODO: Return tuple just like ACL.
-minCostFlow :: (Show cap, U.Unbox cap, Num cap, Integral cap, Ord cap, Bounded cap) => Int -> Int -> Int -> cap -> U.Vector (Vertex, Vertex, cap, Cost) -> Maybe Cost
+minCostFlow ::
+  (Show cap, U.Unbox cap, Num cap, Integral cap, Ord cap, Bounded cap) =>
+  Int ->
+  Int ->
+  Int ->
+  cap ->
+  U.Vector (Vertex, Vertex, cap, Cost) ->
+  Maybe Cost
 minCostFlow !nVerts !src !sink !targetFlow !edges = runST $ do
+  fst <$> minCostFlow' nVerts src sink targetFlow edges
+
+minCostFlow' ::
+  (PrimMonad m, Show cap, U.Unbox cap, Num cap, Integral cap, Ord cap, Bounded cap) =>
+  Int ->
+  Int ->
+  Int ->
+  cap ->
+  U.Vector (Vertex, Vertex, cap, Cost) ->
+  m (Maybe Cost, MinCostFlow (PrimState m) cap)
+minCostFlow' !nVerts !src !sink !targetFlow !edges = do
   !container <- buildMinCostFlow nVerts edges
   -- TODO: return max flow, too
-  runMinCostFlow src sink targetFlow container
+  !minCost <- runMinCostFlow src sink targetFlow container
+  return (minCost, container)
+
+-- | Retrieves edge information @(v1, v2, cap, flow, cost)@ from the `maxFlow` results.
+--
+-- Be warned that it contains reverse edges and edge from/to source/sink.
+edgesMCF :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => MinCostFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c, Cost))
+edgesMCF MinCostFlow {..} = do
+  !edgeCap <- U.unsafeFreeze edgeCapMCF
+
+  let next (!i12, !v1)
+        | i12 == offsetsMCF U.! (v1 + 1) = next (i12, v1 + 1)
+        | otherwise = ((v1, v2, cap, flow, cost), (i12 + 1, v1))
+        where
+          v2 = edgeDstMCF U.! i12
+          i21 = edgeRevIndexMCF U.! i12
+          flow = edgeCap U.! i21
+          cap = edgeCap U.! i12 + edgeCap U.! i21
+          cost = edgeCostMCF U.! i12
+
+  return $ U.unfoldrExactN nEdgesMCF next ((0 :: Vertex), 0 :: Int)
 
 -- | For vertices and edge indices?
 undefMCF :: Int
@@ -81,7 +119,7 @@ buildMinCostFlow ::
   U.Vector (Vertex, Vertex, cap, Cost) ->
   m (MinCostFlow (PrimState m) cap)
 buildMinCostFlow !nVertsMCF !edges = do
-  let !offsetMCF = U.scanl' (+) (0 :: Int) $ U.create $ do
+  let !offsetsMCF = U.scanl' (+) (0 :: Int) $ U.create $ do
         !degs <- UM.replicate nVertsMCF (0 :: Int)
         G.forM_ edges $ \(!v1, !v2, !_, !_) -> do
           GM.modify degs (+ 1) v1
@@ -96,7 +134,7 @@ buildMinCostFlow !nVertsMCF !edges = do
     !edgeCap <- UM.replicate nEdgesMCF (0 :: cap)
 
     -- add the edges and the reverse edges
-    !edgeCounter <- U.thaw offsetMCF
+    !edgeCounter <- U.thaw offsetsMCF
     G.forM_ edges $ \(!v1, !v2, !cap, !cost) -> do
       let !_ = dbgAssert (cost >= 0) $ "costs must be zero or positive" ++ show (v1, v2)
       let !_ = dbgAssert (v1 /= v2) $ "cannot use self loop edge: " ++ show (v1, v2)
@@ -144,8 +182,8 @@ runMinCostFlow !src !sink !targetFlow container@MinCostFlow {..} = do
   let run !accCost !restFlow
         -- TODO: Is it ok to flow too much?
         | restFlow <= 0 =
-          let !_ = dbgAssert (restFlow == 0) "flow too much?"
-           in return $ Just accCost
+            let !_ = dbgAssert (restFlow == 0) "flow too much?"
+             in return $ Just accCost
         | otherwise = do
             -- clear buffers
             GM.set distsMCF undefDistMCF
@@ -230,8 +268,8 @@ runMinCostFlowShortests !src MinCostFlow {..} MinCostFlowBuffer {..} = do
           -- unreachable. skip
           return anyUpdate
         else do
-          let !iStart = offsetMCF U.! v1
-              !iEnd = offsetMCF U.! (v1 + 1)
+          let !iStart = offsetsMCF U.! v1
+              !iEnd = offsetsMCF U.! (v1 + 1)
           (\f -> U.foldM' f anyUpdate (U.generate (iEnd - iStart) (+ iStart))) $ \ !anyUpdate i12 -> do
             let !v2 = edgeDstMCF U.! i12
             !cap12 <- UM.read edgeCapMCF i12
