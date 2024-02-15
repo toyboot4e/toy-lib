@@ -455,8 +455,8 @@ topSortSG gr@SparseGraph {..} = runST $ do
 
 -- | Partial running of `topSccSG` over topologically sorted vertices, but for some connected components
 -- only.
-topScc1SG :: forall i w m. (PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
-topScc1SG !gr' !vis !v0 = do
+revTopScc1SG :: forall i w m. (PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
+revTopScc1SG !gr' !vis !v0 = do
   flip fix ([], v0) $ \loop (!acc, !v) -> do
     UM.unsafeRead vis v >>= \case
       True -> return acc
@@ -479,17 +479,22 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
           !vw2s = U.unsafeSlice o1 (o2 - o1) vws
        in U.map (\(v2, !w2) -> (v2, v1, w2)) vw2s
 
--- | Collectes strongly connected components, topologically sorted.
--- Upstream vertices come first, e.g., @(v1 - v2) -> v3 -> v4@.
-topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
-topSccSG gr = collectSccPreorderSG $ topSortSG gr
+-- | Collectes strongly connected components, reverse topologically sorted.
+-- Upstream vertices come first, e.g., @v1 -> v2 -> v3@.
+revTopSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
+revTopSccSG gr = collectSccPreorderSG $ topSortSG gr
   where
     !gr' = revSG gr
 
     collectSccPreorderSG :: [Int] -> [[Int]]
     collectSccPreorderSG !topVerts = runST $ do
       !vis <- UM.replicate (nVertsSG gr) False
-      filter (not . null) <$> mapM (topScc1SG gr' vis) topVerts
+      filter (not . null) <$> mapM (revTopScc1SG gr' vis) topVerts
+
+-- | Collectes strongly connected components, topologically sorted.
+-- Downstream vertices come first, e.g., @v3 -> v2 -> v1@.
+topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
+topSccSG = map reverse . revTopSccSG
 
 ----------------------------------------------------------------------------------------------------
 -- Tree (API)
