@@ -11,16 +11,30 @@ import Debug.Trace
 -- Otherwise it's an empty function.
 #ifdef DEBUG
 dbg :: Show a => a -> ()
-dbg !x = let !_ = traceShow x () in ()
+dbg !x = do
+  let !_ = traceShow x ()
+  ()
 
 dbgS :: String -> ()
-dbgS !s = let !_ = trace s () in ()
+dbgS !s = do
+  let !_ = trace s ()
+  ()
+
+dbgSM :: (Monad m) => m String -> m ()
+dbgSM !m = do
+  !s <- m
+  let !_ = trace s ()
+  return ()
 
 dbgId :: Show a => a -> a
-dbgId !x = let !_ = traceShow x () in x
+dbgId !x = do
+  let !_ = traceShow x ()
+  x
 
 note :: (Show s, Show a) => s -> a -> a
-note !s !x = let !_ = trace (show s ++ ": " ++ show x) () in x
+note !s !x = do
+  let !_ = trace (show s ++ ": " ++ show x) ()
+  x
 
 dbgAssert :: Bool -> String -> ()
 dbgAssert False !s = error $ "assertion failed!: " ++ s
@@ -32,6 +46,9 @@ dbg _ = ()
 
 dbgS :: String -> ()
 dbgS _ = ()
+
+dbgSM :: (Monad m) => m String -> m ()
+dbgSM _ = return ()
 
 dbgId :: Show a => a -> a
 dbgId = id
