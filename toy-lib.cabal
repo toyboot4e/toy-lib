@@ -184,6 +184,8 @@ library
     Data.Graph.MinCostFlow
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
+    Data.Graph.TwoSat
+    Data.Instances.Mat2x2
     Data.ModInt
     Data.MultiSet
     Data.MultiSetVec
