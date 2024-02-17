@@ -208,3 +208,15 @@ thd4 (!_, !_, !c, !_) = c
 fth4 :: (a, b, c, d) -> d
 fth4 (!_, !_, !_, !d) = d
 
+first4 :: (a -> x) -> (a, b, c, d) -> (x, b, c, d)
+first4 f (!a, !b, !c, !d) = (f a, b, c, d)
+
+second4 :: (b -> x) -> (a, b, c, d) -> (a, x, c, d)
+second4 f (!a, !b, !c, !d) = (a, f b, c, d)
+
+thidr4 :: (c -> x) -> (a, b, c, d) -> (a, b, x, d)
+thidr4 f (!a, !b, !c, !d) = (a, b, f c, d)
+
+fourth4 :: (d -> x) -> (a, b, c, d) -> (a, b, c, x)
+fourth4 f (!a, !b, !c, !d) = (a, b, c, f d)
+
