@@ -92,9 +92,9 @@ bisectM !low !high !isOk = both wrap <$> inner (low - 1) (high + 1)
 bisectML :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int)
 bisectML !a !b !c = fst <$> bisectM a b c
 
-{-# INLINE bisectRM #-}
-bisectRM :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int)
-bisectRM !a !b !c = snd <$> bisectM a b c
+{-# INLINE bisectMR #-}
+bisectMR :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int)
+bisectMR !a !b !c = snd <$> bisectM a b c
 
 {-# INLINE bisectF32 #-}
 bisectF32 :: Float -> Float -> Float -> (Float -> Bool) -> (Maybe Float, Maybe Float)
