@@ -1,7 +1,7 @@
 {- ORMOLU_DISABLE -}
 
-{-# LANGUAGE BlockArguments, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf, NumDecimals #-}
-{-# LANGUAGE PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
+{-# LANGUAGE BlockArguments, DataKinds, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf #-}
+{-# LANGUAGE NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies #-}
 
 -- TODO: overloaded lists (not working for the union-find module?)
@@ -25,7 +25,7 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.State.Class
 import Control.Monad.Trans (MonadTrans, lift)
-import Control.Monad.Trans.State.Strict (State, StateT, runState, evalState, execState, runStateT, evalStateT, execStateT)
+import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
 import Data.Bifunctor
 import Data.Bits
 import Data.Bool (bool)
@@ -51,6 +51,7 @@ import GHC.Exts
 import GHC.Float (int2Float)
 import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
+import GHC.TypeLits
 import System.Exit (exitSuccess)
 import System.IO
 import System.Random

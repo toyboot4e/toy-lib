@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 -- | The rolling hash algorithm lets you create fastly (\(O(1)\)) comparable / concatanatable string
 -- slice in after \(O(N)\) preparation.
 --
@@ -10,12 +12,14 @@ import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
 import Data.List (foldl')
 import Data.Maybe
-import Data.ModInt
 import Data.Proxy
+import GHC.TypeLits
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Unboxed as U
 
 -- {{{ Rolling hash
+
+-- TODO: rolling hash on a segment tree
 
 -- | Rolling hash of a string.
 --
@@ -35,18 +39,15 @@ data RollingHash b p = RollingHash
   }
   deriving (Show, Eq)
 
--- | Type that represents a B-adic number for the rolling hash algorithm.
-data HashInt = HashInt
-
-instance TypeInt HashInt where
-  typeInt _ = 100
+-- | Type level integer that represents the B-adic number used for the rolling hash algorithm.
+type HashInt = (100 :: Nat)
 
 -- | Creates a rolling hash of given string.
-newRH :: forall p. (TypeInt p) => String -> RollingHash HashInt p
+newRH :: forall p. (KnownNat p) => String -> RollingHash HashInt p
 newRH !source = RollingHash n bn hashSum_
   where
-    !p = typeInt (Proxy @p)
-    !b = typeInt (Proxy @HashInt)
+    !p = fromInteger $ natVal (Proxy @p) :: Int
+    !b = fromInteger $ natVal (Proxy @HashInt) :: Int
     !n = length source
     !bn = U.iterateN (succ n) (\lastB -> b * lastB `mod` p) (1 :: Int)
     !hashSum_ = evalState (U.mapM (\ !ch -> state $ \ !acc -> f ch acc) $ U.fromList source) (0 :: Int)
@@ -67,7 +68,7 @@ data HashSlice p = HashSlice
   deriving (Show, Eq)
 
 -- | Slices a rolling hash string.
-sliceRH :: forall b p. (TypeInt p) => RollingHash b p -> Int -> Int -> HashSlice p
+sliceRH :: forall b p. (KnownNat p) => RollingHash b p -> Int -> Int -> HashSlice p
 sliceRH (RollingHash !_ !bn !s) !i0 !i1
   -- TODO: add debug assertion
   | i0 > i1 = emptyHS
@@ -78,13 +79,13 @@ sliceRH (RollingHash !_ !bn !s) !i0 !i1
           !value = (s1 - (bn U.! len) * s0) `mod` p
        in HashSlice value len
   where
-    !p = typeInt (Proxy @p)
+    !p = fromInteger $ natVal (Proxy @p) :: Int
 
 -- | Cons two rolling hash slices.
-consHS :: forall b p. (TypeInt p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
+consHS :: forall b p. (KnownNat p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
 consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSlice value len
   where
-    !p = typeInt (Proxy @p)
+    !p = fromInteger $ natVal (Proxy @p) :: Int
     !value = ((bn U.! l1) * v0 + v1) `mod` p
     !len = l0 + l1
 
@@ -93,7 +94,7 @@ emptyHS :: HashSlice p
 emptyHS = HashSlice 0 0
 
 -- | Concatanates two rolling hash slices.
-concatHS :: forall b p t. (TypeInt p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
+concatHS :: forall b p t. (KnownNat p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
 concatHS !rhash !slices = foldl' (consHS rhash) emptyHS slices
 
 -- }}}

@@ -6,9 +6,9 @@ import Data.Array.Unboxed (UArray)
 import Data.Core.SemigroupAction
 import Data.List (foldl1')
 import Data.List.Extra (chunksOf)
-import Data.ModInt (TypeInt, typeInt)
 import Data.Proxy
 import Data.Tuple.Extra (dupe)
+import GHC.TypeLits
 import ToyLib.Macro
 import ToyLib.Prelude ((.:))
 
@@ -73,11 +73,11 @@ newtype MulMatMod p = MulMatMod (UArray (Int, Int) Int)
 
 -- Implementation over `Int` only!
 
-instance forall p. (TypeInt p) => Semigroup (MulMatMod p) where
-  (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (typeInt (Proxy @p)) m1 m2
+instance forall p. (KnownNat p) => Semigroup (MulMatMod p) where
+  (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (fromInteger (natVal (Proxy @p))) m1 m2
 
 -- | Semigroup action over a list as a column vector
-instance (TypeInt p) => SemigroupAction (MulMatMod p) [Int] where
-  sact (MulMatMod !mat) !col = mulMatToColMod mat (typeInt (Proxy @p)) col
+instance (KnownNat p) => SemigroupAction (MulMatMod p) [Int] where
+  sact (MulMatMod !mat) !col = mulMatToColMod mat (fromInteger (natVal (Proxy @p))) col
 
 -- }}}
