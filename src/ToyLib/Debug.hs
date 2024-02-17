@@ -4,10 +4,14 @@ module ToyLib.Debug where
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Data.Core.SemigroupAction
+import Data.SegmentTree.Lazy
 import Data.SegmentTree.Strict
 import Data.UnionFind.Mutable
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
+import qualified Data.Vector.Unboxed as U
 import ToyLib.Macro
 
 -- | For use with `dbgS`
@@ -65,7 +69,7 @@ dbgUM vec = do
   let !_ = dbg xs'
   return ()
 
--- | Shows the strict segment tree's leaves.
+-- | Shows the leaves of a strict segment tree.
 dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTree (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
@@ -75,7 +79,7 @@ dbgSTree (SegmentTree _ mVec) = do
   let !_ = dbg leaves
   return ()
 
--- | Shows the strict segment tree's nodes and leaves.
+-- | Shows the nodes and the leaves of a strict segment tree,
 dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTreeAll (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
@@ -88,3 +92,11 @@ dbgSTreeAll (SegmentTree _ mVec) = do
 
 -- TODO: dbgLazySTree
 
+-- | Shows the leaves of a lazily propagated segment tree.
+dbgLazySTree :: (Show a, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree v a op (PrimState m) -> m ()
+dbgLazySTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
+  let !nLeaves = GM.length vec `div` 2
+  ss <- forM [0 .. nLeaves - 1] $ \i -> do
+    !x <- queryLazySTree stree i i
+    return $ show x
+  return $ unwords ss
