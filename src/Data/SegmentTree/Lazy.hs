@@ -85,13 +85,13 @@ generateLazySTreeG ::
 generateLazySTreeG !n !f = do
   !as <- GM.unsafeNew n2
 
-  -- Create leaves:
+  -- Fill leaves:
   forM_ [1 .. nLeaves] $ \i -> do
     if i <= n
       then GM.write as (nLeaves + i - 1) $! f (pred i)
       else GM.write as (nLeaves + i - 1) mempty
 
-  -- Create parents:
+  -- Fill parents from bottom to top:
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
     !l <- GM.read as (childL i)
     !r <- GM.read as (childR i)
@@ -112,8 +112,8 @@ generateLazySTreeV = generateLazySTreeG
 generateLazySTreeU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLazySTreeU = generateLazySTreeG
 
--- | Appends the lazy operator monoid monoids over some span of the lazy segment tree.
--- These values are just stored and performed over the nodes when queried.
+-- | Appends the lazy operator monoid monoids over a span. They are just stored and propagated when
+-- queried.
 updateLazySTree ::
   forall v a op m.
   (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -222,7 +222,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
           -- go up to the parent segment
           glitchLoopQuery (shiftR l' 1) (shiftR r' 1) lAcc' rAcc'
 
--- | Propagates the lazy operator monoids from top to bottom where the laef vertex is contained.
+-- | Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
