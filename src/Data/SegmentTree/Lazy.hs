@@ -7,7 +7,8 @@
 -- - [Typical 029 - Long Bricks (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ac)
 -- - [EDPC W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
 --
--- TODO: Add `set` / `get`, as in [ac-library](https://github.com/atcoder/ac-library/blob/master/atcoder/lazysegtree.hpp)
+-- - TODO: Add `set` / `get`, as in [ac-library](https://github.com/atcoder/ac-library/blob/master/atcoder/lazysegtree.hpp)
+-- - TODO: consider Node/Act naming rather than Acc/Op.
 module Data.SegmentTree.Lazy where
 
 import Control.Monad
@@ -52,7 +53,7 @@ import ToyLib.Macro
 --
 -- = Invariant
 --
--- - New operators always come from right: @oldOp <> newOp@
+-- - New operators always come from the left: @(newOp <> oldOp) acc@ or @newOp `sact` (oldOp `sact ac)@.
 data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
@@ -156,7 +157,8 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           !l' <-
             if isRightChild l
               then do
-                UM.modify ops (<> op) l
+                -- REMARK: The new coming operator operator always comes from the left.
+                UM.modify ops (op <>) l
                 return $ succ l
               else return l
 
@@ -164,7 +166,8 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
             -- NOTE: I'm using inclusive range
             if isLeftChild r
               then do
-                UM.modify ops (<> op) r
+                -- REMARK: The new coming operator operator always comes from the left.
+                UM.modify ops (op <>) r
                 return $ pred r
               else return r
 
@@ -241,9 +244,9 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
     !op <- UM.read ops vertex
     when (op /= mempty) $ do
       -- Propagate the operator monoid to the children:
-      -- REMARK: The propagated operator always comes from the right.
-      UM.modify ops (<> op) $! childL vertex
-      UM.modify ops (<> op) $! childR vertex
+      -- REMARK: The new coming operator operator always comes from the left.
+      UM.modify ops (op <>) $! childL vertex
+      UM.modify ops (op <>) $! childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
       GM.modify as (mact op) vertex
