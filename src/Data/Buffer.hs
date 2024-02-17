@@ -7,6 +7,7 @@ import Control.Applicative
 import Control.Exception (assert)
 import Control.Monad (void)
 import Control.Monad.Primitive
+import Control.Monad.ST
 import Data.Ix
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -30,6 +31,11 @@ type Stack s a = Buffer s a
 
 newBufferAsStack :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsStack n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
+
+createBuffer :: (U.Unbox a) => (forall s. ST s (Buffer s a)) -> U.Vector a
+createBuffer f = runST $ do
+  !buf <- f
+  unsafeFreezeBuffer buf
 
 type Queue s a = Buffer s a
 
@@ -203,4 +209,3 @@ viewBackN Buffer {..} i = do
     then Just <$> UM.read internalBuffer (b - 1 - i)
     else return Nothing
 {-# INLINE viewBackN #-}
-
