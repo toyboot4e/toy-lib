@@ -21,7 +21,7 @@ newtype instance U.Vector (A2 a) = V_A2 (U.Vector a)
 instance (U.Unbox a) => U.Unbox (A2 a)
 
 instance (U.Unbox a) => GM.MVector UM.MVector (A2 a) where
-  basicLength (MV_A2 v) = unsafeShiftR (GM.basicLength v) 1
+  basicLength (MV_A2 v) = unsafeShiftR (GM.basicLength v) 1 -- `div` 2
   {-# INLINE basicLength #-}
   basicUnsafeSlice i n (MV_A2 v) = MV_A2 $ GM.basicUnsafeSlice (2 * i) (2 * n) v
   {-# INLINE basicUnsafeSlice #-}
@@ -49,7 +49,7 @@ instance (U.Unbox a) => G.Vector U.Vector (A2 a) where
   {-# INLINE basicUnsafeFreeze #-}
   basicUnsafeThaw (V_A2 v) = MV_A2 `liftM` G.basicUnsafeThaw v
   {-# INLINE basicUnsafeThaw #-}
-  basicLength (V_A2 v) = unsafeShiftR (G.basicLength v) 1
+  basicLength (V_A2 v) = unsafeShiftR (G.basicLength v) 1 -- `div` 2
   {-# INLINE basicLength #-}
   basicUnsafeSlice i n (V_A2 v) = V_A2 $ G.basicUnsafeSlice (2 * i) (2 * n) v
   {-# INLINE basicUnsafeSlice #-}
