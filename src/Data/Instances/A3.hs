@@ -3,7 +3,6 @@
 -- | Unboxed 3D array. The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
 module Data.Instances.A3 where
 
-import Data.Bits
 import Control.Monad
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -11,7 +10,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Unboxed 3D array.
-data A3 a = A3 a a a
+data A3 a = A3 !a !a !a
   deriving (Eq, Show)
 
 newtype instance UM.MVector s (A3 a) = MV_A3 (UM.MVector s a)
@@ -21,7 +20,7 @@ newtype instance U.Vector (A3 a) = V_A3 (U.Vector a)
 instance (U.Unbox a) => U.Unbox (A3 a)
 
 instance (U.Unbox a) => GM.MVector UM.MVector (A3 a) where
-  basicLength (MV_A3 v) = unsafeShiftR (GM.basicLength v) 1
+  basicLength (MV_A3 v) = GM.basicLength v `div` 3
   {-# INLINE basicLength #-}
   basicUnsafeSlice i n (MV_A3 v) = MV_A3 $ GM.basicUnsafeSlice (3 * i) (3 * n) v
   {-# INLINE basicUnsafeSlice #-}
@@ -49,7 +48,7 @@ instance (U.Unbox a) => G.Vector U.Vector (A3 a) where
   {-# INLINE basicUnsafeFreeze #-}
   basicUnsafeThaw (V_A3 v) = MV_A3 `liftM` G.basicUnsafeThaw v
   {-# INLINE basicUnsafeThaw #-}
-  basicLength (V_A3 v) = unsafeShiftR (G.basicLength v) 1
+  basicLength (V_A3 v) = G.basicLength v `div` 3
   {-# INLINE basicLength #-}
   basicUnsafeSlice i n (V_A3 v) = V_A3 $ G.basicUnsafeSlice (3 * i) (3 * n) v
   {-# INLINE basicUnsafeSlice #-}
