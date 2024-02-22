@@ -185,6 +185,8 @@ library
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
     Data.Graph.TwoSat
+    Data.Instances.A2
+    Data.Instances.A3
     Data.Instances.Mat2x2
     Data.ModInt
     Data.MultiSet
