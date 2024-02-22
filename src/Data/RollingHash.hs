@@ -47,11 +47,11 @@ import GHC.TypeLits
 -- [ABC 331 F - Palindrome Query](https://atcoder.jp/contests/abc331/tasks/abc331_f)
 data RH b p = RH
   { -- | Length of the original string.
-    lenRH :: !Int,
+    lenRH :: {-# UNPACK #-} !Int,
     -- | \$b^{lenRH - 1}$.
-    digitRH :: !Int,
+    digitRH :: {-# UNPACK #-} !Int,
     -- | The hash value.
-    hashRH :: !Int
+    hashRH :: {-# UNPACK #-} !Int
   }
   -- TODO: ignore @digitRH@ on @Eq@
   deriving (Eq, Ord, Show)
