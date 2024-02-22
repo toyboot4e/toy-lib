@@ -17,7 +17,6 @@ import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
 import Data.List (foldl')
 import Data.Maybe
-import Data.ModInt
 import Data.Proxy
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Generic as G
@@ -26,8 +25,6 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts
 import GHC.TypeLits
-
--- TODO: Remove the use of Moint
 
 -- | Rolling hash of a string.
 -- = Cummulative sum
@@ -49,11 +46,12 @@ import GHC.TypeLits
 --
 -- [ABC 331 F - Palindrome Query](https://atcoder.jp/contests/abc331/tasks/abc331_f)
 data RH b p = RH
-  { lenRH :: !Int,
-    -- | \$b^{lenRH - 1}$
-    digitRH :: !(ModInt p),
+  { -- | Length of the original string.
+    lenRH :: !Int,
+    -- | \$b^{lenRH - 1}$.
+    digitRH :: !Int,
     -- | The hash value.
-    hashRH :: !(ModInt p)
+    hashRH :: !Int
   }
   -- TODO: ignore @digitRH@ on @Eq@
   deriving (Eq, Ord, Show)
@@ -63,8 +61,8 @@ data RH b p = RH
 -- = Warning
 -- The input must be less than @p@.
 {-# INLINE rh1 #-}
-rh1 :: (KnownNat p) => Int -> RH b p
-rh1 !x = RH 1 1 (ModInt x)
+rh1 :: Int -> RH b p
+rh1 !x = RH 1 1 x
 
 instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
   {-# INLINE (<>) #-}
@@ -72,9 +70,12 @@ instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
   (RH 0 !_ !_) <> rh = rh
   (RH !len1 !digit1 !hash1) <> (RH !len2 !digit2 !hash2) = RH (len1 + len2) digit' hash'
     where
-      !b = fromInteger $ natVal' (proxy# @b) :: ModInt p
-      !digit' = b * digit1 * digit2
-      !hash' = hash1 * (b * digit2) + hash2
+      -- mod p
+      !b = fromInteger $ natVal' (proxy# @b)
+      !p = fromInteger $ natVal' (proxy# @p)
+      -- never overflow! (998244353 < 2^31)
+      !digit' = b * digit1 `mod` p * digit2 `mod` p
+      !hash' = ((hash1 * b) `mod` p * digit2 + hash2) `mod` p
 
 instance (KnownNat b, KnownNat p) => Monoid (RH b p) where
   {-# INLINE mempty #-}
@@ -87,9 +88,9 @@ type RHRepr = (Int, Int, Int)
 
 instance U.IsoUnbox (RH b p) RHRepr where
   {-# INLINE toURepr #-}
-  toURepr (RH !a !b !c) = (a, unModInt b, unModInt c)
+  toURepr (RH !a !b !c) = (a, b, c)
   {-# INLINE fromURepr #-}
-  fromURepr (!a, !b, !c) = RH a (ModInt b) (ModInt c)
+  fromURepr (!a, !b, !c) = RH a b c
 
 newtype instance U.MVector s (RH b p) = MV_RH (UM.MVector s RHRepr)
 
