@@ -19,7 +19,11 @@ import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (EdgeId, Vertex)
 import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
+import qualified Data.IntMap as IM
+import qualified Data.Heap as H
 import Data.Maybe
+import Control.Monad.State.Class
+import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
 import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -168,6 +172,23 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
     UM.write vis v1 False
     return $ max d1 maxDistance
 
+-- | A side effect-only not generic-enough DFS.
+nonGenericDfs :: (PrimMonad m) => Int -> (Vertex -> m (U.Vector Vertex)) -> (Vertex -> m ()) -> Vertex -> m ()
+nonGenericDfs !nVerts !gr !visit !v0 = do
+  !vis <- UM.replicate nVerts False
+  UM.write vis v0 True
+  flip fix v0 $ \loop v1 -> do
+    !vs <- gr v1
+    U.forM_ vs $ \v2 -> do
+      !b <- UM.read vis v2
+      unless b $ do
+        UM.write vis v2 True
+        visit v2
+        loop v2
+        -- for visiting every path:
+        -- UM.write vis v2 False
+        return ()
+
 -- | /O(V+E)/ Marks connected vertices. Also consider using union-find tree.
 componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
 componentsVecSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ do
@@ -293,6 +314,40 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
 
   return dist
   where
+    {-# INLINE merge #-}
+    merge :: w -> w -> w
+    merge = (+)
+
+-- TODO: apply format
+-- TODO: test
+genericSparseDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> IM.IntMap w
+genericSparseDj !gr !nVerts !nEdges !undef !vs0 = (`execState` IM.empty) $ do
+  U.forM_ vs0 $ \v -> do
+    modify' $ IM.insert v 0
+
+  let !heap0 = H.fromList $ V.toList $ V.map (H.Entry 0) $ U.convert vs0
+  flip fix heap0 $ \loop !heap ->
+    case H.uncons heap of
+      Nothing -> return ()
+      Just (H.Entry !w1 !v1, !heap') -> do
+        !newVisit <- (\case Just w | w == w1 -> True; _ -> False) <$> gets (IM.lookup v1)
+        !nextHeap <-
+          if newVisit
+            then do
+              (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
+                !w2 <- fromMaybe undef <$> gets (IM.lookup v2)
+                let !w2' = merge w1 dw2
+                if (w2 == undef || w2' < w2)
+                  then do
+                    modify' $ IM.insert v2 w2'
+                    return $ H.insert (H.Entry w2' v2) h
+                  else do
+                    return h
+            else do
+              return heap'
+        loop nextHeap
+  where
+    {-# INLINE merge #-}
     merge :: w -> w -> w
     merge = (+)
 
