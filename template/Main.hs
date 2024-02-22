@@ -1,7 +1,7 @@
 {- ORMOLU_DISABLE -}
 
-{-# LANGUAGE BlockArguments, DataKinds, DefaultSignatures, DerivingVia, LambdaCase, MultiWayIf #-}
-{-# LANGUAGE NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
+{-# LANGUAGE BlockArguments, DataKinds, DefaultSignatures, DerivingVia, LambdaCase, MagicHash #-}
+{-# LANGUAGE MultiWayIf, NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies #-}
 
 -- TODO: overloaded lists (not working for the union-find module?)

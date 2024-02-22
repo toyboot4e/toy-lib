@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -8,7 +9,7 @@ module Data.ModInt where
 
 import Data.Coerce
 import Data.Core.SemigroupAction
-import Data.Proxy
+import GHC.Exts
 import qualified Data.Ratio as Ratio
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
@@ -27,9 +28,9 @@ newtype ModInt p = ModInt {unModInt :: Int}
 deriving newtype instance (KnownNat p) => Real (ModInt p)
 
 instance (KnownNat p) => Num (ModInt p) where
-  (ModInt !x1) + (ModInt !x2) = ModInt $! (x1 + x2) `mod` fromInteger (natVal (Proxy @p))
-  (ModInt !x1) * (ModInt !x2) = ModInt $! (x1 * x2) `mod` fromInteger (natVal (Proxy @p))
-  negate (ModInt !v) = ModInt $ (-v) `mod` fromInteger (natVal (Proxy @p))
+  (ModInt !x1) + (ModInt !x2) = ModInt $! (x1 + x2) `mod` fromInteger (natVal' (proxy# @p))
+  (ModInt !x1) * (ModInt !x2) = ModInt $! (x1 * x2) `mod` fromInteger (natVal' (proxy# @p))
+  negate (ModInt !v) = ModInt $ (-v) `mod` fromInteger (natVal' (proxy# @p))
   abs = id
   signum _ = 1
   fromInteger = ModInt . fromInteger
@@ -38,14 +39,14 @@ instance (KnownNat p) => Num (ModInt p) where
 instance (KnownNat p) => Fractional (ModInt p) where
   -- \| Reciprocal of x (inverse of x).
   -- REMARK: This is TOO slow. Do cache when possible.
-  recip (ModInt !x) = ModInt $! invModF x (fromInteger (natVal (Proxy @p)))
+  recip (ModInt !x) = ModInt $! invModF x (fromInteger (natVal' (proxy# @p)))
   fromRational !r = ModInt n / ModInt d
     where
       n = fromInteger $! Ratio.numerator r
       d = fromInteger $! Ratio.denominator r
 
 instance (KnownNat p) => Enum (ModInt p) where
-  toEnum = ModInt . (`mod` fromInteger (natVal (Proxy @p)))
+  toEnum = ModInt . (`mod` fromInteger (natVal' (proxy# @p)))
   fromEnum = coerce
 
 instance (KnownNat p) => SemigroupAction (Product (ModInt p)) (ModInt p) where

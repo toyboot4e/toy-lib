@@ -1,4 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | The rolling hash algorithm lets you create fastly (\(O(1)\)) comparable / concatanatable string
 -- slice in after \(O(N)\) preparation.
@@ -12,14 +17,89 @@ import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
 import Data.List (foldl')
 import Data.Maybe
+import Data.ModInt
 import Data.Proxy
-import GHC.TypeLits
 import Data.Tuple.Extra hiding (first, second)
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Exts
+import GHC.TypeLits
 
--- {{{ Rolling hash
+-- TODO: Remove the use of Moint
 
--- TODO: rolling hash on a segment tree
+-- | Rolling hash of a string.
+-- = Cummulative sum
+--
+-- Slice (2, 4) of a string "abcde" is given as this:
+--
+-- >            s :=     a       b       c       d       e
+-- >            s4 = b^4 a + b^3 b + b^2 c + b^1 d + b^0 e
+-- >            s2 = b^1 a + b^0 b
+-- > s4 - s2 * b^3 =                 b^2 c + b^1 d + b^0 e
+--
+-- TODO: Define `Group` class and generalize `csum1D`.
+--
+-- = Monoid
+--
+-- TODO
+--
+-- = Typical prolbems
+--
+-- [ABC 331 F - Palindrome Query](https://atcoder.jp/contests/abc331/tasks/abc331_f)
+data RH b p = RH
+  { lenRH :: !Int,
+    -- | \$b^{lenRH - 1}$
+    digitRH :: !(ModInt p),
+    -- | The hash value.
+    hashRH :: !(ModInt p)
+  }
+  -- TODO: ignore @digitRH@ on @Eq@
+  deriving (Eq, Ord, Show)
+
+-- | Creates a one-length `RH` from an integer.
+--
+-- = Warning
+-- The input must be less than @p@.
+{-# INLINE rh1 #-}
+rh1 :: (KnownNat p) => Int -> RH b p
+rh1 !x = RH 1 1 (ModInt x)
+
+instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
+  {-# INLINE (<>) #-}
+  rh <> (RH 0 !_ !_) = rh
+  (RH 0 !_ !_) <> rh = rh
+  (RH !len1 !digit1 !hash1) <> (RH !len2 !digit2 !hash2) = RH (len1 + len2) digit' hash'
+    where
+      !b = fromInteger $ natVal' (proxy# @b) :: ModInt p
+      !digit' = b * digit1 * digit2
+      !hash' = hash1 * (b * digit2) + hash2
+
+instance (KnownNat b, KnownNat p) => Monoid (RH b p) where
+  {-# INLINE mempty #-}
+  mempty = RH 0 1 0
+
+-- | `RH` conversion type for unboxed vectors.
+--
+-- TODO: Unboxed implementation without the lazy tuples.
+type RHRepr = (Int, Int, Int)
+
+instance U.IsoUnbox (RH b p) RHRepr where
+  {-# INLINE toURepr #-}
+  toURepr (RH !a !b !c) = (a, unModInt b, unModInt c)
+  {-# INLINE fromURepr #-}
+  fromURepr (!a, !b, !c) = RH a (ModInt b) (ModInt c)
+
+newtype instance U.MVector s (RH b p) = MV_RH (UM.MVector s RHRepr)
+
+newtype instance U.Vector (RH b p) = V_RH (U.Vector RHRepr)
+
+deriving via (RH b p `U.As` RHRepr) instance GM.MVector UM.MVector (RH b p)
+
+deriving via (RH b p `U.As` RHRepr) instance G.Vector U.Vector (RH b p)
+
+instance U.Unbox (RH b p)
 
 -- | Rolling hash of a string.
 --
@@ -96,5 +176,3 @@ emptyHS = HashSlice 0 0
 -- | Concatanates two rolling hash slices.
 concatHS :: forall b p t. (KnownNat p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
 concatHS !rhash !slices = foldl' (consHS rhash) emptyHS slices
-
--- }}}
