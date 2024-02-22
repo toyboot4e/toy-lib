@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -15,6 +14,7 @@ module Data.RollingHash where
 import Control.Monad.State.Class
 import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
+import Data.Instances.A3
 import Data.List (foldl')
 import Data.Maybe
 import Data.Proxy
@@ -81,16 +81,21 @@ instance (KnownNat b, KnownNat p) => Monoid (RH b p) where
   {-# INLINE mempty #-}
   mempty = RH 0 1 0
 
--- | `RH` conversion type for unboxed vectors.
---
--- TODO: Unboxed implementation without the lazy tuples.
-type RHRepr = (Int, Int, Int)
+type RHRepr = A3 Int
 
 instance U.IsoUnbox (RH b p) RHRepr where
   {-# INLINE toURepr #-}
-  toURepr (RH !a !b !c) = (a, b, c)
+  toURepr (RH a b c) = A3 a b c
   {-# INLINE fromURepr #-}
-  fromURepr (!a, !b, !c) = RH a b c
+  fromURepr (A3 a b c) = RH a b c
+
+-- type RHRepr = (Int, Int, Int)
+--
+-- instance U.IsoUnbox (RH b p) RHRepr where
+--   {-# INLINE toURepr #-}
+--   toURepr (RH a b c) = (a, b, c)
+--   {-# INLINE fromURepr #-}
+--   fromURepr (!a, !b, !c) = RH a b c
 
 newtype instance U.MVector s (RH b p) = MV_RH (UM.MVector s RHRepr)
 
