@@ -14,7 +14,7 @@ module Data.RollingHash where
 import Control.Monad.State.Class
 import Control.Monad.State.Strict (evalState)
 import Data.Char (ord)
-import Data.Instances.A3
+import Data.Instances.A2
 import Data.List (foldl')
 import Data.Maybe
 import Data.Proxy
@@ -46,14 +46,12 @@ import GHC.TypeLits
 --
 -- [ABC 331 F - Palindrome Query](https://atcoder.jp/contests/abc331/tasks/abc331_f)
 data RH b p = RH
-  { -- | Length of the original string.
-    lenRH :: {-# UNPACK #-} !Int,
-    -- | \$b^{lenRH - 1}$.
-    digitRH :: {-# UNPACK #-} !Int,
+  { -- | \$b^{length}$.
+    nextDigitRH :: {-# UNPACK #-} !Int,
     -- | The hash value.
     hashRH :: {-# UNPACK #-} !Int
   }
-  -- TODO: ignore @digitRH@ on @Eq@
+  -- TODO: ignore @nextDigitRH@ on @Eq@
   deriving (Eq, Ord, Show)
 
 -- | Creates a one-length `RH` from an integer.
@@ -61,41 +59,30 @@ data RH b p = RH
 -- = Warning
 -- The input must be less than @p@.
 {-# INLINE rh1 #-}
-rh1 :: Int -> RH b p
-rh1 !x = RH 1 1 x
+rh1 :: forall b p. (KnownNat b) => Int -> RH b p
+rh1 = RH (fromInteger (natVal' (proxy# @b)))
 
 instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
   {-# INLINE (<>) #-}
-  rh <> (RH 0 !_ !_) = rh
-  (RH 0 !_ !_) <> rh = rh
-  (RH !len1 !digit1 !hash1) <> (RH !len2 !digit2 !hash2) = RH (len1 + len2) digit' hash'
+  (RH !digit1 !hash1) <> (RH !digit2 !hash2) = RH digit' hash'
     where
       -- mod p
-      !b = fromInteger $ natVal' (proxy# @b)
       !p = fromInteger $ natVal' (proxy# @p)
       -- never overflow! (998244353 < 2^31)
-      !digit' = b * digit1 `mod` p * digit2 `mod` p
-      !hash' = ((hash1 * b) `mod` p * digit2 + hash2) `mod` p
+      !digit' = digit1 * digit2 `mod` p
+      !hash' = (hash1 * digit2 + hash2) `mod` p
 
 instance (KnownNat b, KnownNat p) => Monoid (RH b p) where
   {-# INLINE mempty #-}
-  mempty = RH 0 1 0
+  mempty = RH 1 0
 
-type RHRepr = A3 Int
+type RHRepr = A2 Int
 
 instance U.IsoUnbox (RH b p) RHRepr where
   {-# INLINE toURepr #-}
-  toURepr (RH a b c) = A3 a b c
+  toURepr (RH a b) = A2 a b
   {-# INLINE fromURepr #-}
-  fromURepr (A3 a b c) = RH a b c
-
--- type RHRepr = (Int, Int, Int)
---
--- instance U.IsoUnbox (RH b p) RHRepr where
---   {-# INLINE toURepr #-}
---   toURepr (RH a b c) = (a, b, c)
---   {-# INLINE fromURepr #-}
---   fromURepr (!a, !b, !c) = RH a b c
+  fromURepr (A2 a b) = RH a b
 
 newtype instance U.MVector s (RH b p) = MV_RH (UM.MVector s RHRepr)
 
