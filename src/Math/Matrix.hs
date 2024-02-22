@@ -1,3 +1,5 @@
+{-# LANGUAGE MagicHash #-}
+
 -- | TODO: Refactor in my way.
 module Math.Matrix where
 
@@ -6,8 +8,8 @@ import Data.Array.Unboxed (UArray)
 import Data.Core.SemigroupAction
 import Data.List (foldl1')
 import Data.List.Extra (chunksOf)
-import Data.Proxy
 import Data.Tuple.Extra (dupe)
+import GHC.Exts
 import GHC.TypeLits
 import ToyLib.Macro
 import ToyLib.Prelude ((.:))
@@ -74,10 +76,10 @@ newtype MulMatMod p = MulMatMod (UArray (Int, Int) Int)
 -- Implementation over `Int` only!
 
 instance forall p. (KnownNat p) => Semigroup (MulMatMod p) where
-  (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (fromInteger (natVal (Proxy @p))) m1 m2
+  (MulMatMod !m1) <> (MulMatMod !m2) = MulMatMod $ mulMatMod (fromInteger (natVal' (proxy# @p))) m1 m2
 
 -- | Semigroup action over a list as a column vector
 instance (KnownNat p) => SemigroupAction (MulMatMod p) [Int] where
-  sact (MulMatMod !mat) !col = mulMatToColMod mat (fromInteger (natVal (Proxy @p))) col
+  sact (MulMatMod !mat) !col = mulMatToColMod mat (fromInteger (natVal' (proxy# @p))) col
 
 -- }}}
