@@ -4,11 +4,30 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | The rolling hash algorithm lets you create fastly (\(O(1)\)) comparable / concatanatable string
--- slice in after \(O(N)\) preparation.
+-- | The rolling hash algorithm lets you create ( \(O(N)\) or \(O(N \log N)\) ) fastly ( \(O(1)\) )
+-- comparable, concatanatable string.
 --
--- I suspect if slices longer than the orignal string can be calculated without panic in my
--- implementation.
+-- = Overview
+--
+-- Rolling hash of a string is calculated as a B-adic number. As an example, slice [2, 4] of a
+-- string "abcde" is given as this:
+--
+-- >            s :=     a       b       c       d       e
+-- >            s4 = b^4 a + b^3 b + b^2 c + b^1 d + b^0 e
+-- >            s2 = b^1 a + b^0 b
+-- > s4 - s2 * b^3 =                 b^2 c + b^1 d + b^0 e
+--
+--
+-- = Cumulative sum-based implementation
+--
+-- `RollingHash` is a cumulative sum-based implementation. It needs to calculate
+-- \(b^{n_1} / b^{n_2}\) for the inverse operation. Thus it holds a cache of \(\{b^{n}\}_{n}\) and
+-- not so flexible. Unless extreamly fast calculaton is required, `RH` is better.
+--
+-- = Monoid-based implmentation
+--
+-- `RH` is the monoid-based rolling hash implementation. Convert a string into a segment tree of
+-- `RH` and you win.
 module Data.RollingHash where
 
 import Control.Monad.State.Class
@@ -26,21 +45,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts
 import GHC.TypeLits
 
--- | Rolling hash of a string.
--- = Cummulative sum
---
--- Slice (2, 4) of a string "abcde" is given as this:
---
--- >            s :=     a       b       c       d       e
--- >            s4 = b^4 a + b^3 b + b^2 c + b^1 d + b^0 e
--- >            s2 = b^1 a + b^0 b
--- > s4 - s2 * b^3 =                 b^2 c + b^1 d + b^0 e
---
--- TODO: Define `Group` class and generalize `csum1D`.
---
--- = Monoid
---
--- TODO
+-- | Rolling hash monoid.
 --
 -- = Typical prolbems
 --
