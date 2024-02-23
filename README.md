@@ -38,9 +38,9 @@ TODO
 
 ### Installation
 
-- GHC 9.4.5 (corresponds to [lts-21.7](https://www.stackage.org/lts-21.7))
+- GHC 9.4.5 (corresponds to [lts-21.7](https://www.stackage.org/lts-21.7))  
   Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)
-- HLS 2.2.0
+- HLS 2.2.0  
   See [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html)
 
 ### `toy-lib.cabal`
@@ -52,7 +52,7 @@ ghc-options:
 - -Wno-missing-export-lists
 ```
 
-We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand it, but all the extensions enabled by `GHC2021` are enabled as `default-extensisons`:
+We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand `GHC2021`, but all the extensions enabled by it are enabled as `default-extensisons`:
 
 ```yaml
 default-language: Haskell2010
@@ -85,14 +85,15 @@ $ cabal haddock --open
 
 We have limitations coming from [haskell-src-exts](https://github.com/haskell-suite/haskell-src-exts):
 
-- Can't use `MultiWayIf`
+- Can't use `MultiWayIf`  
   `haskell-src-exts` does not understand it well.
 
-- Can't use `GHC2021` syntax
+- Can't use `GHC2021` syntax  
   For example `import X qualified as Y` is not available.
-  > But [the default language extensisons enabled by `GHC2021`](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/control.html#extension-GHC2021) is supported and needs not to be declared.
 
 ## Thanks
 
 [cojna/iota](https://github.com/cojna/iota)
+
+[`haddock`]: https://haskell-haddock.readthedocs.io/en/latest/index.html
 
