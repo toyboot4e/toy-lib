@@ -20,7 +20,7 @@ Bundle the whole / part of the ToyLib modules into one `Main.hs` with a specifie
 | One module    | :construction: In progress   |
 | stdin         | :construction: In progress   |
 
-#### Available formats
+#### Available outputs
 
 | Format                      | Status                       |
 |-----------------------------|------------------------------|
