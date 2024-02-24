@@ -238,13 +238,13 @@ genericBfs !gr !nVerts !source = U.create $ do
 
   return dist
 
--- | /O(V+E)/ 01-BFS. Unreachable vertices are given distance of @-1@.
-genericBfs01 :: (Ix i, U.Unbox i) => (i, i) -> (i -> U.Vector (i, Int)) -> U.Vector i -> IxUVector i Int
-genericBfs01 !bndExt !gr !sources = IxVector bndExt $ U.create $ do
+-- | \(O(V+E)\) 01-BFS. Unreachable vertices are given distance of @-1@.
+genericBfs01 :: (Ix i, U.Unbox i) => (i, i) -> (i -> U.Vector (i, Int)) -> Int -> U.Vector i -> IxUVector i Int
+genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
   let !undef = -1 :: Int
   let !nVertsExt = rangeSize bndExt
   !vec <- IxVector bndExt <$> UM.replicate nVertsExt undef
-  !deque <- newBufferAsDeque nVertsExt
+  !deque <- newBufferAsDeque (nEdges + 1)
 
   U.forM_ sources $ \vExt -> do
     pushFront deque (0 :: Int, vExt)
@@ -320,8 +320,8 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
 
 -- TODO: apply format
 -- TODO: test
-genericSparseDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> IM.IntMap w
-genericSparseDj !gr !nVerts !nEdges !undef !vs0 = (`execState` IM.empty) $ do
+genericSparseDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> w -> U.Vector Vertex -> IM.IntMap w
+genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
   U.forM_ vs0 $ \v -> do
     modify' $ IM.insert v 0
 
