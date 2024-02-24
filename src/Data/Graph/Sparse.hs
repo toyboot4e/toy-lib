@@ -9,6 +9,8 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
+import Control.Monad.State.Class
+import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
 import Data.Array.IArray
 import Data.Bifunctor
 import Data.BinaryHeap
@@ -19,11 +21,9 @@ import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (EdgeId, Vertex)
 import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
-import qualified Data.IntMap as IM
 import qualified Data.Heap as H
+import qualified Data.IntMap as IM
 import Data.Maybe
-import Control.Monad.State.Class
-import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
 import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -129,9 +129,9 @@ adjW SparseGraph {..} v = U.zip vs ws
     !ws = U.unsafeSlice o1 (o2 - o1) edgeWeightsSG
 
 -- | Retrieves adjacent vertex indices with weights.
-{-# INLINE adjWIx #-}
-adjWIx :: (Unindex i, U.Unbox w) => SparseGraph i w -> i -> U.Vector (i, w)
-adjWIx gr i = U.map (first (unindex (boundsSG gr))) $ adjW gr v
+{-# INLINE adjIxW #-}
+adjIxW :: (Unindex i, U.Unbox w) => SparseGraph i w -> i -> U.Vector (i, w)
+adjIxW gr i = U.map (first (unindex (boundsSG gr))) $ adjW gr v
   where
     !v = index (boundsSG gr) i
 
@@ -337,7 +337,7 @@ genericSparseDj !gr !nVerts !nEdges !undef !vs0 = (`execState` IM.empty) $ do
               (\f -> U.foldM' f heap' (gr v1)) $ \h (!v2, !dw2) -> do
                 !w2 <- fromMaybe undef <$> gets (IM.lookup v2)
                 let !w2' = merge w1 dw2
-                if (w2 == undef || w2' < w2)
+                if w2 == undef || w2' < w2
                   then do
                     modify' $ IM.insert v2 w2'
                     return $ H.insert (H.Entry w2' v2) h
@@ -394,10 +394,10 @@ treeDfsPathSG :: (HasCallStack, Unindex i) => SparseGraph i w -> i -> i -> [Vert
 treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
   let !undef = -1 :: Int
 
-  let loop !parent !v1 !stack = do
-        if v1 == sink
-          then return $ Just (v1 : stack)
-          else do
+  let loop !parent !v1 !stack
+        | v1 == sink = do
+            return $ Just (v1 : stack)
+        | otherwise = do
             flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
               Nothing -> return Nothing
               Just (!v2, !v2s') -> do
