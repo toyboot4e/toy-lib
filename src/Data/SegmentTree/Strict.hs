@@ -11,7 +11,7 @@ import GHC.Stack (HasCallStack)
 
 -- {{{ Segment tree
 
--- TODO: refactor
+-- TODO: rewrite
 -- TODO: use one-based indices internally?
 
 -- | A mutable segment tree backed by a complete binary tree.
@@ -137,8 +137,8 @@ _updateElement tree@(SegmentTree !f !vec) !i !value = do
     -- TODO: This case never happens, right?
     (-1) -> return ()
     !iParent -> do
-      !c1 <- GM.unsafeRead vec $! iParent * 2 + 1
-      !c2 <- GM.unsafeRead vec $! iParent * 2 + 2
+      !c1 <- GM.unsafeRead vec $ iParent * 2 + 1
+      !c2 <- GM.unsafeRead vec $ iParent * 2 + 2
       _updateElement tree iParent $! f c1 c2
 
 -- | Retrieves the folding result over the inclusive range `[l, r]` from `SegmentTree`.
@@ -159,7 +159,7 @@ querySTree (SegmentTree !f !vec) !lo !hi
           !ansL <- inner (2 * i + 1) l (l + d)
           !ansH <- inner (2 * i + 2) (l + d + 1) h
           pure . Just $ case (ansL, ansH) of
-            (Just !a, Just !b) -> f a b
+            (Just !a, Just !b) -> let !res = f a b in res
             (Just !a, _) -> a
             (_, Just !b) -> b
             (_, _) -> error $ "query error (segment tree): " ++ show (i, (l, h), (lo, hi))
