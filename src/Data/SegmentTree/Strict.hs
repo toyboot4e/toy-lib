@@ -1,6 +1,7 @@
 -- | Strict segment tree
 module Data.SegmentTree.Strict where
 
+import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
@@ -48,26 +49,51 @@ data SegmentTree v s a = SegmentTree (a -> a -> a) (v s a)
 -- TODO: Possibly a show instance?
 -- TODO: Use 1-based index
 
--- | Creates a new segment tree for `n` leaves.
--- REMARK: Always give a zero value. It fills all the nodes including parent nodes, and the parent
--- nodes are not updated.
+-- | Creates a segment tree for `n` leaves.
 {-# INLINE newSTreeG #-}
 newSTreeG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree v (PrimState m) a)
 newSTreeG !f !nLeaves !zero = SegmentTree f <$> GM.replicate nVerts zero
   where
+    -- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
     !nVerts = until (>= 2 * nLeaves) (* 2) 2
 
--- !nVerts = fromJust $ find ((>= (2 * nLeaves)) . bit) [0 .. 63]
-
--- | Creates a boxed segment tree.
+-- | Creates a segment tree of boxed elements.
 {-# INLINE newSTreeV #-}
 newSTreeV :: (PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree VM.MVector (PrimState m) a)
 newSTreeV = newSTreeG
 
--- | Creates an unboxed segment tree.
+-- | Creates a segment tree of unboxed elements.
 {-# INLINE newSTreeU #-}
 newSTreeU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
 newSTreeU = newSTreeG
+
+-- | Creates a segment tree of unboxed monoids monoids.
+{-# INLINE newSTree #-}
+newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree UM.MVector (PrimState m) a)
+newSTree !nLeaves = newSTreeU (<>) nLeaves mempty
+
+-- | Creates a segment tree.
+{-# INLINE generateSTreeG #-}
+generateSTreeG :: (GM.MVector v a, PrimMonad m) => (a -> a -> a) -> Int -> a -> (Int -> a) -> m (SegmentTree v (PrimState m) a)
+generateSTreeG !f !nLeaves !zero !gen = do
+  !stree <- newSTreeG f nLeaves zero
+  forM_ [0 .. nLeaves - 1] $ \i -> do
+    insertSTree stree i $! gen i
+  return stree
+
+-- | Creates a segment tree of boxed elements.
+{-# INLINE generateSTreeV #-}
+generateSTreeV :: (PrimMonad m) => (a -> a -> a) -> Int -> a -> (Int -> a) -> m (SegmentTree VM.MVector (PrimState m) a)
+generateSTreeV = generateSTreeG
+
+-- | Creates a segment tree of unboxed elements.
+{-# INLINE generateSTreeU #-}
+generateSTreeU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> (Int -> a) -> m (SegmentTree UM.MVector (PrimState m) a)
+generateSTreeU = generateSTreeG
+
+{-# INLINE generateSTree #-}
+generateSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree UM.MVector (PrimState m) a)
+generateSTree !xs = generateSTreeG (<>) (U.length xs) mempty (xs U.!)
 
 -- | Sets all the internal values of a segment tree to the given value which has to be zero.
 --
