@@ -96,7 +96,7 @@ generateLazySTreeG !n !f = do
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
     !l <- GM.read as (childL i)
     !r <- GM.read as (childR i)
-    GM.write as i (l <> r)
+    GM.write as i $! l <> r
 
   !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
@@ -219,7 +219,8 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
               then do
                 -- Evaluate the target segmnent and append the result:
                 !ra' <- mact <$!> UM.read ops r <*> GM.read as r
-                return (pred r, ra' <> rAcc)
+                let !ra'' = ra' <> rAcc
+                return (pred r, ra'')
               else return (r, rAcc)
 
           -- go up to the parent segment
@@ -272,8 +273,8 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- mact <$> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
-    !aR' <- mact <$> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
+    !aL' <- mact <$!> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
+    !aR' <- mact <$!> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
     GM.write as vertex $! aL' <> aR'
   where
     !nVerts = GM.length as
