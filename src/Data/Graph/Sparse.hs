@@ -139,7 +139,7 @@ adjIxW gr i = U.map (first (unindex (boundsSG gr))) $ adjW gr v
 -- DFS / BFS / 01-BFS / Dijkstra
 ----------------------------------------------------------------------------------------------------
 
--- | /O(V+E)/ Depth-first search. Returns a vector of distances to each vertex. Unreachable
+-- | \(O(V+E)\) Depth-first search. Returns a vector of distances to each vertex. Unreachable
 -- vertices are given distance of `-1`.
 dfsSG :: (Unindex i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 dfsSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ do
@@ -155,7 +155,7 @@ dfsSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ do
 
   return dist
 
--- | /O(V+E)/ Depth-first search. Just a template.
+-- | \(O(V+E)\) Depth-first search. Just a template.
 --
 -- = Typical problems
 -- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
@@ -189,7 +189,7 @@ nonGenericDfs !nVerts !gr !visit !v0 = do
         -- UM.write vis v2 False
         return ()
 
--- | /O(V+E)/ Marks connected vertices. Also consider using union-find tree.
+-- | \(O(V+E)\) Marks connected vertices. Also consider using union-find tree.
 componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
 componentsVecSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ do
   !vis <- UM.replicate nVertsSG False
@@ -206,13 +206,13 @@ componentsVecSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ d
   where
     !source = index boundsSG sourceIx :: Vertex
 
--- | /O(V+E)/ breadth-first search. Unreachable vertices are given distance of @-1@.
+-- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
 bfsSG gr@SparseGraph {..} !sourceIx =
   IxVector boundsSG $
     genericBfs (gr `adj`) nVertsSG (index boundsSG sourceIx)
 
--- | /O(V+E)/ breadth-first search. Unreachable vertices are given distance of @-1@.
+-- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !source = U.create $ do
   let !undef = -1 :: Int
@@ -272,7 +272,7 @@ genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
 
   return $ vecIV vec
 
--- | /O((E+V) \log {V})/ Dijkstra's algorithm.
+-- | \(O((E+V) \log {V})\) Dijkstra's algorithm.
 --
 -- >>> let gr = buildWSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1, 1 :: Int), (1, 2, 1), (1, 3, 100), (2, 3, 1)])
 -- >>> vecIV $ djSG gr (-1 :: Int) (U.singleton 0)
@@ -282,7 +282,7 @@ djSG gr@SparseGraph {..} !undef !is0 =
   IxVector boundsSG $
     genericDj (gr `adjW`) nVertsSG nEdgesSG undef (U.map (index boundsSG) is0)
 
--- | /O((E+V) \log {V})/ Dijkstra's algorithm.
+-- | \(O((E+V) \log {V})\) Dijkstra's algorithm.
 --
 -- Does pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
 --
@@ -409,7 +409,7 @@ treeDfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = fromJust $ runST $ do
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
 
--- | /O(V+E)/ depth-first search. Returns a vector of parents. The source vertex or unrechable
+-- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
 --
 -- >>> createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
@@ -442,7 +442,7 @@ createDfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
   where
     !source = index boundsSG sourceIx
 
--- | /O(V+E)/ breadth-first search. Returns a vector of parents. The source vertex or unrechable
+-- | \(O(V+E)\) breadth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
 --
 -- >>> createBfsTreeSG (buildSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
@@ -651,7 +651,7 @@ foldTreeAllSG !tree !acc0At !toOp =
     !root0 = 0 :: Int
     !op0 = mempty @op
 
--- | /O(V^3)/ Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
+-- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
 -- usually like @maxBound `div` 2@.
 --
 -- It's strict about path connection and invalid paths are ignored.
