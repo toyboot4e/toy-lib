@@ -51,7 +51,7 @@ import GHC.TypeLits
 --
 -- [ABC 331 F - Palindrome Query](https://atcoder.jp/contests/abc331/tasks/abc331_f)
 data RH b p = RH
-  { -- | \$b^{length}$.
+  { -- | \(b^{length}\).
     nextDigitRH :: {-# UNPACK #-} !Int,
     -- | The hash value.
     hashRH :: {-# UNPACK #-} !Int
@@ -111,7 +111,7 @@ instance U.Unbox (RH b p)
 -- > s4 - s2 * b^3 =                 b^2 c + b^1 d + b^0 e
 data RollingHash b p = RollingHash
   { sourceLength :: !Int,
-    -- | \$\{B^i mod p\}_{i \elem [0, n)}$
+    -- | \(\{B^i mod p\}_{i \elem [0, n)}\)
     dimensions :: !(U.Vector Int),
     hashSum :: !(U.Vector Int)
   }
