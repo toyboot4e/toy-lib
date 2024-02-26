@@ -240,10 +240,16 @@ ints5 = auto
 ints6 :: IO (Int, Int, Int, Int, Int, Int)
 ints6 = auto
 
+ints11 :: IO (Int, Int)
+ints11 = (\(!v1, !v2) -> (v1 - 1, v2 - 1)) <$> ints2
+
+ints110 :: IO (Int, Int, Int)
+ints110 = (\(!v1, !v2, !w) -> (v1 - 1, v2 - 1, w)) <$> ints3
+
 -- vectors
 
-intsW :: (G.Vector v Int) => Int -> IO (v Int)
-intsW !w = G.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
+intsN :: (G.Vector v Int) => Int -> IO (v Int)
+intsN !w = G.unfoldrExactN w (fromJust . BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 -- | Reads one line as an integer.
 intsG :: (G.Vector v Int) => IO (v Int)
@@ -385,4 +391,3 @@ printGrid gr = do
   V.forM_ rows $ putStrLn . U.toList
   where
     (!h, !w) = boundsSize2 (boundsIV gr)
-
