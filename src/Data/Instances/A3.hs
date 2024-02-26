@@ -9,7 +9,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | Unboxed 3D array.
+-- | Unboxed 3D array packed in one array when stored in `U.Vector`.
 data A3 a = A3 !a !a !a
   deriving (Eq, Show)
 

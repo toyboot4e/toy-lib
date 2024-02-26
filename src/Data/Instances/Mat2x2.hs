@@ -6,6 +6,8 @@
 -- | `Mat2x2` and `V2` as a `SemigroupAction` instance.
 module Data.Instances.Mat2x2 where
 
+-- TODO: store in one array?
+
 import Data.Core.SemigroupAction
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM

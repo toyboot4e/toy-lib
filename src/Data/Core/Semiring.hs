@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Semiring`.
+-- | `Semiring`. I usually use `Num` + `Monoid` as an implicit `Semiring` though.
 module Data.Core.Semiring where
 
 import qualified Data.Vector.Generic as G

@@ -10,7 +10,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | Unboxed 2D array.
+-- | Unboxed 2D array packed in one array when stored in `U.Vector`.
 data A2 a = A2 a a
   deriving (Eq, Show)
 

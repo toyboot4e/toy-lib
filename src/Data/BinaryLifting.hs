@@ -63,7 +63,7 @@ mactBL = sactBL
 
 -- | Old binary lifting implementation without typeclasses. TODO: Remove
 newDoubling :: (G.Vector v a, G.Vector v Int) => a -> (a -> a) -> v a
-newDoubling !oper0 !squareCompositeF = G.scanl' step oper0 $! G.enumFromN (1 :: Int) 62
+newDoubling !oper0 !squareCompositeF = G.scanl' step oper0 $ G.enumFromN (1 :: Int) 62
   where
     step !oper !_ = squareCompositeF oper
 
