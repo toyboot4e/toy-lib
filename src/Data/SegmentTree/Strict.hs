@@ -3,6 +3,7 @@ module Data.SegmentTree.Strict where
 
 import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
@@ -12,6 +13,7 @@ import GHC.Stack (HasCallStack)
 -- {{{ Segment tree
 
 -- TODO: rewrite
+-- TODO: change newSTreeU to take monoid first and then the number
 -- TODO: use one-based indices internally?
 
 -- | A mutable segment tree backed by a complete binary tree.
@@ -67,10 +69,15 @@ newSTreeV = newSTreeG
 newSTreeU :: (U.Unbox a, PrimMonad m) => (a -> a -> a) -> Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
 newSTreeU = newSTreeG
 
--- | Creates a segment tree of unboxed monoids monoids.
+-- | Creates a segment tree of unboxed monoids.
 {-# INLINE newSTree #-}
 newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree UM.MVector (PrimState m) a)
 newSTree !nLeaves = newSTreeU (<>) nLeaves mempty
+
+-- | Creates a segment tree of unboxed monoid-likes. FIXME: Use `NonNegative` or `Double'` instead.
+{-# INLINE newSTree' #-}
+newSTree' :: (U.Unbox a, Semigroup a, PrimMonad m) => Int -> a -> m (SegmentTree UM.MVector (PrimState m) a)
+newSTree' = newSTreeU (<>)
 
 -- | Creates a segment tree.
 {-# INLINE generateSTreeG #-}
@@ -164,4 +171,11 @@ querySTree (SegmentTree !f !vec) !lo !hi
             (_, Just !b) -> b
             (_, _) -> error $ "query error (segment tree): " ++ show (i, (l, h), (lo, hi))
 
--- }}}
+-- | Retrieves leaves.
+--
+-- WARNING: It doesn't remember correct number of leaves.
+{-# INLINE unsafeFreezeSTree #-}
+unsafeFreezeSTree :: (G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
+unsafeFreezeSTree (SegmentTree _ vec) = do
+  -- 0-based index
+  G.unsafeFreeze $ GM.slice 0 (GM.length vec `div` 2) vec
