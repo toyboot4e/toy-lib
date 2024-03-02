@@ -14,6 +14,7 @@
 -- - `insertBH`,
 -- - `deleteFindTopBH`
 -- - `viewBH`
+-- - `unsafeDeleteBH`
 --
 -- == Reset
 --

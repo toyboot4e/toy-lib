@@ -70,6 +70,8 @@ dbgUM vec = do
   return ()
 
 -- | Shows the leaves of a strict segment tree.
+--
+-- WARNING: It shows unused leaves, too.
 dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTree (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec
@@ -80,6 +82,8 @@ dbgSTree (SegmentTree _ mVec) = do
   return ()
 
 -- | Shows the nodes and the leaves of a strict segment tree,
+--
+-- WARNING: It shows unused nodes and leaves, too.
 dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
 dbgSTreeAll (SegmentTree _ mVec) = do
   !vec <- G.unsafeFreeze mVec

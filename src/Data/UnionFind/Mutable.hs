@@ -76,7 +76,7 @@ rootMUF uf@(MUnionFind !vec) i = do
       UM.unsafeWrite vec i (MUFChild r)
       return r
 
--- | Returns all root vertices.
+-- | \(O(N \log N)\) Returns all root vertices.
 {-# INLINE groupsMUF #-}
 groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
 groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (GM.length vec)]

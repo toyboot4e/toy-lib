@@ -10,10 +10,6 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
--- | From more recent GHC
-clamp :: (Ord a) => (a, a) -> a -> a
-clamp (!low, !high) !a = min high (max a low)
-
 flipOrder :: Ordering -> Ordering
 flipOrder = \case
   GT -> LT
