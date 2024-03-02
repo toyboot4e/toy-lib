@@ -117,6 +117,54 @@ popFront_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
 popFront_ = void . popFront
 {-# INLINE popFront_ #-}
 
+-- | The popped vector is from left to the right order.
+popFrontN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe (U.Vector a))
+popFrontN Buffer {bufferVars, internalBuffer} len = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  if b - f >= len
+    then do
+      res <- U.freeze (UM.slice f len internalBuffer)
+      UM.unsafeWrite bufferVars _bufferFrontPos (f + len)
+      pure $ Just res
+    else return Nothing
+{-# INLINE popFrontN #-}
+
+-- | The popped vector is from left to the right order.
+popBackN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe (U.Vector a))
+popBackN Buffer {bufferVars, internalBuffer} len = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  if b - f >= len
+    then do
+      res <- U.freeze (UM.slice (b - len) len internalBuffer)
+      UM.unsafeWrite bufferVars _bufferBackPos (b - len)
+      pure $ Just res
+    else pure Nothing
+{-# INLINE popBackN #-}
+
+popFrontN_ :: (PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe ())
+popFrontN_ Buffer {bufferVars} len = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  if b - f >= len
+    then do
+      UM.unsafeWrite bufferVars _bufferFrontPos (f + len)
+      pure $ Just ()
+    else pure Nothing
+{-# INLINE popFrontN_ #-}
+
+popBackN_ :: (PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe ())
+popBackN_ Buffer {bufferVars} len = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  if b - f >= len
+    then do
+      UM.unsafeWrite bufferVars _bufferBackPos (b - len)
+      pure $ Just ()
+    else pure Nothing
+{-# INLINE popBackN_ #-}
+
 viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewFront Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
