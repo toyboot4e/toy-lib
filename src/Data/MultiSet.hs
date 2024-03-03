@@ -4,9 +4,7 @@ module Data.MultiSet where
 import qualified Data.IntMap.Strict as IM
 import Data.List (foldl')
 
--- {{{ Multiset
-
--- | Multiset: (nKeys, (key -> count))
+-- | MultiSet: (nKeys, (key -> count))
 type MultiSet = (Int, IM.IntMap Int)
 
 {-# INLINE emptyMS #-}
@@ -57,4 +55,3 @@ decFindMinMS ms@(!_, !im) =
 innerMS :: MultiSet -> IM.IntMap Int
 innerMS (!_, !im) = im
 
--- }}}
