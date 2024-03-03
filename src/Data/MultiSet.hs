@@ -46,9 +46,9 @@ memberMS !k (!_, !im) = IM.member k im
 notMemberMS :: Int -> MultiSet -> Bool
 notMemberMS !k (!_, !im) = IM.notMember k im
 
-{-# INLINE deleteFindMinMS #-}
-deleteFindMinMS :: MultiSet -> (Int, MultiSet)
-deleteFindMinMS ms@(!_, !im) =
+{-# INLINE decFindMinMS #-}
+decFindMinMS :: MultiSet -> (Int, MultiSet)
+decFindMinMS ms@(!_, !im) =
   let !key = fst $ IM.findMin im
    in (key, decMS key ms)
 
