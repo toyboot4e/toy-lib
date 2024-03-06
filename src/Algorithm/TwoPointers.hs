@@ -47,7 +47,7 @@ twoPointersU !n !p = U.unfoldr (uncurry f) s0
 -- | Stateful two pointer method over a vector. Returns the longest non-null inclusive ranges for
 -- each @l@ that satisfy the given @check@.
 {-# INLINE twoPtrM #-}
-twoPtrM :: forall acc m v a. (Monad m, G.Vector v a) => acc -> (acc -> m Bool) -> (acc -> a -> m acc) -> (acc -> a -> m acc) -> v a -> m [(Int, Int)]
+twoPtrM :: forall acc m v a. (Monad m, G.Vector v a) => acc -> (acc -> a -> m Bool) -> (acc -> a -> m acc) -> (acc -> a -> m acc) -> v a -> m [(Int, Int)]
 twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
   where
     inner :: acc -> v a -> v a -> Int -> Int -> m [(Int, Int)]
@@ -55,20 +55,23 @@ twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
       Nothing -> return []
       Just (!y, !pops') -> case G.uncons nexts of
         Just (!x, !nexts') -> do
-          b <- (r - l == 0 ||) <$> p acc
+          b <- (r - l == 0 ||) <$> p acc x
           if b
             then do
               !acc' <- onNext acc x
               inner acc' pops nexts' l (r + 1)
             else do
               !acc' <- onPop acc y
-              ((l, r) :) <$> inner acc' pops' nexts (l - 1) r
+              ((l, r) :) <$> inner acc' pops' nexts (l + 1) r
+        -- FIXME: same code twice..
         Nothing -> do
           !acc' <- onPop acc y
-          inner acc' pops' nexts (l - 1) r
+          ((l, r) :) <$> inner acc' pops' nexts (l + 1) r
+
+-- TODO: purely mutation only two pointer method
 
 {-# INLINE twoPtr #-}
-twoPtr :: (G.Vector v a) => acc -> (acc -> Bool) -> (acc -> a -> acc) -> (acc -> a -> acc) -> v a -> [(Int, Int)]
-twoPtr acc0 p onNext onPop = runIdentity . twoPtrM acc0 (pure . p) ((pure .) . onNext) ((pure .) . onPop)
+twoPtr :: (G.Vector v a) => acc -> (acc -> a -> Bool) -> (acc -> a -> acc) -> (acc -> a -> acc) -> v a -> [(Int, Int)]
+twoPtr acc0 p onNext onPop = runIdentity . twoPtrM acc0 ((pure .) . p) ((pure .) . onNext) ((pure .) . onPop)
 
 -- TODO: try also the `Writer`
