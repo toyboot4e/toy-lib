@@ -130,7 +130,7 @@ tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `d
     !nSets = bit nVerts
     !undef = -1 :: Int
 
--- | Enumerates all possible bitsets that composes @bit n - 1@.
+-- | Enumerates all possible mutually exclusive bitsets that sums up to the bitset of @bit n - 1@.
 --
 -- REMARK: It returns a null list at the end (be sure to call @init@ to remove it).
 --
