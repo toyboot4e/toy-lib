@@ -4,7 +4,7 @@ module Data.Core.SemigroupAction where
 import Data.Monoid
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-import ToyLib.Macro
+import ToyLib.Debug
 
 -- {{{ Semigroup action and binary lifting
 

@@ -11,7 +11,7 @@ import Data.List.Extra (chunksOf)
 import Data.Tuple.Extra (dupe)
 import GHC.Exts
 import GHC.TypeLits
-import ToyLib.Macro
+import ToyLib.Debug
 import ToyLib.Prelude ((.:))
 
 -- {{{ Math

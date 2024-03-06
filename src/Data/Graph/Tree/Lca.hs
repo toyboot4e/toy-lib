@@ -17,7 +17,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-import ToyLib.Macro
+import ToyLib.Debug
 import ToyLib.Prelude
 
 -- {{{ LCA (basic)

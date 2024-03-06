@@ -219,6 +219,8 @@ library
     Math.PowMod
     Math.Primes
     ToyLib.Debug
+    ToyLib.DebugGrid
+    ToyLib.DebugSTree
     ToyLib.DP
     ToyLib.IO
     ToyLib.Macro

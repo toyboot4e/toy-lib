@@ -16,7 +16,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
-import ToyLib.Macro (dbgAssert)
+import ToyLib.Debug
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}

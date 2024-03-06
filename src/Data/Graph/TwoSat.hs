@@ -12,7 +12,7 @@ import Data.Buffer
 import Data.Graph.Sparse
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import ToyLib.Macro (dbgAssert)
+import ToyLib.Debug (dbgAssert)
 
 -- | Data with True | False tag.
 data TF a = T {-# UNPACK #-} !a | F {-# UNPACK #-} !a

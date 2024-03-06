@@ -22,7 +22,7 @@ import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-import ToyLib.Macro
+import ToyLib.Debug
 
 -- {{{ Lazy segment tree
 

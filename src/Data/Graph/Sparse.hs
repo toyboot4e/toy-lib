@@ -32,7 +32,7 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-import ToyLib.Macro (dbgAssert)
+import ToyLib.Debug (dbgAssert)
 
 -- | CSR (compressed sparse row) representation of a graph, weightened or unweightened.
 data SparseGraph i w = SparseGraph

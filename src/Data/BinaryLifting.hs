@@ -14,7 +14,7 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
-import ToyLib.Macro (dbgAssert)
+import ToyLib.Debug (dbgAssert)
 import ToyLib.Prelude (rangeG)
 
 -- | Storage of \(s^{2^i}\).
