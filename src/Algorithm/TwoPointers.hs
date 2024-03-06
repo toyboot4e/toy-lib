@@ -10,8 +10,7 @@
 -- See also: <https://zenn.dev/osushi0x/articles/e5bd9fe60abee4>
 module Algorithm.TwoPointers where
 
-import Control.Monad.State.Class
-import Control.Monad.State.Strict
+import Control.Monad.Identity
 import Data.List (unfoldr)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
@@ -45,30 +44,31 @@ twoPointersU !n !p = U.unfoldr (uncurry f) s0
         -- run peek check and advance on success
         r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
--- | Stateless two pointer method over a vector. Returns the longest non-null inclusive ranges for
+-- | Stateful two pointer method over a vector. Returns the longest non-null inclusive ranges for
 -- each @l@ that satisfy the given @check@.
 {-# INLINE twoPtrM #-}
-twoPtrM :: (Monad m, G.Vector v a) => (Int -> m Bool) -> (a -> m ()) -> (a -> m ()) -> v a -> m [(Int, Int)]
-twoPtrM p onNext onPop xs0 = inner xs0 xs0 (0 :: Int)
+twoPtrM :: forall acc m v a. (Monad m, G.Vector v a) => acc -> (acc -> m Bool) -> (acc -> a -> m acc) -> (acc -> a -> m acc) -> v a -> m [(Int, Int)]
+twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
   where
-    inner pops nexts len = case G.uncons pops of
+    inner :: acc -> v a -> v a -> Int -> Int -> m [(Int, Int)]
+    inner acc pops nexts l r = case G.uncons pops of
       Nothing -> return []
       Just (!y, !pops') -> case G.uncons nexts of
         Just (!x, !nexts') -> do
-          b <- (len == 0 ||) <$> p len
+          b <- (r - l == 0 ||) <$> p acc
           if b
             then do
-              onNext x
-              inner pops nexts' (len + 1)
+              !acc' <- onNext acc x
+              inner acc' pops nexts' l (r + 1)
             else do
-              onPop y
-              inner pops' nexts (len - 1)
+              !acc' <- onPop acc y
+              inner acc' pops' nexts (l - 1) r
         Nothing -> do
-          onPop y
-          inner pops' nexts (len - 1)
+          !acc' <- onPop acc y
+          inner acc' pops' nexts (l - 1) r
 
 {-# INLINE twoPtr #-}
-twoPtr :: (G.Vector v a) => acc -> (acc -> Int -> Bool) -> (a -> acc) -> (a -> acc) -> v a -> [(Int, Int)]
-twoPtr acc0 p onNext onPop xs0 = (`evalState` acc0) $ twoPtrM (\i -> gets (`p` i)) (put . onNext) (put . onPop) xs0
+twoPtr :: (G.Vector v a) => acc -> (acc -> Bool) -> (acc -> a -> acc) -> (acc -> a -> acc) -> v a -> [(Int, Int)]
+twoPtr acc0 p onNext onPop = runIdentity . twoPtrM acc0 (pure . p) ((pure .) . onNext) ((pure .) . onPop)
 
 -- TODO: try also the `Writer`
