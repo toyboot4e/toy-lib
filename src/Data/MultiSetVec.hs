@@ -41,6 +41,7 @@ fromVecMSV !capacity !xs = do
   U.forM_ xs (incMSV msv)
   return msv
 
+-- | Returns the number of keys in the multiset.
 countMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m Int
 countMSV (MultiSetVec !nRef !_) = readMutVar nRef
 

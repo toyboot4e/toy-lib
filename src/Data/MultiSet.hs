@@ -1,9 +1,12 @@
 -- | Multi set backed by `IntMap`.
+--
+-- Tip: `MultiSet` is for light calculation only. Do not use `MultiSet` for, for example, sqrt
+-- decomposition. Do index compression and use @MultiSetVec@ or maybe just a mutable vector.
 module Data.MultiSet where
 
 import qualified Data.IntMap.Strict as IM
 import Data.List (foldl')
-import Data.Maybe
+import GHC.Stack (HasCallStack)
 
 -- | MultiSet: (nKeys, (key -> count))
 type MultiSet = (Int, IM.IntMap Int)
@@ -75,8 +78,10 @@ lookupMS !k = IM.lookup k . innerMS
 
 -- | Partial alternative to `lookupMS`.
 {-# INLINE getMS #-}
-getMS :: Int -> MultiSet -> Int
-getMS !k = fromJust . lookupMS k
+getMS :: (HasCallStack) => Int -> MultiSet -> Int
+getMS !k !ms = case lookupMS k ms of
+  Just x -> x
+  Nothing -> error $ "getMS: panic with key: " ++ show k
 
 -- | Unwraps `MultiSet` into the underlying `IntMap`.
 {-# INLINE innerMS #-}
