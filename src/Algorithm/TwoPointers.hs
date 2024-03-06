@@ -1,10 +1,23 @@
--- | Two pointers method
+-- | Two pointers method.
+--
+-- = Stateless two pointer method
+--
+-- The stateless two pointer method assumes you can make up an \(O(1)\) @Int -> Int -> Bool@
+-- predicate. Maybe cummulative sum comes with it.
+--
+-- = Statefull two pointer method
+--
+-- See also: <https://zenn.dev/osushi0x/articles/e5bd9fe60abee4>
 module Algorithm.TwoPointers where
 
+import Control.Monad.State.Class
+import Control.Monad.State.Strict
 import Data.List (unfoldr)
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
--- | Returns inclusive ranges that satisfy the given `check`.
+-- | Stateless two pointer method over a range. Returns the longest non-null inclusive ranges for
+-- each @l@ that satisfy the given @check@.
 twoPointers :: Int -> (Int -> Int -> Bool) -> [(Int, Int)]
 twoPointers !n !p = unfoldr (uncurry f) s0
   where
@@ -14,11 +27,12 @@ twoPointers !n !p = unfoldr (uncurry f) s0
       | l == n = Nothing
       | not (p l r) = f (l + 1) (max (l + 1) r)
       | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
-        where
-          -- run peek check and advance on success
-          r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
+      where
+        -- run peek check and advance on success
+        r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
--- | Returns inclusive ranges that satisfy the given `check`.
+-- | Stateless two pointer method over a range. Returns the longest non-null inclusive ranges for
+-- each @l@ that satisfy the given @check@.
 twoPointersU :: Int -> (Int -> Int -> Bool) -> U.Vector (Int, Int)
 twoPointersU !n !p = U.unfoldr (uncurry f) s0
   where
@@ -27,7 +41,34 @@ twoPointersU !n !p = U.unfoldr (uncurry f) s0
       | l == n = Nothing
       | not (p l r) = f (l + 1) (max (l + 1) r)
       | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
-        where
-          -- run peek check and advance on success
-          r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
+      where
+        -- run peek check and advance on success
+        r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
+-- | Stateless two pointer method over a vector. Returns the longest non-null inclusive ranges for
+-- each @l@ that satisfy the given @check@.
+{-# INLINE twoPtrM #-}
+twoPtrM :: (Monad m, G.Vector v a) => (Int -> m Bool) -> (a -> m ()) -> (a -> m ()) -> v a -> m [(Int, Int)]
+twoPtrM p onNext onPop xs0 = inner xs0 xs0 (0 :: Int)
+  where
+    inner pops nexts len = case G.uncons pops of
+      Nothing -> return []
+      Just (!y, !pops') -> case G.uncons nexts of
+        Just (!x, !nexts') -> do
+          b <- (len == 0 ||) <$> p len
+          if b
+            then do
+              onNext x
+              inner pops nexts' (len + 1)
+            else do
+              onPop y
+              inner pops' nexts (len - 1)
+        Nothing -> do
+          onPop y
+          inner pops' nexts (len - 1)
+
+{-# INLINE twoPtr #-}
+twoPtr :: (G.Vector v a) => acc -> (acc -> Int -> Bool) -> (a -> acc) -> (a -> acc) -> v a -> [(Int, Int)]
+twoPtr acc0 p onNext onPop xs0 = (`evalState` acc0) $ twoPtrM (\i -> gets (`p` i)) (put . onNext) (put . onPop) xs0
+
+-- TODO: try also the `Writer`
