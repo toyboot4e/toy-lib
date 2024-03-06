@@ -5,12 +5,19 @@ import Algorithm.Bisect
 import Data.Maybe
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
--- | One dimensional index compression: xs -> (nubSortXs, is)
+-- | One dimensional index compression: xs -> (nubSortXs, xs')
+{-# INLINE compressU #-}
 compressU :: (HasCallStack) => U.Vector Int -> (U.Vector Int, U.Vector Int)
-compressU xs = (indexer, U.map (fromJust . fst . f) xs)
+compressU xs = (nubSortXs, U.map (bindex nubSortXs) xs)
   where
-    -- !indexer = U.fromList $ nubSort $ U.toList xs
-    !indexer = U.uniq $ U.modify VAI.sort xs
-    f !x = bisect 0 (pred (U.length indexer)) $ \i -> indexer U.! i <= x
+    -- TODO: use radix sort
+    !nubSortXs = U.uniq $ U.modify VAI.sort xs
+
+-- | Index with binary search (and index compression)
+{-# INLINE bindex #-}
+bindex :: (HasCallStack, G.Vector v a, Ord a) => v a -> a -> Int
+bindex !vec !xref = fromJust $ bsearchL vec (<= xref)
+
