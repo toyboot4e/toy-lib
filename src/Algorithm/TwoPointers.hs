@@ -62,7 +62,7 @@ twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
               inner acc' pops nexts' l (r + 1)
             else do
               !acc' <- onPop acc y
-              inner acc' pops' nexts (l - 1) r
+              ((l, r) :) <$> inner acc' pops' nexts (l - 1) r
         Nothing -> do
           !acc' <- onPop acc y
           inner acc' pops' nexts (l - 1) r
