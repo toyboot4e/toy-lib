@@ -1,7 +1,5 @@
 #ifdef DEBUG
-debug :: Bool
-debug = True
+debug :: Bool ; debug = True
 #else
-debug :: Bool
-debug = False
+debug :: Bool ; debug = False
 #endif
