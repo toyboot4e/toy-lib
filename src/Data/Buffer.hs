@@ -9,8 +9,10 @@ import Control.Monad (void)
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Ix
+import Data.Maybe
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
 
 data Buffer s a = Buffer
   { bufferVars :: !(UM.MVector s Int),
@@ -257,3 +259,11 @@ viewBackN Buffer {..} i = do
     then Just <$> UM.read internalBuffer (b - 1 - i)
     else return Nothing
 {-# INLINE viewBackN #-}
+
+readFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
+readFront = (fmap fromJust .) . viewFrontN
+{-# INLINE readFront #-}
+
+readBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
+readBack = (fmap fromJust .) . viewBackN
+{-# INLINE readBack #-}
