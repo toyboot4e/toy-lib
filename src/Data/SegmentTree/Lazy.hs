@@ -11,6 +11,7 @@
 -- - TODO: consider Node/Act naming rather than Acc/Op.
 module Data.SegmentTree.Lazy where
 
+import Algorithm.Bisect (bisectM)
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
@@ -24,11 +25,8 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
--- {{{ Lazy segment tree
-
 -- TODO: Do we have to duplicate `SegmentTree` and `LazySegmentTree`?
--- TODO: We're assuming commutative operator monoid in LazySegmentTree, right?
--- TODO: Vertex -> Node
+-- TODO: Vertex -> Node? Op -> F?
 
 -- | Lazy segment tree.
 --
@@ -282,4 +280,47 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     childL !vertex = shiftL vertex 1
     childR !vertex = shiftL vertex 1 .|. 1
 
--- }}}
+----------------------------------------------------------------------------------------------------
+-- TODO: test them
+----------------------------------------------------------------------------------------------------
+
+-- | The @l@, @r@ indices are the zero-based leaf indices.
+{-# INLINE bisectLazySTree #-}
+bisectLazySTree ::
+  forall v a m op.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  Int ->
+  (a -> Bool) ->
+  m (Maybe Int, Maybe Int)
+bisectLazySTree stree@(LazySegmentTree !as !_ !_) l r f = do
+  bisectM l r $ \r' -> do
+    !acc <- queryLazySTree stree l r'
+    return $! f acc
+  where
+    !nLeaves = GM.length as `div` 2
+    !_ = dbgAssert (inRange (0, nLeaves - 1) l && inRange (0, nLeaves - 1) r) $ "bisectLazySTree: giveninvalid range " ++ show (l, r)
+
+{-# INLINE bisectLazySTreeL #-}
+bisectLazySTreeL ::
+  forall v a m op.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  Int ->
+  (a -> Bool) ->
+  m (Maybe Int)
+bisectLazySTreeL stree l r f = fst <$> bisectLazySTree stree l r f
+
+{-# INLINE bisectLazySTreeR #-}
+bisectLazySTreeR ::
+  forall v a m op.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  Int ->
+  (a -> Bool) ->
+  m (Maybe Int)
+bisectLazySTreeR stree l r f = snd <$> bisectLazySTree stree l r f
+
