@@ -67,31 +67,3 @@ instance FromVec MultiSet where
   fromVec = G.foldl' (flip incMS) emptyMS
   {-# INLINE fromVecWith #-}
   fromVecWith _ = fromVec
-
--- | Strongly typed `fromVec`.
-fromVecIM :: (G.Vector v (Int, a)) => v (Int, a) -> IM.IntMap a
-fromVecIM = fromVec
-
--- | Strongly typed `fromVecWith`.
-fromVecWithIM :: (G.Vector v (Int, a)) => (a -> a -> a) -> v (Int, a) -> IM.IntMap a
-fromVecWithIM = fromVecWith
-
--- | Strongly typed `fromVec`.
-fromVecM :: (G.Vector v (k, a), Ord k) => v (k, a) -> M.Map k a
-fromVecM = fromVec
-
--- | Strongly typed `fromVecWith`.
-fromVecWithM :: (G.Vector v (k, a), Ord k) => (a -> a -> a) -> v (k, a) -> M.Map k a
-fromVecWithM = fromVecWith
-
--- | Strongly typed `fromVec`.
-fromVecIS :: (G.Vector v Int) => v Int -> IS.IntSet
-fromVecIS = fromVec
-
--- | Strongly typed `fromVec`.
-fromVecS :: (Ord a, G.Vector v a) => v a -> S.Set a
-fromVecS = fromVec
-
--- | Strongly typed `fromVec`.
-fromVecH :: (Ord a, G.Vector v a) => v a -> H.Heap a
-fromVecH = fromVec
