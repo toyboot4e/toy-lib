@@ -199,7 +199,6 @@ library
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse
-    Data.Utils.FromVec
     Data.Utils.Unindex
     Data.Vector.Compress
     Data.Vector.Construct
