@@ -101,6 +101,25 @@ constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> a) -> 
 constructIV bnd f = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar ->
   f (IxVector bnd sofar) $! unindex bnd (G.length sofar)
 
+{-# INLINE constructMIV #-}
+constructMIV :: forall i a m. (Unindex i, PrimMonad m, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> m a) -> m (U.Vector a)
+constructMIV bnd@(!_, !_) f = do
+  v <- GM.new n
+  v' <- G.unsafeFreeze v
+  fill v' 0
+  where
+    !n = rangeSize bnd
+    fill :: U.Vector a -> Int -> m (U.Vector a)
+    fill !v i
+      | i < n = do
+          x <- f (IxVector bnd (G.unsafeTake i v)) (unindex bnd i)
+          G.elemseq v x $ do
+            v' <- G.unsafeThaw v
+            GM.unsafeWrite v' i x
+            v'' <- G.unsafeFreeze v'
+            fill v'' (i + 1)
+    fill v _ = return v
+
 {-# INLINE thawIV #-}
 thawIV :: (PrimMonad m, G.Vector v a) => IxVector i (v a) -> m (IxVector i (G.Mutable v (PrimState m) a))
 thawIV iv = IxVector (boundsIV iv) <$> G.thaw (vecIV iv)
