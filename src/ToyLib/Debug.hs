@@ -40,7 +40,7 @@ note s x
 
 dbgAssert :: Bool -> String -> ()
 dbgAssert b s
-  | debug && b = error $ "assertion failed!: " ++ s
+  | debug && not b = error $ "assertion failed!: " ++ s
   | otherwise = ()
 
 -- | `$` with `dbgId`
