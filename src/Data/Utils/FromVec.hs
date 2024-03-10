@@ -3,6 +3,9 @@
 -- | Helper methods for creating collections types from @Vector@ types.
 module Data.Utils.FromVec where
 
+import qualified Data.HashMap.Strict as HM
+import qualified Data.HashSet as HS
+import Data.Hashable
 import qualified Data.Heap as H
 import qualified Data.IntMap.Strict as IM
 import qualified Data.IntSet as IS
@@ -50,6 +53,20 @@ instance (Ord k) => FromVec (S.Set k) where
   {-# INLINE fromVecWith #-}
   fromVecWith _ = fromVec
 
+instance (Ord k, Hashable k) => FromVec (HM.HashMap k a) where
+  type FromVecInput (HM.HashMap k a) = (k, a)
+  type FromVecItem (HM.HashMap k a) = a
+  {-# INLINE fromVec #-}
+  fromVec = G.foldl' (\im (!k, !v) -> HM.insert k v im) HM.empty
+  {-# INLINE fromVecWith #-}
+  fromVecWith !f = G.foldl' (\im (!k, !v) -> HM.insertWith f k v im) HM.empty
+
+instance (Ord k, Hashable k) => FromVec (HS.HashSet k) where
+  type FromVecInput (HS.HashSet k) = k
+  type FromVecItem (HS.HashSet k) = k
+  {-# INLINE fromVec #-}
+  fromVec = G.foldl' (flip HS.insert) HS.empty
+  {-# INLINE fromVecWith #-}
   fromVecWith _ = fromVec
 
 instance (Ord a) => FromVec (H.Heap a) where

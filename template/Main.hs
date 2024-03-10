@@ -121,6 +121,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Heap as H
 
 -- unordered-containers
+import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet as HS
 
