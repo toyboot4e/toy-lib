@@ -41,6 +41,7 @@ exgcd a b = f $ go a b 1 0 0 1
 -- | Example for showing how to use `exgcd` to calculate the modular multicative inverse.
 invModGcd :: (Integral a) => a -> a -> Maybe a
 invModGcd a m = case exgcd a m of
-  -- FIXME: on `-1`
   (1, na, _) -> Just na
+  -- assuming @a > 0@ and @m > 0@:
+  (-1, na, _) -> Just (-na)
   _ -> Nothing
