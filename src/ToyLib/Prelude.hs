@@ -54,12 +54,13 @@ ortho4' bnd base = U.filter (inRange bnd) $ U.map (add2 base) ortho4
 slice :: (G.Vector v a) => Int -> Int -> v a -> v a
 slice !l !r !vec = G.slice l (max 0 (r - l + 1)) vec
 
--- | @constructN@ with initial value for index zero.
-constructN0 :: (U.Unbox a) => a -> Int -> (U.Vector a -> a) -> U.Vector a
-constructN0 !x0 !n !f = U.constructN n $ \vec ->
-  if U.null vec
-    then x0
-    else f vec
+{-# INLINE zero2 #-}
+zero2 :: Int -> Int -> ((Int, Int), (Int, Int))
+zero2 n1 n2 = ((0, 0), (n1 - 1, n2 - 1))
+
+{-# INLINE zero3 #-}
+zero3 :: Int -> Int -> Int -> ((Int, Int, Int), (Int, Int, Int))
+zero3 n1 n2 n3 = ((0, 0, 0), (n1 - 1, n2 - 1, n3 - 1))
 
 -- | List-like range syntax for `vector`.
 --
