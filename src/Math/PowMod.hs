@@ -12,11 +12,15 @@ import qualified Data.Vector.Unboxed as U
 -- TODO: consider taking `modulo` as the first argument
 
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
-addMod !x !a !modulo = (x + a) `mod` modulo
-subMod !x !s !modulo = (x - s) `mod` modulo
-mulMod !b !p !modulo = (b * p) `mod` modulo
+{-# INLINE addMod #-}
+addMod !modulo !x !a = (x + a) `mod` modulo
+{-# INLINE subMod #-}
+subMod !modulo !x !s = (x - s) `mod` modulo
+{-# INLINE mulMod #-}
+mulMod !modulo !b !p = (b * p) `mod` modulo
 
 -- | n! `mod` m
+{-# INLINE factMod #-}
 factMod :: Int -> Int -> Int
 factMod 0 _ = 1
 factMod 1 _ = 1
@@ -26,6 +30,7 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 
 -- | One-shot calculation of $base ^ power `mod` modulo$ in a constant time
 -- REMARK: It uses @base `mod` modulo@ in order to avoid overflow.
+{-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
 powModConst !base !power !modulo = powModByCache power (powModCache (base `mod` modulo) modulo)
 
@@ -33,10 +38,12 @@ powModConst !base !power !modulo = powModByCache power (powModCache (base `mod` 
 --
 -- \(1/d = d^{p-2} (\mod p) \equiv d^p = d (\mod p)\)
 --   where the modulo is a prime number and `x` is not a mulitple of `p`.
+{-# INLINE invModF #-}
 invModF :: Int -> Int -> Int
 invModF !d !modulo = invModFC modulo (powModCache d modulo)
 
 -- | Calculates \(x / d mod p\), using Fermat's little theorem.
+{-# INLINE divModF #-}
 divModF :: Int -> Int -> Int -> Int
 divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
 
@@ -48,6 +55,7 @@ powModCache !base !modulo = (modulo, doubling)
     doubling = newDoubling base (\x -> x * x `rem` modulo)
 
 -- | Calculates \(base^power\) (mod p) from a cache.
+{-# INLINE powModByCache #-}
 powModByCache :: Int -> (Int, U.Vector Int) -> Int
 powModByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
   where
@@ -60,18 +68,22 @@ powModByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
 --   where the modulo is a prime number and `x` is not a mulitple of `p`.
 --
 -- and \(x^{p-2}\) is calculated with cache.
+{-# INLINE invModFC #-}
 invModFC :: Int -> (Int, U.Vector Int) -> Int
 invModFC !primeModulo = powModByCache (primeModulo - 2)
 
+{-# INLINE divModFC #-}
 divModFC :: Int -> (Int, U.Vector Int) -> Int
 divModFC !x context@(!modulo, !_) = x * invModFC modulo context `rem` modulo
 
 -- | Cache of \(n! \mod m\) up to `n`.
+{-# INLINE factMods #-}
 factMods :: Int -> Int -> U.Vector Int
 factMods !n !modulo =
   U.scanl' (\ !x !y -> x * y `rem` modulo) (1 :: Int) $ U.fromList [(1 :: Int) .. n]
 
 -- | nCr `mod` m (binominal cofficient).
+{-# INLINE bdMod #-}
 bcMod :: Int -> Int -> Int -> Int
 bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
   where
