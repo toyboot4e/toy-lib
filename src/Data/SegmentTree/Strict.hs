@@ -10,8 +10,6 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
--- {{{ Segment tree
-
 -- TODO: rewrite
 -- TODO: change newSTreeU to take monoid first and then the number
 -- TODO: use one-based indices internally?

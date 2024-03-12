@@ -14,8 +14,6 @@ import GHC.TypeLits
 import ToyLib.Debug
 import ToyLib.Prelude ((.:))
 
--- {{{ Math
-
 -- | Multiplies HxW matrix to a Hx1 column vector.
 mulMatToCol :: (Num e, IArray UArray e) => UArray (Int, Int) e -> [e] -> [e]
 mulMatToCol !mat !col =
@@ -82,4 +80,3 @@ instance forall p. (KnownNat p) => Semigroup (MulMatMod p) where
 instance (KnownNat p) => SemigroupAction (MulMatMod p) [Int] where
   sact (MulMatMod !mat) !col = mulMatToColMod mat (fromInteger (natVal' (proxy# @p))) col
 
--- }}}
