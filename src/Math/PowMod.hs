@@ -83,7 +83,7 @@ factMods !n !modulo =
   U.scanl' (\ !x !y -> x * y `rem` modulo) (1 :: Int) $ U.fromList [(1 :: Int) .. n]
 
 -- | nCr `mod` m (binominal cofficient).
-{-# INLINE bdMod #-}
+{-# INLINE bcMod #-}
 bcMod :: Int -> Int -> Int -> Int
 bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
   where
