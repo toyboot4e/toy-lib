@@ -623,6 +623,8 @@ scanTreeV = scanTree
 --
 -- = Typical problems
 -- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
+-- - [EDPC V - Subtree](https://atcoder.jp/contests/dp/tasks/dp_v)
+-- - [TDPC N - tree](https://atcoder.jp/contests/tdpc/tasks/tdpc_tree)
 foldTreeAllSG :: forall a op w. (U.Unbox a, U.Unbox op, MonoidAction op a) => SparseGraph Int w -> (Vertex -> a) -> (a -> op) -> U.Vector a
 foldTreeAllSG !tree !acc0At !toOp =
   -- Calculate tree DP for one root vertex
@@ -630,20 +632,22 @@ foldTreeAllSG !tree !acc0At !toOp =
       !rootDp = U.create $ do
         -- Calculate tree DP for every vertex as a root:
         !dp <- UM.unsafeNew nVerts
-        flip fix (-1, op0, root0) $ \runRootDp (!parent, !parentOp, !v1) -> do
-          let !children = U.filter (/= parent) $ tree `adj` v1
-          let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp U.! v2) op0 children
-          let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp U.! v2) op0 children
+        let reroot parent parentOp v1 = do
+              let !children = U.filter (/= parent) $ tree `adj` v1
+              let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp U.! v2) op0 children
+              let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp U.! v2) op0 children
 
-          -- save
-          let !x1 = (parentOp <> U.last opL) `mact` acc0At v1
-          UM.write dp v1 x1
+              -- save
+              let !x1 = (parentOp <> U.last opL) `mact` acc0At v1
+              UM.write dp v1 x1
 
-          flip U.imapM_ children $ \ !i2 !v2 -> do
-            let !lrOp = (opL U.! i2) <> (opR U.! succ i2)
-            let !v1Acc = (parentOp <> lrOp) `mact` acc0At v2
-            runRootDp (v1, toOp v1Acc, v2)
+              U.iforM_ children $ \i2 v2 -> do
+                let !lrOp = (opL U.! i2) <> (opR U.! succ i2)
+                let !v1Acc = (parentOp <> lrOp) `mact` acc0At v2
+                let !op' = toOp v1Acc
+                reroot v1 op' v2
 
+        reroot (-1 :: Vertex) op0 root0
         return dp
    in rootDp
   where
