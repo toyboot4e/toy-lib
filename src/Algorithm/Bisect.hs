@@ -24,11 +24,13 @@
 -- `bisectL` returns @Just 5@ and `bisectR` returns @Just 6@.
 module Algorithm.Bisect where
 
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Functor.Identity
 import Data.Ix
 import Data.Maybe
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 
 -- TODO: Use higher order function for getting middle and detecting end
 
@@ -47,12 +49,39 @@ bsearchL !vec !p = bisectL 0 (G.length vec - 1) (p . (vec G.!))
 bsearchR :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
 bsearchR !vec !p = bisectR 0 (G.length vec - 1) (p . (vec G.!))
 
--- | `bsearchL` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+-- | `bsearchExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
 {-# INLINE bsearchExact #-}
 bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe Int
 bsearchExact !vec f !xref = case bisectL 0 (G.length vec - 1) ((<= xref) . f . (vec G.!)) of
   Just !x | f (vec G.! x) == xref -> Just x
   _ -> Nothing
+
+-- \| `bisectM` over a vector.
+{-# INLINE bsearchM #-}
+bsearchM :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int, Maybe Int)
+bsearchM !vec !p = bisectM 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bisectML` over a vector.
+{-# INLINE bsearchML #-}
+bsearchML :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
+bsearchML !vec !p = bisectML 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bisectMR` over a vector.
+{-# INLINE bsearchMR #-}
+bsearchMR :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
+bsearchMR !vec !p = bisectMR 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bsearchMExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+{-# INLINE bsearchMExact #-}
+bsearchMExact :: (PrimMonad m, GM.MVector v a, Ord b) => v (PrimState m) a -> (a -> b) -> b -> m (Maybe Int)
+bsearchMExact !vec f !xref =
+  bisectML 0 (GM.length vec - 1) (fmap ((<= xref) . f) . GM.read vec) >>= \case
+    Just !i -> do
+      !x <- f <$> GM.read vec i
+      if x == xref
+        then return $ Just i
+        else return Nothing
+    _ -> return Nothing
 
 -- | Pure binary search.
 {-# INLINE bisect #-}
