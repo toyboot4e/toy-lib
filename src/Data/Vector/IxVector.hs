@@ -54,6 +54,10 @@ type IxMUVector s i a = IxVector i (UM.MVector s a)
   | inRange boundsIV i = Just (G.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
 
+{-# INLINE lengthIV #-}
+lengthIV :: (G.Vector v a) => IxVector i (v a) -> Int
+lengthIV = G.length . vecIV
+
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 mapIV !f !vec = IxVector bnd $ U.map f (vecIV vec)
