@@ -180,6 +180,11 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
     -- From top left to @-@
     !s4 = csum @! (y1, x1)
 
+-- | Creates a new `IxVector` with initial value.
+{-# INLINE newIV #-}
+newIV :: (Ix i, PrimMonad m, U.Unbox a) => (i, i) -> a -> m (IxMUVector (PrimState m) i a)
+newIV bnd e0 = IxVector bnd <$> UM.replicate (rangeSize bnd) e0
+
 -- | Reads a value from `IxVector`.
 {-# INLINE readIV #-}
 readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
