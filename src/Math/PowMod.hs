@@ -77,9 +77,9 @@ divModFC :: Int -> (Int, U.Vector Int) -> Int
 divModFC !x context@(!modulo, !_) = x * invModFC modulo context `rem` modulo
 
 -- | Cache of \(n! \mod m\) up to `n`.
-{-# INLINE factMods #-}
-factMods :: Int -> Int -> U.Vector Int
-factMods !n !modulo =
+{-# INLINE factModsN #-}
+factModsN :: Int -> Int -> U.Vector Int
+factModsN !n !modulo =
   U.scanl' (\ !x !y -> x * y `rem` modulo) (1 :: Int) $ U.fromList [(1 :: Int) .. n]
 
 -- | nCr `mod` m (binominal cofficient).
@@ -87,6 +87,6 @@ factMods !n !modulo =
 bcMod :: Int -> Int -> Int -> Int
 bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
   where
-    facts = factMods n modulo
+    facts = factModsN n modulo
 
 -- }}}

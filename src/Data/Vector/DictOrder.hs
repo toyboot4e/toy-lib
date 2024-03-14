@@ -11,7 +11,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import GHC.Exts
 import GHC.Stack (HasCallStack)
-import Math.PowMod (factMods)
+import Math.PowMod (factModsN)
 
 prevPermutationVec :: (Ord e, G.Vector v e, G.Vector v (Down e)) => v e -> v e
 prevPermutationVec =
@@ -25,8 +25,8 @@ dictOrderModuloVec :: (HasCallStack, G.Vector v Int) => v Int -> Int -> Int
 dictOrderModuloVec xs modulo = runST $ do
   !stree <- newSTreeU (+) (G.length xs + 1) (0 :: Int)
 
-  -- Pre-calculate factorial numbers:
-  let !facts = factMods (G.length xs) modulo
+  -- Pre-calculated factorial numbers:
+  let !facts = factModsN (G.length xs) modulo
 
   -- The calculation is very similar to that of inversion number. For example,
   -- ```
