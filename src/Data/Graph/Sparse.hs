@@ -24,8 +24,12 @@ import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
 import qualified Data.Heap as H
 import qualified Data.IntMap as IM
 import Data.Maybe
+import Data.Ord (comparing)
+import Data.Tuple.Extra (thd3)
+import Data.UnionFind.Mutable
 import Data.Utils.Unindex
 import qualified Data.Vector as V
+import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -663,31 +667,26 @@ foldTreeAllSG !tree !acc0At !toOp =
 --
 -- = Typical problems
 -- TODO: Test it
-{-# INLINE mstSG #-}
-mstSG :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
-mstSG nVerts edges = runST $ do
-  marks <- UM.replicate nVerts False
-
-  (`evalStateT` (0 :: Int)) $ flip U.unfoldrM edges' $ \es0 -> flip fix es0 $ \loop es -> do
-    cnt' <- get
-    if cnt' == nVerts
-      then return Nothing
-      else do
-        let Just (e@(!v1, !v2, !_), !es') = U.uncons es
-        b1 <- UM.read marks v1
-        b2 <- UM.read marks v2
-        if not b1 || not b2
-          then do
-            UM.write marks v1 True
-            UM.write marks v2 True
-            let !dn = delta b1 + delta b2
-            modify' (+ dn)
-            return $ Just (e, es')
-          else loop es'
+{-# INLINE collectMST #-}
+collectMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
+collectMST nVerts edges = runST $ do
+  uf <- newMUF nVerts
+  flip U.unfoldrM edges' $ \es0 -> flip fix es0 $ \loop es -> case U.uncons es of
+    Nothing -> return Nothing
+    Just (e@(!v1, !v2, !_), !es') -> do
+      unifyMUF uf v1 v2 >>= \case
+        False -> loop es'
+        True -> do
+          return $ Just (e, es')
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
-    delta False = 1
-    delta True = 0
+
+{-# INLINE buildMST #-}
+buildMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> SparseGraph Int w
+buildMST nVerts edges = buildWSG (0, nVerts - 1) $ U.concatMap expand $ collectMST nVerts edges
+  where
+    {-# INLINE expand #-}
+    expand (!v1, !v2, !w) = U.fromListN 2 [(v1, v2, w), (v2, v1, w)]
 
 -- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
 -- usually like @maxBound `div` 2@.
