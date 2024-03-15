@@ -20,7 +20,7 @@ import Data.Buffer
 import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (EdgeId, Vertex)
-import Data.Graph.Tree.Lca (LcaCache, ToParent (..))
+import Data.Graph.Tree.Lca
 import qualified Data.Heap as H
 import qualified Data.IntMap as IM
 import Data.Maybe
@@ -556,11 +556,11 @@ topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
 topSccSG = map reverse . revTopSccSG
 
 ----------------------------------------------------------------------------------------------------
--- Tree (API)
+-- Tee LCA
 ----------------------------------------------------------------------------------------------------
 
 -- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
-treeDepthInfoSG :: SparseGraph Int w -> Int -> (ToParent, U.Vector Int)
+treeDepthInfoSG :: SparseGraph Int w -> Int -> (Permutation, U.Vector Int)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.replicate nVerts (-1 :: Int)
   !depths <- UM.replicate nVerts (-1 :: Int)
@@ -572,21 +572,22 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
       let !vs' = U.filter (/= parent) $ gr `adj` v
       loop (succ depth, v, vs')
 
-  (,) <$> (ToParent <$> U.unsafeFreeze parents) <*> U.unsafeFreeze depths
+  (,) <$> (Permutation <$> U.unsafeFreeze parents) <*> U.unsafeFreeze depths
   where
     !nVerts = rangeSize boundsSG
 
 -- | LCA component. Returns `LcaCache`, i.e., `(parents, depths, parents')`.
 lcaCacheSG :: SparseGraph Int w -> Vertex -> LcaCache
-lcaCacheSG !gr !root = (toParent, depths, toParentN)
+lcaCacheSG !gr !root = (toParent, depths, toParentBL)
   where
     (!toParent, !depths) = treeDepthInfoSG gr root
-    !toParentN = newBinLift toParent
+    !toParentBL = cacheBL toParent
 
 ----------------------------------------------------------------------------------------------------
--- Tree (impl)
+-- Tree fold
 ----------------------------------------------------------------------------------------------------
 
+-- TODO: consider to not require semigroup aciton?
 foldTreeImpl :: forall m op a w. (Monad m) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a
 foldTreeImpl !tree !root !sact_ !acc0At !toOp !memo = inner (-1) root
   where
@@ -676,8 +677,7 @@ collectMST nVerts edges = runST $ do
     Just (e@(!v1, !v2, !_), !es') -> do
       unifyMUF uf v1 v2 >>= \case
         False -> loop es'
-        True -> do
-          return $ Just (e, es')
+        True -> return $ Just (e, es')
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
