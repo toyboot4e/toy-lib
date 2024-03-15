@@ -15,6 +15,7 @@ type LcaCache a = (U.Vector Int, TransiteSemigroup a, VecBL (TransiteSemigroup a
 
 -- | Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.
+{-# INLINE lca #-}
 lca :: (HasCallStack, U.Unbox a) => LcaCache a -> Vertex -> Vertex -> (Vertex, Int)
 lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
   where
@@ -37,6 +38,7 @@ lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
     !vLCA = parentN dLCA v1'
 
 -- | Gets the length between given two vertices with the help of LCA.
+{-# INLINE lcaLen #-}
 lcaLen :: (HasCallStack, U.Unbox a) => LcaCache a -> Int -> Int -> Int
 lcaLen cache@(!depths, !_, !_) !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
@@ -66,6 +68,7 @@ foldLcaCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.l
 -- = Typical problems
 -- - [ABC 235 E - MST + 1](https://atcoder.jp/contests/abc235/tasks/abc235_e)
 --   In this problems we have self-looping edge though.
+{-# INLINE foldViaLca #-}
 foldViaLca :: forall a. (HasCallStack, U.Unbox a, Semigroup a) => LcaCache a -> (Vertex, a) -> (Vertex, a) -> a
 foldViaLca cache@(!depths, !_, !toParentBL) (!v1, !a1) (!v2, !a2) = a'
   where
