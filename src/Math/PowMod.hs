@@ -1,7 +1,7 @@
 -- | TODO, Combine ModInt as Modulo module.
 module Math.PowMod where
 
-import Data.Bits
+import Data.BitSet (bitsOf)
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
 
@@ -46,19 +46,16 @@ divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
 
 -- | Cache of \(base^i\) for iterative square method.
 powModCache :: Int -> Int -> (Int, U.Vector Int)
-powModCache !base !modulo = (modulo, doubling)
+powModCache !base !modulo = (modulo, bl)
   where
-    doubling = U.iterateN 63 (\x -> x * x `rem` modulo) base
+    bl = U.iterateN 63 (\x -> x * x `rem` modulo) base
 
 -- | Calculates \(base^power\) (mod p) from a cache.
 {-# INLINE powModByCache #-}
 powModByCache :: Int -> (Int, U.Vector Int) -> Int
-powModByCache !power (!modulo, !cache) = foldl' step 1 [0 .. 62]
+powModByCache !power (!modulo, !cache) = U.foldl' step 1 (bitsOf power)
   where
-    step !acc !nBit =
-      if testBit power nBit
-        then acc * (cache U.! nBit) `rem` modulo
-        else acc
+    step !acc !nBit = acc * (cache U.! nBit) `rem` modulo
 
 -- \(1/d = d^{p-2} (\mod p) \equiv d^p = d (\mod p)\)
 --   where the modulo is a prime number and `x` is not a mulitple of `p`.
@@ -84,4 +81,3 @@ bcMod :: Int -> Int -> Int -> Int
 bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
   where
     facts = factModsN n modulo
-
