@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | The rolling hash algorithm lets you create ( \(O(N)\) or \(O(N \log N)\) ) fastly ( \(O(1)\) )
--- comparable, concatanatable string.
+-- comparable, concatanatable string slices.
 --
 -- = Overview
 --

@@ -15,7 +15,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug (dbgAssert)
 
 -- | Data with True | False tag.
-data TF a = T {-# UNPACK #-} !a | F {-# UNPACK #-} !a
+data TF a = T !a | F !a
 
 -- | Constructs `TF` dynamically.
 asTF :: a -> Bool -> TF a

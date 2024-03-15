@@ -71,6 +71,8 @@ unitMat !n = accumArray @UArray (+) (0 :: Int) ((0, 0), (pred n, pred n)) $ map 
 newtype MulMatMod p = MulMatMod (UArray (Int, Int) Int)
   deriving (Eq, Show)
 
+-- TODO: implement BinaryLifting
+
 -- Implementation over `Int` only!
 
 instance forall p. (KnownNat p) => Semigroup (MulMatMod p) where
