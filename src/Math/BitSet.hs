@@ -15,6 +15,7 @@ import qualified Data.Vector.Unboxed as U
 -- 62
 -- >>> msbOf $ 4 + 2 + 1
 -- 2
+{-# INLINE msbOf #-}
 msbOf :: Int -> Int
 msbOf !x = 63 - countLeadingZeros x
 
@@ -26,13 +27,22 @@ msbOf !x = 63 - countLeadingZeros x
 -- 0
 -- >>> lsbOf $ 4 + 2 + 1
 -- 0
+{-# INLINE lsbOf #-}
 lsbOf :: Int -> Int
 lsbOf = countTrailingZeros
+
+bitsOf :: Int -> U.Vector Int
+bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
+  where
+    f x =
+      let !lsb = countTrailingZeros x
+       in (lsb, clearBit x lsb)
 
 -- TODO: super efficient bit operations
 
 -- | Log base of two or bit floor.
 -- <https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-Bits.html#v:countLeadingZeros>
+{-# INLINE log2 #-}
 log2 :: (FiniteBits b) => b -> Int
 log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 

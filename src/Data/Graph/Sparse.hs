@@ -560,7 +560,7 @@ topSccSG = map reverse . revTopSccSG
 ----------------------------------------------------------------------------------------------------
 
 -- | LCA component. See also `lca` and `lcaLen` from `Data.Tree`.
-treeDepthInfoSG :: SparseGraph Int w -> Int -> (Permutation, U.Vector Int)
+treeDepthInfoSG :: SparseGraph Int w -> Int -> (U.Vector Int, Permutation)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.replicate nVerts (-1 :: Int)
   !depths <- UM.replicate nVerts (-1 :: Int)
@@ -570,18 +570,42 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
       UM.unsafeWrite depths v depth
       UM.unsafeWrite parents v parent
       let !vs' = U.filter (/= parent) $ gr `adj` v
-      loop (succ depth, v, vs')
+      loop (depth + 1, v, vs')
 
-  (,) <$> (Permutation <$> U.unsafeFreeze parents) <*> U.unsafeFreeze depths
+  (,) <$> U.unsafeFreeze depths <*> (Permutation <$> U.unsafeFreeze parents)
   where
     !nVerts = rangeSize boundsSG
 
 -- | LCA component. Returns `LcaCache`, i.e., `(parents, depths, parents')`.
 lcaCacheSG :: SparseGraph Int w -> Vertex -> LcaCache
-lcaCacheSG !gr !root = (toParent, depths, toParentBL)
+lcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
   where
-    (!toParent, !depths) = treeDepthInfoSG gr root
-    !toParentBL = cacheBL toParent
+    (!depths, !toParent) = treeDepthInfoSG gr root
+
+-- TODO: always use `TransiteSemigroup a` (a = ())
+
+-- | Weightened tree info.
+wTreeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Int -> (U.Vector Int, TransiteSemigroup w)
+wTreeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
+  !parents <- UM.unsafeNew nVerts
+  !depths <- UM.unsafeNew nVerts
+
+  flip fix (0 :: Int, -1 :: Int, U.singleton (root, mempty)) $ \loop (!depth, !parent, !vs) -> do
+    U.forM_ vs $ \(!v, !w) -> do
+      UM.unsafeWrite depths v depth
+      UM.unsafeWrite parents v (parent, w)
+      let !vs' = U.filter ((/= parent) . fst) $ gr `adjW` v
+      loop (depth + 1, v, vs')
+
+  (,) <$> U.unsafeFreeze depths <*> (TransiteSemigroup <$> U.unsafeFreeze parents)
+  where
+    !nVerts = rangeSize boundsSG
+
+-- | Weightened LCA cache.
+wLcaCacheSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Vertex -> WLcaCache w
+wLcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
+  where
+    (!depths, !toParent) = wTreeDepthInfoSG gr root
 
 ----------------------------------------------------------------------------------------------------
 -- Tree fold

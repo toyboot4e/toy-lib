@@ -17,6 +17,7 @@ import Data.Monoid
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
+import Math.BitSet (bitsOf)
 
 -- | Binary lifting.
 class BinaryLifting a where
@@ -33,12 +34,10 @@ cacheBLV = V.iterateN 63 (\x -> x <> x)
 
 {-# INLINE stimesBL #-}
 stimesBL :: (Semigroup a, G.Vector v a) => v a -> Int -> a -> a
-stimesBL cache n !s0 = U.foldl' step s0 (U.generate 63 id)
+stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
   where
     {-# INLINE step #-}
-    step !s i
-      | testBit n i = let !s' = s <> cache G.! i in s'
-      | otherwise = s
+    step !s i = let !s' = s <> cache G.! i in s'
 
 {-# INLINE mtimesBL #-}
 mtimesBL :: (Monoid a, G.Vector v a) => v a -> Int -> a
@@ -46,12 +45,10 @@ mtimesBL cache n = stimesBL cache n mempty
 
 {-# INLINE sactBL #-}
 sactBL :: (SemigroupAction a b, G.Vector v a) => v a -> Int -> b -> b
-sactBL cache n !b0 = U.foldl' step b0 (U.generate 63 id)
+sactBL cache n !b0 = U.foldl' step b0 (bitsOf n)
   where
     {-# INLINE step #-}
-    step !b i
-      | testBit n i = let !b' = cache G.! i `sact` b in b'
-      | otherwise = b
+    step !b i = let !b' = cache G.! i `sact` b in b'
 
 ----------------------------------------------------------------------------------------------------
 -- Product
@@ -101,7 +98,7 @@ instance SemigroupAction Permutation Int where
   -- sact (Permutation vec) i = case vec U.! i of
   --   (-1) -> i
   --   i' -> i'
-  sact (Permutation vec) (-1) = -1
+  sact (Permutation _) (-1) = -1
   sact (Permutation vec) i = vec U.! i
 
 -- | The identity element of `Permutation`.
@@ -122,9 +119,9 @@ instance BinaryLifting Permutation where
 newtype TransiteSemigroup a = TransiteSemigroup (U.Vector (Int, a))
   deriving (Show, Eq)
 
-{-# INLINE unTransiteAction #-}
-unTransiteAction :: TransiteSemigroup a -> U.Vector (Int, a)
-unTransiteAction (TransiteSemigroup vec) = vec
+{-# INLINE unTransiteSemigroup #-}
+unTransiteSemigroup :: TransiteSemigroup a -> U.Vector (Int, a)
+unTransiteSemigroup (TransiteSemigroup vec) = vec
 
 instance (U.Unbox a, Semigroup a) => Semigroup (TransiteSemigroup a) where
   {-# INLINE (<>) #-}
@@ -136,6 +133,14 @@ instance (U.Unbox a, Semigroup a) => Semigroup (TransiteSemigroup a) where
         let (!i', !a') = r2 U.! i
             !a'' = a' <> a
          in (i', a'')
+
+-- | @Int@ as target
+instance (U.Unbox a) => SemigroupAction (TransiteSemigroup a) Int where
+  {-# INLINE sact #-}
+  sact (TransiteSemigroup _) (-1) = -1
+  sact (TransiteSemigroup vec) i =
+    let (!i', !_) = vec U.! i
+     in i'
 
 -- | @b@ as target
 instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (TransiteSemigroup a) (Int, b) where
@@ -155,4 +160,3 @@ instance (U.Unbox a, Semigroup a) => BinaryLifting (TransiteSemigroup a) where
   type VecBL (TransiteSemigroup a) = V.Vector (TransiteSemigroup a)
   {-# INLINE cacheBL #-}
   cacheBL = cacheBLV
-
