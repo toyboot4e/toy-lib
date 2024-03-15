@@ -31,6 +31,7 @@ msbOf !x = 63 - countLeadingZeros x
 lsbOf :: Int -> Int
 lsbOf = countTrailingZeros
 
+{-# INLINE bitsOf #-}
 bitsOf :: Int -> U.Vector Int
 bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
   where
