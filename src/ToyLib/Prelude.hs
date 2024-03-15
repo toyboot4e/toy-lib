@@ -10,17 +10,20 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
+{-# INLINE flipOrder #-}
 flipOrder :: Ordering -> Ordering
 flipOrder = \case
   GT -> LT
   LT -> GT
   EQ -> EQ
 
+{-# INLINE square #-}
 square :: (Num a) => a -> a
 square !x = x * x
 
 -- | Inaccurate, but fast `Int` square root.
 -- TODO: Fast and accurate implementation
+{-# INLINE isqrt #-}
 isqrt :: Int -> Int
 isqrt = round @Double . sqrt . fromIntegral
 
@@ -35,13 +38,16 @@ modifyArray !ary !f !i = do
 (.:) :: (b -> c) -> (a1 -> a2 -> b) -> (a1 -> a2 -> c)
 (.:) = (.) . (.)
 
+{-# INLINE swapDupeU #-}
 swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
 swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- | Converts undirected edges into directed edges.
+{-# INLINE swapDupeW #-}
 swapDupeW :: U.Vector (Int, Int, Int) -> U.Vector (Int, Int, Int)
 swapDupeW = U.concatMap (\(!v1, !v2, !d) -> U.fromListN 2 [(v1, v2, d), (v2, v1, d)])
 
+{-# INLINE ortho4 #-}
 ortho4 :: U.Vector (Int, Int)
 ortho4 = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
@@ -165,55 +171,71 @@ combs k as@(!_ : xs)
         (!q : qs) = take (n - k + 1) ys
         dc = product [(n - k + 1) .. (n - 1)] `div` product [1 .. (k - 1)]
 
+{-# INLINE swapDupe #-}
 swapDupe :: (a, a) -> [(a, a)]
 swapDupe (!x1, !x2) = [(x1, x2), (x2, x1)]
 
+{-# INLINE add2 #-}
 add2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 add2 (!y, !x) = bimap (y +) (x +)
 
+{-# INLINE sub2 #-}
 sub2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 sub2 (!y, !x) = bimap (y -) (x -)
 
+{-# INLINE mul2 #-}
 mul2 :: Int -> (Int, Int) -> (Int, Int)
 mul2 !m = both (m *)
 
+{-# INLINE add3 #-}
 add3 :: (Int, Int, Int) -> (Int, Int, Int) -> (Int, Int, Int)
 add3 (!z1, !y1, !x1) (!z2, !y2, !x2) = (z1 + z2, y1 + y2, x1 + x2)
 
+{-# INLINE sub3 #-}
 sub3 :: (Int, Int, Int) -> (Int, Int, Int) -> (Int, Int, Int)
 sub3 (!z1, !y1, !x1) (!z2, !y2, !x2) = (z1 - z2, y1 - y2, x1 - x2)
 
+{-# INLINE mul3 #-}
 mul3 :: (Int, Int, Int) -> (Int, Int, Int) -> (Int, Int, Int)
 mul3 (!z1, !y1, !x1) (!z2, !y2, !x2) = (z1 - z2, y1 - y2, x1 - x2)
 
 -- 180.0 degree = \p radian
+{-# INLINE toRadian #-}
 toRadian :: Double -> Double
 toRadian degree = degree / 180.0 * pi
 
+{-# INLINE toDegree #-}
 toDegree :: Double -> Double
 toDegree rad = rad / pi * 180.0
 
+{-# INLINE fst4 #-}
 fst4 :: (a, b, c, d) -> a
 fst4 (!a, !_, !_, !_) = a
 
+{-# INLINE snd4 #-}
 snd4 :: (a, b, c, d) -> b
 snd4 (!_, !b, !_, !_) = b
 
+{-# INLINE thd4 #-}
 thd4 :: (a, b, c, d) -> c
 thd4 (!_, !_, !c, !_) = c
 
+{-# INLINE fth4 #-}
 fth4 :: (a, b, c, d) -> d
 fth4 (!_, !_, !_, !d) = d
 
+{-# INLINE first4 #-}
 first4 :: (a -> x) -> (a, b, c, d) -> (x, b, c, d)
 first4 f (!a, !b, !c, !d) = (f a, b, c, d)
 
+{-# INLINE second4 #-}
 second4 :: (b -> x) -> (a, b, c, d) -> (a, x, c, d)
 second4 f (!a, !b, !c, !d) = (a, f b, c, d)
 
-thidr4 :: (c -> x) -> (a, b, c, d) -> (a, b, x, d)
-thidr4 f (!a, !b, !c, !d) = (a, b, f c, d)
+{-# INLINE third4 #-}
+third4 :: (c -> x) -> (a, b, c, d) -> (a, b, x, d)
+third4 f (!a, !b, !c, !d) = (a, b, f c, d)
 
+{-# INLINE fourth4 #-}
 fourth4 :: (d -> x) -> (a, b, c, d) -> (a, b, c, x)
 fourth4 f (!a, !b, !c, !d) = (a, b, c, f d)
-
