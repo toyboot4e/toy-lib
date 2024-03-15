@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
--- | Unboxed 2D array. The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
+-- | Unboxed 2D array stored in a packed 1-dimensional vector.
+--
+-- The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
 module Data.Instances.A2 where
 
 import Data.Bits
@@ -11,7 +13,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Unboxed 2D array packed in one array when stored in `U.Vector`.
-data A2 a = A2 a a
+data A2 a = A2 !a !a
   deriving (Eq, Show)
 
 newtype instance UM.MVector s (A2 a) = MV_A2 (UM.MVector s a)

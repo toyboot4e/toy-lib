@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
--- | Unboxed 3D array. The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
+-- | Unboxed 3D array stored in a packed 1-dimensional vector.
+--
+-- The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
 module Data.Instances.A3 where
 
 import Control.Monad
