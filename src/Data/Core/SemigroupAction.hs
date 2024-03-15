@@ -13,6 +13,10 @@ class SemigroupAction s a where
   -- | Right semigroup aciton
   sact :: s -> a -> a
 
+-- | Target self
+instance (Semigroup a) => SemigroupAction a a where
+  sact x y = x <> y
+
 -- | Right monoid action.
 class (SemigroupAction m a, Monoid m) => MonoidAction m a where
   -- | Right monoid aciton
