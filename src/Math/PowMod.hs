@@ -1,12 +1,9 @@
 -- | TODO, Combine ModInt as Modulo module.
 module Math.PowMod where
 
-import Data.BinaryLifting
 import Data.Bits
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
-
--- {{{ Modulo arithmetic
 
 -- TODO: refactor
 -- TODO: consider taking `modulo` as the first argument
@@ -19,7 +16,7 @@ subMod !modulo !x !s = (x - s) `mod` modulo
 {-# INLINE mulMod #-}
 mulMod !modulo !b !p = (b * p) `mod` modulo
 
--- | n! `mod` m
+-- | \(n! `mod` m\) stupid calculation.
 {-# INLINE factMod #-}
 factMod :: Int -> Int -> Int
 factMod 0 _ = 1
@@ -51,8 +48,7 @@ divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
 powModCache :: Int -> Int -> (Int, U.Vector Int)
 powModCache !base !modulo = (modulo, doubling)
   where
-    -- doubling = U.scanl' (\ !x _ -> x * x `rem` modulo) base $ rangeG (1 :: Int) 62
-    doubling = newDoubling base (\x -> x * x `rem` modulo)
+    doubling = U.iterateN 63 (\x -> x * x `rem` modulo) base
 
 -- | Calculates \(base^power\) (mod p) from a cache.
 {-# INLINE powModByCache #-}
@@ -89,4 +85,3 @@ bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [fact
   where
     facts = factModsN n modulo
 
--- }}}
