@@ -655,6 +655,40 @@ foldTreeAllSG !tree !acc0At !toOp =
     !root0 = 0 :: Int
     !op0 = mempty @op
 
+----------------------------------------------------------------------------------------------------
+-- Misc
+----------------------------------------------------------------------------------------------------
+
+-- | \(O(E)\) Kruscal's algorithm. Returns used edges.
+--
+-- = Typical problems
+-- TODO: Test it
+{-# INLINE mstSG #-}
+mstSG :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
+mstSG nVerts edges = runST $ do
+  marks <- UM.replicate nVerts False
+
+  (`evalStateT` (0 :: Int)) $ flip U.unfoldrM edges' $ \es0 -> flip fix es0 $ \loop es -> do
+    cnt' <- get
+    if cnt' == nVerts
+      then return Nothing
+      else do
+        let Just (e@(!v1, !v2, !_), !es') = U.uncons es
+        b1 <- UM.read marks v1
+        b2 <- UM.read marks v2
+        if not b1 || not b2
+          then do
+            UM.write marks v1 True
+            UM.write marks v2 True
+            let !dn = delta b1 + delta b2
+            modify' (+ dn)
+            return $ Just (e, es')
+          else loop es'
+  where
+    edges' = U.modify (VAI.sortBy (comparing thd3)) edges
+    delta False = 1
+    delta True = 0
+
 -- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
 -- usually like @maxBound `div` 2@.
 --
