@@ -78,7 +78,7 @@ wLca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
 -- - @graph@: Vertex -> [Vertex]
 -- - @edgeValueOf@: child -> parent -> m
 foldLcaCache :: forall m. (Monoid m, U.Unbox m) => LcaCache -> (Vertex -> Vertex -> m) -> VecBL (TransiteSemigroup m)
-foldLcaCache (!_, !toParent, !_) !edgeValueOf = cacheBL . TransiteSemigroup $ U.generate (G.length (unPermutation toParent)) f
+foldLcaCache (!_, !toParent, !_) !edgeValueOf = cacheBL . TransiteSemigroup $ U.generate (G.length (unTransiteSemigroup toParent)) f
   where
     f c
       | p == -1 = (-1, mempty)
@@ -87,6 +87,19 @@ foldLcaCache (!_, !toParent, !_) !edgeValueOf = cacheBL . TransiteSemigroup $ U.
            in (p, op)
       where
         p = toParent `sact` c
+
+-- | Returns `FoldLcaCache` for folding values between two vertices.
+--
+-- - @graph@: Vertex -> [Vertex]
+-- - @edgeValueOf@: child -> parent -> m
+wFoldLcaCache :: forall m. (Monoid m, U.Unbox m) => WLcaCache m -> VecBL (TransiteSemigroup m)
+wFoldLcaCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.length (unTransiteSemigroup toParent)) f
+  where
+    f c
+      | p == -1 = (-1, mempty)
+      | otherwise = (p, op)
+      where
+        (!p, !op) = toParent `sact` (c, mempty)
 
 -- | Calculates the folding value of the path between two vertices in a tree.
 --

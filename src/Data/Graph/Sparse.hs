@@ -572,7 +572,7 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
       let !vs' = U.filter (/= parent) $ gr `adj` v
       loop (depth + 1, v, vs')
 
-  (,) <$> U.unsafeFreeze depths <*> (Permutation <$> U.unsafeFreeze parents)
+  (,) <$> U.unsafeFreeze depths <*> (TransiteSemigroup . (`U.zip` U.replicate nVerts ()) <$> U.unsafeFreeze parents)
   where
     !nVerts = rangeSize boundsSG
 

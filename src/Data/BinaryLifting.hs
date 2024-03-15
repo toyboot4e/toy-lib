@@ -10,9 +10,7 @@
 -- can construct any of \(s^i\) (\(0 <= i < 2^63\)) in a big (63) constant time.
 module Data.BinaryLifting where
 
-import Data.Bits
 import Data.Core.SemigroupAction
-import Data.Maybe
 import Data.Monoid
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -64,58 +62,24 @@ instance (Num a, U.Unbox a) => BinaryLifting (Product a) where
   cacheBL = cacheBLU
 
 ----------------------------------------------------------------------------------------------------
--- Permutation
+-- TransiteSemigroup: Permutation + Semigroup
 ----------------------------------------------------------------------------------------------------
 
--- | Permutation of N sequence. `-1` does nothing.
---
--- = Typical problems
--- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
-newtype Permutation = Permutation (U.Vector Int)
-  deriving (Show, Eq)
-
-{-# INLINE unPermutation #-}
-unPermutation :: Permutation -> U.Vector Int
-unPermutation (Permutation vec) = vec
-
-instance Semigroup Permutation where
-  {-# INLINE (<>) #-}
-  Permutation r2 <> Permutation r1 = Permutation $ U.map f r1
-    where
-      -- Preserving version:
-      -- f i x1
-      --   | x1 == -1 = i
-      --   | x2 == -1 = x1
-      --   | otherwise = x2
-      --   where
-      --     x2 = r2 U.! x1
-      f x1
-        | x1 == -1 = -1
-        | otherwise = r2 U.! x1
-
-instance SemigroupAction Permutation Int where
-  {-# INLINE sact #-}
-  -- sact (Permutation vec) i = case vec U.! i of
-  --   (-1) -> i
-  --   i' -> i'
-  sact (Permutation _) (-1) = -1
-  sact (Permutation vec) i = vec U.! i
+type Permutation = TransiteSemigroup ()
 
 -- | The identity element of `Permutation`.
 {-# INLINE idPerm #-}
 idPerm :: Int -> Permutation
-idPerm = Permutation . (`U.generate` id)
-
-instance BinaryLifting Permutation where
-  type VecBL Permutation = V.Vector Permutation
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLV
-
-----------------------------------------------------------------------------------------------------
--- TransiteSemigroup: Permutation + Semigroup
-----------------------------------------------------------------------------------------------------
+idPerm = TransiteSemigroup . (`U.generate` (,()))
 
 -- | Transition + semigroup concatanation. LCA is based on this.
+--
+-- = Typical problems (Permutation)
+-- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
+-- = Typical problems (Permutation)
+--
+-- = Typical problems (TransiteSemigroup)
+-- c.f. LCA.
 newtype TransiteSemigroup a = TransiteSemigroup (U.Vector (Int, a))
   deriving (Show, Eq)
 
