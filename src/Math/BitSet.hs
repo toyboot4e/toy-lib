@@ -57,6 +57,7 @@ log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 -- > log2CeilInt 3
 -- 2
 -- @
+{-# INLINE log2CeilInt #-}
 log2CeilInt :: Int -> Int
 log2CeilInt !x = msb + ceiling_
   where
@@ -71,10 +72,12 @@ log2CeilInt !x = msb + ceiling_
 -- > bitCeil 3
 -- 4
 -- @
+{-# INLINE bitCeil #-}
 bitCeil :: Int -> Int
 bitCeil = bit . log2CeilInt
 
 -- | Originally by @yamate11
+{-# INLINE powersetM_ #-}
 powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 powersetM_ !is0 !act = act2 is0
   where
@@ -86,6 +89,7 @@ powersetM_ !is0 !act = act2 is0
 --
 -- >>> powerset (7 :: Int)
 -- [7,6,5,4,3,2,1,0]
+{-# INLINE powerset #-}
 powerset :: (Bits a, Num a) => a -> [a]
 powerset !a = a : unfoldr f a
   where
@@ -96,6 +100,7 @@ powerset !a = a : unfoldr f a
 --
 -- >>> powersetU (7 :: Int)
 -- [7,6,5,4,3,2,1,0]
+{-# INLINE powersetU #-}
 powersetU :: (Bits a, Num a, U.Unbox a) => a -> U.Vector a
 powersetU !x0 = U.unfoldrExactN n f x0
   where
@@ -106,5 +111,6 @@ powersetU !x0 = U.unfoldrExactN n f x0
 -- [0,2]
 --
 -- TODO: which is faster: unfoldrExactN with count leading zeros.
+{-# INLINE unBitSet #-}
 unBitSet :: Int -> Int -> U.Vector Int
 unBitSet n bits = U.filter (testBit bits) (U.generate n id)

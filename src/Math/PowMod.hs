@@ -1,9 +1,9 @@
 -- | TODO, Combine ModInt as Modulo module.
 module Math.PowMod where
 
-import Data.BitSet (bitsOf)
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
+import Math.BitSet (bitsOf)
 
 -- TODO: refactor
 -- TODO: consider taking `modulo` as the first argument
