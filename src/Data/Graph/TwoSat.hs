@@ -6,7 +6,6 @@ module Data.Graph.TwoSat where
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
-import Data.Array.IArray
 import Data.Bool (bool)
 import Data.Buffer
 import Data.Graph.Sparse

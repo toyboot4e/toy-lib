@@ -11,7 +11,6 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Control.Monad.State.Class
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
-import Data.Array.IArray
 import Data.Bifunctor
 import Data.BinaryHeap
 import Data.Bool (bool)
@@ -19,6 +18,7 @@ import Data.Buffer
 import Data.Graph.Alias (EdgeId, Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntMap as IM
+import Data.Ix
 import Data.Maybe
 import Data.Ord (comparing)
 import Data.Tuple.Extra (thd3)

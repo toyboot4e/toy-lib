@@ -6,7 +6,6 @@ module Data.Graph.Tree.TreeSG where
 
 import Control.Monad.Fix
 import Control.Monad.ST
-import Data.Array.IArray
 import Data.BinaryLifting
 import Data.Core.SemigroupAction
 import Data.Functor.Identity
