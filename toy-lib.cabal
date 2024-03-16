@@ -184,6 +184,7 @@ library
     Data.Graph.MinCostFlow
     Data.Graph.Sparse
     Data.Graph.Tree.Lca
+    Data.Graph.Tree.TreeSG
     Data.Graph.TwoSat
     Data.Instances.A2
     Data.Instances.A3
