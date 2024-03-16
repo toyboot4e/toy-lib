@@ -35,7 +35,7 @@ sortMo !maxL !lrs = U.modify (VAI.sortBy compareF) (G.generate (G.length lrs) id
           !res = compare b1 b2 <> bool (compare r2 r1) (compare r1 r2) (even b1)
        in res
 
--- | Runs Mo's algorithm: /O(N * \sqrt Q). @runMo xs lrs onInsL onInsR onRemL onRemR extract state0@.
+-- | Runs Mo's algorithm: \(O(N * \sqrt Q)\). @runMo xs lrs onInsL onInsR onRemL onRemR extract state0@.
 runMoG :: (PrimMonad m, U.Unbox x, G.Vector v b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> b) -> a -> m (v b)
 runMoG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = do
   !result <- GM.unsafeNew q

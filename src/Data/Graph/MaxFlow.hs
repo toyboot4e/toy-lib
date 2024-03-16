@@ -3,7 +3,7 @@
 
 -- TODO: rename the module to MaxFlow
 
--- | /O(V^2E)/ max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
+-- | \(O(V^2E)\) max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
 -- Just run `maxFlowD` to get the result. All the other functions are used internally.
 --
@@ -54,7 +54,7 @@ data MaxFlowBuffer s c = MaxFlowBuffer
     iterMF :: !(UM.MVector s Int)
   }
 
--- | /O(V^2E)/ max flow algorithm (Dinic's algorithm).
+-- | \(O(V^2E)\) max flow algorithm (Dinic's algorithm).
 maxFlow ::
   (U.Unbox c, Num c, Ord c, Bounded c) =>
   Int ->

@@ -1,3 +1,4 @@
+-- | Common type name aliaes among the @Graph@ module.
 module Data.Graph.Alias where
 
 -- | Reprensents a vertex.
