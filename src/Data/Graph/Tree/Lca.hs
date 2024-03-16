@@ -50,12 +50,13 @@ lcaLen cache@(!depths, !_, !_) !v1 !v2 =
 -- Tree path folding
 ----------------------------------------------------------------------------------------------------
 
--- | Returns `FoldLcaCache` for folding values between two vertices.
+-- | Returns caches for `foldPathViaLca`.
 --
 -- - @graph@: Vertex -> [Vertex]
 -- - @edgeValueOf@: child -> parent -> m
-foldLcaCache :: forall m. (Monoid m, U.Unbox m) => LcaCache m -> VecBL (TransiteSemigroup m)
-foldLcaCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.length (unTransiteSemigroup toParent)) f
+{-# INLINE foldPathCache #-}
+foldPathCache :: forall m. (Monoid m, U.Unbox m) => LcaCache m -> VecBL (TransiteSemigroup m)
+foldPathCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.length (unTransiteSemigroup toParent)) f
   where
     f c
       | p == -1 = (-1, mempty)
@@ -68,9 +69,9 @@ foldLcaCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.l
 -- = Typical problems
 -- - [ABC 235 E - MST + 1](https://atcoder.jp/contests/abc235/tasks/abc235_e)
 --   In this problems we have self-looping edge though.
-{-# INLINE foldViaLca #-}
-foldViaLca :: forall a. (HasCallStack, U.Unbox a, Semigroup a) => LcaCache a -> (Vertex, a) -> (Vertex, a) -> a
-foldViaLca cache@(!depths, !_, !toParentBL) (!v1, !a1) (!v2, !a2) = a'
+{-# INLINE foldPathViaLca #-}
+foldPathViaLca :: forall a. (HasCallStack, U.Unbox a, Semigroup a) => LcaCache a -> (Vertex, a) -> (Vertex, a) -> a
+foldPathViaLca cache@(!depths, !_, !toParentBL) (!v1, !a1) (!v2, !a2) = a'
   where
     (!_, !d) = lca cache v1 v2
     d1 = depths U.! v1
