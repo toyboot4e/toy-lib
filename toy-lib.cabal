@@ -201,12 +201,8 @@ library
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse
     Data.Utils.Unindex
-    Data.Vector.Compress
-    Data.Vector.Construct
     Data.Vector.CSum
-    Data.Vector.DictOrder
     Data.Vector.Extra
-    Data.Vector.InvNum
     Data.Vector.IxVector
     Heuristic.Randoms
     Math.BitSet

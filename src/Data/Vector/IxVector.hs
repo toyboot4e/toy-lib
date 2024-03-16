@@ -256,3 +256,4 @@ imos2DIV seeds@IxVector {boundsIV} = IxVector boundsIV $ U.create $ do
     modifyIV vec (+ v) (y, x)
 
   return $ vecIV vec
+
