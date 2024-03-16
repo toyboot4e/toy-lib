@@ -9,6 +9,7 @@ import Control.Monad.ST
 import Data.Bool (bool)
 import Data.Buffer
 import Data.Graph.Sparse
+import Data.Ix
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug (dbgAssert)

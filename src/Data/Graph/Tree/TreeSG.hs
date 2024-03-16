@@ -12,6 +12,7 @@ import Data.Functor.Identity
 import Data.Graph.Alias (Vertex)
 import Data.Graph.Sparse
 import Data.Graph.Tree.Lca
+import Data.Ix
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -23,7 +24,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 ----------------------------------------------------------------------------------------------------
 
 -- | Returns @(depths, parents)@.
-treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Int -> (U.Vector Int, TransiteSemigroup w)
+treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Int -> (U.Vector Int, TransitionalSemigroup w)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.unsafeNew nVerts
   !depths <- UM.unsafeNew nVerts
@@ -35,7 +36,7 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
       let !vs' = U.filter ((/= parent) . fst) $ gr `adjW` v
       loop (depth + 1, v, vs')
 
-  (,) <$> U.unsafeFreeze depths <*> (TransiteSemigroup <$> U.unsafeFreeze parents)
+  (,) <$> U.unsafeFreeze depths <*> (TransitionalSemigroup <$> U.unsafeFreeze parents)
   where
     !nVerts = rangeSize boundsSG
 

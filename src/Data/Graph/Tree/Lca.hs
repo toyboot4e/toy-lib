@@ -9,7 +9,7 @@ import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 
 -- | `(parents, depths, parents')`
-type LcaCache a = (U.Vector Int, TransiteSemigroup a, VecBL (TransiteSemigroup a))
+type LcaCache a = (U.Vector Int, TransitionalSemigroup a, VecBL (TransitionalSemigroup a))
 
 -- | Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.

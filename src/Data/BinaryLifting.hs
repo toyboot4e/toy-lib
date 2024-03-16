@@ -19,7 +19,9 @@ import Math.BitSet (bitsOf)
 
 -- | Binary lifting.
 class BinaryLifting a where
+  -- | @V.Vector a@ or @U.Vector a@
   type VecBL a
+  -- | @cacheBLV@ or @cacheBLU@
   cacheBL :: a -> VecBL a
 
 {-# INLINE cacheBLU #-}
@@ -62,15 +64,17 @@ instance (Num a, U.Unbox a) => BinaryLifting (Product a) where
   cacheBL = cacheBLU
 
 ----------------------------------------------------------------------------------------------------
--- TransiteSemigroup: Permutation + Semigroup
+-- TransitionalSemigroup: Permutation + Semigroup
 ----------------------------------------------------------------------------------------------------
 
-type Permutation = TransiteSemigroup ()
+-- TODO: proper english
+
+type Permutation = TransitionalSemigroup ()
 
 -- | The identity element of `Permutation`.
 {-# INLINE idPerm #-}
 idPerm :: Int -> Permutation
-idPerm = TransiteSemigroup . (`U.generate` (,()))
+idPerm = TransitionalSemigroup . (`U.generate` (,()))
 
 -- | Transition + semigroup concatanation. LCA is based on this.
 --
@@ -78,18 +82,18 @@ idPerm = TransiteSemigroup . (`U.generate` (,()))
 -- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
 -- = Typical problems (Permutation)
 --
--- = Typical problems (TransiteSemigroup)
+-- = Typical problems (TransitionalSemigroup)
 -- c.f. LCA.
-newtype TransiteSemigroup a = TransiteSemigroup (U.Vector (Int, a))
+newtype TransitionalSemigroup a = TransitionalSemigroup (U.Vector (Int, a))
   deriving (Show, Eq)
 
-{-# INLINE unTransiteSemigroup #-}
-unTransiteSemigroup :: TransiteSemigroup a -> U.Vector (Int, a)
-unTransiteSemigroup (TransiteSemigroup vec) = vec
+{-# INLINE unTransitionalSemigroup #-}
+unTransitionalSemigroup :: TransitionalSemigroup a -> U.Vector (Int, a)
+unTransitionalSemigroup (TransitionalSemigroup vec) = vec
 
-instance (U.Unbox a, Semigroup a) => Semigroup (TransiteSemigroup a) where
+instance (U.Unbox a, Semigroup a) => Semigroup (TransitionalSemigroup a) where
   {-# INLINE (<>) #-}
-  TransiteSemigroup r2 <> TransiteSemigroup r1 = TransiteSemigroup $ U.map f r1
+  TransitionalSemigroup r2 <> TransitionalSemigroup r1 = TransitionalSemigroup $ U.map f r1
     where
       {-# INLINE f #-}
       f (-1, !a) = (-1, a)
@@ -99,28 +103,28 @@ instance (U.Unbox a, Semigroup a) => Semigroup (TransiteSemigroup a) where
          in (i', a'')
 
 -- | @Int@ as target
-instance (U.Unbox a) => SemigroupAction (TransiteSemigroup a) Int where
+instance (U.Unbox a) => SemigroupAction (TransitionalSemigroup a) Int where
   {-# INLINE sact #-}
-  sact (TransiteSemigroup _) (-1) = -1
-  sact (TransiteSemigroup vec) i =
+  sact (TransitionalSemigroup _) (-1) = -1
+  sact (TransitionalSemigroup vec) i =
     let (!i', !_) = vec U.! i
      in i'
 
 -- | @b@ as target
-instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (TransiteSemigroup a) (Int, b) where
+instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (TransitionalSemigroup a) (Int, b) where
   {-# INLINE sact #-}
-  sact (TransiteSemigroup _) (-1, !b) = (-1, b)
-  sact (TransiteSemigroup vec) (!i, !b) =
+  sact (TransitionalSemigroup _) (-1, !b) = (-1, b)
+  sact (TransitionalSemigroup vec) (!i, !b) =
     let (!i', !a) = vec U.! i
         !b' = a `sact` b
      in (i', b')
 
 -- | The identity element of `TransiteSemigroup`.
-{-# INLINE idTransiteSemigroup #-}
-idTransiteSemigroup :: (U.Unbox a) => Int -> a -> TransiteSemigroup a
-idTransiteSemigroup !n !ident = TransiteSemigroup $ U.generate n (,ident)
+{-# INLINE idTransitionalSemigroup #-}
+idTransitionalSemigroup :: (U.Unbox a) => Int -> a -> TransitionalSemigroup a
+idTransitionalSemigroup !n !ident = TransitionalSemigroup $ U.generate n (,ident)
 
-instance (U.Unbox a, Semigroup a) => BinaryLifting (TransiteSemigroup a) where
-  type VecBL (TransiteSemigroup a) = V.Vector (TransiteSemigroup a)
+instance (U.Unbox a, Semigroup a) => BinaryLifting (TransitionalSemigroup a) where
+  type VecBL (TransitionalSemigroup a) = V.Vector (TransitionalSemigroup a)
   {-# INLINE cacheBL #-}
   cacheBL = cacheBLV
