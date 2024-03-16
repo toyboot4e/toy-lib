@@ -171,7 +171,6 @@ library
   -- cabal-fmt: expand src
   exposed-modules:
     Algorithm.Bisect
-    Algorithm.Imos
     Algorithm.Mo
     Algorithm.TwoPointers
     Data.BinaryHeap
