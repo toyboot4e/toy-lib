@@ -3,10 +3,8 @@ module Data.Graph.Tree.Lca where
 
 import Algorithm.Bisect
 import Data.BinaryLifting
-import Data.Core.SemigroupAction
 import Data.Graph.Alias (Vertex)
 import Data.Maybe
-import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 
@@ -45,24 +43,6 @@ lcaLen cache@(!depths, !_, !_) !v1 !v2 =
       !d1 = depths U.! v1
       !d2 = depths U.! v2
    in (d1 - d) + (d2 - d)
-
-----------------------------------------------------------------------------------------------------
--- Tree path folding
-----------------------------------------------------------------------------------------------------
-
--- | Returns caches for `foldPathViaLca`.
---
--- - @graph@: Vertex -> [Vertex]
--- - @edgeValueOf@: child -> parent -> m
-{-# INLINE foldPathCache #-}
-foldPathCache :: forall m. (Monoid m, U.Unbox m) => LcaCache m -> VecBL (TransiteSemigroup m)
-foldPathCache (!_, !toParent, !_) = cacheBL . TransiteSemigroup $ U.generate (G.length (unTransiteSemigroup toParent)) f
-  where
-    f c
-      | p == -1 = (-1, mempty)
-      | otherwise = (p, op)
-      where
-        (!p, !op) = toParent `sact` (c, mempty)
 
 -- | Calculates the folding value of the path between two vertices in a tree.
 --
