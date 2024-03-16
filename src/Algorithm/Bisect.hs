@@ -22,7 +22,41 @@
 -- (Just 5,Just 6)
 --
 -- `bisectL` returns @Just 5@ and `bisectR` returns @Just 6@.
-module Algorithm.Bisect where
+module Algorithm.Bisect
+  ( -- * Bisection methods
+
+    -- ** `Int`
+    bisect,
+    bisectL,
+    bisectR,
+    bisectM,
+    bisectML,
+    bisectMR,
+
+    -- ** `Float`
+    bisectF32,
+    bisectF32L,
+    bisectF32R,
+
+    -- ** `Double`
+    bisectF64,
+    bisectF64L,
+    bisectF64R,
+
+    -- * Binary search over vector
+    bsearch,
+    bsearchL,
+    bsearchR,
+    bsearchExact,
+    bsearchM,
+    bsearchML,
+    bsearchMR,
+    bsearchMExact,
+
+    -- * Misc
+    isqrtSlow,
+  )
+where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Functor.Identity
@@ -33,55 +67,6 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 
 -- TODO: Use higher order function for getting middle and detecting end
-
--- | `bisect` over a vector.
-{-# INLINE bsearch #-}
-bsearch :: (G.Vector v a) => v a -> (a -> Bool) -> (Maybe Int, Maybe Int)
-bsearch !vec !p = bisect 0 (G.length vec - 1) (p . (vec G.!))
-
--- | `bisectL` over a vector.
-{-# INLINE bsearchL #-}
-bsearchL :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
-bsearchL !vec !p = bisectL 0 (G.length vec - 1) (p . (vec G.!))
-
--- | `bisectR` over a vector.
-{-# INLINE bsearchR #-}
-bsearchR :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
-bsearchR !vec !p = bisectR 0 (G.length vec - 1) (p . (vec G.!))
-
--- | `bsearchExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
-{-# INLINE bsearchExact #-}
-bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe Int
-bsearchExact !vec f !xref = case bisectL 0 (G.length vec - 1) ((<= xref) . f . (vec G.!)) of
-  Just !x | f (vec G.! x) == xref -> Just x
-  _ -> Nothing
-
--- \| `bisectM` over a vector.
-{-# INLINE bsearchM #-}
-bsearchM :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int, Maybe Int)
-bsearchM !vec !p = bisectM 0 (GM.length vec - 1) (fmap p . GM.read vec)
-
--- | `bisectML` over a vector.
-{-# INLINE bsearchML #-}
-bsearchML :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
-bsearchML !vec !p = bisectML 0 (GM.length vec - 1) (fmap p . GM.read vec)
-
--- | `bisectMR` over a vector.
-{-# INLINE bsearchMR #-}
-bsearchMR :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
-bsearchMR !vec !p = bisectMR 0 (GM.length vec - 1) (fmap p . GM.read vec)
-
--- | `bsearchMExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
-{-# INLINE bsearchMExact #-}
-bsearchMExact :: (PrimMonad m, GM.MVector v a, Ord b) => v (PrimState m) a -> (a -> b) -> b -> m (Maybe Int)
-bsearchMExact !vec f !xref =
-  bisectML 0 (GM.length vec - 1) (fmap ((<= xref) . f) . GM.read vec) >>= \case
-    Just !i -> do
-      !x <- f <$> GM.read vec i
-      if x == xref
-        then return $ Just i
-        else return Nothing
-    _ -> return Nothing
 
 -- | Pure binary search.
 {-# INLINE bisect #-}
@@ -172,6 +157,55 @@ bisectF64L !a !b !c !d = fst $! bisectF64 a b c d
 {-# INLINE bisectF64R #-}
 bisectF64R :: Double -> Double -> Double -> (Double -> Bool) -> Maybe Double
 bisectF64R !a !b !c !d = snd $! bisectF64 a b c d
+
+-- | `bisect` over a vector.
+{-# INLINE bsearch #-}
+bsearch :: (G.Vector v a) => v a -> (a -> Bool) -> (Maybe Int, Maybe Int)
+bsearch !vec !p = bisect 0 (G.length vec - 1) (p . (vec G.!))
+
+-- | `bisectL` over a vector.
+{-# INLINE bsearchL #-}
+bsearchL :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
+bsearchL !vec !p = bisectL 0 (G.length vec - 1) (p . (vec G.!))
+
+-- | `bisectR` over a vector.
+{-# INLINE bsearchR #-}
+bsearchR :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
+bsearchR !vec !p = bisectR 0 (G.length vec - 1) (p . (vec G.!))
+
+-- | `bsearchExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+{-# INLINE bsearchExact #-}
+bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe Int
+bsearchExact !vec f !xref = case bisectL 0 (G.length vec - 1) ((<= xref) . f . (vec G.!)) of
+  Just !x | f (vec G.! x) == xref -> Just x
+  _ -> Nothing
+
+-- \| `bisectM` over a vector.
+{-# INLINE bsearchM #-}
+bsearchM :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int, Maybe Int)
+bsearchM !vec !p = bisectM 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bisectML` over a vector.
+{-# INLINE bsearchML #-}
+bsearchML :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
+bsearchML !vec !p = bisectML 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bisectMR` over a vector.
+{-# INLINE bsearchMR #-}
+bsearchMR :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
+bsearchMR !vec !p = bisectMR 0 (GM.length vec - 1) (fmap p . GM.read vec)
+
+-- | `bsearchMExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+{-# INLINE bsearchMExact #-}
+bsearchMExact :: (PrimMonad m, GM.MVector v a, Ord b) => v (PrimState m) a -> (a -> b) -> b -> m (Maybe Int)
+bsearchMExact !vec f !xref =
+  bisectML 0 (GM.length vec - 1) (fmap ((<= xref) . f) . GM.read vec) >>= \case
+    Just !i -> do
+      !x <- f <$> GM.read vec i
+      if x == xref
+        then return $ Just i
+        else return Nothing
+    _ -> return Nothing
 
 -- | Retrieves square root of an `Int`.
 isqrtSlow :: Int -> Int
