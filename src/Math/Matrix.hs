@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
--- | TODO: Refactor in my way.
+-- | Vector-based matrix implementation.
 module Math.Matrix where
 
 import Data.BinaryLifting
@@ -87,4 +87,3 @@ instance (Num a, U.Unbox a) => BinaryLifting (Mat a) where
   type VecBL (Mat a) = V.Vector (Mat a)
   {-# INLINE cacheBL #-}
   cacheBL = cacheBLV
-

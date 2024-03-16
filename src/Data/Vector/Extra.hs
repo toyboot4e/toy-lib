@@ -159,7 +159,7 @@ lexOrderMod xs modulo = runST $ do
   !stree <- newSTreeU (+) (G.length xs + 1) (0 :: Int)
 
   -- Pre-calculated factorial numbers:
-  let !facts = factModsN (G.length xs) modulo
+  let !facts = factModsN modulo (G.length xs)
 
   -- The calculation is very similar to that of inversion number. For example,
   -- ```

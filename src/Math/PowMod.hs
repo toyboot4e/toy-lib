@@ -1,4 +1,6 @@
 -- | \(\mathit{base}^n \bmod x\) in a constant time using Fermet's little theorem.
+--
+-- TODO: Test all the functions.
 module Math.PowMod where
 
 import Data.List (foldl')
@@ -25,52 +27,49 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 -- time.
 {-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
-powModConst !base !power !modulo = powModByCache power (powModCache (base `mod` modulo) modulo)
+powModConst !modulo !base !power = powModByCache (powModCache modulo (base `mod` modulo)) power
 
 -- | One-shot calcaulation of \(x / d \bmod p\), using Fermat's little theorem.
 {-# INLINE invModF #-}
 invModF :: Int -> Int -> Int
-invModF !d !modulo = invModFC modulo (powModCache d modulo)
+invModF !modulo !d = invModFC (powModCache modulo d) modulo
 
 -- | Calculates \(x / d \bmod p\), using Fermat's little theorem.
 {-# INLINE divModF #-}
 divModF :: Int -> Int -> Int -> Int
-divModF !x !d !modulo = divModFC x (powModCache d modulo) `rem` modulo
+divModF !modulo !x !d = divModFC (powModCache modulo d) x `rem` modulo
 
 -- | Cache of \(\mathit{base}^n\) for iterative square method.
 powModCache :: Int -> Int -> (Int, U.Vector Int)
-powModCache !base !modulo = (modulo, bl)
-  where
-    bl = U.iterateN 63 (\x -> x * x `rem` modulo) base
+powModCache !modulo !base = (modulo, U.iterateN 63 (\x -> x * x `rem` modulo) base)
 
 -- | Calculates \(\mathit{base}^n \bmod p\) using a cache.
 {-# INLINE powModByCache #-}
-powModByCache :: Int -> (Int, U.Vector Int) -> Int
-powModByCache !power (!modulo, !cache) = U.foldl' step 1 (bitsOf power)
+powModByCache :: (Int, U.Vector Int) -> Int -> Int
+powModByCache (!modulo, !cache) power = U.foldl' step 1 (bitsOf power)
   where
-    step !acc !nBit = acc * (cache U.! nBit) `rem` modulo
+    step !acc nBit = acc * (cache U.! nBit) `rem` modulo
 
 -- | \(1/d = d^{p-2} \bmod p\)
 --
 -- \(\because d^p = d \bmod p\) where the modulo is a prime number and @d@ is not a mulitple of
--- @p@. and \(x^{p-2}\) is pre-calculated with cache.
+-- @p@.
 {-# INLINE invModFC #-}
-invModFC :: Int -> (Int, U.Vector Int) -> Int
-invModFC !primeModulo = powModByCache (primeModulo - 2)
+invModFC :: (Int, U.Vector Int) -> Int -> Int
+invModFC context primeModulo = powModByCache context (primeModulo - 2)
 
 {-# INLINE divModFC #-}
-divModFC :: Int -> (Int, U.Vector Int) -> Int
-divModFC !x context@(!modulo, !_) = x * invModFC modulo context `rem` modulo
+divModFC :: (Int, U.Vector Int) -> Int -> Int
+divModFC context@(!modulo, !_) x = x * invModFC context modulo `rem` modulo
 
 -- | Cache of \(n! \bmod m\) up to `n`.
 {-# INLINE factModsN #-}
 factModsN :: Int -> Int -> U.Vector Int
-factModsN !n !modulo =
-  U.scanl' (\ !x !y -> x * y `rem` modulo) (1 :: Int) $ U.fromList [(1 :: Int) .. n]
+factModsN !modulo !n = U.scanl' (mulMod modulo) (1 :: Int) $ U.generate n (+ 1)
 
 -- | nCr `mod` m (binominal cofficient).
 {-# INLINE bcMod #-}
 bcMod :: Int -> Int -> Int -> Int
-bcMod !n !r !modulo = foldl' (\ !x !y -> divModF x y modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
+bcMod !n !r !modulo = foldl' (divModF modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
   where
-    facts = factModsN n modulo
+    facts = factModsN modulo n

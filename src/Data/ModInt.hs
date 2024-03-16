@@ -9,7 +9,6 @@ module Data.ModInt where
 
 import Data.Coerce
 import Data.Core.SemigroupAction
-import GHC.Exts
 import qualified Data.Ratio as Ratio
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
@@ -17,6 +16,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Exts
 import GHC.TypeLits
 import Math.PowMod (invModF)
 
@@ -37,9 +37,9 @@ instance (KnownNat p) => Num (ModInt p) where
 
 -- TODO: prefer @recip@?
 instance (KnownNat p) => Fractional (ModInt p) where
-  -- \| Reciprocal of x (inverse of x).
+  -- Reciprocal of x (inverse of x).
   -- REMARK: This is TOO slow. Do cache when possible.
-  recip (ModInt !x) = ModInt $! invModF x (fromInteger (natVal' (proxy# @p)))
+  recip (ModInt !x) = ModInt $! invModF (fromInteger (natVal' (proxy# @p))) x
   fromRational !r = ModInt n / ModInt d
     where
       n = fromInteger $! Ratio.numerator r
