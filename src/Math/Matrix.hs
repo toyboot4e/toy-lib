@@ -10,9 +10,7 @@ import Data.Vector.Extra (chunksOfG)
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
-import GHC.Exts
 import GHC.Stack (HasCallStack)
-import GHC.TypeLits
 import ToyLib.Debug
 import ToyLib.Prelude (zero2)
 
