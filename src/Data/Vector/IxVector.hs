@@ -139,52 +139,6 @@ freezeIV iv = IxVector (boundsIV iv) <$> G.freeze (vecIV iv)
 unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
 unsafeFreezeIV iv = IxVector (boundsIV iv) <$> G.unsafeFreeze (vecIV iv)
 
--- | Calculates two-dimensional cummulative sum.
---
--- WARNING: Can you really allocate/run \(O(HW)\) algorithm?
---
--- NOTE: Returns a 2D graph with one-based index with a zero row and a column inserted.
---
--- = Typical problems
--- - [ABC 331 D - Tile Pattern](https://atcoder.jp/contests/abc331/tasks/abc331_d)
-{-# INLINE csum2D #-}
-csum2D :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
-csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case unindex bnd (G.length sofar) of
-  (0, _) -> 0
-  (_, 0) -> 0
-  (!y, !x) -> v0 + fromY + fromX - fromD
-    where
-      -- NOTE: Use zero-based indices on original graph access
-      v0 = gr @! (y - 1, x - 1)
-      fromY = IxVector bnd sofar @! (y - 1, x)
-      fromX = IxVector bnd sofar @! (y, x - 1)
-      fromD = IxVector bnd sofar @! (y - 1, x - 1)
-  where
-    -- Insert the zero row and the column:
-    !bnd = second (both (+ 1)) (boundsIV gr)
-
--- | Returns cummulative sum in the given 2D range.
--- @
--- - - * * *
--- - - * * *
--- = = # # #
--- = = # # #
--- = = # # #
--- @
-{-# INLINE (@+!) #-}
-(@+!) :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
-(@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
-  where
-    -- NOTE: Using one-based indices sinces zeros are inserted
-    -- From top left to @#@
-    !s1 = csum @! (y2 + 1, x2 + 1)
-    -- From top left to @*@
-    !s2 = csum @! (y1, x2 + 1)
-    -- From top left to @=@
-    !s3 = csum @! (y2 + 1, x1)
-    -- From top left to @-@
-    !s4 = csum @! (y1, x1)
-
 -- | Creates a new `IxVector` with initial value.
 {-# INLINE newIV #-}
 newIV :: (Ix i, PrimMonad m, U.Unbox a) => (i, i) -> a -> m (IxMUVector (PrimState m) i a)
@@ -247,3 +201,48 @@ exchangeIV IxVector {..} i = GM.exchange vecIV (index boundsIV i)
 unsafeExchangeIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
 unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
 
+-- | Calculates two-dimensional cummulative sum.
+--
+-- WARNING: Can you really allocate/run \(O(HW)\) algorithm?
+--
+-- NOTE: Returns a 2D graph with one-based index with a zero row and a column inserted.
+--
+-- = Typical problems
+-- - [ABC 331 D - Tile Pattern](https://atcoder.jp/contests/abc331/tasks/abc331_d)
+{-# INLINE csum2D #-}
+csum2D :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> IxUVector (Int, Int) a
+csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case unindex bnd (G.length sofar) of
+  (0, _) -> 0
+  (_, 0) -> 0
+  (!y, !x) -> v0 + fromY + fromX - fromD
+    where
+      -- NOTE: Use zero-based indices on original graph access
+      v0 = gr @! (y - 1, x - 1)
+      fromY = IxVector bnd sofar @! (y - 1, x)
+      fromX = IxVector bnd sofar @! (y, x - 1)
+      fromD = IxVector bnd sofar @! (y - 1, x - 1)
+  where
+    -- Insert the zero row and the column:
+    !bnd = second (both (+ 1)) (boundsIV gr)
+
+-- | Returns cummulative sum in the given 2D range.
+-- @
+-- - - * * *
+-- - - * * *
+-- = = # # #
+-- = = # # #
+-- = = # # #
+-- @
+{-# INLINE (@+!) #-}
+(@+!) :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
+(@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
+  where
+    -- NOTE: Using one-based indices sinces zeros are inserted
+    -- From top left to @#@
+    !s1 = csum @! (y2 + 1, x2 + 1)
+    -- From top left to @*@
+    !s2 = csum @! (y1, x2 + 1)
+    -- From top left to @=@
+    !s3 = csum @! (y2 + 1, x1)
+    -- From top left to @-@
+    !s4 = csum @! (y1, x1)
