@@ -221,6 +221,7 @@ library
     ToyLib.IO
     ToyLib.Macro
     ToyLib.Prelude
+    ToyLib.Procedual
 
   hs-source-dirs:   src
   ghc-options:
