@@ -60,22 +60,15 @@ lengthIV = G.length . vecIV
 
 {-# INLINE findIndexIV #-}
 findIndexIV :: (G.Vector v a, Unindex i) => IxVector i (v a) -> (a -> Bool) -> Maybe i
-findIndexIV iv f = unindex bnd <$> G.findIndex f (vecIV iv)
-  where
-    bnd = boundsIV iv
+findIndexIV IxVector { .. } f = unindex boundsIV <$> G.findIndex f vecIV
 
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
-mapIV !f !vec = IxVector bnd $ U.map f (vecIV vec)
-  where
-    !bnd = boundsIV vec
+mapIV !f IxVector { .. } = IxVector boundsIV $ U.map f vecIV
 
 {-# INLINE imapIV #-}
 imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
-imapIV !f !vec = IxVector bnd $ U.imap wrapper (vecIV vec)
-  where
-    !bnd = boundsIV vec
-    wrapper i = f (unindex bnd i)
+imapIV !f IxVector{..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
 
 {-# INLINE zipWithIV #-}
 zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b) -> IxVector i (U.Vector c)
@@ -147,6 +140,8 @@ unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimSt
 unsafeFreezeIV iv = IxVector (boundsIV iv) <$> G.unsafeFreeze (vecIV iv)
 
 -- | Calculates two-dimensional cummulative sum.
+--
+-- WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 --
 -- NOTE: Returns a 2D graph with one-based index with a zero row and a column inserted.
 --
@@ -251,23 +246,4 @@ exchangeIV IxVector {..} i = GM.exchange vecIV (index boundsIV i)
 {-# INLINE unsafeExchangeIV #-}
 unsafeExchangeIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
 unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
-
--- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
-imos2DIV :: (HasCallStack) => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)
-imos2DIV seeds@IxVector {boundsIV} = IxVector boundsIV $ U.create $ do
-  !vec <- IxVector boundsIV <$> U.thaw (vecIV seeds)
-
-  let (!minY, !minX) = fst boundsIV
-
-  -- row scan
-  forM_ (range boundsIV) $ \(!y, !x) -> do
-    !v <- if x == minX then return 0 else readIV vec (y, x - 1)
-    modifyIV vec (+ v) (y, x)
-
-  -- column scan
-  forM_ (range boundsIV) $ \(!x, !y) -> do
-    !v <- if y == minY then return 0 else readIV vec (y - 1, x)
-    modifyIV vec (+ v) (y, x)
-
-  return $ vecIV vec
 
