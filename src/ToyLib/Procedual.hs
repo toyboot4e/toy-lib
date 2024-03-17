@@ -14,7 +14,7 @@ or2 x y = do
   b <- x
   or1 b y
 
-and2 :: (Monad m) => Bool -> m Bool -> m Bool
+and2 :: (Monad m) => m Bool -> m Bool -> m Bool
 and2 x y = do
   b <- x
   and1 b y
