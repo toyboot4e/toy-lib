@@ -58,6 +58,12 @@ type IxMUVector s i a = IxVector i (UM.MVector s a)
 lengthIV :: (G.Vector v a) => IxVector i (v a) -> Int
 lengthIV = G.length . vecIV
 
+{-# INLINE findIndexIV #-}
+findIndexIV :: (G.Vector v a, Unindex i) => IxVector i (v a) -> (a -> Bool) -> Maybe i
+findIndexIV iv f = unindex bnd <$> G.findIndex f (vecIV iv)
+  where
+    bnd = boundsIV iv
+
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 mapIV !f !vec = IxVector bnd $ U.map f (vecIV vec)
@@ -237,6 +243,14 @@ swapIV IxVector {..} !i1 !i2 = GM.swap vecIV (index boundsIV i1) (index boundsIV
 {-# INLINE unsafeSwapIV #-}
 unsafeSwapIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
 unsafeSwapIV IxVector {..} !i1 !i2 = GM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
+
+{-# INLINE exchangeIV #-}
+exchangeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
+exchangeIV IxVector {..} i = GM.exchange vecIV (index boundsIV i)
+
+{-# INLINE unsafeExchangeIV #-}
+unsafeExchangeIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
+unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
 
 -- | WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 imos2DIV :: (HasCallStack) => IxVector (Int, Int) (U.Vector Int) -> IxVector (Int, Int) (U.Vector Int)
