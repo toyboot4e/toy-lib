@@ -165,9 +165,9 @@ querySTree (SegmentTree !f !vec) !lo !hi
           !ansH <- inner (2 * i + 2) (l + d + 1) h
           pure . Just $ case (ansL, ansH) of
             (Just !a, Just !b) -> let !res = f a b in res
-            (Just !a, _) -> a
-            (_, Just !b) -> b
-            (_, _) -> error $ "query error (segment tree): " ++ show (i, (l, h), (lo, hi))
+            (Just !a, !_) -> a
+            (!_, Just !b) -> b
+            (!_, !_) -> error $ "query error (segment tree): " ++ show (i, (l, h), (lo, hi))
 
 -- | Retrieves leaves.
 --
