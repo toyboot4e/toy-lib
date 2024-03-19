@@ -186,6 +186,14 @@ partitionsOfK set0 k0 = inner [] k0 [] set0
           let !set' = set .|. bit lsb
            in inner res (k - 1) (set' : acc) (rest' .&. complement set')
 
+-- | Powerset with the lsb on, mainly for partitioning DP.
+ordPowerset :: Int -> U.Vector Int
+ordPowerset 0 = U.empty
+ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU
+  where
+    lsb = lsbOf s0
+    set' = clearBit set0 lsb
+
 -- | Longest increasing subsequence. The input must be zero-based.
 lisOf :: (HasCallStack) => U.Vector Int -> Int
 lisOf !xs = runST $ do
