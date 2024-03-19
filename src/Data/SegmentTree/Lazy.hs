@@ -25,18 +25,15 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
--- TODO: Do we have to duplicate `SegmentTree` and `LazySegmentTree`?
--- TODO: Vertex -> Node? Op -> F?
-
 -- | Lazy segment tree.
 --
--- = Indices
+-- = 1-based indices
 --
--- Use 1-based indices for super handy index hacks:
+-- Use 1-based indices for super handy vertex indices:
 --
 -- @
 --            1             |
---      2           3       | height = 4
+--      2           3       | height = 4 = log_2 16
 --   4     5     6     7    |
 -- 08 09 10 11 12 13 14 15  v
 -- ^
@@ -44,14 +41,15 @@ import ToyLib.Debug
 --
 -- 0  1  2  3  4  5  6  7   -- iLeaf is given by user and uses zero-based indices.
 --
--- - parentVertex = vertex / 2 = shiftR vertex 1
--- - leftChild = vertex * 2 = shiftR vertex 1
--- - rightChild = vertex * 2 + 1 = shiftR vertex 1 + 1 = (shiftR vertex 1) .|. 1
+-- - parent = v .>>. 1
+-- - childL = v .<<. 1
+-- - childR = v .<<. 1 .|. 1
 -- @
 --
 -- = Invariant
 --
--- - New operators always come from the left: @(newOp <> oldOp) acc@ or @newOp `sact` (oldOp `sact ac)@.
+-- - New operators always come from the left: @(newOp <> oldOp) acc@ or
+-- @newOp `sact` (oldOp `sact` ac)@.
 data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
@@ -102,8 +100,8 @@ generateLazySTreeG !n !f = do
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
     !nLeaves = n2 `div` 2
-    childL !vertex = shiftL vertex 1
-    childR !vertex = shiftL vertex 1 .|. 1
+    childL !vertex = vertex .<<. 1
+    childR !vertex = vertex .<<. 1 .|. 1
 
 generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
 generateLazySTreeV = generateLazySTreeG
@@ -170,7 +168,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
               else return r
 
           -- go up to the parent segment
-          glitchLoopUpdate (shiftR l' 1) (shiftR r' 1)
+          glitchLoopUpdate (l' .>>. 1) (r' .>>. 1)
 
 queryLazySTree ::
   forall v a m op.
@@ -223,7 +221,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
               else return (r, rAcc)
 
           -- go up to the parent segment
-          glitchLoopQuery (shiftR l' 1) (shiftR r' 1) lAcc' rAcc'
+          glitchLoopQuery (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
 
 -- | Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --
@@ -253,9 +251,9 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
       UM.write ops vertex mempty
   where
     !nVerts = GM.length as
-    nthParent !leafVertex !nth = shiftR leafVertex nth
-    childL !vertex = shiftL vertex 1
-    childR !vertex = shiftL vertex 1 .|. 1
+    nthParent !leafVertex !nth = leafVertex .>>. nth
+    childL !vertex = vertex .<<. 1
+    childR !vertex = vertex .<<. 1 .|. 1
 
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
@@ -277,9 +275,9 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     GM.write as vertex $! aL' <> aR'
   where
     !nVerts = GM.length as
-    nthParent !leafVertex !nth = shiftR leafVertex nth
-    childL !vertex = shiftL vertex 1
-    childR !vertex = shiftL vertex 1 .|. 1
+    nthParent !leafVertex !nth = leafVertex .>>. nth
+    childL !vertex = vertex .<<. 1
+    childR !vertex = vertex .<<. 1 .|. 1
 
 ----------------------------------------------------------------------------------------------------
 -- TODO: test them
