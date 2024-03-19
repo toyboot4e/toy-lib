@@ -189,9 +189,9 @@ partitionsOfK set0 k0 = inner [] k0 [] set0
 -- | Powerset with the lsb on, mainly for partitioning DP.
 ordPowerset :: Int -> U.Vector Int
 ordPowerset 0 = U.empty
-ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU
+ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU set'
   where
-    lsb = lsbOf s0
+    lsb = countTrailingZeros set0
     set' = clearBit set0 lsb
 
 -- | Longest increasing subsequence. The input must be zero-based.
