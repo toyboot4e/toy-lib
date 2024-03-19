@@ -208,7 +208,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                la' <- mact <$!> UM.read ops l <*> GM.read as l
+                !la' <- mact <$> UM.read ops l <*> GM.read as l
                 let !la'' = lAcc <> la'
                 return (succ l, lAcc <> la')
               else return (l, lAcc)
@@ -217,7 +217,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                ra' <- mact <$!> UM.read ops r <*> GM.read as r
+                !ra' <- mact <$> UM.read ops r <*> GM.read as r
                 let !ra'' = ra' <> rAcc
                 return (pred r, ra'')
               else return (r, rAcc)
