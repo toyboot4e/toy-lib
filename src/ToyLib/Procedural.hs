@@ -1,5 +1,5 @@
 -- | The great good procedual programming.
-module ToyLib.Procedual where
+module ToyLib.Procedural where
 
 or1 :: (Monad m) => Bool -> m Bool -> m Bool
 or1 True _ = return True
