@@ -208,7 +208,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
                 -- Evaluate the target segmnent and append the result:
                 !la' <- mact <$> UM.read ops l <*> GM.read as l
                 let !la'' = lAcc <> la'
-                return (succ l, lAcc <> la')
+                return (succ l, lAcc <> la'')
               else return (l, lAcc)
 
           (!r', !rAcc') <-
@@ -298,7 +298,6 @@ bisectLazySTree stree@(LazySegmentTree !as !_ !_) l r f = do
     !acc <- queryLazySTree stree l r'
     return $! f acc
   where
-    !nLeaves = GM.length as `div` 2
     !_ = dbgAssert (inRange (0, nLeaves - 1) l && inRange (0, nLeaves - 1) r) $ "bisectLazySTree: giveninvalid range " ++ show (l, r)
 
 {-# INLINE bisectLazySTreeL #-}
