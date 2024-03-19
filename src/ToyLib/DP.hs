@@ -81,20 +81,28 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 
   return vec
 
--- | Returns non-zero two spans over the given inclusive range @[l, r]@.
--- >>> spansU 3 6
--- [((3,3),(4,6)),((3,4),(5,6)),((3,5),(6,6))]
-spansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
-spansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeU 1 (r - l)
+-- | $[l, r]$ span.
+type Span = (Int, Int)
 
--- | >>> iwiSpansU 3 6
+-- | Returns non-empty splits of a `Span`.
+-- >>> twoSplits 3 6
+-- [((3,3),(4,6)),((3,4),(5,6)),((3,5),(6,6))]
+{-# INLINE twoSplits #-}
+twoSplits :: Int -> Int -> U.Vector (Span, Span)
+twoSplits !l !r = U.map (\len -> ((l, l + len - 1), (l + len, r))) $ rangeU 1 (r - l)
+
+-- | Returns two nullable splits of a span.
+-- >>> iwiSpansU 3 6
 -- [((3,2),(4,6)),((3,3),(5,6)),((3,4),(6,6)),((3,5),(7,6))]
-iwiSpansU :: Int -> Int -> U.Vector ((Int, Int), (Int, Int))
+{-# INLINE iwiSpansU #-}
+iwiSpansU :: Int -> Int -> U.Vector (Span, Span)
 iwiSpansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len + 1, r))) $ rangeU 0 (r - l)
 
--- | >>> iwiSpansU' 3 6
+-- | Returns two nullables splits and a non-null mid point of a span.
+-- >>> iwiSpansU' 3 6
 -- [((3,2),3,(4,6)),((3,3),4,(5,6)),((3,4),5,(6,6)),((3,5),6,(7,6))]
-iwiSpansU' :: Int -> Int -> U.Vector ((Int, Int), Int, (Int, Int))
+{-# INLINE iwiSpansU' #-}
+iwiSpansU' :: Int -> Int -> U.Vector (Span, Int, Span)
 iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r))) $ rangeU 0 (r - l)
 
 -- | Span-based DP with preset index patterns.
@@ -106,6 +114,7 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
     else
       if spanLen == 1
         then onOne spanL
+        -- f = fromKnown <> fromNew
         else f vec (spanLen, spanL)
 
 -- | Typical set-based DP (traveling salesman problem).
