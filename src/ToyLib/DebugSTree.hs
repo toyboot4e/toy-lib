@@ -44,13 +44,13 @@ dbgSTreeAll (SegmentTree mVec _)
           loop (n + 1, 2 * len)
   | otherwise = return ()
 
--- TODO: dbgLazySTree
+-- TODO: dbgLSTree
 
 -- | Shows the leaves of a lazily propagated segment tree.
-dbgLazySTree :: (Show a, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree v a op (PrimState m) -> m ()
-dbgLazySTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
+dbgLSTree :: (Show a, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree v a op (PrimState m) -> m ()
+dbgLSTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
   let !nLeaves = GM.length vec `div` 2
   ss <- forM [0 .. nLeaves - 1] $ \i -> do
-    !x <- readLazySTree stree i
+    !x <- readLSTree stree i
     return $ show x
   return $ unwords ss
