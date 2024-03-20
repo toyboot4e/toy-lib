@@ -10,6 +10,7 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Buffer
 import Data.Maybe
+import Data.Monoid
 import Data.Ord (comparing, Down(..))
 import Data.SegmentTree.Strict
 import qualified Data.Vector as V
@@ -127,41 +128,45 @@ prevPermutation =
     . G.map Down
 
 -- | Calculates the inversion number. Be sure to compress the input vector!
-invNumG :: (HasCallStack) => Int -> (G.Vector v Int) => v Int -> Int
-invNumG xMax xs = runST $ do
-  !stree <- newSTreeU (+) (xMax + 1) (0 :: Int)
+--
+-- = Typical problems
+--
+-- TODO
+--
+-- - ABC 261 - F
+invNum :: (HasCallStack) => Int -> (G.Vector v Int) => v Int -> Int
+invNum xMax xs = runST $ do
+  !stree <- newSTree @(Sum Int) (xMax + 1)
 
-  (\f -> G.foldM' f (0 :: Int) xs) $ \acc x -> do
+  fmap getSum . (\f -> G.foldM' f mempty xs) $ \acc x -> do
     -- count pre-inserted numbers bigger than this:
-    -- let !_ = dbg (x, (succ x, xMax))
-    !s <-
-      if x == xMax
-        then return 0
-        else fromJust <$> querySTree stree (succ x) xMax
-
-    -- let !_ = traceShow (x, s, (succ x, pred n)) ()
-    modifySTree stree succ x
+    !s <- fromMaybe mempty <$> foldMaySTree stree (x + 1) xMax
+    modifySTree stree (+ 1) x
     return $! acc + s
 
--- | Calculates the inversion number after applying index compression.
+-- | Calculates the inversion number, but after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
 compressInvNumG :: (HasCallStack) => U.Vector Int -> Int
-compressInvNumG xs = invNumG (pred (U.length xs')) xs'
+compressInvNumG xs = invNum (U.length xs' - 1) xs'
   where
     !xs' = snd $ compressU xs
 
--- | Returns 1-based Lexicographic order for the given array.
+-- | Returns 1-based lexicographic order of the given array.
 --
 -- WARNING: Use 0-based indices for the input.
+--
+-- = Typical problems
+--
+-- TODO
 lexOrderMod :: (HasCallStack, G.Vector v Int) => v Int -> Int -> Int
 lexOrderMod xs modulo = runST $ do
-  !stree <- newSTreeU (+) (G.length xs + 1) (0 :: Int)
+  !stree <- newSTree @(Sum Int) (G.length xs + 1)
 
   -- Pre-calculated factorial numbers:
   let !facts = factModsN modulo (G.length xs)
 
   -- The calculation is very similar to that of inversion number. For example,
-  -- ```
+  -- @
   --     2 0 4 3 1
   --     | | | | |
   --     | | | | +-- 0 * 0!
@@ -169,16 +174,16 @@ lexOrderMod xs modulo = runST $ do
   --     | | +-- 2 * 2!
   --     | +-- 0 * 3 !
   --     +-- 2 * 4!
-  -- ```
+  -- @
   -- So each expression is given as `(the number of unused numbers smaller than this) * factMod`.
   !counts <- G.iforM xs $ \i x -> do
-    !nUsed <- fromJust <$> querySTree stree 0 x
+    Sum !nUsed <- foldSTree stree 0 x
     let !nUnused = x - nUsed
     let !factMod = facts G.! (G.length xs - (i + 1))
     let !inc = nUnused * factMod `rem` modulo
 
     -- mark it as used
-    insertSTree stree x 1
+    writeSTree stree x (Sum 1)
 
     return inc
 

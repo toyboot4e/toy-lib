@@ -10,6 +10,7 @@ import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import Data.SegmentTree.Strict
+import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -197,13 +198,13 @@ ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU set'
 -- | Longest increasing subsequence. The input must be zero-based.
 lisOf :: (HasCallStack) => U.Vector Int -> Int
 lisOf !xs = runST $ do
-  !stree <- newSTreeU max (G.length xs) (0 :: Int)
+  !stree <- buildSTree (U.replicate (G.length xs) (Max (0 :: Int)))
 
   U.forM_ xs $ \x -> do
-    !n0 <- fromMaybe 0 <$> querySTree stree 0 (x - 1)
-    insertSTree stree x (n0 + 1)
+    !n0 <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
+    writeSTree stree x (Max (n0 + 1))
 
-  fromJust <$> querySTree stree 0 (G.length xs - 1)
+  getMax <$> foldWholeSTree stree
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int

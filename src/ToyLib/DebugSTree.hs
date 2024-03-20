@@ -13,16 +13,18 @@ import qualified Data.Vector.Unboxed as U
 import ToyLib.Macro
 import ToyLib.Debug
 
+-- TODO: consider showing `mempty` values as `-`
+
 -- | Shows the leaves of a strict segment tree.
 --
 -- WARNING: It shows unused leaves, too.
 dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
-dbgSTree (SegmentTree _ mVec)
+dbgSTree (SegmentTree mVec nValidLeaves)
   | debug = do
       !vec <- G.unsafeFreeze mVec
       -- REMARK: I'm using 0-based index and it has 2^n - 1 vertices
       -- TODO: drop non used slots?
-      let !leaves = G.drop (G.length vec `div` 2 - 1) vec
+      let !leaves = G.take nValidLeaves $ G.drop (G.length vec `div` 2) vec
       let !_ = dbg leaves
       return ()
   | otherwise = return ()
@@ -31,7 +33,7 @@ dbgSTree (SegmentTree _ mVec)
 --
 -- WARNING: It shows unused nodes and leaves, too.
 dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
-dbgSTreeAll (SegmentTree _ mVec)
+dbgSTreeAll (SegmentTree mVec _)
   | debug = do
       !vec <- G.unsafeFreeze mVec
       flip fix (0 :: Int, 1 :: Int) $ \loop (!n, !len) -> do
