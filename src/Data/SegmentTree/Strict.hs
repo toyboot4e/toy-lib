@@ -138,7 +138,7 @@ _updateElement (SegmentTree !_ !vec) 0 !value = do
 _updateElement tree@(SegmentTree !f !vec) !i !value = do
   GM.unsafeWrite vec i value
   case (i - 1) `div` 2 of
-    -- REMARK: (-1) `div` 2 == -1
+    -- REMARK: ((-1) - 1) `div` 2 == -1
     -- TODO: This case never happens, right?
     (-1) -> return ()
     !iParent -> do

@@ -27,7 +27,7 @@ import ToyLib.Debug
 
 -- | Lazy segment tree.
 --
--- = 1-based indices
+-- = (Internal) 1-based indices
 --
 -- Use 1-based indices for super handy vertex indices:
 --
