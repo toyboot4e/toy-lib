@@ -100,7 +100,7 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
   GM.unsafeWrite vec v0 x
   _unsafeUpdateParentNodes vec v0
   where
-    !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "writeSTree: given invalid index: " ++ show i ++ " out of " ++ show nValidLeaves
+    !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "writeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(log \N)\) Modifies a leaf value.
@@ -110,7 +110,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
   GM.unsafeModify vec f v0
   _unsafeUpdateParentNodes vec v0
   where
-    !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "modifySTree: given invalid index: " ++ show i ++ " out of " ++ show nValidLeaves
+    !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "modifySTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(log \N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
@@ -118,7 +118,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
 foldSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where
-    !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0)
+    !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
     !nLeaves = GM.length vec .>>. 1
     glitchFold l r lx rx
       | l > r = return $! lx <> rx
