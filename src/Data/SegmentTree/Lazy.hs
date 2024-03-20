@@ -19,7 +19,6 @@ import Data.Bits
 import Data.Core.SemigroupAction
 import Data.Ix (inRange)
 import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
@@ -53,12 +52,12 @@ import ToyLib.Debug
 data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
-newLazySTree ::
+newLazySTreeImpl ::
   forall a op v m.
   (Monoid a, MonoidAction op a, U.Unbox op, GM.MVector v a,PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
-newLazySTree !n = do
+newLazySTreeImpl !n = do
   !as <- GM.replicate n2 mempty
   !ops <- UM.replicate n2 mempty
   return $ LazySegmentTree as ops h
@@ -66,20 +65,17 @@ newLazySTree !n = do
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
-newLazySTreeV :: forall a op m. (Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree VM.MVector a op (PrimState m))
-newLazySTreeV = newLazySTree
-
-newLazySTreeU :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
-newLazySTreeU = newLazySTree
+newLazySTree :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
+newLazySTree = newLazySTreeImpl
 
 -- | Creates `LazySegmentTree` with initial leaf values.
-generateLazySTreeG ::
+generateLazySTreeImpl ::
   forall v a op m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
-generateLazySTreeG !n !f = do
+generateLazySTreeImpl !n !f = do
   !as <- GM.unsafeNew n2
 
   -- Fill leaves:
@@ -103,11 +99,8 @@ generateLazySTreeG !n !f = do
     childL !vertex = vertex .<<. 1
     childR !vertex = vertex .<<. 1 .|. 1
 
-generateLazySTreeV :: forall a op m. (HasCallStack, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree VM.MVector a op (PrimState m))
-generateLazySTreeV = generateLazySTreeG
-
-generateLazySTreeU :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
-generateLazySTreeU = generateLazySTreeG
+generateLazySTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
+generateLazySTree = generateLazySTreeImpl
 
 -- | Appends the lazy operator monoid monoids over a span. They are just stored and propagated when
 -- queried.
@@ -155,7 +148,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
               then do
                 -- REMARK: The new coming operator operator always comes from the left.
                 UM.modify ops (op <>) l
-                return $ succ l
+                return $ l + 1
               else return l
 
           !r' <-
@@ -164,7 +157,7 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
               then do
                 -- REMARK: The new coming operator operator always comes from the left.
                 UM.modify ops (op <>) r
-                return $ pred r
+                return $ r - 1
               else return r
 
           -- go up to the parent segment
