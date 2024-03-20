@@ -229,7 +229,7 @@ paintDigraphSG gr = runST $ do
     !isPainted <- (/= -1) <$> UM.read vertColors i
     if isPainted then return iComp else do
       -- paint
-      flip fix (0 :: Int, i) \loop (!c1, !v1) -> do
+      flip fix (0 :: Int, i) $ \loop (!c1, !v1) -> do
         UM.write vertColors v1 c1
         UM.write vertComps v1 iComp
         if even c1
@@ -248,7 +248,6 @@ paintDigraphSG gr = runST $ do
       return $ iComp + 1
 
   DigraphInfo <$> readMutVar failure <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
-
 
 -- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
