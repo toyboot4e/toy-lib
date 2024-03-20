@@ -1,6 +1,7 @@
 -- | Strict segment tree
 module Data.SegmentTree.Strict where
 
+import Algorithm.Bisect
 import Control.Monad (forM_, when)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -144,3 +145,20 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
 -- | \(O(1)\) Reads the whole span segment.
 foldWholeSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
 foldWholeSTree (SegmentTree vec _) = GM.read vec 1
+
+
+-- | \(O(\log N)\) Binary search on a segment tree.
+bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
+bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
+  let !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) l0) $ "bsearhSTree: wrong range " ++ show (l0, r0) ++ " for " ++ show nValidLeaves
+  bisectM l0 r0 $ \r -> do
+    x <- foldSTree stree l0 r
+    return $ f x
+
+-- | \(O(\log N)\) Binary search on a segment tree.
+bsearchSTreeL :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
+bsearchSTreeL stree l0 r0 f = fst <$> bsearchSTree stree l0 r0 f
+
+-- | \(O(\log N)\) Binary search on a segment tree.
+bsearchSTreeR :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
+bsearchSTreeR stree l0 r0 f = snd <$> bsearchSTree stree l0 r0 f

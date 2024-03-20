@@ -1,14 +1,13 @@
 -- | Lazily propageted segment tree, where we can perform operation over range.
 --
 -- = Algebra
--- - (Op * Acc) <> (Op * Acc) = (Op <> Op) (Acc <> Acc)
+-- - (Op * Acc) <> (Op * Acc) = (Op <> Op) * (Acc <> Acc)
+--
+-- Typical example of @Op@ is a matrix and @Acc@ is a column vector.
 --
 -- = Typical problems
 -- - [Typical 029 - Long Bricks (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_ac)
 -- - [EDPC W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
---
--- - TODO: Add `set` / `get`, as in [ac-library](https://github.com/atcoder/ac-library/blob/master/atcoder/lazysegtree.hpp)
--- - TODO: consider Node/Act naming rather than Acc/Op.
 module Data.SegmentTree.Lazy where
 
 import Algorithm.Bisect (bisectM)
@@ -101,6 +100,11 @@ generateLSTreeImpl !n !f = do
 
 generateLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLSTree = generateLSTreeImpl
+
+-- TODO: replace with a faster implementation with unsafeCopy
+{-# INLINE buildLSTree #-}
+buildLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
+buildLSTree xs = generateLSTreeImpl (U.length xs) (xs U.!)
 
 -- | Appends the lazy operator monoid monoids over a span. They are just stored and propagated when
 -- queried.
