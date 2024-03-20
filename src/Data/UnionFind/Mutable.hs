@@ -19,8 +19,6 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
--- {{{ Dense, mutable Union-Find tree
-
 -- | Dense, mutable Union-Find tree (originally by `@pel`)
 --
 -- >>> stree <- newMUF 3
@@ -32,6 +30,9 @@ import GHC.Stack (HasCallStack)
 -- True
 -- >>> unifyMUF stree 0 2
 -- False
+--
+-- = See also
+-- <https://algo-method.com/descriptions/132>
 newtype MUnionFind s = MUnionFind (UM.MVector s MUFNode)
 
 type IOUnionFind = MUnionFind RealWorld
@@ -129,5 +130,3 @@ sizeMUF uf@(MUnionFind !vec) !x = do
 clearMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 clearMUF (MUnionFind !vec) = do
   UM.set vec (MUFRoot 1)
-
--- }}}
