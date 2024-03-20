@@ -189,7 +189,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
   -- 2. Return concatanated result:
   let !lVertex = iLLeaf + nLeaves
       !rVertex = iRLeaf + nLeaves
-  glitchLoopQuery lVertex rVertex mempty mempty
+  glitchFold lVertex rVertex mempty mempty
   where
     !nLeaves = GM.length as `div` 2
 
@@ -198,8 +198,8 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 
     -- Find the maximum segments for the given range and append the value.
     -- It's much like using some glitch in a platformer game:
-    glitchLoopQuery :: Int -> Int -> a -> a -> m a
-    glitchLoopQuery !l !r !lAcc !rAcc
+    glitchFold :: Int -> Int -> a -> a -> m a
+    glitchFold !l !r !lAcc !rAcc
       | l > r = return $! lAcc <> rAcc
       | otherwise = do
           (!l', !lAcc') <-
@@ -221,7 +221,7 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
               else return (r, rAcc)
 
           -- go up to the parent segment
-          glitchLoopQuery (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
+          glitchFold (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
 
 -- | Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --

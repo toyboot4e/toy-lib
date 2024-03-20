@@ -55,7 +55,7 @@ subMS !k !dn (!nKeys, !im) =
       | n > dn -> (nKeys, IM.insert k (n - dn) im)
       | n == dn -> (nKeys - 1, IM.delete k im)
       -- TODO: prefer panic?
-      | n < dn -> (nKeys - 1, IM.delete k im)
+      | otherwise -> (nKeys - 1, IM.delete k im)
     Nothing -> (nKeys, im)
 
 {-# INLINE memberMS #-}
