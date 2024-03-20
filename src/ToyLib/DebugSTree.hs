@@ -51,6 +51,6 @@ dbgLazySTree :: (Show a, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.U
 dbgLazySTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
   let !nLeaves = GM.length vec `div` 2
   ss <- forM [0 .. nLeaves - 1] $ \i -> do
-    !x <- queryLazySTree stree i i
+    !x <- readLazySTree stree i
     return $ show x
   return $ unwords ss

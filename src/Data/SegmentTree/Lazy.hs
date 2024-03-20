@@ -170,17 +170,17 @@ updateLazySTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           -- go up to the parent segment
           glitchLoopUpdate (l' .>>. 1) (r' .>>. 1)
 
-queryLazySTree ::
+foldLazySTree ::
   forall v a m op.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
   m a
-queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
+foldLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
   let !_ =
-        dbgAssert (inRange (0, nLeaves - 1) iLLeaf && inRange (0, nLeaves - 1) iRLeaf) $
-          "queryLazySTree: wrong range " ++ show (iLLeaf, iRLeaf)
+        dbgAssert (iLLeaf <= iRLeaf && inRange (0, nLeaves - 1) iLLeaf && inRange (0, nLeaves - 1) iRLeaf) $
+          "foldLazySTree: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
   _propOpMonoidsToLeaf stree iLLeaf
@@ -222,6 +222,38 @@ queryLazySTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 
           -- go up to the parent segment
           glitchFold (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
+
+-- | Read one leaf.
+readLazySTree ::
+  forall a op v m.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  m a
+-- TODO: faster impl
+readLazySTree stree i = foldLazySTree stree i i
+
+foldMayLazySTree ::
+  forall a op v m.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  Int ->
+  m (Maybe a)
+-- TODO: faster impl
+foldMayLazySTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
+  | iLLeaf > iRLeaf || not (inRange (0, nLeaves - 1) iLLeaf) || not (inRange (0, nLeaves - 1) iRLeaf) = return Nothing
+  | otherwise = Just <$> foldLazySTree stree iLLeaf iRLeaf
+  where
+    !nLeaves = GM.length as `div` 2
+
+foldWholeLazySTree ::
+  forall a op v m.
+  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  m a
+-- TODO: faster implementation
+foldWholeLazySTree stree@(LazySegmentTree !as !_ !_) = foldLazySTree stree 0 (GM.length as - 1)
 
 -- | Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --
@@ -295,7 +327,7 @@ bisectLazySTree ::
   m (Maybe Int, Maybe Int)
 bisectLazySTree stree@(LazySegmentTree !as !_ !_) l r f = do
   bisectM l r $ \r' -> do
-    !acc <- queryLazySTree stree l r'
+    !acc <- foldLazySTree stree l r'
     return $! f acc
   where
     !_ = dbgAssert (inRange (0, nLeaves - 1) l && inRange (0, nLeaves - 1) r) $ "bisectLazySTree: giveninvalid range " ++ show (l, r)
