@@ -15,8 +15,8 @@ import Data.List (unfoldr)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
--- | Stateless two pointer method over a range. Returns the longest non-null inclusive ranges for
--- each @l@ that satisfy the given @check@.
+-- | \(O(N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
+-- ranges for each @l@ that satisfy the given @check@.
 twoPointers :: Int -> (Int -> Int -> Bool) -> [(Int, Int)]
 twoPointers !n !p = unfoldr (uncurry f) s0
   where
@@ -30,8 +30,8 @@ twoPointers !n !p = unfoldr (uncurry f) s0
         -- run peek check and advance on success
         r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
--- | Stateless two pointer method over a range. Returns the longest non-null inclusive ranges for
--- each @l@ that satisfy the given @check@.
+-- | \(O(N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
+-- ranges for each @l@ that satisfy the given @check@.
 twoPointersU :: Int -> (Int -> Int -> Bool) -> U.Vector (Int, Int)
 twoPointersU !n !p = U.unfoldr (uncurry f) s0
   where
@@ -44,8 +44,8 @@ twoPointersU !n !p = U.unfoldr (uncurry f) s0
         -- run peek check and advance on success
         r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
--- | Stateful two pointer method over a vector. Returns the longest non-null inclusive ranges for
--- each @l@ that satisfy the given @check@.
+-- | \(O(N)\) Stateful two pointer method over a vector. Returns the longest non-null inclusive
+-- ranges for each @l@ that satisfy the given @check@.
 {-# INLINE twoPtrM #-}
 twoPtrM :: forall acc m v a. (Monad m, G.Vector v a) => acc -> (acc -> a -> m Bool) -> (acc -> a -> m acc) -> (acc -> a -> m acc) -> v a -> m [(Int, Int)]
 twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
@@ -70,6 +70,7 @@ twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
 
 -- TODO: purely mutation only two pointer method
 
+-- | \(O(N)\)
 {-# INLINE twoPtr #-}
 twoPtr :: (G.Vector v a) => acc -> (acc -> a -> Bool) -> (acc -> a -> acc) -> (acc -> a -> acc) -> v a -> [(Int, Int)]
 twoPtr acc0 p onNext onPop = runIdentity . twoPtrM acc0 ((pure .) . p) ((pure .) . onNext) ((pure .) . onPop)
