@@ -21,7 +21,7 @@ module Math.Divisors where
 
 import Data.List
 
--- \(O(log N)\) divisor enumeration (sorted).
+-- \(O(\log N)\) divisor enumeration (sorted).
 divisorsOf :: Int -> [Int]
 divisorsOf n = sort $ inner 1
   where

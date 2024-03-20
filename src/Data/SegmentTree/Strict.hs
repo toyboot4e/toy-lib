@@ -146,7 +146,7 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
 foldWholeSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
 foldWholeSTree (SegmentTree vec _) = GM.read vec 1
 
--- | \(O(\log N)\) Binary search on a segment tree.
+-- | \(O(\log^2 N)\)
 bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
   let !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) l0) $ "bsearhSTree: wrong range " ++ show (l0, r0) ++ " for " ++ show nValidLeaves
@@ -154,10 +154,10 @@ bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
     x <- foldSTree stree l0 r
     return $ f x
 
--- | \(O(\log N)\) Binary search on a segment tree.
+-- | \(O(\log^2 N)\)
 bsearchSTreeL :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeL stree l0 r0 f = fst <$> bsearchSTree stree l0 r0 f
 
--- | \(O(\log N)\) Binary search on a segment tree.
+-- | \(O(\log^2 N)\)
 bsearchSTreeR :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeR stree l0 r0 f = snd <$> bsearchSTree stree l0 r0 f

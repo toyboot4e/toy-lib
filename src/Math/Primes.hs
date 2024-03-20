@@ -5,7 +5,7 @@ import Data.List (group)
 
 -- {{{ Prime factors
 
--- | @0xYusuke <https://zenn.dev/link/comments/1022553732563c>
+-- | \(O(N \log (\log N))\)? @0xYusuke <https://zenn.dev/link/comments/1022553732563c>
 primes :: [Int]
 primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tail primes])
   where
@@ -29,7 +29,7 @@ primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tai
         pairs _ = error "unionAll _ pairs: unreachable"
     unionAll _ = error "unionAll: unreachable"
 
--- | Returns @[(prime, count)]@
+-- | \(O(N \log (\log N))\)? Returns @[(prime, count)]@
 primeFactors :: Int -> [(Int, Int)]
 primeFactors !n_ = map (\ !xs -> (head xs, length xs)) . group $ inner n_ input
   where

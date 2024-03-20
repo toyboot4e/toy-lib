@@ -3,7 +3,6 @@
 -- | `Ix`-based API over `vector`.
 module Data.Vector.IxVector where
 
-import Control.Monad (forM_)
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Bifunctor (first, second)
@@ -38,7 +37,7 @@ type IxMUVector s i a = IxVector i (UM.MVector s a)
 (@!!) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
 (@!!) IxVector {..} i = G.unsafeIndex vecIV (unsafeIndex boundsIV i)
 
--- | Total `IxVector` accessor
+-- | \(O(1)\) Total `IxVector` accessor
 {-# INLINE (@!?) #-}
 (@!?) :: (HasCallStack, Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
 (@!?) IxVector {..} i
@@ -54,29 +53,34 @@ type IxMUVector s i a = IxVector i (UM.MVector s a)
   | inRange boundsIV i = Just (G.unsafeIndex vecIV (unsafeIndex boundsIV i))
   | otherwise = Nothing
 
+-- | \(O(1)\)
 {-# INLINE lengthIV #-}
 lengthIV :: (G.Vector v a) => IxVector i (v a) -> Int
 lengthIV = G.length . vecIV
 
+-- | \(O(f N)\)
 {-# INLINE findIndexIV #-}
 findIndexIV :: (G.Vector v a, Unindex i) => IxVector i (v a) -> (a -> Bool) -> Maybe i
 findIndexIV IxVector { .. } f = unindex boundsIV <$> G.findIndex f vecIV
 
+-- | \(O(f N)\)
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 mapIV !f IxVector { .. } = IxVector boundsIV $ U.map f vecIV
 
+-- | \(O(f N)\)
 {-# INLINE imapIV #-}
 imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 imapIV !f IxVector{..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
 
+-- | \(O(f N)\)
 {-# INLINE zipWithIV #-}
 zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b) -> IxVector i (U.Vector c)
 zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
   where
     !bnd = boundsIV vec1
 
--- | Altertnative to `accumulate` for `IxVector` that share the same bounds.
+-- | \(O(f X)\) Altertnative to `accumulate` for `IxVector` that share the same bounds.
 {-# INLINE accumulateIV #-}
 accumulateIV :: (Ix i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
 accumulateIV !f !vec0 !commands =
@@ -94,16 +98,18 @@ createIV st = runST $ do
   let bnd = boundsIV iv
   IxVector bnd <$> G.unsafeFreeze (vecIV iv)
 
+-- | \(O(f N)\) `U.constructN` for `IxVector`
 {-# INLINE generateIV #-}
 generateIV :: (Unindex i, U.Unbox a) => (i, i) -> (i -> a) -> IxUVector i a
 generateIV bnd f = IxVector bnd $ U.generate (rangeSize bnd) (f . unindex bnd)
 
--- | `U.constructN` for `IxVector`
+-- | \(O(f N)\) `U.constructN` for `IxVector`
 {-# INLINE constructIV #-}
 constructIV :: (Unindex i, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> a) -> IxUVector i a
 constructIV bnd f = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar ->
   f (IxVector bnd sofar) $! unindex bnd (G.length sofar)
 
+-- | \(O(f N)\)
 {-# INLINE constructMIV #-}
 constructMIV :: forall i a m. (Unindex i, PrimMonad m, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> m a) -> m (U.Vector a)
 constructMIV bnd@(!_, !_) f = do
@@ -123,85 +129,101 @@ constructMIV bnd@(!_, !_) f = do
             fill v'' (i + 1)
     fill v _ = return v
 
+-- | \(O(N)\)
 {-# INLINE thawIV #-}
 thawIV :: (PrimMonad m, G.Vector v a) => IxVector i (v a) -> m (IxVector i (G.Mutable v (PrimState m) a))
 thawIV iv = IxVector (boundsIV iv) <$> G.thaw (vecIV iv)
 
+-- | \(O(1)\)
 {-# INLINE unsafeThawIV #-}
 unsafeThawIV :: (PrimMonad m, G.Vector v a) => IxVector i (v a) -> m (IxVector i (G.Mutable v (PrimState m) a))
 unsafeThawIV iv = IxVector (boundsIV iv) <$> G.thaw (vecIV iv)
 
+-- | \(O(N)\)
 {-# INLINE freezeIV #-}
 freezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
 freezeIV iv = IxVector (boundsIV iv) <$> G.freeze (vecIV iv)
 
+-- | \(O(1)\)
 {-# INLINE unsafeFreezeIV #-}
 unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
 unsafeFreezeIV iv = IxVector (boundsIV iv) <$> G.unsafeFreeze (vecIV iv)
 
+-- | \(O(N)\)
 -- | Creates a new `IxVector` with initial value.
 {-# INLINE newIV #-}
 newIV :: (Ix i, PrimMonad m, U.Unbox a) => (i, i) -> a -> m (IxMUVector (PrimState m) i a)
 newIV bnd e0 = IxVector bnd <$> UM.replicate (rangeSize bnd) e0
 
--- | Reads a value from `IxVector`.
+-- | \(O(1)\) Reads a value from `IxVector`.
 {-# INLINE readIV #-}
 readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
 
--- | Reads a value from `IxVector`.
+-- | \(O(1)\) Reads a value from `IxVector`.
 {-# INLINE readMayIV #-}
 readMayIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
 readMayIV IxVector {..} i
   | not (inRange boundsIV i) = return Nothing
   | otherwise = Just <$> GM.read vecIV (index boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE unsafeReadIV #-}
 unsafeReadIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
 unsafeReadIV IxVector {..} i = GM.unsafeRead vecIV (unsafeIndex boundsIV i)
 
+-- | \(O(1)\)
 -- | Writes a value to `IxVector`.
 {-# INLINE writeIV #-}
 writeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
 writeIV IxVector {..} i = GM.write vecIV (index boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE unsafeWriteIV #-}
 unsafeWriteIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
 unsafeWriteIV IxVector {..} i = GM.unsafeWrite vecIV (unsafeIndex boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE modifyIV #-}
 modifyIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
 modifyIV IxVector {..} !alter i = GM.modify vecIV alter (index boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE unsafeModifyIV #-}
 unsafeModifyIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
 unsafeModifyIV IxVector {..} !alter i = GM.unsafeModify vecIV alter (unsafeIndex boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE modifyMIV #-}
 modifyMIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
 modifyMIV IxVector {..} !alter i = GM.modifyM vecIV alter (index boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE unsafeModifyMIV #-}
 unsafeModifyMIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> m a) -> i -> m ()
 unsafeModifyMIV IxVector {..} !alter i = GM.unsafeModifyM vecIV alter (unsafeIndex boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE swapIV #-}
 swapIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
 swapIV IxVector {..} !i1 !i2 = GM.swap vecIV (index boundsIV i1) (index boundsIV i2)
 
+-- | \(O(1)\)
 {-# INLINE unsafeSwapIV #-}
 unsafeSwapIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> i -> m ()
 unsafeSwapIV IxVector {..} !i1 !i2 = GM.unsafeSwap vecIV (unsafeIndex boundsIV i1) (unsafeIndex boundsIV i2)
 
+-- | \(O(1)\)
 {-# INLINE exchangeIV #-}
 exchangeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
 exchangeIV IxVector {..} i = GM.exchange vecIV (index boundsIV i)
 
+-- | \(O(1)\)
 {-# INLINE unsafeExchangeIV #-}
 unsafeExchangeIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
 unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
 
--- | Calculates two-dimensional cummulative sum.
+-- | \(O(HW)\) Calculates two-dimensional cummulative sum.
 --
 -- WARNING: Can you really allocate/run \(O(HW)\) algorithm?
 --
@@ -225,7 +247,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
     -- Insert the zero row and the column:
     !bnd = second (both (+ 1)) (boundsIV gr)
 
--- | Returns cummulative sum in the given 2D range.
+-- | \(O(1)\) Returns cummulative sum in the given 2D range.
 -- @
 -- - - * * *
 -- - - * * *

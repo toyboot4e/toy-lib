@@ -32,6 +32,7 @@ cacheBLU = U.iterateN 63 (\x -> x <> x)
 cacheBLV :: (Semigroup a) => a -> V.Vector a
 cacheBLV = V.iterateN 63 (\x -> x <> x)
 
+-- | \(O({(<>)} \cdot \mathit{popCount}(n))\)
 {-# INLINE stimesBL #-}
 stimesBL :: (Semigroup a, G.Vector v a) => v a -> Int -> a -> a
 stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
@@ -39,10 +40,12 @@ stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
     {-# INLINE step #-}
     step !s i = let !s' = s <> cache G.! i in s'
 
+-- | \(O({(<>)} \cdot \mathit{popCount}(n))\)
 {-# INLINE mtimesBL #-}
 mtimesBL :: (Monoid a, G.Vector v a) => v a -> Int -> a
 mtimesBL cache n = stimesBL cache n mempty
 
+-- | \(O(\mathit{sact} \cdot \mathit{popCount}(n))\)
 {-# INLINE sactBL #-}
 sactBL :: (SemigroupAction a b, G.Vector v a) => v a -> Int -> b -> b
 sactBL cache n !b0 = U.foldl' step b0 (bitsOf n)

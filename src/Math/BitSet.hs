@@ -76,7 +76,7 @@ log2CeilInt !x = msb + ceiling_
 bitCeil :: Int -> Int
 bitCeil = bit . log2CeilInt
 
--- | Originally by @yamate11
+-- | \(O(2^N)\) Originally by @yamate11
 {-# INLINE powersetM_ #-}
 powersetM_ :: (Bits a, Num a, Monad m) => a -> (a -> m ()) -> m ()
 powersetM_ !is0 !act = act2 is0
@@ -85,7 +85,7 @@ powersetM_ !is0 !act = act2 is0
       act is
       unless (is == 0) (act2 (is0 .&. (is - 1)))
 
--- | Originally by @yamate11
+-- | \(O(2^N)\) Originally by @yamate11
 --
 -- >>> powerset (7 :: Int)
 -- [7,6,5,4,3,2,1,0]
@@ -96,7 +96,7 @@ powerset !a = a : unfoldr f a
     f 0 = Nothing
     f !x = Just . dupe $! a .&. (x - 1)
 
--- | Returns a powerset of @x0@ in descending order.
+-- | \(O(2^N)\) Returns a powerset of @x0@ in descending order.
 --
 -- >>> powersetU (7 :: Int)
 -- [7,6,5,4,3,2,1,0]

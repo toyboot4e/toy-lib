@@ -1,4 +1,4 @@
--- | Two pointers method.
+-- | \(O(N)\) Two pointers method.
 --
 -- = Stateless two pointer method
 --

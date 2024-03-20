@@ -6,8 +6,6 @@ import Data.Maybe
 
 -- TODO: revive
 
--- {{{ Digits
-
 -- Taken from <https://hackage.haskell.org/package/digits-0.3.1/docs/Data-Digits.html>
 
 -- digitToInt :: Char -> Int
@@ -49,4 +47,3 @@ unDigits !base = foldl' (\ !a !b -> a * base + b) 0
 convertBase :: (Integral a) => a -> a -> [a] -> [a]
 convertBase !from !to = digits to . unDigits from
 
--- }}}

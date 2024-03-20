@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | Union-Find tree
+-- | A union-Find tree or a disjoint set.
 --
 -- = Typical problems
 -- - [Typical 012 - Red Painting (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_l)
@@ -61,12 +61,12 @@ deriving via (MUFNode `U.As` (Bool, Int)) instance G.Vector U.Vector MUFNode
 
 instance U.Unbox MUFNode
 
--- | Creates a new Union-Find tree of the given size.
+-- | \(O(N)\) Creates a new Union-Find tree of the given size.
 {-# INLINE newMUF #-}
 newMUF :: (PrimMonad m) => Int -> m (MUnionFind (PrimState m))
 newMUF !n = MUnionFind <$> UM.replicate n (MUFRoot 1)
 
--- | Returns the root node index.
+-- | \(O(\alpha(N))\) Returns the root node index.
 {-# INLINE rootMUF #-}
 rootMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 rootMUF uf@(MUnionFind !vec) i = do
@@ -79,17 +79,7 @@ rootMUF uf@(MUnionFind !vec) i = do
       UM.unsafeWrite vec i (MUFChild r)
       return r
 
--- | \(O(N \log N)\) Returns all root vertices.
-groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
-groupRootsMUF uf@(MUnionFind !vec) = IS.fromList . U.toList <$> U.generateM (GM.length vec) (rootMUF uf)
-
--- | \(O(N \log N)\) Collects groups. Returns a list of @(root, component)@. Too slow?
-groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])
-groupsMUF uf@(MUnionFind !vec) = do
-  rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootMUF uf v)
-  return $ IM.fromListWith (flip (++)) $ V.toList rvs
-
--- | Checks if the two nodes are under the same root.
+-- | \(O(\alpha(N))\) Checks if the two nodes are under the same root.
 {-# INLINE sameMUF #-}
 sameMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 sameMUF !uf !x !y = liftM2 (==) (rootMUF uf x) (rootMUF uf y)
@@ -99,7 +89,7 @@ _unwrapMUFRoot :: MUFNode -> Int
 _unwrapMUFRoot (MUFRoot !s) = s
 _unwrapMUFRoot (MUFChild !_) = error "tried to unwrap child as UF root"
 
--- | Unifies two nodes. Returns `True` when thry're newly unified.
+-- | \(O(1)\) Unifies two nodes. Returns `True` when thry're newly unified.
 {-# INLINE unifyMUF #-}
 unifyMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m Bool
 unifyMUF uf@(MUnionFind !vec) !x !y = do
@@ -119,14 +109,26 @@ unifyMUF uf@(MUnionFind !vec) !x !y = do
 unifyMUF_ :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> Int -> m ()
 unifyMUF_ uf x y = void $ unifyMUF uf x y
 
--- | Returns the size of the a node, starting with `1`.
+-- | \(O(\alpha(N))\) Returns the size of the a node, starting with `1`.
 {-# INLINE sizeMUF #-}
 sizeMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m Int
 sizeMUF uf@(MUnionFind !vec) !x = do
   !px <- rootMUF uf x
   _unwrapMUFRoot <$> UM.unsafeRead vec px
 
+-- | \(O(N)\)
 {-# INLINE clearMUF #-}
 clearMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 clearMUF (MUnionFind !vec) = do
   UM.set vec (MUFRoot 1)
+
+-- | \(O(N W)\) Returns all root vertices.
+groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
+groupRootsMUF uf@(MUnionFind !vec) = IS.fromList . U.toList <$> U.generateM (GM.length vec) (rootMUF uf)
+
+-- | \(O(N W)\) Collects groups. Returns a list of @(root, component)@. Too slow?
+groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])
+groupsMUF uf@(MUnionFind !vec) = do
+  rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootMUF uf v)
+  return $ IM.fromListWith (flip (++)) $ V.toList rvs
+

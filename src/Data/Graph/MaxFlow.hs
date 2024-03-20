@@ -3,7 +3,7 @@
 
 -- TODO: rename the module to MaxFlow
 
--- | \(O(V^2E)\) max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
+-- | \(O(V^2 E)\) Max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
 -- Just run `maxFlowD` to get the result. All the other functions are used internally.
 --

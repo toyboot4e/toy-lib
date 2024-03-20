@@ -1,4 +1,4 @@
--- | Mo's algorithm
+-- | \(O(N \sqrt Q)\) Mo's algorithm
 --
 -- Be sure to..
 --
@@ -18,7 +18,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import ToyLib.Prelude (slice, (.:))
 
--- | \(O(N \log N\) Returns a sorted indices to the vector of @(l, r)@, first by @l `div` b@ and
+-- | \(O(N \log N)\) Returns a sorted indices to the vector of @(l, r)@, first by @l `div` b@ and
 -- then @r@.
 {-# INLINE sortMo #-}
 sortMo :: Int -> U.Vector (Int, Int) -> U.Vector Int
@@ -36,7 +36,7 @@ sortMo !maxL !lrs = U.modify (VAI.sortBy compareF) (G.generate (G.length lrs) id
           !res = compare b1 b2 <> bool (compare r2 r1) (compare r1 r2) (even b1)
        in res
 
--- | \(O(N * \sqrt Q)\). Mo's algorithm: @runMo xs lrs onInsL onInsR onRemL onRemR extract state0@.
+-- | \(O(N \sqrt Q)\). Mo's algorithm: @runMo xs lrs onInsL onInsR onRemL onRemR extract state0@.
 runMoG :: (PrimMonad m, U.Unbox x, G.Vector v b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> b) -> a -> m (v b)
 runMoG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = do
   !result <- GM.unsafeNew q
@@ -58,24 +58,24 @@ runMoG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = do
       GM.unsafeWrite result iLrs $! extract s'
       return ((l, r), s')
 
--- | \(O(N * \sqrt Q)\). Pure variant of @runMoG@.
+-- | \(O(N \sqrt Q)\). Pure variant of @runMoG@.
 runMoPureG :: (U.Unbox x, G.Vector v b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> b) -> a -> v b
 runMoPureG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = runST $ do
   runMoG xs lrs (return .: onInsL) (return .: onInsR) (return .: onRemL) (return .: onRemR) extract state0
 
--- | \(O(N * \sqrt Q)\). Type-restricted `runMo`
+-- | \(O(N \sqrt Q)\). Type-restricted `runMo`
 runMo :: (PrimMonad m, U.Unbox x, U.Unbox b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> b) -> a -> m (U.Vector b)
 runMo = runMoG
 
--- | \(O(N * \sqrt Q)\). Type-restricted `runMoPure`
+-- | \(O(N \sqrt Q)\). Type-restricted `runMoPure`
 runMoPure :: (U.Unbox x, U.Unbox b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> b) -> a -> U.Vector b
 runMoPure = runMoPureG
 
--- | \(O(N * \sqrt Q)\). Run Mo's algorithm simply
+-- | \(O(N \sqrt Q)\). Run Mo's algorithm simply
 simpleRunMo :: (PrimMonad m, U.Unbox x, U.Unbox a) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> a -> m (U.Vector a)
 simpleRunMo !xs !lrs !onIns !onRem !state0 = runMo xs lrs onIns onIns onRem onRem id state0
 
--- | \(O(N * \sqrt Q)\). Run Mo's algorithm simply
+-- | \(O(N \sqrt Q)\). Run Mo's algorithm simply
 simpleRunMoPure :: (U.Unbox x, U.Unbox a) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> a) -> (a -> x -> a) -> a -> U.Vector a
 simpleRunMoPure !xs !lrs !onIns !onRem !state0 = runMoPure xs lrs onIns onIns onRem onRem id state0
 

@@ -216,7 +216,7 @@ data DigraphInfo = DigraphInfo
     componentInfoDI :: U.Vector (Int, Int)
   }
 
--- | Works on non-directed graphs only.
+-- | \(O(V+E)\) Works on non-directed graphs only.
 paintDigraphSG :: SparseGraph Int w -> DigraphInfo
 paintDigraphSG gr = runST $ do
   let n = rangeSize (boundsSG gr)
@@ -361,7 +361,8 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
--- TODO: apply format
+-- | \(O((E+V) \log {V})\) Dijkstra's algorithm with sparse heap.
+--
 -- TODO: test
 genericSparseDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> w -> U.Vector Vertex -> IM.IntMap w
 genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
@@ -398,7 +399,7 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
 -- Path restoration
 ----------------------------------------------------------------------------------------------------
 
--- | Returns a path from the source to the sink in reverse order.
+-- | \(O(V+E)\) Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
 -- >>> reverse <$> dfsPathSG (buildSG (0 :: Int, 3 :: Int) (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
@@ -428,7 +429,7 @@ dfsPathSG gr@SparseGraph {..} !sourceIx !sinkIx = runST $ do
     !source = index boundsSG sourceIx
     !sink = index boundsSG sinkIx
 
--- | Returns a path from the source to the sink in reverse order.
+-- | \(O(V+E)\)Returns a path from the source to the sink in reverse order.
 -- Note that it is NOT not the shortest path:
 --
 -- >>> reverse $ treeDfsPathSG (buildSG (0 :: Int, 3 :: Int) (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
@@ -513,7 +514,7 @@ createBfsTreeSG gr@SparseGraph {..} !sourceIx = U.create $ do
   where
     !source = index boundsSG sourceIx
 
--- | Given a vector of vertex parents, restores path from the source to a sink.
+-- | \(O(V)\) Given a vector of vertex parents, restores path from the source to a sink.
 --
 -- TODO: restore without reverse?
 restorePath :: U.Vector Vertex -> Vertex -> U.Vector Vertex
@@ -530,7 +531,7 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
 -- Topological sort and strongly connected components
 ----------------------------------------------------------------------------------------------------
 
--- | Topological sort
+-- | \(O(V+E)\) Topological sort
 --
 -- Non-referenced vertices come first:
 -- >>> let !gr = buildSG ((0, 4) :: (Int, Int)) $ U.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
@@ -551,7 +552,7 @@ topSortSG gr@SparseGraph {..} = runST $ do
 
   U.foldM' dfsM [] (U.generate nVertsSG id)
 
--- | Partial running of `topSccSG` over topologically sorted vertices, but for some connected components
+-- | \(O(V+E)\) Partial running of `topSccSG` over topologically sorted vertices, but for some connected components
 -- only.
 revTopScc1SG :: forall i w m. (PrimMonad m) => SparseGraph i w -> UM.MVector (PrimState m) Bool -> Vertex -> m [Vertex]
 revTopScc1SG !gr' !vis !v0 = do
@@ -564,7 +565,7 @@ revTopScc1SG !gr' !vis !v0 = do
         -- Create preorder output:
         (v :) <$> U.foldM' (curry loop) acc vs
 
--- | Creates a reverse graph.
+-- | \(O(V+E)\) Creates a reverse graph.
 -- TODO: return weightned graph
 revSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> SparseGraph i w
 revSG SparseGraph {..} = buildRawSG boundsSG edges'
@@ -577,7 +578,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
           !vw2s = U.unsafeSlice o1 (o2 - o1) vws
        in U.map (\(v2, !w2) -> (v2, v1, w2)) vw2s
 
--- | Collectes strongly connected components, reverse topologically sorted.
+-- | \(O(V+E)\) Collectes strongly connected components, reverse topologically sorted.
 -- Upstream vertices come first, e.g., @v1 -> v2 -> v3@.
 revTopSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
 revTopSccSG gr = collectSccPreorderSG $ topSortSG gr
@@ -589,7 +590,7 @@ revTopSccSG gr = collectSccPreorderSG $ topSortSG gr
       !vis <- UM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (revTopScc1SG gr' vis) topVerts
 
--- | Collectes strongly connected components, topologically sorted.
+-- | \(O(V+E)\) Collectes strongly connected components, topologically sorted.
 -- Downstream vertices come first, e.g., @v3 -> v2 -> v1@.
 topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
 topSccSG = map reverse . revTopSccSG
@@ -598,7 +599,7 @@ topSccSG = map reverse . revTopSccSG
 -- MST
 ----------------------------------------------------------------------------------------------------
 
--- | \(O(E)\) Kruscal's algorithm. Returns used edges.
+-- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
 --
 -- = Typical problems
 -- TODO: Test it
@@ -615,6 +616,7 @@ collectMST nVerts edges = runST $ do
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
+-- | \(O(E)\) Kruscal's algorithm. Returns a minimum spanning tree.
 {-# INLINE buildMST #-}
 buildMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> SparseGraph Int w
 buildMST nVerts edges = buildWSG (0, nVerts - 1) $ U.concatMap expand $ collectMST nVerts edges
@@ -637,7 +639,6 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
   U.forM_ wEdges $ \(!v1, !v2, !w) -> do
     UM.write vec (index bnd (v1, v2)) w
 
-  -- `forM_ vs repM_
   forM_ [0 .. nVerts - 1] $ \k -> do
     forM_ [0 .. nVerts - 1] $ \i -> do
       forM_ [0 .. nVerts - 1] $ \j -> do

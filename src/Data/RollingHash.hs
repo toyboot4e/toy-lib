@@ -59,7 +59,7 @@ data RH b p = RH
   -- TODO: ignore @nextDigitRH@ on @Eq@
   deriving (Eq, Ord, Show)
 
--- | Creates a one-length `RH` from an integer.
+-- | \(O(1)\) Creates a one-length `RH` from an integer.
 --
 -- = Warning
 -- The input must be less than @p@.
@@ -68,6 +68,7 @@ rh1 :: forall b p. (KnownNat b) => Int -> RH b p
 rh1 = RH (fromInteger (natVal' (proxy# @b)))
 
 instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
+  -- | \(O(1)\)
   {-# INLINE (<>) #-}
   (RH !digit1 !hash1) <> (RH !digit2 !hash2) = RH digit' hash'
     where
@@ -120,7 +121,7 @@ data RollingHash b p = RollingHash
 -- | Type level integer that represents the B-adic number used for the rolling hash algorithm.
 type HashInt = (100 :: Nat)
 
--- | Creates a rolling hash of given string.
+-- | \(O(N)\) Creates a rolling hash of given string.
 newRH :: forall p. (KnownNat p) => String -> RollingHash HashInt p
 newRH !source = RollingHash n bn hashSum_
   where
@@ -133,7 +134,7 @@ newRH !source = RollingHash n bn hashSum_
         f :: Char -> Int -> (Int, Int)
         f !ch !lastX = dupe $! (lastX * b + ord ch) `mod` p
 
--- | Retrieves the original length of the `RollingHash` string.
+-- | \(O(1)\) Retrieves the original length of the `RollingHash` string.
 lengthRH :: RollingHash b p -> Int
 lengthRH (RollingHash !len !_ !_) = len
 
@@ -145,7 +146,7 @@ data HashSlice p = HashSlice
   }
   deriving (Show, Eq)
 
--- | Slices a rolling hash string.
+-- | \(O(1)\) Slices a rolling hash string.
 sliceRH :: forall b p. (KnownNat p) => RollingHash b p -> Int -> Int -> HashSlice p
 sliceRH (RollingHash !_ !bn !s) !i0 !i1
   -- TODO: add debug assertion
@@ -159,7 +160,7 @@ sliceRH (RollingHash !_ !bn !s) !i0 !i1
   where
     !p = fromInteger $ natVal (Proxy @p) :: Int
 
--- | Cons two rolling hash slices.
+-- | \(O(1)\) Cons two rolling hash slices.
 consHS :: forall b p. (KnownNat p) => RollingHash b p -> HashSlice p -> HashSlice p -> HashSlice p
 consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSlice value len
   where
@@ -167,10 +168,10 @@ consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSli
     !value = ((bn U.! l1) * v0 + v1) `mod` p
     !len = l0 + l1
 
--- | Creates an empty rolling hash slice.
+-- | \(O(1)\) Creates an empty rolling hash slice.
 emptyHS :: HashSlice p
 emptyHS = HashSlice 0 0
 
--- | Concatanates two rolling hash slices.
+-- | \(O(K)\) Concatanates two rolling hash slices.
 concatHS :: forall b p t. (KnownNat p, Foldable t) => RollingHash b p -> t (HashSlice p) -> HashSlice p
 concatHS !rhash !slices = foldl' (consHS rhash) emptyHS slices

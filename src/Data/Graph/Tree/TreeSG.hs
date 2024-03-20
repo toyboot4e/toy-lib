@@ -23,7 +23,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- LCA
 ----------------------------------------------------------------------------------------------------
 
--- | Returns @(depths, parents)@.
+-- | \(O(N)\) Returns @(depths, parents)@.
 treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Int -> (U.Vector Int, TransitionalSemigroup w)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.unsafeNew nVerts
@@ -63,11 +63,11 @@ foldTreeImpl !tree !root !sact_ !acc0At !toOp !memo = inner (-1) root
       where
         !v2s = U.filter (/= parent) $ tree `adj` v1
 
--- | Folds a tree from one root vertex using postorder DFS.
+-- | \(O(N)\) Folds a tree from one root vertex using postorder DFS.
 foldTree :: SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> a
 foldTree !tree !root !sact_ !acc0At !toOp = runIdentity $ foldTreeImpl tree root sact_ acc0At toOp (\_ _ -> return ())
 
--- | Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
+-- | \(O(N)\) Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
 scanTree :: (G.Vector v a) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> v a
 scanTree !tree !root !sact_ !acc0At !toOp = G.create $ do
@@ -78,15 +78,15 @@ scanTree !tree !root !sact_ !acc0At !toOp = G.create $ do
   where
     !nVerts = rangeSize $! boundsSG tree
 
--- | Type-restricted `scanTree`.
+-- | \(O(N)\) Type-restricted `scanTree`.
 scanTreeU :: (U.Unbox a) => SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> U.Vector a
 scanTreeU = scanTree
 
--- | Type-restricted `scanTree`.
+-- | \(O(N)\) Type-restricted `scanTree`.
 scanTreeV :: SparseGraph Int w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> V.Vector a
 scanTreeV = scanTree
 
--- | \(O(N)\). Folds a tree for every vertex as a root using the rerooting technique.
+-- | \(O(N)\) Folds a tree for every vertex as a root using the rerooting technique.
 -- REMARK: `mempty` is used for initial operator value.
 --
 -- = Typical problems

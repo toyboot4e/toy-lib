@@ -21,7 +21,7 @@ import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 import Math.PowMod (factModsN)
 
--- | One dimensional index compression: xs -> (nubSortXs, xs')
+-- | \(O(N \log N)\) One dimensional index compression: xs -> (nubSortXs, xs')
 {-# INLINE compressU #-}
 compressU :: (HasCallStack) => U.Vector Int -> (U.Vector Int, U.Vector Int)
 compressU xs = (dict, U.map (bindex dict) xs)
@@ -30,12 +30,13 @@ compressU xs = (dict, U.map (bindex dict) xs)
     -- NOTE: `U.modify VAI.sort` is super slow on GHC 9.4.5
     !dict = U.uniq $ U.modify (VAI.sortBy (comparing id)) xs
 
--- | Binary search-based indexing.
+-- | \(O(\log N)\) Binary search-based indexing.
 {-# INLINE bindex #-}
 bindex :: (HasCallStack, G.Vector v a, Ord a) => v a -> a -> Int
 bindex !dict !xref = fromJust $ bsearchL dict (<= xref)
 
--- | = Test
+-- | \(O(N)\)
+-- = Test
 -- >>> chunksOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
 chunksOfG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
@@ -44,7 +45,7 @@ chunksOfG k xs0 = V.unfoldrExactN n step xs0
     n = (G.length xs0 + k - 1) `div` k
     step xs = (G.take k xs, G.drop k xs)
 
--- | <https://qiita.com/kuuso1/items/318d42cd089a49eeb332>
+-- | \(O(N)\) <https://qiita.com/kuuso1/items/318d42cd089a49eeb332>
 --
 -- Returns indices of elements of the minimum values in corresponding spans.
 -- Drop the first @len - 1@ elements if you don't need spans shorter than the @len@.
@@ -70,7 +71,9 @@ slideMinIndicesOn wrap len xs = runST $ do
     pushBack buf i
     fromJust <$> viewFront buf
 
--- | >>> slideMinIndices 3 (U.fromList [0 .. 5])
+-- | \(O(N)\)
+--
+-- >>> slideMinIndices 3 (U.fromList [0 .. 5])
 -- [0,1,2,3,4,5]
 -- >>> slideMinIndices 3 (U.fromList [5, 4 .. 0])
 -- [0,0,0,1,2,3]
@@ -78,7 +81,9 @@ slideMinIndicesOn wrap len xs = runST $ do
 slideMinIndices :: Int -> U.Vector Int -> U.Vector Int
 slideMinIndices = slideMinIndicesOn id
 
--- | >>> slideMaxIndices 3 (U.fromList [0 .. 5])
+-- | \(O(N)\)
+--
+-- >>> slideMaxIndices 3 (U.fromList [0 .. 5])
 -- [0,0,0,1,2,3]
 -- >>> slideMaxIndices 3 (U.fromList [5, 4 .. 0])
 -- [0,1,2,3,4,5]
@@ -86,6 +91,7 @@ slideMinIndices = slideMinIndicesOn id
 slideMaxIndices :: Int -> U.Vector Int -> U.Vector Int
 slideMaxIndices = slideMinIndicesOn Down
 
+-- | \(O(N f)\)
 {-# INLINE constructNM #-}
 constructNM :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
 constructNM !n f = do
@@ -104,6 +110,7 @@ constructNM !n f = do
             fill v'' (i + 1)
     fill v _ = return v
 
+-- | \(O(N f)\)
 {-# INLINE constructrNM #-}
 constructrNM :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
 constructrNM !n f = do
@@ -127,7 +134,7 @@ prevPermutation =
     . G.modify (void . GM.nextPermutation)
     . G.map Down
 
--- | Calculates the inversion number. Be sure to compress the input vector!
+-- | \(O(N \log N)\) Calculates the inversion number. Be sure to compress the input vector!
 --
 -- = Typical problems
 --
@@ -144,14 +151,14 @@ invNum xMax xs = runST $ do
     modifySTree stree (+ 1) x
     return $! acc + s
 
--- | Calculates the inversion number, but after applying index compression.
+-- | \(O(N \log N)\) Calculates the inversion number, but after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
 compressInvNumG :: (HasCallStack) => U.Vector Int -> Int
 compressInvNumG xs = invNum (U.length xs' - 1) xs'
   where
     !xs' = snd $ compressU xs
 
--- | Returns 1-based lexicographic order of the given array.
+-- | \(O(N \log N)\) Returns 1-based lexicographic order of the given array.
 --
 -- WARNING: Use 0-based indices for the input.
 --

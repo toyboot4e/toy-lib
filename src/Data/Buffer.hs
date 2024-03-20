@@ -26,11 +26,13 @@ _bufferFrontPos = 0
 _bufferBackPos :: Int
 _bufferBackPos = 1
 
+-- | \(O(N)\)
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBuffer n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
 type Stack s a = Buffer s a
 
+-- | \(O(N)\)
 newBufferAsStack :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsStack n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
@@ -41,11 +43,13 @@ createBuffer f = runST $ do
 
 type Queue s a = Buffer s a
 
+-- | \(O(N)\)
 newBufferAsQueue :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsQueue n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
 type Deque s a = Buffer s a
 
+-- | \(O(N)\) Creates a buffer of length $2 N$ for both front and back.
 newBufferAsDeque :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsDeque n =
   Buffer
@@ -53,6 +57,7 @@ newBufferAsDeque n =
     <*> UM.unsafeNew (2 * n)
     <*> pure (2 * n)
 
+-- | \(O(1)\)
 lengthBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m Int
 lengthBuffer Buffer {bufferVars} =
   liftA2
@@ -61,15 +66,18 @@ lengthBuffer Buffer {bufferVars} =
     (UM.unsafeRead bufferVars _bufferFrontPos)
 {-# INLINE lengthBuffer #-}
 
+-- | \(O(1)\)
 nullBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m Bool
 nullBuffer = fmap (== 0) . lengthBuffer
 {-# INLINE nullBuffer #-}
 
+-- | \(O(1)\)
 clearBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m ()
 clearBuffer Buffer {bufferVars} = do
   UM.unsafeWrite bufferVars _bufferFrontPos 0
   UM.unsafeWrite bufferVars _bufferBackPos 0
 
+-- | \(O(N)\)
 freezeBuffer ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -79,6 +87,7 @@ freezeBuffer Buffer {bufferVars, internalBuffer} = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   U.freeze $ UM.unsafeSlice f (b - f) internalBuffer
 
+-- | \(O(1)\)
 unsafeFreezeBuffer ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -88,6 +97,7 @@ unsafeFreezeBuffer Buffer {bufferVars, internalBuffer} = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   U.unsafeFreeze $ UM.unsafeSlice f (b - f) internalBuffer
 
+-- | \(O(N)\)
 freezeInternalBuffer ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -96,6 +106,7 @@ freezeInternalBuffer Buffer {bufferVars, internalBuffer} = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   U.freeze $ UM.unsafeSlice 0 b internalBuffer
 
+-- | \(O(1)\)
 unsafeFreezeInternalBuffer ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -104,6 +115,7 @@ unsafeFreezeInternalBuffer Buffer {bufferVars, internalBuffer} = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   U.unsafeFreeze $ UM.unsafeSlice 0 b internalBuffer
 
+-- | \(O(1)\)
 popFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 popFront Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -119,7 +131,7 @@ popFront_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
 popFront_ = void . popFront
 {-# INLINE popFront_ #-}
 
--- | The popped vector is from left to the right order.
+-- | \(O(L)\) The popped vector is from left to the right order.
 popFrontN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe (U.Vector a))
 popFrontN Buffer {bufferVars, internalBuffer} len = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -132,7 +144,7 @@ popFrontN Buffer {bufferVars, internalBuffer} len = do
     else return Nothing
 {-# INLINE popFrontN #-}
 
--- | The popped vector is from left to the right order.
+-- | \(O(L)\) The popped vector is from left to the right order.
 popBackN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe (U.Vector a))
 popBackN Buffer {bufferVars, internalBuffer} len = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -145,6 +157,7 @@ popBackN Buffer {bufferVars, internalBuffer} len = do
     else pure Nothing
 {-# INLINE popBackN #-}
 
+-- | \(O(1)\)
 popFrontN_ :: (PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe ())
 popFrontN_ Buffer {bufferVars} len = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -156,6 +169,7 @@ popFrontN_ Buffer {bufferVars} len = do
     else pure Nothing
 {-# INLINE popFrontN_ #-}
 
+-- | \(O(1)\)
 popBackN_ :: (PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe ())
 popBackN_ Buffer {bufferVars} len = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -167,6 +181,7 @@ popBackN_ Buffer {bufferVars} len = do
     else pure Nothing
 {-# INLINE popBackN_ #-}
 
+-- | \(O(1)\)
 viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewFront Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -176,6 +191,7 @@ viewFront Buffer {bufferVars, internalBuffer} = do
     else return Nothing
 {-# INLINE viewFront #-}
 
+-- | \(O(1)\)
 popBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 popBack Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -187,10 +203,12 @@ popBack Buffer {bufferVars, internalBuffer} = do
     else return Nothing
 {-# INLINE popBack #-}
 
+-- | \(O(1)\)
 popBack_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
 popBack_ = void . popBack
 {-# INLINE popBack_ #-}
 
+-- | \(O(1)\)
 viewBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 viewBack Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -200,6 +218,7 @@ viewBack Buffer {bufferVars, internalBuffer} = do
     else return Nothing
 {-# INLINE viewBack #-}
 
+-- | \(O(1)\)
 pushFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushFront Buffer {bufferVars, internalBuffer} x = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -208,6 +227,7 @@ pushFront Buffer {bufferVars, internalBuffer} x = do
     UM.unsafeWrite internalBuffer (f - 1) x
 {-# INLINE pushFront #-}
 
+-- | \(O(1)\)
 pushBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushBack Buffer {bufferVars, internalBuffer, internalBufferSize} x = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
@@ -216,6 +236,7 @@ pushBack Buffer {bufferVars, internalBuffer, internalBufferSize} x = do
     UM.unsafeWrite internalBuffer b x
 {-# INLINE pushBack #-}
 
+-- | \(O(K)\)
 pushFronts ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -229,6 +250,7 @@ pushFronts Buffer {bufferVars, internalBuffer} vec = do
     U.unsafeCopy (UM.unsafeSlice (f - n) n internalBuffer) vec
 {-# INLINE pushFronts #-}
 
+-- | \(O(K)\)
 pushBacks ::
   (U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
@@ -242,6 +264,7 @@ pushBacks Buffer {bufferVars, internalBuffer, internalBufferSize} vec = do
     U.unsafeCopy (UM.unsafeSlice b n internalBuffer) vec
 {-# INLINE pushBacks #-}
 
+-- | \(O(1)\)
 viewFrontN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
 viewFrontN Buffer {..} i = do
   !f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -251,6 +274,7 @@ viewFrontN Buffer {..} i = do
     else return Nothing
 {-# INLINE viewFrontN #-}
 
+-- | \(O(1)\)
 viewBackN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
 viewBackN Buffer {..} i = do
   !f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -260,10 +284,12 @@ viewBackN Buffer {..} i = do
     else return Nothing
 {-# INLINE viewBackN #-}
 
+-- | \(O(1)\)
 readFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
 readFront = (fmap fromJust .) . viewFrontN
 {-# INLINE readFront #-}
 
+-- | \(O(1)\)
 readBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
 readBack = (fmap fromJust .) . viewBackN
 {-# INLINE readBack #-}

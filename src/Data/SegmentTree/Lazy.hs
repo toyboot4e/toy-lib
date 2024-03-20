@@ -50,7 +50,7 @@ import ToyLib.Debug
 -- @newOp `sact` (oldOp `sact` ac)@.
 data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
--- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
+-- | \(O(N)\) Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::
   forall a op v m.
   (Monoid a, MonoidAction op a, U.Unbox op, GM.MVector v a,PrimMonad m) =>
@@ -64,10 +64,11 @@ newLSTreeImpl !n = do
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
+-- | \(O(z)\)
 newLSTree :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
 newLSTree = newLSTreeImpl
 
--- | Creates `LazySegmentTree` with initial leaf values.
+-- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
 generateLSTreeImpl ::
   forall v a op m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
@@ -98,16 +99,18 @@ generateLSTreeImpl !n !f = do
     childL !vertex = vertex .<<. 1
     childR !vertex = vertex .<<. 1 .|. 1
 
+-- | \(O(N)\)
 generateLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
--- TODO: replace with a faster implementation with unsafeCopy
+-- | \(O(N)\)
 {-# INLINE buildLSTree #-}
 buildLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
+-- TODO: replace with a faster implementation with unsafeCopy
 buildLSTree xs = generateLSTreeImpl (U.length xs) (xs U.!)
 
--- | Appends the lazy operator monoid monoids over a span. They are just stored and propagated when
--- queried.
+-- | \(O(\log N)\) Appends the lazy operator monoid monoids over a span. They are just stored and
+-- propagated when queried.
 updateLSTree ::
   forall v a op m.
   (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -167,6 +170,7 @@ updateLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           -- go up to the parent segment
           glitchLoopUpdate (l' .>>. 1) (r' .>>. 1)
 
+-- | \(O(\log N)\)
 foldLSTree ::
   forall v a m op.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -220,7 +224,7 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
           -- go up to the parent segment
           glitchFold (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
 
--- | Read one leaf.
+-- | \(O(\log N)\) Read one leaf.
 readLSTree ::
   forall a op v m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -230,6 +234,7 @@ readLSTree ::
 -- TODO: faster impl
 readLSTree stree i = foldLSTree stree i i
 
+-- | \(O(\log N)\)
 foldMayLSTree ::
   forall a op v m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -244,6 +249,7 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
   where
     !nLeaves = GM.length as `div` 2
 
+-- | \(O(\log N)\)
 foldWholeLSTree ::
   forall a op v m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -252,7 +258,7 @@ foldWholeLSTree ::
 -- TODO: faster implementation
 foldWholeLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as - 1)
 
--- | Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
+-- | \(O(\log N)\) Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
@@ -312,7 +318,7 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
 -- TODO: test them
 ----------------------------------------------------------------------------------------------------
 
--- | The @l@, @r@ indices are the zero-based leaf indices.
+-- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
 {-# INLINE bisectLSTree #-}
 bisectLSTree ::
   forall v a m op.
@@ -331,6 +337,7 @@ bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
       where
         nLeaves = GM.length as `div` 2
 
+-- | \(O(\log^2 N)\)
 {-# INLINE bisectLSTreeL #-}
 bisectLSTreeL ::
   forall v a m op.
@@ -342,6 +349,7 @@ bisectLSTreeL ::
   m (Maybe Int)
 bisectLSTreeL stree l r f = fst <$> bisectLSTree stree l r f
 
+-- | \(O(\log^2 N)\)
 {-# INLINE bisectLSTreeR #-}
 bisectLSTreeR ::
   forall v a m op.

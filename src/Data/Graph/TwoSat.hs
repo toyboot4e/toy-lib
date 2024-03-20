@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
--- | 2-satisfiability problem.
+-- | \(O(V + E)\) 2-satisfiability problem.
 module Data.Graph.TwoSat where
 
 import Control.Monad
@@ -66,6 +66,7 @@ addOrClauseTSB' TwoSatBuilder {..} x1 b1 x2 b2 = case (b1, b2) of
     !x1' = x1 + nVarsTSB
     !x2' = x2 + nVarsTSB
 
+-- | \(O(V + E)\) 
 solveTS :: Int -> U.Vector (Int, Int) -> Maybe (U.Vector Bool)
 solveTS !nVars !constraints = do
   -- TODO: better SCC output

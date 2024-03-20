@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
--- | \(O(log N)\) bisection method for sorted items in an inclusive range (from left to right only).
+-- | \(O(\log N)\) bisection method for sorted items in an inclusive range (from left to right only).
 --
 -- `bisect` returns an @(ok, ng)@ index pair at the boundary. `bisectL` and `bisectR` returns
 -- one of the pair. `bisectM` is a monadic variant of `bisect`.

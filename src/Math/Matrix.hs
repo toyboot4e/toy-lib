@@ -20,7 +20,7 @@ type Mat a = IxUVector (Int, Int) a
 -- | Column vector.
 type Col a = U.Vector a
 
--- | Multiplies HxW matrix to a Hx1 column vector.
+-- | \(O(HW)\) Multiplies HxW matrix to a Hx1 column vector.
 mulMatToCol :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Col e -> Col e
 mulMatToCol !mat !col = U.convert $ G.map (G.sum . flip (G.zipWith (*)) col) rows
   where
@@ -28,7 +28,7 @@ mulMatToCol !mat !col = U.convert $ G.map (G.sum . flip (G.zipWith (*)) col) row
     !_ = dbgAssert $ (== n) . succ . fst . snd $ boundsIV mat
     rows = chunksOfG n (vecIV mat)
 
--- | Multiplies HxW matrix to a Hx1 column vector, taking the modulus.
+-- | \(O(HW)\) Multiplies HxW matrix to a Hx1 column vector, taking the modulus.
 mulMatToColMod :: (HasCallStack, Num e, U.Unbox e, Integral e) => e -> Mat e -> Col e -> Col e
 mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip (G.zipWith mulMod_) col) rows
   where
@@ -38,7 +38,7 @@ mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip
     addMod_ x y = (x + y) `mod` modulus
     mulMod_ x y = (x * y) `mod` modulus
 
--- | Multiplies H1xK matrix to a KxW2 matrix.
+-- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix.
 mulMat :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
 mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
   U.sum $ U.zipWith (*) (rows1 V.! row) (cols2 V.! col)
@@ -53,7 +53,7 @@ mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     rows1 = chunksOfG w (vecIV a)
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b U.! (w' * row + col)
 
--- | Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
+-- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
 mulMatMod :: (HasCallStack, Num e, U.Unbox e, Integral e) => e -> Mat e -> Mat e -> Mat e
 mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
   U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 V.! row) (cols2 V.! col)
@@ -70,7 +70,7 @@ mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     addMod_ x y = (x + y) `mod` m
     mulMod_ x y = (x * y) `mod` m
 
--- | Retruns NxN unit matrix.
+-- | \(O(N^2)\) Retruns NxN unit matrix.
 {-# INLINE unitMat #-}
 unitMat :: (U.Unbox e, Num e) => Int -> Mat e
 unitMat !n = constructIV (zero2 n n) $ \_ (!row, !col) -> if col == row then 1 else 0
