@@ -6,6 +6,7 @@ module Data.Graph.Sparse where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Extra (whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -21,6 +22,7 @@ import qualified Data.IntMap as IM
 import Data.Ix
 import Data.Maybe
 import Data.Ord (comparing)
+import Data.Primitive.MutVar
 import Data.Tuple.Extra (thd3)
 import Data.UnionFind.Mutable
 import Data.Utils.Unindex
@@ -171,39 +173,29 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
     UM.write vis v1 False
     return $ max d1 maxDistance
 
--- | A side effect-only not generic-enough DFS.
-nonGenericDfs :: (PrimMonad m) => Int -> (Vertex -> m (U.Vector Vertex)) -> (Vertex -> m ()) -> Vertex -> m ()
-nonGenericDfs !nVerts !gr !visit !v0 = do
-  !vis <- UM.replicate nVerts False
-  UM.write vis v0 True
-  flip fix v0 $ \loop v1 -> do
-    !vs <- gr v1
-    U.forM_ vs $ \v2 -> do
-      !b <- UM.read vis v2
-      unless b $ do
-        UM.write vis v2 True
-        visit v2
-        loop v2
-        -- for visiting every path:
-        -- UM.write vis v2 False
-        return ()
+-- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
+componentsSG :: SparseGraph Int w -> (U.Vector Int, [[Int]])
+componentsSG gr = runST $ do
+  let n = rangeSize (boundsSG gr)
+  components <- UM.replicate n (-1 :: Int)
 
--- | \(O(V+E)\) Marks connected vertices. Also consider using union-find tree.
-componentsVecSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Bool)
-componentsVecSG gr@SparseGraph {..} !sourceIx = IxVector boundsSG $ U.create $ do
-  !vis <- UM.replicate nVertsSG False
+  iGroupRef <- newMutVar (0 :: Int)
 
-  flip fix source $ \loop v1 -> do
-    UM.write vis v1 True
-    let !v2s = gr `adj` v1
-    U.forM_ v2s $ \v2 -> do
-      !visited <- UM.read vis v2
-      unless visited $ do
-        loop v2
+  groupVerts <- (\f -> U.foldM' f [] (U.generate (rangeSize (boundsSG gr) - 1) id)) $ \acc v -> do
+    g <- UM.read components v
+    if g /= -1
+      then return acc
+      else do
+        iGroup <- readMutVar iGroupRef
+        modifyMutVar iGroupRef (+ 1)
+        fmap (: acc) . (`execStateT` []) $ flip fix v $ \loop v1 -> do
+          UM.write components v1 iGroup
+          modify' (v1 :)
+          U.forM_ (gr `adj` v1) $ \v2 -> do
+            whenM ((/= iGroup) <$> UM.read components v2) $ do
+              loop v2
 
-  return vis
-  where
-    !source = index boundsSG sourceIx :: Vertex
+  (,groupVerts) <$> U.unsafeFreeze components
 
 -- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
