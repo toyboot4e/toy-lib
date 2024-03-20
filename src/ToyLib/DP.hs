@@ -81,7 +81,7 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 
   return vec
 
--- | $[l, r]$ span.
+-- | \([l, r]\) span.
 type Span = (Int, Int)
 
 -- | Returns non-empty splits of a `Span`.
@@ -114,8 +114,8 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
     else
       if spanLen == 1
         then onOne spanL
-        -- f = fromKnown <> fromNew
-        else f vec (spanLen, spanL)
+        else -- f = fromKnown <> fromNew
+          f vec (spanLen, spanL)
 
 -- | Typical set-based DP (traveling salesman problem).
 --
