@@ -54,8 +54,8 @@ data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 
 -- | Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLazySTree ::
-  forall v a op m.
-  (GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  forall a op v m.
+  (Monoid a, MonoidAction op a, U.Unbox op, GM.MVector v a,PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
 newLazySTree !n = do
