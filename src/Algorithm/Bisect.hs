@@ -33,11 +33,6 @@ module Algorithm.Bisect
     bisectML,
     bisectMR,
 
-    -- ** `Float`
-    bisectF32,
-    bisectF32L,
-    bisectF32R,
-
     -- ** `Double`
     bisectF64,
     bisectF64L,
@@ -68,22 +63,22 @@ import qualified Data.Vector.Generic.Mutable as GM
 
 -- TODO: Use higher order function for getting middle and detecting end
 
--- | Pure binary search.
+-- | \(O(f \log N)\) Pure binary search.
 {-# INLINE bisect #-}
 bisect :: Int -> Int -> (Int -> Bool) -> (Maybe Int, Maybe Int)
 bisect !l !r = runIdentity . bisectM l r . (return .)
 
--- | Also known as lower bound.
+-- | \(O(f \log N)\) Also known as lower bound.
 {-# INLINE bisectL #-}
 bisectL :: Int -> Int -> (Int -> Bool) -> Maybe Int
 bisectL !a !b !c = fst $! bisect a b c
 
--- | Also known as upper bound.
+-- | \(O(f \log N)\) Also known as upper bound.
 {-# INLINE bisectR #-}
 bisectR :: Int -> Int -> (Int -> Bool) -> Maybe Int
 bisectR !a !b !c = snd $! bisect a b c
 
--- | Monadic binary search.
+-- | \(O(f \log N)\) Monadic binary search.
 {-# INLINE bisectM #-}
 bisectM :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int, Maybe Int)
 bisectM !low !high !isOk = both wrap <$> inner (low - 1) (high + 1)
@@ -102,38 +97,17 @@ bisectM !low !high !isOk = both wrap <$> inner (low - 1) (high + 1)
       | inRange (low, high) x = Just x
       | otherwise = Nothing
 
+-- | \(O(f \log N)\)
 {-# INLINE bisectML #-}
 bisectML :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int)
 bisectML !a !b !c = fst <$> bisectM a b c
 
+-- | \(O(f \log N)\)
 {-# INLINE bisectMR #-}
 bisectMR :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int)
 bisectMR !a !b !c = snd <$> bisectM a b c
 
-{-# INLINE bisectF32 #-}
-bisectF32 :: Float -> Float -> Float -> (Float -> Bool) -> (Maybe Float, Maybe Float)
-bisectF32 !low !high !diff !isOk = both wrap (inner (low - diff) (high + diff))
-  where
-    inner :: Float -> Float -> (Float, Float)
-    inner !ok !ng | abs (ok - ng) <= diff = (ok, ng)
-    inner !ok !ng
-      | isOk m = inner m ng
-      | otherwise = inner ok m
-      where
-        !m = (ok + ng) / 2
-    wrap :: Float -> Maybe Float
-    wrap !x
-      | x == (low - diff) || x == (high + diff) = Nothing
-      | otherwise = Just x
-
-{-# INLINE bisectF32L #-}
-bisectF32L :: Float -> Float -> Float -> (Float -> Bool) -> Maybe Float
-bisectF32L !a !b !c !d = fst $! bisectF32 a b c d
-
-{-# INLINE bisectF32R #-}
-bisectF32R :: Float -> Float -> Float -> (Float -> Bool) -> Maybe Float
-bisectF32R !a !b !c !d = snd $! bisectF32 a b c d
-
+-- | \(O(f \log N)\)
 {-# INLINE bisectF64 #-}
 bisectF64 :: Double -> Double -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
 bisectF64 !low !high !diff !isOk = both wrap (inner (low - diff) (high + diff))
@@ -150,52 +124,56 @@ bisectF64 !low !high !diff !isOk = both wrap (inner (low - diff) (high + diff))
       | x == (low - diff) || x == (high + diff) = Nothing
       | otherwise = Just x
 
+-- | \(O(f \log N)\)
 {-# INLINE bisectF64L #-}
 bisectF64L :: Double -> Double -> Double -> (Double -> Bool) -> Maybe Double
 bisectF64L !a !b !c !d = fst $! bisectF64 a b c d
 
+-- | \(O(f \log N)\)
 {-# INLINE bisectF64R #-}
 bisectF64R :: Double -> Double -> Double -> (Double -> Bool) -> Maybe Double
 bisectF64R !a !b !c !d = snd $! bisectF64 a b c d
 
--- | `bisect` over a vector.
+-- | \(O(f \log N)\) `bisect` over a vector.
 {-# INLINE bsearch #-}
 bsearch :: (G.Vector v a) => v a -> (a -> Bool) -> (Maybe Int, Maybe Int)
 bsearch !vec !p = bisect 0 (G.length vec - 1) (p . (vec G.!))
 
--- | `bisectL` over a vector.
+-- | \(O(f \log N)\) `bisectL` over a vector.
 {-# INLINE bsearchL #-}
 bsearchL :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
 bsearchL !vec !p = bisectL 0 (G.length vec - 1) (p . (vec G.!))
 
--- | `bisectR` over a vector.
+-- | \(O(f \log N)\) `bisectR` over a vector.
 {-# INLINE bsearchR #-}
 bsearchR :: (G.Vector v a) => v a -> (a -> Bool) -> Maybe Int
 bsearchR !vec !p = bisectR 0 (G.length vec - 1) (p . (vec G.!))
 
--- | `bsearchExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+-- | \(O(\log N)\) `bsearchExact` over a vector, searching for a specific value.
+-- FIXME: It's slower than `bsearchL`.
 {-# INLINE bsearchExact #-}
 bsearchExact :: (G.Vector v a, Ord b) => v a -> (a -> b) -> b -> Maybe Int
 bsearchExact !vec f !xref = case bisectL 0 (G.length vec - 1) ((<= xref) . f . (vec G.!)) of
   Just !x | f (vec G.! x) == xref -> Just x
   _ -> Nothing
 
--- \| `bisectM` over a vector.
+-- | \(O(f \log N)\) `bisectM` over a vector.
 {-# INLINE bsearchM #-}
 bsearchM :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchM !vec !p = bisectM 0 (GM.length vec - 1) (fmap p . GM.read vec)
 
--- | `bisectML` over a vector.
+-- | \(O(f \log N)\) `bisectML` over a vector.
 {-# INLINE bsearchML #-}
 bsearchML :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
 bsearchML !vec !p = bisectML 0 (GM.length vec - 1) (fmap p . GM.read vec)
 
--- | `bisectMR` over a vector.
+-- | \(O(f \log N)\) `bisectMR` over a vector.
 {-# INLINE bsearchMR #-}
 bsearchMR :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int)
 bsearchMR !vec !p = bisectMR 0 (GM.length vec - 1) (fmap p . GM.read vec)
 
--- | `bsearchMExact` over a vector, searching for a specific value. FIXME: It's slower than `bsearchL`.
+-- | \(O(\log N)\) `bsearchMExact` over a vector, searching for a specific value.
+-- FIXME: It's slower than `bsearchL`.
 {-# INLINE bsearchMExact #-}
 bsearchMExact :: (PrimMonad m, GM.MVector v a, Ord b) => v (PrimState m) a -> (a -> b) -> b -> m (Maybe Int)
 bsearchMExact !vec f !xref =

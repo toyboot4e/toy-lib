@@ -146,7 +146,6 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
 foldWholeSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
 foldWholeSTree (SegmentTree vec _) = GM.read vec 1
 
-
 -- | \(O(\log N)\) Binary search on a segment tree.
 bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
