@@ -10,10 +10,12 @@ module Data.UnionFind.Mutable where
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST (RealWorld)
+import qualified Data.IntMap as IM
 import qualified Data.IntSet as IS
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed.Base as U
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
@@ -77,13 +79,14 @@ rootMUF uf@(MUnionFind !vec) i = do
       return r
 
 -- | \(O(N \log N)\) Returns all root vertices.
-{-# INLINE groupsMUF #-}
-groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
-groupsMUF uf@(MUnionFind !vec) = foldM step IS.empty [0 .. pred (GM.length vec)]
-  where
-    step !is !i = do
-      !root <- rootMUF uf i
-      return $ IS.insert root is
+groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
+groupRootsMUF uf@(MUnionFind !vec) = IS.fromList . U.toList <$> U.generateM (GM.length vec) (rootMUF uf)
+
+-- | \(O(N \log N)\) Collects groups. Returns a list of @(root, component)@. Too slow?
+groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])
+groupsMUF uf@(MUnionFind !vec) = do
+  rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootMUF uf v)
+  return $ IM.fromListWith (flip (++)) $ V.toList rvs
 
 -- | Checks if the two nodes are under the same root.
 {-# INLINE sameMUF #-}
