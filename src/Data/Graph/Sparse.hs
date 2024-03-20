@@ -174,6 +174,7 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
     return $ max d1 maxDistance
 
 -- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
+-- Works on a non-directed graph only.
 componentsSG :: SparseGraph Int w -> (U.Vector Int, [[Int]])
 componentsSG gr = runST $ do
   let n = rangeSize (boundsSG gr)
@@ -192,10 +193,62 @@ componentsSG gr = runST $ do
           UM.write components v1 iGroup
           modify' (v1 :)
           U.forM_ (gr `adj` v1) $ \v2 -> do
-            whenM ((/= iGroup) <$> UM.read components v2) $ do
+            whenM ((== -1) <$> UM.read components v2) $ do
               loop v2
 
   (,groupVerts) <$> U.unsafeFreeze components
+
+-- | Tries to paint the whole graph (possible not connected) as a digraph.
+--
+-- @
+-- let DigraphInfo isFailure vertColors vertComps compInfos = paintDigraphSG gr
+-- @
+--
+-- = Typical problems
+-- - [ABC 282 D - Make Bipartite 2](https://atcoder.jp/contests/abc282/tasks/abc282_d)
+data DigraphInfo = DigraphInfo
+  { isDigraphDI :: Bool,
+    -- | Vertex -> color (0 or 1)
+    vertColorDI :: U.Vector Int,
+    -- | Vertex -> component index
+    vertComponentDI :: U.Vector Int,
+    -- | component -> (n1, n2)
+    componentInfoDI :: U.Vector (Int, Int)
+  }
+
+-- | Works on non-directed graphs only.
+paintDigraphSG :: SparseGraph Int w -> DigraphInfo
+paintDigraphSG gr = runST $ do
+  let n = rangeSize (boundsSG gr)
+  !failure <- newMutVar False
+  !vertColors <- UM.replicate n (-1 :: Int)
+  !vertComps <- UM.replicate n (-1 :: Int)
+  !compInfo <- UM.replicate n (0 :: Int, 0 :: Int)
+
+  !nComps <- (\f -> U.foldM' f (0 :: Int) (U.generate n id)) $ \iComp i -> do
+    !isPainted <- (/= -1) <$> UM.read vertColors i
+    if isPainted then return iComp else do
+      -- paint
+      flip fix (0 :: Int, i) \loop (!c1, !v1) -> do
+        UM.write vertColors v1 c1
+        UM.write vertComps v1 iComp
+        if even c1
+          then UM.modify compInfo (first succ) iComp
+          else UM.modify compInfo (second succ) iComp
+
+        U.forM_ (gr `adj` v1) $ \v2 -> do
+          c2 <- UM.read vertColors v2
+          when (c2 == c1) $ do
+            -- not a digraph
+            writeMutVar failure True
+
+          when (c2 == -1) $ do
+            loop ((c1 + 1) `mod` 2, v2)
+
+      return $ iComp + 1
+
+  DigraphInfo <$> readMutVar failure <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
+
 
 -- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: (Ix i) => SparseGraph i w -> i -> IxVector i (U.Vector Int)
