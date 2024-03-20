@@ -42,7 +42,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import GHC.Exts
+import GHC.Exts (proxy#)
 import GHC.TypeLits
 
 -- | Rolling hash monoid.

@@ -10,14 +10,13 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Buffer
 import Data.Maybe
-import Data.Ord (comparing)
+import Data.Ord (comparing, Down(..))
 import Data.SegmentTree.Strict
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
-import GHC.Exts
 import GHC.Stack (HasCallStack)
 import Math.PowMod (factModsN)
 
