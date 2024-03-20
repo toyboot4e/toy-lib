@@ -51,7 +51,7 @@ import ToyLib.Debug
 -- So bottom-up implementation is almost always faster.
 data SegmentTree v s a = SegmentTree {unSegmentTree :: !(v s a), nValidLeavesSegmentTree :: !Int}
 
--- | \(O(log \N)\) Creates a segment tree for `n` leaves.
+-- | \(O(\log N)\) Creates a segment tree for `n` leaves.
 newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree UM.MVector (PrimState m) a)
 newSTree nValidLeaves = do
   vec <- GM.replicate nVerts mempty
@@ -59,7 +59,7 @@ newSTree nValidLeaves = do
   where
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
 
--- | \(O(log \N)\) Creates a segment tree from the given leaf values.
+-- | \(O(\log N)\) Creates a segment tree from the given leaf values.
 buildSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree UM.MVector (PrimState m) a)
 buildSTree leaves = do
   verts <- GM.unsafeNew nVerts
@@ -78,14 +78,14 @@ buildSTree leaves = do
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
     !nLeaves = nVerts .>>. 1
 
--- | \(O(log \N)\) Reads a leaf value.
+-- | \(O(\log N)\) Reads a leaf value.
 readSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> m a
 readSTree (SegmentTree vec nValidLeaves) i = GM.unsafeRead vec (nLeaves + i)
   where
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "readSTree: given invalid index: " ++ show i ++ " out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
--- | \(O(log \N)\) (Internal) Updates parent nodes after modifying a leaf.
+-- | \(O(\log N)\) (Internal) Updates parent nodes after modifying a leaf.
 _unsafeUpdateParentNodes :: (Monoid a, GM.MVector v a, PrimMonad m) => v (PrimState m) a -> Int -> m ()
 _unsafeUpdateParentNodes vec v0 = do
   flip fix (v0 .>>. 1) $ \loop v -> do
@@ -93,7 +93,7 @@ _unsafeUpdateParentNodes vec v0 = do
     GM.unsafeWrite vec v x'
     when (v > 1) $ loop (v .>>. 1)
 
--- | \(O(log \N)\) Writes a leaf value.
+-- | \(O(\log N)\) Writes a leaf value.
 writeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 writeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
@@ -103,7 +103,7 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "writeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
--- | \(O(log \N)\) Modifies a leaf value.
+-- | \(O(\log N)\) Modifies a leaf value.
 modifySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree (SegmentTree vec nValidLeaves) f i = do
   let v0 = nLeaves + i
@@ -113,7 +113,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "modifySTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
--- | \(O(log \N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
+-- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
 -- (so this is @unsafezfoldSTree@).
 foldSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
@@ -133,7 +133,7 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 +
               else return rx
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lx' rx'
 
--- | \(O(log \N)\) Folds a non-empty @[l, r]@ span. Returns `Nothing` when given invalid range.
+-- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns `Nothing` when given invalid range.
 foldMaySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m (Maybe a)
 foldMaySTree stree@(SegmentTree vec _) l0 r0
   | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = return Nothing
