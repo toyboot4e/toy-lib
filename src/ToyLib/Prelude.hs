@@ -2,6 +2,7 @@
 
 module ToyLib.Prelude where
 
+import Control.Monad.Fix
 import Data.Array.IArray
 import Data.Array.MArray
 import Data.Bifunctor
@@ -239,3 +240,12 @@ third4 f (!a, !b, !c, !d) = (a, b, f c, d)
 {-# INLINE fourth4 #-}
 fourth4 :: (d -> x) -> (a, b, c, d) -> (a, b, c, x)
 fourth4 f (!a, !b, !c, !d) = (a, b, c, f d)
+
+fix1 :: a -> ((a -> b) -> a -> b) -> b
+fix1 a f = fix f a
+
+fix2 :: a -> b -> ((a -> b -> c) -> a -> b -> c) -> c
+fix2 a b f = fix f a b
+
+fix3 :: a -> b -> c -> ((a -> b -> c -> d) -> a -> b -> c -> d) -> d
+fix3 a b c f = fix f a b c
