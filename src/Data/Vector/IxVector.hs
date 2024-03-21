@@ -74,6 +74,26 @@ imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Ve
 imapIV !f IxVector{..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
 
 -- | \(O(f N)\)
+{-# INLINE filterIV #-}
+filterIV :: (Unindex i, U.Unbox a) => (a -> Bool) -> IxVector i (U.Vector a) -> U.Vector a
+filterIV !f IxVector {..} = U.filter f vecIV
+
+-- | \(O(f N)\)
+{-# INLINE ifilterIV #-}
+ifilterIV :: (Unindex i, U.Unbox a) => (i -> a -> Bool) -> IxVector i (U.Vector a) -> U.Vector a
+ifilterIV !f IxVector {..} = U.ifilter (f . unindex boundsIV) vecIV
+
+-- | \(O(N)\)
+{-# INLINE indexedIV #-}
+indexedIV :: (Unindex i, U.Unbox a) => IxVector i (U.Vector a) -> U.Vector (i, a)
+indexedIV IxVector {..} = U.imap ((,) . unindex boundsIV) vecIV
+
+-- | \(O(N)\)
+{-# INLINE replicateIV #-}
+replicateIV :: (Unindex i, U.Unbox a) => (i, i) -> a -> IxUVector i a
+replicateIV bnd x = IxVector bnd $ U.replicate (rangeSize bnd) x
+
+-- | \(O(f N)\)
 {-# INLINE zipWithIV #-}
 zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b) -> IxVector i (U.Vector c)
 zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)

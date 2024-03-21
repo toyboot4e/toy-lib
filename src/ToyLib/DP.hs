@@ -82,6 +82,21 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 
   return vec
 
+pushBasedConstructIV :: (HasCallStack, Unindex i, U.Unbox a) => (a -> a -> a) -> IxUVector i a -> (IxUVector i a -> i -> U.Vector (i, a)) -> IxUVector i a
+pushBasedConstructIV !relax !vec0 !expander = runST $ do
+  !vec <- unsafeThawIV vec0
+  let bnd@(!_, !_) = boundsIV vec0
+  let !_ = dbgAssert (rangeSize bnd == GM.length (vecIV vec)) "wrong bounds"
+
+  forM_ [0 .. GM.length (vecIV vec) - 1] $ \iFrom -> do
+    let !iFrom' = unindex bnd iFrom
+    -- Because this is a push-based DP, the value for the interested index is already known.
+    !freezed <- unsafeFreezeIV vec
+    U.forM_ (expander freezed iFrom') $ \(!iTo, !x') -> do
+      modifyIV vec (`relax` x') iTo
+
+  unsafeFreezeIV vec
+
 -- | \([l, r]\) span.
 type Span = (Int, Int)
 
