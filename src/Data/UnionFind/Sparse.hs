@@ -29,7 +29,7 @@ fromListSUF = foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 fromVecSUF :: U.Vector (Int, Int) -> SparseUnionFind
 fromVecSUF = U.foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 
--- | \(O(min(N, W))\) Returns (root, size)
+-- | \(O(\min(N, W))\) Returns (root, size)
 rootSUF :: (HasCallStack) => Int -> SparseUnionFind -> (Int, Int)
 rootSUF !i !uf
   | IM.notMember i uf = (i, 1)
@@ -38,11 +38,11 @@ rootSUF !i !uf
   where
     j = uf IM.! i
 
--- | \(O(min(N, W))\)
+-- | \(O(\min(N, W))\)
 sameSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> Bool
 sameSUF !i !j !uf = fst (rootSUF i uf) == fst (rootSUF j uf)
 
--- | \(O(min(N, W))\)
+-- | \(O(\min(N, W))\)
 unifySUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
 unifySUF !i !j !uf
   | a == b = uf

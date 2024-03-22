@@ -39,7 +39,7 @@ type IOUnionFind = MUnionFind RealWorld
 
 type STUnionFind s = MUnionFind s
 
--- | `MUFChild parent | MUFRoot size`.
+-- | @MUFChild parent | MUFRoot size@.
 data MUFNode = MUFChild {-# UNPACK #-} !Int | MUFRoot {-# UNPACK #-} !Int
   deriving (Eq, Show)
 

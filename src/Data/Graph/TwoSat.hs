@@ -14,7 +14,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug (dbgAssert)
 
--- | Data with True | False tag.
+-- | Data with @True@ | @False@ tag.
 data TF a = T !a | F !a
 
 -- | Constructs `TF` dynamically.

@@ -15,7 +15,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- | `Affine2d` represents @x -> a x + b@.
 type Affine2dRepr a = (a, a)
 
--- The implementation is leaf easy.
+-- The implementation is left easy.
 
 -- | Affine2d: x -> ax + b
 instance (Num a) => Semigroup (Affine2d a) where

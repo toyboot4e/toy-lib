@@ -40,7 +40,7 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   where
     !nVerts = rangeSize boundsSG
 
--- | Returns `LcaCache`, i.e., `(parents, depths, parents')`.
+-- | Returns `LcaCache`, i.e., @(parents, depths, parents')@.
 lcaCacheSG :: (Monoid w, U.Unbox w) => SparseGraph Int w -> Vertex -> LcaCache w
 lcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
   where
