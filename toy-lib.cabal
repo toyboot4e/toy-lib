@@ -187,6 +187,7 @@ library
     Data.Graph.TwoSat
     Data.Instances.A2
     Data.Instances.A3
+    Data.Instances.Affine2d
     Data.Instances.Mat2x2
     Data.Instances.T2
     Data.ModInt
