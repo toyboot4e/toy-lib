@@ -111,7 +111,7 @@ buildLSTree xs = generateLSTreeImpl (U.length xs) (xs U.!)
 
 -- | \(O(\log N)\) Appends the lazy operator monoid monoids over a span. They are just stored and
 -- propagated when queried.
-updateLSTree ::
+sactLSTree ::
   forall v a op m.
   (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
@@ -119,10 +119,10 @@ updateLSTree ::
   Int ->
   op ->
   m ()
-updateLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
+sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
   let !_ =
         dbgAssert (inRange (0, nLeaves - 1) iLLeaf && inRange (0, nLeaves - 1) iRLeaf) $
-          "updateLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
+          "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
   _propOpMonoidsToLeaf stree iLLeaf
