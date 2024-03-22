@@ -250,13 +250,13 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
     !nLeaves = GM.length as `div` 2
 
 -- | \(O(\log N)\)
-foldWholeLSTree ::
+foldAllLSTree ::
   forall a op v m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   m a
 -- TODO: faster implementation
-foldWholeLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as - 1)
+foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as - 1)
 
 -- | \(O(\log N)\) Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
 --

@@ -221,7 +221,7 @@ lisOf !xs = runST $ do
     !n0 <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
     writeSTree stree x (Max (n0 + 1))
 
-  getMax <$> foldWholeSTree stree
+  getMax <$> foldAllSTree stree
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int

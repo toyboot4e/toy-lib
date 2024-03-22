@@ -143,8 +143,8 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(1)\) Reads the whole span segment.
-foldWholeSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
-foldWholeSTree (SegmentTree vec _) = GM.read vec 1
+foldAllSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
+foldAllSTree (SegmentTree vec _) = GM.read vec 1
 
 -- | \(O(\log^2 N)\)
 bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
