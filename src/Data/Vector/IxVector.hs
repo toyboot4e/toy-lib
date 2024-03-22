@@ -75,7 +75,7 @@ imapIV !f IxVector{..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
 
 -- | \(O(f N)\)
 {-# INLINE filterIV #-}
-filterIV :: (Unindex i, U.Unbox a) => (a -> Bool) -> IxVector i (U.Vector a) -> U.Vector a
+filterIV :: (U.Unbox a) => (a -> Bool) -> IxVector i (U.Vector a) -> U.Vector a
 filterIV !f IxVector {..} = U.filter f vecIV
 
 -- | \(O(f N)\)
