@@ -64,7 +64,7 @@ newLSTreeImpl !n = do
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
--- | \(O(z)\)
+-- | \(O(N)\)
 newLSTree :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
 newLSTree = newLSTreeImpl
 
@@ -170,6 +170,16 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           -- go up to the parent segment
           glitchLoopUpdate (l' .>>. 1) (r' .>>. 1)
 
+-- | \(O(\log N)\) Acts on one leaf. TODO: Faster implementation.
+sactAtLSTree ::
+  forall v a op m.
+  (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree v a op (PrimState m) ->
+  Int ->
+  op ->
+  m ()
+sactAtLSTree stree i = sactLSTree stree i i
+
 -- | \(O(\log N)\)
 foldLSTree ::
   forall v a m op.
@@ -224,14 +234,13 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
           -- go up to the parent segment
           glitchFold (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
 
--- | \(O(\log N)\) Read one leaf.
+-- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 readLSTree ::
   forall a op v m.
   (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m a
--- TODO: faster impl
 readLSTree stree i = foldLSTree stree i i
 
 -- | \(O(\log N)\)
