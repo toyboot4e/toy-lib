@@ -351,6 +351,9 @@ instance ShowBSB Float where
 instance ShowBSB Double where
   showBSB = BSB.doubleDec
 
+instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
+  showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
+
 showLnBSB :: (ShowBSB a) => a -> BSB.Builder
 showLnBSB = (<> endlBSB) . showBSB
 
@@ -378,6 +381,9 @@ printYn = putLnBSB . ynBSB
 
 printList :: (Show a) => [a] -> IO ()
 printList = putStrLn . unwords . map show
+
+printVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
+printVec = putLnBSB . unwordsBSB
 
 putList :: (Show a) => [a] -> IO ()
 putList = putStr . unwords . map show
