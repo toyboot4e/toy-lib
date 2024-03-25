@@ -60,8 +60,8 @@ lengthIV = G.length . vecIV
 
 -- | \(O(f N)\)
 {-# INLINE findIndexIV #-}
-findIndexIV :: (G.Vector v a, Unindex i) => IxVector i (v a) -> (a -> Bool) -> Maybe i
-findIndexIV IxVector { .. } f = unindex boundsIV <$> G.findIndex f vecIV
+findIndexIV :: (G.Vector v a, Unindex i) => (a -> Bool) -> IxVector i (v a) -> Maybe i
+findIndexIV f IxVector { .. } = unindex boundsIV <$> G.findIndex f vecIV
 
 -- | \(O(f N)\)
 {-# INLINE mapIV #-}
