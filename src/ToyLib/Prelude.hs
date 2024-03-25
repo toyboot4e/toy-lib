@@ -8,6 +8,7 @@ import Data.Array.MArray
 import Data.Bifunctor
 import Data.Tuple.Extra hiding (first, second)
 import qualified Data.Vector as V
+import Data.Utils.Unindex
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
@@ -55,6 +56,12 @@ ortho4 = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
 {-# INLINE ortho4' #-}
 ortho4' :: ((Int, Int), (Int, Int)) -> (Int, Int) -> U.Vector (Int, Int)
 ortho4' bnd base = U.filter (inRange bnd) $ U.map (add2 base) ortho4
+
+-- | Specifically for grids with generic search functions.
+{-# INLINE orthoWith #-}
+orthoWith :: ((Int, Int), (Int, Int)) -> ((Int, Int) -> Bool) -> (Int -> U.Vector Int)
+orthoWith bnd p v1 =
+  U.map (index bnd) . U.filter ((&&) <$> inRange bnd <*> p) $ U.map (add2 (unindex bnd v1)) ortho4
 
 -- | `G.slice` via inclusive range @[l, r]@.
 {-# INLINE slice #-}
