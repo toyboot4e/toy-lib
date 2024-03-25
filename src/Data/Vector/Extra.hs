@@ -92,9 +92,9 @@ slideMaxIndices :: Int -> U.Vector Int -> U.Vector Int
 slideMaxIndices = slideMinIndicesOn Down
 
 -- | \(O(N f)\)
-{-# INLINE constructNM #-}
-constructNM :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
-constructNM !n f = do
+{-# INLINE constructMN #-}
+constructMN :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
+constructMN !n f = do
   v <- GM.new n
   v' <- G.unsafeFreeze v
   fill v' 0
@@ -111,9 +111,9 @@ constructNM !n f = do
     fill v _ = return v
 
 -- | \(O(N f)\)
-{-# INLINE constructrNM #-}
-constructrNM :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
-constructrNM !n f = do
+{-# INLINE constructrMN #-}
+constructrMN :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
+constructrMN !n f = do
   v <- n `seq` GM.new n
   v' <- G.unsafeFreeze v
   fill v' 0
