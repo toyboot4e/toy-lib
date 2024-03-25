@@ -6,7 +6,7 @@ module Data.Graph.Sparse where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Extra (whenM)
+import Control.Monad.Extra (whenM, unlessM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -173,10 +173,23 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
     UM.write vis v1 False
     return $ max d1 maxDistance
 
+-- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
+componentsOf :: (Vertex -> U.Vector Vertex) -> Int ->  Vertex -> U.Vector Vertex
+componentsOf gr nVerts start = runST $ do
+  vis <- UM.replicate nVerts False
+
+  flip fix start $ \loop v1 -> do
+    UM.write vis v1 True
+    U.forM_ (gr v1) $ \v2 -> do
+      unlessM (UM.read vis v2) $ do
+        loop v2
+
+  U.findIndices id <$> U.unsafeFreeze vis
+
 -- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
 -- Works on a non-directed graph only.
-componentsSG :: SparseGraph Int w -> (U.Vector Int, [[Int]])
-componentsSG gr = runST $ do
+allComponentsSG :: SparseGraph Int w -> (U.Vector Int, [[Int]])
+allComponentsSG gr = runST $ do
   let n = rangeSize (boundsSG gr)
   components <- UM.replicate n (-1 :: Int)
 
@@ -489,7 +502,8 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
 -- = Typical problems
 -- - [ABC 282 D - Make Bipartite 2](https://atcoder.jp/contests/abc282/tasks/abc282_d)
 data DigraphInfo = DigraphInfo
-  { isDigraphDI :: Bool,
+  { -- | False if any of the connected components is not a digraph.
+    isDigraphDI :: Bool,
     -- | Vertex -> color (0 or 1)
     vertColorDI :: U.Vector Int,
     -- | Vertex -> component index
@@ -498,9 +512,10 @@ data DigraphInfo = DigraphInfo
     componentInfoDI :: U.Vector (Int, Int)
   }
 
--- | \(O(V+E)\) Works on non-directed graphs only.
-paintDigraphSG :: SparseGraph Int w -> DigraphInfo
-paintDigraphSG gr = runST $ do
+-- | \(O(V+E)\) Tries to paint the whole graph (possible not connected) as a digraph.
+-- Works on non-directed graphs only.
+digraphSG :: SparseGraph Int w -> DigraphInfo
+digraphSG gr = runST $ do
   let n = rangeSize (boundsSG gr)
   !failure <- newMutVar False
   !vertColors <- UM.replicate n (-1 :: Int)
