@@ -25,6 +25,7 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.State.Class
 import Control.Monad.Trans (MonadTrans, lift)
+import Control.Monad.Trans.Cont
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
 import Data.Bifunctor
 import Data.Bits
