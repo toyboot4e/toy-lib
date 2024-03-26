@@ -615,18 +615,27 @@ topSccSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> [[Int]]
 topSccSG = map reverse . revTopSccSG
 
 ----------------------------------------------------------------------------------------------------
--- MST
+-- MST (Minimum Spanning Tree)
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
 --
+-- NOTE: User ia assumed to not duplicate the edges.
+--
+-- If you need to detect if the tree spans all the vertices, be sure to check the length of the edges
+-- equals to the number of vertices minus one. Do not try to count the vertices directly, e.g.,
+-- @o-o o-o@ contains four connected vertices, but only has two edges. It's apparently not a spanning
+-- tree.
+--
 -- = Typical problems
--- TODO: Test it
+-- - [Typica 49 - Flip Digits 2](https://atcoder.jp/contests/typical90/tasks/typical90_aw)
 {-# INLINE collectMST #-}
-collectMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
+collectMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> U.Vector (Vertex, Vertex, w)
 collectMST nVerts edges = runST $ do
   uf <- newMUF nVerts
-  flip U.unfoldrM edges' $ \es0 -> flip fix es0 $ \loop es -> case U.uncons es of
+  -- TODO: use `runMaybeT`
+  -- TODO: prefer `mapMaybeM`
+  flip U.unfoldrM edges' $ fix $ \loop es -> case U.uncons es of
     Nothing -> return Nothing
     Just (e@(!v1, !v2, !_), !es') -> do
       unifyMUF uf v1 v2 >>= \case
@@ -636,8 +645,10 @@ collectMST nVerts edges = runST $ do
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
 -- | \(O(E)\) Kruscal's algorithm. Returns a minimum spanning tree.
+--
+-- NOTE: User ia assumed to not duplicate the edges.
 {-# INLINE buildMST #-}
-buildMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Int, Int, w) -> SparseGraph Int w
+buildMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> SparseGraph Int w
 buildMST nVerts edges = buildWSG (0, nVerts - 1) $ U.concatMap expand $ collectMST nVerts edges
   where
     {-# INLINE expand #-}
