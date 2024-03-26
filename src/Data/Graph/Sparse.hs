@@ -633,14 +633,10 @@ topSccSG = map reverse . revTopSccSG
 collectMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> U.Vector (Vertex, Vertex, w)
 collectMST nVerts edges = runST $ do
   uf <- newMUF nVerts
-  -- TODO: use `runMaybeT`
-  -- TODO: prefer `mapMaybeM`
-  flip U.unfoldrM edges' $ fix $ \loop es -> case U.uncons es of
-    Nothing -> return Nothing
-    Just (e@(!v1, !v2, !_), !es') -> do
+  flip U.mapMaybeM edges' $ \e@(!v1, !v2, !_) -> do
       unifyMUF uf v1 v2 >>= \case
-        False -> loop es'
-        True -> return $ Just (e, es')
+        False -> return Nothing
+        True -> return $ Just e
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
