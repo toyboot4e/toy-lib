@@ -634,9 +634,7 @@ collectMST :: (Ord w, U.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> U.Vec
 collectMST nVerts edges = runST $ do
   uf <- newMUF nVerts
   flip U.mapMaybeM edges' $ \e@(!v1, !v2, !_) -> do
-      unifyMUF uf v1 v2 >>= \case
-        False -> return Nothing
-        True -> return $ Just e
+    bool Nothing (Just e) <$> unifyMUF uf v1 v2
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
