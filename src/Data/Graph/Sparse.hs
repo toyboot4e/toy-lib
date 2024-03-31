@@ -501,15 +501,16 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
 --
 -- = Typical problems
 -- - [ABC 282 D - Make Bipartite 2](https://atcoder.jp/contests/abc282/tasks/abc282_d)
+-- - [PAST 10 O - 3-順列](https://atcoder.jp/contests/past202203-open/tasks/past202203_o)
 data DigraphInfo = DigraphInfo
   { -- | False if any of the connected components is not a digraph.
-    isDigraphDI :: Bool,
+    isAllDigraphDI :: Bool,
     -- | Vertex -> color (0 or 1)
     vertColorDI :: U.Vector Int,
     -- | Vertex -> component index
     vertComponentDI :: U.Vector Int,
-    -- | component -> (n1, n2)
-    componentInfoDI :: U.Vector (Int, Int)
+    -- | component -> (n1, n2, isDigraph)
+    componentInfoDI :: U.Vector (Int, Int, Bool)
   }
 
 -- | \(O(V+E)\) Tries to paint the whole graph (possible not connected) as a digraph.
@@ -520,7 +521,7 @@ digraphSG gr = runST $ do
   !failure <- newMutVar False
   !vertColors <- UM.replicate n (-1 :: Int)
   !vertComps <- UM.replicate n (-1 :: Int)
-  !compInfo <- UM.replicate n (0 :: Int, 0 :: Int)
+  !compInfo <- UM.replicate n (0 :: Int, 0 :: Int, False)
 
   !nComps <- (\f -> U.foldM' f (0 :: Int) (U.generate n id)) $ \iComp i -> do
     !isPainted <- (/= -1) <$> UM.read vertColors i
@@ -530,14 +531,15 @@ digraphSG gr = runST $ do
         UM.write vertColors v1 c1
         UM.write vertComps v1 iComp
         if even c1
-          then UM.modify compInfo (first succ) iComp
-          else UM.modify compInfo (second succ) iComp
+          then UM.modify compInfo (first3 succ) iComp
+          else UM.modify compInfo (second3 succ) iComp
 
         U.forM_ (gr `adj` v1) $ \v2 -> do
           c2 <- UM.read vertColors v2
           when (c2 == c1) $ do
             -- not a digraph
             writeMutVar failure True
+            UM.modify compInfo (third3 (const True)) iComp
 
           when (c2 == -1) $ do
             loop ((c1 + 1) `mod` 2, v2)
