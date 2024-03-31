@@ -518,10 +518,10 @@ data DigraphInfo = DigraphInfo
 digraphSG :: SparseGraph Int w -> DigraphInfo
 digraphSG gr = runST $ do
   let n = rangeSize (boundsSG gr)
-  !failure <- newMutVar False
+  !allDigraph <- newMutVar True
   !vertColors <- UM.replicate n (-1 :: Int)
   !vertComps <- UM.replicate n (-1 :: Int)
-  !compInfo <- UM.replicate n (0 :: Int, 0 :: Int, False)
+  !compInfo <- UM.replicate n (0 :: Int, 0 :: Int, True)
 
   !nComps <- (\f -> U.foldM' f (0 :: Int) (U.generate n id)) $ \iComp i -> do
     !isPainted <- (/= -1) <$> UM.read vertColors i
@@ -538,15 +538,15 @@ digraphSG gr = runST $ do
           c2 <- UM.read vertColors v2
           when (c2 == c1) $ do
             -- not a digraph
-            writeMutVar failure True
-            UM.modify compInfo (third3 (const True)) iComp
+            writeMutVar allDigraph False
+            UM.modify compInfo (third3 (const False)) iComp
 
           when (c2 == -1) $ do
             loop ((c1 + 1) `mod` 2, v2)
 
       return $ iComp + 1
 
-  DigraphInfo <$> readMutVar failure <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
+  DigraphInfo <$> readMutVar allDigraph <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
 ----------------------------------------------------------------------------------------------------
 -- Topological sort and strongly connected components
