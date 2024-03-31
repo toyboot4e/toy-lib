@@ -122,9 +122,10 @@ clearMUF :: (PrimMonad m) => MUnionFind (PrimState m) -> m ()
 clearMUF (MUnionFind !vec) = do
   UM.set vec (MUFRoot 1)
 
--- | \(O(N W)\) Returns all root vertices.
-groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m IS.IntSet
-groupRootsMUF uf@(MUnionFind !vec) = IS.fromList . U.toList <$> U.generateM (GM.length vec) (rootMUF uf)
+-- | \(O(N \alpha(N))\) Returns all root vertices.
+{-# groupRootMUF #-}
+groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (U.Vector Int)
+groupRootsMUF uf@(MUnionFind !vec) = U.filterM (\x -> (== x) <$> rootMUF uf x) (U.generate (GM.length vec) id)
 
 -- | \(O(N W)\) Collects groups. Returns a list of @(root, component)@. Too slow?
 groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])

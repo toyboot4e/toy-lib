@@ -585,7 +585,6 @@ revTopScc1SG !gr' !vis !v0 = do
         (v :) <$> U.foldM' (curry loop) acc vs
 
 -- | \(O(V+E)\) Creates a reverse graph.
--- TODO: return weightned graph
 revSG :: (Unindex i, U.Unbox w) => SparseGraph i w -> SparseGraph i w
 revSG SparseGraph {..} = buildRawSG boundsSG edges'
   where
@@ -595,7 +594,7 @@ revSG SparseGraph {..} = buildRawSG boundsSG edges'
       let !o1 = U.unsafeIndex offsetsSG v1
           !o2 = U.unsafeIndex offsetsSG (v1 + 1)
           !vw2s = U.unsafeSlice o1 (o2 - o1) vws
-       in U.map (\(v2, !w2) -> (v2, v1, w2)) vw2s
+       in U.map (\(!v2, !w2) -> (v2, v1, w2)) vw2s
 
 -- | \(O(V+E)\) Collectes strongly connected components, reverse topologically sorted.
 -- Upstream vertices come first, e.g., @v1 -> v2 -> v3@.
