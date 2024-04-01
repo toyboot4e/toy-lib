@@ -74,8 +74,8 @@ intsN' :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
 -- intsN' n = withLine' $ U.replicateM n int'
 intsN' n = U.unfoldrExactN n (fromJust . BS.readInt . BS.dropWhile isSpace) <$> getLine'
 
-digitsU :: (MonadState BS.ByteString m) => m (U.Vector Int)
-digitsU = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> getLine'
+digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
+digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> getLine'
 
 -- | Parses one line via the `ReadBS` class.
 auto' :: (ReadBS a, MonadState BS.ByteString m) => m a
