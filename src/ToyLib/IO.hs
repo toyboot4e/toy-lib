@@ -47,7 +47,7 @@ ints = unfoldr (BS.readInt . BS.dropWhile isSpace) <$> BS.getLine
 
 -- Tuples
 
--- | Read from a space-delimited `ByteStrtig`.
+-- | Read from a space-delimited `ByteString`.
 class ReadBS a where
   {-# INLINE convertBS #-}
   convertBS :: BS.ByteString -> a
