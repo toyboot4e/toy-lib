@@ -6,7 +6,7 @@ module Data.Graph.Sparse where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Extra (whenM, unlessM)
+import Control.Monad.Extra (unlessM, whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -23,7 +23,7 @@ import Data.Ix
 import Data.Maybe
 import Data.Ord (comparing)
 import Data.Primitive.MutVar
-import Data.Tuple.Extra (thd3)
+import Data.Tuple.Extra (first3, second3, third3, thd3)
 import Data.UnionFind.Mutable
 import Data.Utils.Unindex
 import qualified Data.Vector as V
@@ -174,7 +174,7 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
     return $ max d1 maxDistance
 
 -- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
-componentsOf :: (Vertex -> U.Vector Vertex) -> Int ->  Vertex -> U.Vector Vertex
+componentsOf :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> U.Vector Vertex
 componentsOf gr nVerts start = runST $ do
   vis <- UM.replicate nVerts False
 
@@ -525,26 +525,28 @@ digraphSG gr = runST $ do
 
   !nComps <- (\f -> U.foldM' f (0 :: Int) (U.generate n id)) $ \iComp i -> do
     !isPainted <- (/= -1) <$> UM.read vertColors i
-    if isPainted then return iComp else do
-      -- paint
-      flip fix (0 :: Int, i) $ \loop (!c1, !v1) -> do
-        UM.write vertColors v1 c1
-        UM.write vertComps v1 iComp
-        if even c1
-          then UM.modify compInfo (first3 succ) iComp
-          else UM.modify compInfo (second3 succ) iComp
+    if isPainted
+      then return iComp
+      else do
+        -- paint
+        flip fix (0 :: Int, i) $ \loop (!c1, !v1) -> do
+          UM.write vertColors v1 c1
+          UM.write vertComps v1 iComp
+          if even c1
+            then UM.modify compInfo (first3 succ) iComp
+            else UM.modify compInfo (second3 succ) iComp
 
-        U.forM_ (gr `adj` v1) $ \v2 -> do
-          c2 <- UM.read vertColors v2
-          when (c2 == c1) $ do
-            -- not a digraph
-            writeMutVar allDigraph False
-            UM.modify compInfo (third3 (const False)) iComp
+          U.forM_ (gr `adj` v1) $ \v2 -> do
+            c2 <- UM.read vertColors v2
+            when (c2 == c1) $ do
+              -- not a digraph
+              writeMutVar allDigraph False
+              UM.modify compInfo (third3 (const False)) iComp
 
-          when (c2 == -1) $ do
-            loop ((c1 + 1) `mod` 2, v2)
+            when (c2 == -1) $ do
+              loop ((c1 + 1) `mod` 2, v2)
 
-      return $ iComp + 1
+        return $ iComp + 1
 
   DigraphInfo <$> readMutVar allDigraph <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
