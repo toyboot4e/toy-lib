@@ -221,6 +221,7 @@ library
     ToyLib.DP
     ToyLib.IO
     ToyLib.Macro
+    ToyLib.Parser
     ToyLib.Prelude
     ToyLib.Procedural
 
