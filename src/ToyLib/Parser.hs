@@ -89,7 +89,7 @@ getHW' !h !w = convertNBS (h * w) <$> V.replicateM h getLine'
 -- | Reads @h@ lines of stdin and converts them into a IxVector reading as HxW
 -- **whitespace-separated** input.
 getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
-getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> getHW' h w
+getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 
 -- | Reads @h@ lines of stdin and converts them as HxW **whitespace-delimited `ByteString`** and
 -- converts them into a flat vector of type @a@.
