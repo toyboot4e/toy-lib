@@ -345,6 +345,8 @@ class ShowBSB a where
   default showBSB :: (Show a) => a -> BSB.Builder
   showBSB = BSB.string8 . show
 
+-- TODO: deriving?
+
 instance ShowBSB Int where
   showBSB = BSB.intDec
 
@@ -395,11 +397,14 @@ printYn = putLnBSB . ynBSB
 printList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
 printList = putLnBSB . unwordsBSB . U.fromList
 
+putList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
+putList = putBSB . unwordsBSB . U.fromList
+
 printVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
 printVec = putLnBSB . unwordsBSB
 
-putList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
-putList = putLnBSB . unwordsBSB . U.fromList
+putVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
+putVec = putBSB . unwordsBSB
 
 printGrid ::  IxUVector (Int, Int) Char -> IO ()
 printGrid = putBSB . showGridBSB
