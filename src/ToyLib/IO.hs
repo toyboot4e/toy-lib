@@ -118,6 +118,8 @@ instance (ReadBS a) => ReadBS (V.Vector a) where
     | BS.null bs = Nothing
     | otherwise = Just (readBS bs)
 
+-- TODO: use `State` for refactoring
+
 instance (ReadBS a1, ReadBS a2) => ReadBS (a1, a2) where
   {-# INLINE convertBS #-}
   convertBS !bs0 =
@@ -327,6 +329,10 @@ putBSB = BSB.hPutBuilder stdout
 putLnBSB :: BSB.Builder -> IO ()
 putLnBSB = BSB.hPutBuilder stdout . (<> endlBSB)
 
+{-# INLINE wsBSB #-}
+wsBSB :: BSB.Builder
+wsBSB = BSB.char7 ' '
+
 -- ord8 :: Char -> Word8
 -- ord8 = fromIntegral . fromEnum
 --
@@ -351,6 +357,9 @@ instance ShowBSB Float where
 instance ShowBSB Double where
   showBSB = BSB.doubleDec
 
+instance ShowBSB Char where
+  showBSB = BSB.char7
+
 instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
 
@@ -360,15 +369,19 @@ showLnBSB = (<> endlBSB) . showBSB
 printBSB :: (ShowBSB a) => a -> IO ()
 printBSB = putBSB . showBSB
 
--- | See `unwordsBSB` as example.
-concatBSB :: (G.Vector v a) => (a -> BSB.Builder) -> v a -> BSB.Builder
-concatBSB f = G.foldr' ((<>) . f) mempty
+concatBSB :: (G.Vector v a, ShowBSB a) => v a -> BSB.Builder
+concatBSB = G.foldMap showBSB
+
+intersperseBSB :: (G.Vector v a, ShowBSB a) => BSB.Builder -> v a -> BSB.Builder
+intersperseBSB del vec
+  | G.null vec = mempty
+  | otherwise = showBSB (G.head vec) <> G.foldMap ((del <>) . showBSB) (G.tail vec)
 
 unwordsBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
-unwordsBSB = concatBSB ((<> BSB.string7 " ") . showBSB)
+unwordsBSB = intersperseBSB wsBSB
 
 unlinesBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
-unlinesBSB = concatBSB showLnBSB
+unlinesBSB = intersperseBSB endlBSB
 
 yn :: Bool -> String
 yn = bool "No" "Yes"
@@ -379,21 +392,33 @@ ynBSB = bool (BSB.string8 "No") (BSB.string8 "Yes")
 printYn :: Bool -> IO ()
 printYn = putLnBSB . ynBSB
 
-printList :: (Show a) => [a] -> IO ()
-printList = putStrLn . unwords . map show
+printList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
+printList = putLnBSB . unwordsBSB . U.fromList
 
 printVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
 printVec = putLnBSB . unwordsBSB
 
-putList :: (Show a) => [a] -> IO ()
-putList = putStr . unwords . map show
+putList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
+putList = putLnBSB . unwordsBSB . U.fromList
 
-boundsSize2 :: ((Int, Int), (Int, Int)) -> (Int, Int)
-boundsSize2 ((!y1, !x1), (!y2, !x2)) = (y2 - y1 + 1, x2 - x1 + 1)
+printGrid ::  IxUVector (Int, Int) Char -> IO ()
+printGrid = putBSB . showGridBSB
 
-printGrid :: IxUVector (Int, Int) Char -> IO ()
-printGrid gr = do
-  let !rows = V.unfoldrExactN h (U.splitAt w) (vecIV gr)
-  V.forM_ rows $ putStrLn . U.toList
+showGridBSB :: IxUVector (Int, Int) Char -> BSB.Builder
+showGridBSB mat = G.foldMap ((<> endlBSB) . concatBSB) rows
   where
-    (!h, !w) = boundsSize2 (boundsIV gr)
+    ((!y1, !x1), (!y2, !x2)) = boundsIV mat
+    !h = y2 + 1 - y1
+    !w = x2 + 1 - x1
+    rows = V.unfoldrExactN h (U.splitAt w) (vecIV mat)
+
+printMat :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> IO ()
+printMat = putBSB . showMatBSB
+
+showMatBSB :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> BSB.Builder
+showMatBSB mat = G.foldMap ((<> endlBSB) . unwordsBSB) rows
+  where
+    ((!y1, !x1), (!y2, !x2)) = boundsIV mat
+    !h = y2 + 1 - y1
+    !w = x2 + 1 - x1
+    rows = V.unfoldrExactN h (U.splitAt w) (vecIV mat)
