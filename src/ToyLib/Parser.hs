@@ -17,8 +17,8 @@ import qualified Data.Vector.Unboxed as U
 import ToyLib.IO
 
 -- | Reads the whole stdin and runs the user program.
-runIO :: StateT BS.ByteString IO a -> IO ()
-runIO = (BS.getContents >>=) . evalStateT . void
+runIO :: StateT BS.ByteString IO () -> IO ()
+runIO = (BS.getContents >>=) . evalStateT
 
 -- | Parses an `Int`.
 int' :: (MonadState BS.ByteString m) => m Int
