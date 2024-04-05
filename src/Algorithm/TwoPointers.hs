@@ -3,7 +3,7 @@
 -- = Stateless two pointer method
 --
 -- The stateless two pointer method assumes you can make up an \(O(1)\) @Int -> Int -> Bool@
--- predicate. Maybe cummulative sum comes with it.
+-- predicate. Maybe cumulative sum comes with it.
 --
 -- = Statefull two pointer method
 --
