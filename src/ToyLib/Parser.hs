@@ -20,6 +20,10 @@ import ToyLib.IO
 runIO :: StateT BS.ByteString IO () -> IO ()
 runIO = (BS.getContents >>=) . evalStateT
 
+-- | Reads a file runs the user program.
+runFileIO :: StateT BS.ByteString IO () -> String -> IO ()
+runFileIO f path = evalStateT f =<< BS.readFile path
+
 -- * Primitives
 
 -- | Parses an `Int`.
