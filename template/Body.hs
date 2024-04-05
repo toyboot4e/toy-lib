@@ -1,6 +1,8 @@
 main :: IO ()
-main = do
-  !n <- ints1
-  !xs <- intsU
+main = runIO $ do
+  !n <- int'
+  !xs <- intsU'
 
-  putStrLn "TODO"
+  liftIO $ putStrLn "TODO"
+
+  return ()
