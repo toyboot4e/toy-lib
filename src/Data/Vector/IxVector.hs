@@ -64,6 +64,11 @@ findIndexIV :: (G.Vector v a, Unindex i) => (a -> Bool) -> IxVector i (v a) -> M
 findIndexIV f IxVector { .. } = unindex boundsIV <$> G.findIndex f vecIV
 
 -- | \(O(f N)\)
+{-# INLINE findIndicesIV #-}
+findIndicesIV :: (Unindex i, G.Vector v a, G.Vector v i, G.Vector v Int) => (a -> Bool) -> IxVector i (v a) -> v i
+findIndicesIV f IxVector {..} = G.map (unindex boundsIV) $ G.findIndices f vecIV
+
+-- | \(O(f N)\)
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
 mapIV !f IxVector { .. } = IxVector boundsIV $ U.map f vecIV
