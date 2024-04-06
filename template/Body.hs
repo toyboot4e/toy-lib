@@ -3,9 +3,7 @@ solve = do
   !n <- int'
   !xs <- intsU'
 
-  liftIO $ putStrLn "TODO"
-
-  return ()
+  printBSB "TODO"
 
 main :: IO ()
 main = runIO solve

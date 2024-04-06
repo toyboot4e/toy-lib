@@ -20,6 +20,7 @@
 module ToyLib.IO where
 
 import Control.Monad (forM_)
+import Control.Monad.IO.Class
 import Data.Bifunctor (first)
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
@@ -323,11 +324,11 @@ getGrid !h !w = IxVector ((0, 0), (h - 1, w - 1)) . convertCharsHW <$> V.replica
 endlBSB :: BSB.Builder
 endlBSB = BSB.char7 '\n'
 
-putBSB :: BSB.Builder -> IO ()
-putBSB = BSB.hPutBuilder stdout
+putBSB :: (MonadIO m) => BSB.Builder -> m ()
+putBSB = liftIO . BSB.hPutBuilder stdout
 
-putLnBSB :: BSB.Builder -> IO ()
-putLnBSB = BSB.hPutBuilder stdout . (<> endlBSB)
+putLnBSB :: (MonadIO m) => BSB.Builder -> m ()
+putLnBSB = liftIO . BSB.hPutBuilder stdout . (<> endlBSB)
 
 {-# INLINE wsBSB #-}
 wsBSB :: BSB.Builder
@@ -362,13 +363,20 @@ instance ShowBSB Double where
 instance ShowBSB Char where
   showBSB = BSB.char7
 
+instance ShowBSB String where
+  -- TODO: string7 vs string8
+  showBSB = BSB.string8
+
+instance ShowBSB BS.ByteString where
+  showBSB = BSB.byteString
+
 instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
 
 showLnBSB :: (ShowBSB a) => a -> BSB.Builder
 showLnBSB = (<> endlBSB) . showBSB
 
-printBSB :: (ShowBSB a) => a -> IO ()
+printBSB :: (ShowBSB a, MonadIO m) => a -> m ()
 printBSB = putBSB . showBSB
 
 concatBSB :: (G.Vector v a, ShowBSB a) => v a -> BSB.Builder
@@ -397,16 +405,16 @@ printYn = putLnBSB . ynBSB
 printList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
 printList = putLnBSB . unwordsBSB . U.fromList
 
-putList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
+putList :: (ShowBSB a, U.Unbox a, MonadIO m) => [a] -> m ()
 putList = putBSB . unwordsBSB . U.fromList
 
-printVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
+printVec :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
 printVec = putLnBSB . unwordsBSB
 
-putVec :: (ShowBSB a, G.Vector v a) => v a -> IO ()
+putVec :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
 putVec = putBSB . unwordsBSB
 
-printGrid ::  IxUVector (Int, Int) Char -> IO ()
+printGrid :: (MonadIO m) => IxUVector (Int, Int) Char -> m ()
 printGrid = putBSB . showGridBSB
 
 showGridBSB :: IxUVector (Int, Int) Char -> BSB.Builder
@@ -417,7 +425,7 @@ showGridBSB mat = G.foldMap ((<> endlBSB) . concatBSB) rows
     !w = x2 + 1 - x1
     rows = V.unfoldrExactN h (U.splitAt w) (vecIV mat)
 
-printMat :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> IO ()
+printMat :: (ShowBSB a, U.Unbox a, MonadIO m) => IxUVector (Int, Int) a -> m ()
 printMat = putBSB . showMatBSB
 
 showMatBSB :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> BSB.Builder
