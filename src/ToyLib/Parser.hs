@@ -34,6 +34,12 @@ int' = state $ fromJust . BS.readInt . BS.dropWhile isSpace
 int1' :: (MonadState BS.ByteString m) => m Int
 int1' = subtract 1 <$> int'
 
+char' :: (MonadState BS.ByteString m) => m Char
+char' = state $ fromJust . BS.uncons . BS.dropWhile isSpace
+
+word' :: (MonadState BS.ByteString m) => m BS.ByteString
+word' = state $ BS.break isSpace . BS.dropWhile isSpace
+
 -- | Parsers an `Int` and converts it into a `Double`.
 --
 -- TODO: read and word'
