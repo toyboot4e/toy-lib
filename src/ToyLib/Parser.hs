@@ -17,11 +17,11 @@ import qualified Data.Vector.Unboxed as U
 import ToyLib.IO
 
 -- | Reads the whole stdin and runs the user program.
-runIO :: StateT BS.ByteString IO () -> IO ()
+runIO :: StateT BS.ByteString IO a -> IO a
 runIO = (BS.getContents >>=) . evalStateT
 
 -- | Reads a file runs the user program.
-runFileIO :: StateT BS.ByteString IO () -> String -> IO ()
+runFileIO :: StateT BS.ByteString IO a -> String -> IO a
 runFileIO f path = evalStateT f =<< BS.readFile path
 
 -- * Primitives
@@ -102,11 +102,11 @@ digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> getLine'
 getHW' :: (U.Unbox a, ReadBS a, MonadState BS.ByteString m) => Int -> Int -> m (U.Vector a)
 getHW' !h !w = convertNBS (h * w) <$> V.replicateM h getLine'
 
--- | Reads next @h * w@ elements as a char-based grid.
+-- | Reads next @h * w@ elements as matrix of type @a@.
 getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
 getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 
--- | Reads next @h * w@ elements as a matrix of type @a@.
+-- | Reads next @h * w@ elements as a char-based grid.
 getGrid' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
 getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) . convertCharsHW <$> V.replicateM h getLine'
 

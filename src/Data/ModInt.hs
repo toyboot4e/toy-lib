@@ -7,6 +7,7 @@
 -- | `Int` with automatic moudlo arithmetic performed. Depends on @Math.PowMod@.
 module Data.ModInt where
 
+import qualified Data.ByteString.Builder as BSB
 import Data.Coerce
 import Data.Core.SemigroupAction
 import qualified Data.Ratio as Ratio
@@ -19,11 +20,15 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
 import GHC.TypeLits
 import Math.PowMod (invModF)
+import ToyLib.IO
 
 -- | `Int` with automatic moudlo arithmetic performed.
 newtype ModInt p = ModInt {unModInt :: Int}
   deriving (Eq, P.Prim)
   deriving newtype (Ord, Read, Show)
+
+instance (p) => ShowBSB (ModInt p) where
+  showBSB = BSB.intDec . unModInt
 
 deriving newtype instance (KnownNat p) => Real (ModInt p)
 

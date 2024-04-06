@@ -377,7 +377,7 @@ showLnBSB :: (ShowBSB a) => a -> BSB.Builder
 showLnBSB = (<> endlBSB) . showBSB
 
 printBSB :: (ShowBSB a, MonadIO m) => a -> m ()
-printBSB = putBSB . showBSB
+printBSB = putBSB . showLnBSB
 
 concatBSB :: (G.Vector v a, ShowBSB a) => v a -> BSB.Builder
 concatBSB = G.foldMap showBSB
