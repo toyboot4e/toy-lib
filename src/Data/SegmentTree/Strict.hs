@@ -146,6 +146,8 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
 foldAllSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
 foldAllSTree (SegmentTree vec _) = GM.read vec 1
 
+-- TODO: faster bsearch
+
 -- | \(O(\log^2 N)\)
 bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do

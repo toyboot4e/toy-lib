@@ -4,6 +4,8 @@
 -- | `vector`-based sparse graph implementation. Heavily inspired by @cojna/iota@.
 module Data.Graph.Sparse where
 
+-- TODO: separate search module
+
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Extra (unlessM, whenM)

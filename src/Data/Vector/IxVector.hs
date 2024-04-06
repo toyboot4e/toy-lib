@@ -285,6 +285,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
 (@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
   where
     -- NOTE: Using one-based indices sinces zeros are inserted
+    --
     -- From top left to @#@
     !s1 = csum @! (y2 + 1, x2 + 1)
     -- From top left to @*@
