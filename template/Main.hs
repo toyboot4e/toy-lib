@@ -74,6 +74,9 @@ import Data.Array.Unsafe
 
 import qualified Data.Array as A
 
+-- bitvec
+import Data.Bit
+
 -- bytestring
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
