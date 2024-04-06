@@ -399,10 +399,10 @@ yn = bool "No" "Yes"
 ynBSB :: Bool -> BSB.Builder
 ynBSB = bool (BSB.string8 "No") (BSB.string8 "Yes")
 
-printYn :: Bool -> IO ()
+printYn :: (MonadIO m) => Bool -> m ()
 printYn = putLnBSB . ynBSB
 
-printList :: (ShowBSB a, U.Unbox a) => [a] -> IO ()
+printList :: (ShowBSB a, U.Unbox a, MonadIO m) => [a] -> m ()
 printList = putLnBSB . unwordsBSB . U.fromList
 
 putList :: (ShowBSB a, U.Unbox a, MonadIO m) => [a] -> m ()
