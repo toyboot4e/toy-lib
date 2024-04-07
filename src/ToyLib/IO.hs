@@ -373,6 +373,9 @@ instance ShowBSB BS.ByteString where
 instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
 
+instance (ShowBSB a, ShowBSB b, ShowBSB c) => ShowBSB (a, b, c) where
+  showBSB (!a, !b, c) = showBSB a <> BSB.string7 " " <> showBSB b <> BSB.string7 " " <> showBSB c
+
 showLnBSB :: (ShowBSB a) => a -> BSB.Builder
 showLnBSB = (<> endlBSB) . showBSB
 
