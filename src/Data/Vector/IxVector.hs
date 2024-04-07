@@ -248,6 +248,12 @@ exchangeIV IxVector {..} i = GM.exchange vecIV (index boundsIV i)
 unsafeExchangeIV :: (Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m a
 unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
 
+-- | \(O(N)\) Cloning
+cloneIV :: (PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> m (IxVector i (v (PrimState m) a))
+cloneIV IxVector {..} = do
+  vec' <- GM.clone vecIV
+  return $ IxVector boundsIV vec'
+
 -- | \(O(HW)\) Calculates two-dimensional cumulative sum.
 --
 -- WARNING: Can you really allocate/run \(O(HW)\) algorithm?

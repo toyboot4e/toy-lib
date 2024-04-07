@@ -293,3 +293,11 @@ readFront = (fmap fromJust .) . viewFrontN
 readBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
 readBack = (fmap fromJust .) . viewBackN
 {-# INLINE readBack #-}
+
+-- | \(O(N)\)
+cloneBuffer :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Buffer (PrimState m) a)
+cloneBuffer Buffer {..} = do
+  vars' <- UM.clone bufferVars
+  buf' <- UM.clone internalBuffer
+  return $ Buffer vars' buf' internalBufferSize
+
