@@ -187,15 +187,22 @@ insertBH BinaryHeap {..} x = do
   siftUpBy (compareVia priorityBH) size internalVecBH
 {-# INLINE insertBH #-}
 
-unsafeDeleteBH ::
+unsafeDeleteBH_ ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m ()
-unsafeDeleteBH BinaryHeap {..} = do
+unsafeDeleteBH_ BinaryHeap {..} = do
   size' <- subtract 1 <$!> UM.unsafeRead intVarsBH _sizeBH
   UM.unsafeWrite intVarsBH _sizeBH size'
   UM.unsafeSwap internalVecBH 0 size'
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size' internalVecBH)
+{-# INLINE unsafeDeleteBH_ #-}
+
+unsafeDeleteBH ::
+  (OrdVia f a, U.Unbox a, PrimMonad m) =>
+  BinaryHeap f (PrimState m) a ->
+  m a
+unsafeDeleteBH bh = unsafeViewBH bh <* unsafeDeleteBH_ bh
 {-# INLINE unsafeDeleteBH #-}
 
 modifyTopBH ::
@@ -217,7 +224,7 @@ deleteFindTopBH bh = do
   size <- getBinaryHeapSize bh
   if size > 0
     then do
-      !top <- unsafeViewBH bh <* unsafeDeleteBH bh
+      !top <- unsafeViewBH bh <* unsafeDeleteBH_ bh
       return $ Just top
     else return Nothing
 {-# INLINE deleteFindTopBH #-}
