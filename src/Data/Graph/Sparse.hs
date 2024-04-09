@@ -246,6 +246,23 @@ genericBfs !gr !nVerts !source = U.create $ do
   return dist
 
 -- | \(O(V+E)\) 01-BFS. Unreachable vertices are given distance of @-1@.
+--
+-- = Example
+--
+-- @
+-- let !bnd3 = zero3 n n 4
+-- let !res = genericBfs01 bnd3 grF (4 * n * n) source
+--       where
+--         grF (!y, !x, !iDir) = flip U.imapMaybe diag4 $ \i (!dy, !dx) -> do
+--           let (!y', !x') = (y + dy, x + dx)
+--           guard $ inRange (zero2 n n) (y', x') && gr @! (y', x') /= '#'
+--           return ((y', x', i), bool 1 0 (iDir == i))
+--         source = U.generate 4 $ (sy, sx,)
+-- @
+--
+-- = Typical problems
+-- - [ABC 176 E - Wizard in Maze](https://atcoder.jp/contests/abc176/tasks/abc176_d)
+-- - [ABC 246 E - Bishop 2](https://atcoder.jp/contests/abc246/tasks/abc246_e)
 genericBfs01 :: (Ix i, U.Unbox i) => (i, i) -> (i -> U.Vector (i, Int)) -> Int -> U.Vector i -> IxUVector i Int
 genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
   let !undef = -1 :: Int
