@@ -12,7 +12,6 @@ import Control.Monad.Fix
 import Control.Monad.ST
 import Control.Monad.State.Class
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
-import Data.Bifunctor
 import Data.BinaryHeap
 import Data.Bool (bool)
 import Data.Buffer
@@ -132,7 +131,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     insertBH heap (0, v)
 
   fix $ \loop ->
-    deleteFindTopBH heap >>= \case
+    deleteFindBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> UM.read dist v1
