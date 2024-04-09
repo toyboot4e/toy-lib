@@ -63,6 +63,10 @@ orthoWith :: ((Int, Int), (Int, Int)) -> ((Int, Int) -> Bool) -> (Int -> U.Vecto
 orthoWith bnd p v1 =
   U.map (index bnd) . U.filter ((&&) <$> inRange bnd <*> p) $ U.map (add2 (unindex bnd v1)) ortho4
 
+{-# INLINE diag4 #-}
+diag4 :: U.Vector (Int, Int)
+diag4 = U.fromList [(-1, 1), (1, 1), (1, -1), (-1, -1)]
+
 -- | `G.slice` via inclusive range @[l, r]@.
 {-# INLINE slice #-}
 slice :: (G.Vector v a) => Int -> Int -> v a -> v a
