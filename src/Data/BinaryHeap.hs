@@ -12,7 +12,7 @@
 -- == Operations and views
 --
 -- - `insertBH`,
--- - `deleteFindTopBH`
+-- - `deleteFindBH`
 -- - `viewBH`
 -- - `unsafeDeleteBH`
 --
@@ -205,29 +205,27 @@ unsafeDeleteBH ::
 unsafeDeleteBH bh = unsafeViewBH bh <* unsafeDeleteBH_ bh
 {-# INLINE unsafeDeleteBH #-}
 
-modifyTopBH ::
+modifyBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   (a -> a) ->
   m ()
-modifyTopBH BinaryHeap {..} f = do
+modifyBH BinaryHeap {..} f = do
   UM.unsafeModify internalVecBH f 0
   size <- UM.unsafeRead intVarsBH _sizeBH
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size internalVecBH)
-{-# INLINE modifyTopBH #-}
+{-# INLINE modifyBH #-}
 
-deleteFindTopBH ::
+deleteFindBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
-deleteFindTopBH bh = do
+deleteFindBH bh = do
   size <- getBinaryHeapSize bh
   if size > 0
-    then do
-      !top <- unsafeViewBH bh <* unsafeDeleteBH_ bh
-      return $ Just top
+    then Just <$> unsafeDeleteBH bh
     else return Nothing
-{-# INLINE deleteFindTopBH #-}
+{-# INLINE deleteFindBH #-}
 
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
 clearBH BinaryHeap {..} = UM.unsafeWrite intVarsBH 0 0
