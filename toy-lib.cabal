@@ -179,6 +179,7 @@ library
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.Graph.Alias
+    Data.Graph.Generic
     Data.Graph.MaxFlow
     Data.Graph.MinCostFlow
     Data.Graph.Sparse
