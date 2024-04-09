@@ -230,10 +230,10 @@ deleteFindBH bh = do
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
 clearBH BinaryHeap {..} = UM.unsafeWrite intVarsBH 0 0
 
-freezeInternalVecBH ::
+unsafeFreezeBH ::
   (U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m (U.Vector a)
-freezeInternalVecBH BinaryHeap {..} = do
+unsafeFreezeBH BinaryHeap {..} = do
   size <- UM.unsafeRead intVarsBH _sizeBH
   U.unsafeFreeze (UM.unsafeTake size internalVecBH)
