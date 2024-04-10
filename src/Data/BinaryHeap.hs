@@ -12,7 +12,7 @@
 -- == Operations and views
 --
 -- - `insertBH`,
--- - `deleteFindBH`
+-- - `deleteBH`
 -- - `viewBH`
 -- - `unsafeDeleteBH`
 --
@@ -216,16 +216,17 @@ modifyBH BinaryHeap {..} f = do
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size internalVecBH)
 {-# INLINE modifyBH #-}
 
-deleteFindBH ::
+-- | \(O(\log N)\) Deletes and returns the top node.
+deleteBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
-deleteFindBH bh = do
+deleteBH bh = do
   size <- sizeBN bh
   if size > 0
     then Just <$> unsafeDeleteBH bh
     else return Nothing
-{-# INLINE deleteFindBH #-}
+{-# INLINE deleteBH #-}
 
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
 clearBH BinaryHeap {..} = UM.unsafeWrite intVarsBH 0 0
