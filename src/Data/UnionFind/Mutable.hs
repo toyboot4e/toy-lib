@@ -11,7 +11,6 @@ import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST (RealWorld)
 import qualified Data.IntMap as IM
-import qualified Data.IntSet as IS
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
