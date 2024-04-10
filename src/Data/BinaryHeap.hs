@@ -6,14 +6,15 @@
 --
 -- == Construction
 --
--- - `newMinBinaryHeap`, `buildMinBinaryHeapVia`
--- - `newMaxBinaryHeap`, `buildMaxBinaryHeapVia`
+-- - `newMinBinaryHeap`, `buildMinBinaryHeap`
+-- - `newMaxBinaryHeap`, `buildMaxBinaryHeap`
 --
 -- == Operations and views
 --
--- - `insertBH`,
+-- - `insertBH`
 -- - `deleteBH`
 -- - `viewBH`
+-- - `deleteBH`
 -- - `unsafeDeleteBH`
 --
 -- == Reset
@@ -48,8 +49,11 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 --
 -- Parent value is smaller than or equal to their children.
 data BinaryHeap (f :: Type -> Type) s a = BinaryHeap
-  { priorityBH :: !(a -> f a),
+  { -- | Newtype of `OrdVia`
+    priorityBH :: !(a -> f a),
+    -- | Stores the size of the heap.
     intVarsBH :: !(UM.MVector s Int),
+    -- | The storage.
     internalVecBH :: !(UM.MVector s a)
   }
 
@@ -76,7 +80,7 @@ sizeBN :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
 sizeBN BinaryHeap {..} = UM.unsafeRead intVarsBH _sizeBH
 {-# INLINE sizeBN #-}
 
--- | Moves a leaf value upwards order to keep the invariant.
+-- | \(O(\log N)\) Moves a leaf value upwards order to keep the invariant.
 siftUpBy ::
   (U.Unbox a, PrimMonad m) =>
   (a -> a -> Ordering) ->
@@ -98,7 +102,7 @@ siftUpBy cmp k vec = do
       else UM.unsafeWrite vec 0 x
 {-# INLINE siftUpBy #-}
 
--- | Moves a parent vertex downwards in order to keep the invariant.
+-- | \(O(\log N)\) Moves a parent vertex downwards in order to keep the invariant.
 siftDownBy ::
   (U.Unbox a, PrimMonad m) =>
   (a -> a -> Ordering) ->
@@ -139,7 +143,7 @@ siftDownBy cmp k vec = do
             _ -> UM.unsafeWrite vec i x
 {-# INLINE siftDownBy #-}
 
--- | Sorts a vector as a heap.
+-- | \(O(N \log N)\) Sorts a vector as a heap.
 heapifyBy ::
   (U.Unbox a, PrimMonad m) =>
   (a -> a -> Ordering) ->
