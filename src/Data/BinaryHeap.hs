@@ -55,9 +55,9 @@ newMinBinaryHeap = newBinaryHeap Identity
 newMaxBinaryHeap :: (U.Unbox a, PrimMonad m) => Int -> m (MaxBinaryHeap (PrimState m) a)
 newMaxBinaryHeap = newBinaryHeap Down
 
-getBinaryHeapSize :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
-getBinaryHeapSize BinaryHeap {..} = UM.unsafeRead intVarsBH _sizeBH
-{-# INLINE getBinaryHeapSize #-}
+sizeBN :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
+sizeBN BinaryHeap {..} = UM.unsafeRead intVarsBH _sizeBH
+{-# INLINE sizeBN #-}
 
 siftUpBy ::
   (U.Unbox a, PrimMonad m) =>
@@ -169,7 +169,7 @@ viewBH ::
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
 viewBH bh = do
-  size <- getBinaryHeapSize bh
+  size <- sizeBN bh
   if size > 0
     then Just <$!> unsafeViewBH bh
     else return Nothing
@@ -221,7 +221,7 @@ deleteFindBH ::
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
 deleteFindBH bh = do
-  size <- getBinaryHeapSize bh
+  size <- sizeBN bh
   if size > 0
     then Just <$> unsafeDeleteBH bh
     else return Nothing
