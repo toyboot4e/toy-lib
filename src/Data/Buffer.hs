@@ -15,8 +15,13 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 data Buffer s a = Buffer
-  { bufferVars :: !(UM.MVector s Int),
+  { -- | Stores the @[front, back)@ position of the buffer in use. The @front@ value is zero when
+    -- the buffer is initialized as a stack or queue. The front value is at the middle of the
+    -- internal buffer when initialized as a deque.
+    bufferVars :: !(UM.MVector s Int),
+    -- | The storage.
     internalBuffer :: !(UM.MVector s a),
+    -- | The capacity of the buffer. It's doubled when initialized as a dequeue.
     internalBufferSize :: !Int
   }
 
@@ -26,36 +31,38 @@ _bufferFrontPos = 0
 _bufferBackPos :: Int
 _bufferBackPos = 1
 
--- | \(O(N)\)
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBuffer n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
 type Stack s a = Buffer s a
 
--- | \(O(N)\)
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
 newBufferAsStack :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsStack n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
-createBuffer :: (U.Unbox a) => (forall s. ST s (Buffer s a)) -> U.Vector a
-createBuffer f = runST $ do
-  !buf <- f
-  unsafeFreezeBuffer buf
-
 type Queue s a = Buffer s a
 
--- | \(O(N)\)
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
 newBufferAsQueue :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+-- TODO: It should have length @2 * n + 1@.
 newBufferAsQueue n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
 type Deque s a = Buffer s a
 
--- | \(O(N)\) Creates a buffer of length $2 N$ for both front and back.
+-- | \(O(N)\) Creates a buffer of length @2 * n@ with initial value at @n@.
 newBufferAsDeque :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBufferAsDeque n =
   Buffer
     <$> UM.replicate 2 n
     <*> UM.unsafeNew (2 * n)
     <*> pure (2 * n)
+
+-- | \(O(N)\) Freezes a buffer after creation.
+createBuffer :: (U.Unbox a) => (forall s. ST s (Buffer s a)) -> U.Vector a
+createBuffer f = runST $ do
+  !buf <- f
+  unsafeFreezeBuffer buf
 
 -- | \(O(1)\)
 lengthBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m Int
