@@ -16,8 +16,29 @@ import Data.Ix
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
+import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+
+----------------------------------------------------------------------------------------------------
+-- DFS / BFS
+----------------------------------------------------------------------------------------------------
+
+-- TODO. Also, generalize the implementation among ordinary BFS/DFS.
+
+----------------------------------------------------------------------------------------------------
+-- Diameter
+----------------------------------------------------------------------------------------------------
+
+-- | \(O(V+E)\) Tree diameter calculation.
+treeDiameterSG :: SparseGraph Int w -> Int
+treeDiameterSG gr =
+  let bfs0 = vecIV $ bfsSG gr 0
+      far1 = U.maxIndex bfs0
+      bfs1 = vecIV $ bfsSG gr far1
+   in U.maximum bfs1
+
+-- TODO: height
 
 ----------------------------------------------------------------------------------------------------
 -- LCA
