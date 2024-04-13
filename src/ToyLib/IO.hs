@@ -370,6 +370,9 @@ instance ShowBSB String where
 instance ShowBSB BS.ByteString where
   showBSB = BSB.byteString
 
+instance ShowBSB BSB.Builder where
+  showBSB = id
+
 instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
 
