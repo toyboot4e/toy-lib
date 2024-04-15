@@ -1,22 +1,8 @@
 {-# LANGUAGE DefaultSignatures #-}
 
--- | Super dirty slow IO
+-- | Show with bytestring `Builder`.
 --
--- = Main procedures
---
--- `ints2`, `intsW`, `auto`, `digitsU`, `getMat` and `charsH`.
---
--- = `ReadBS` and `auto`
---
--- Primitives are `ReadBS`. Tuples of `ReadBS` are also `ReadBS`:
---
--- >>> convertBS @(Int, Char, String, Float) $ BS.pack "42 c string 2.5"
--- (42,'c',"string",2.5)
---
--- Vectors are `ReadBS` and they can also be embedded in the end of a tuple:
---
--- >>> convertBS @(Int, String, Float, U.Vector Int) $ BS.pack "1 string 3.5 10 20 30 40"
--- (1,"string",3.5,[10,20,30,40])
+-- It's good for both performance and monad transformers.
 module ToyLib.ShowBSB where
 
 import Control.Monad.IO.Class
@@ -42,12 +28,6 @@ putLnBSB = liftIO . BSB.hPutBuilder stdout . (<> endlBSB)
 {-# INLINE wsBSB #-}
 wsBSB :: BSB.Builder
 wsBSB = BSB.char7 ' '
-
--- ord8 :: Char -> Word8
--- ord8 = fromIntegral . fromEnum
---
--- chr8 :: Word8 -> Char
--- chr8 = toEnum . fromIntegral
 
 -- | Show as a bytestring builder.
 class ShowBSB a where
