@@ -19,20 +19,14 @@
 -- (1,"string",3.5,[10,20,30,40])
 module ToyLib.ShowBSB where
 
-import Control.Monad (forM_)
 import Control.Monad.IO.Class
-import Data.Bifunctor (first)
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
-import Data.Char (digitToInt, isSpace)
-import Data.List (unfoldr)
-import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
 import System.IO (stdout)
 
 {-# INLINE endlBSB #-}
