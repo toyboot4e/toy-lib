@@ -2,18 +2,18 @@
 
 -- | \(O(\log N)\) bisection method for sorted items in an inclusive range (from left to right only).
 --
--- `bisect` returns an @(ok, ng)@ index pair at the boundary. `bisectL` and `bisectR` returns
+-- `bisect` returns an @(yes, no)@ index pair at the boundary. `bisectL` and `bisectR` returns
 -- one of the pair. `bisectM` is a monadic variant of `bisect`.
 --
 -- = Example
 --
--- With an OK predicate @(<= 5)@, list @[0..9]@ can be seen as:
+-- With an yes predicate @(<= 5)@, list @[0..9]@ can be seen as:
 --
 -- > [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 -- >  <-------------->  <-------->
--- >         ok             ng
+-- >         yes             no
 --
--- In the preceding example, `bisect` returns the @(ok, ng)@ = @(Just 5, Just 6)@ pair at the boundary:
+-- In the preceding example, `bisect` returns the @(yes, no)@ = @(Just 5, Just 6)@ pair at the boundary:
 --
 -- >>> :{
 -- let xs = [0 :: Int .. 9]
@@ -81,16 +81,16 @@ bisectR !a !b !c = snd $! bisect a b c
 -- | \(O(f \log N)\) Monadic binary search.
 {-# INLINE bisectM #-}
 bisectM :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int, Maybe Int)
-bisectM !low !high !isOk = both wrap <$> inner (low - 1) (high + 1)
+bisectM !low !high !isYes = both wrap <$> inner (low - 1) (high + 1)
   where
     inner :: Int -> Int -> m (Int, Int)
-    inner !ok !ng | abs (ok - ng) == 1 = return (ok, ng)
-    inner !ok !ng =
-      isOk m >>= \case
-        True -> inner m ng
-        False -> inner ok m
+    inner !y !n | abs (y - n) == 1 = return (y, n)
+    inner !y !n =
+      isYes m >>= \case
+        True -> inner m n
+        False -> inner y m
       where
-        !m = (ok + ng) `div` 2
+        !m = (y + n) `div` 2
 
     wrap :: Int -> Maybe Int
     wrap !x
@@ -110,15 +110,15 @@ bisectMR !a !b !c = snd <$> bisectM a b c
 -- | \(O(f \log N)\)
 {-# INLINE bisectF64 #-}
 bisectF64 :: Double -> Double -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
-bisectF64 !low !high !diff !isOk = both wrap (inner (low - diff) (high + diff))
+bisectF64 !low !high !diff !isYes = both wrap (inner (low - diff) (high + diff))
   where
     inner :: Double -> Double -> (Double, Double)
-    inner !ok !ng | abs (ok - ng) < diff = (ok, ng)
-    inner !ok !ng
-      | isOk m = inner m ng
-      | otherwise = inner ok m
+    inner !y !n | abs (y - n) < diff = (y, n)
+    inner !y !n
+      | isYes m = inner m n
+      | otherwise = inner y m
       where
-        !m = (ok + ng) / 2
+        !m = (y + n) / 2
     wrap :: Double -> Maybe Double
     wrap !x
       | x == (low - diff) || x == (high + diff) = Nothing
