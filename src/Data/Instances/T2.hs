@@ -7,14 +7,10 @@ module Data.Instances.T2 where
 
 import Control.Monad
 import Data.Bifunctor
-import qualified Data.ByteString.Char8 as BS
-import Data.Char (isSpace)
-import Data.Maybe
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import ToyLib.IO (ReadBS (..), auto)
 
 -- | Unboxed 2D array packed in one array when stored in `U.Vector`.
 data T2 a b = T2 !a !b
@@ -30,32 +26,6 @@ instance Bifunctor T2 where
   first f (T2 a b) = let !a' = f a in T2 a' b
   {-# INLINE second #-}
   second g (T2 a b) = let !b' = g b in T2 a b'
-
-----------------------------------------------------------------------------------------------------
--- IO
-----------------------------------------------------------------------------------------------------
-
--- TODO: Just use unboxed tuples
-
-instance (ReadBS a1, ReadBS a2) => ReadBS (T2 a1 a2) where
-  {-# INLINE convertBS #-}
-  convertBS !bs0 =
-    let (!a1, !bs1) = readBS (BS.dropWhile isSpace bs0)
-        !a2 = convertBS (BS.dropWhile isSpace bs1)
-     in T2 a1 a2
-  {-# INLINE readBS #-}
-  readBS = fromJust . readMayBS
-  {-# INLINE readMayBS #-}
-  readMayBS !bs0 = do
-    (!x1, !bs1) <- readMayBS bs0
-    (!x2, !bs2) <- readMayBS bs1
-    Just (T2 x1 x2, bs2)
-
-ints2T :: IO (T2 Int Int)
-ints2T = auto
-
-ints11T :: IO (T2 Int Int)
-ints11T = (\(T2 v1 v2) -> T2 (v1 - 1) (v2 - 1)) <$> ints2T
 
 ----------------------------------------------------------------------------------------------------
 -- Unbox

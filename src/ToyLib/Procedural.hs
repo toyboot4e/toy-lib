@@ -3,6 +3,7 @@
 -- | The great good procedual programming.
 module ToyLib.Procedural where
 
+import Control.Monad.Fix
 import qualified Data.Vector.Generic as G
 
 or1 :: (Monad m) => Bool -> m Bool -> m Bool

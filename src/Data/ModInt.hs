@@ -20,7 +20,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
 import GHC.TypeLits
 import Math.PowMod (invModF)
-import ToyLib.IO
+import ToyLib.ShowBSB
 
 -- | `Int` with automatic moudlo arithmetic performed.
 newtype ModInt p = ModInt {unModInt :: Int}

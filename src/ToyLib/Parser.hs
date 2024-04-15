@@ -1,20 +1,14 @@
 -- | `StateT` -based parser.
---
--- - TODO: Replace my `IO` module.
--- - TODO: try strict tuple evaluation and compare performacne (force?)
 module ToyLib.Parser where
 
-import Control.Monad
 import Control.Monad.State.Class
-import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
+import Control.Monad.Trans.State.Strict (State, evalState, StateT, evalStateT)
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
 import Data.Maybe
-import qualified Data.Vector as V
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
-import ToyLib.IO
 
 -- | Reads the whole stdin and runs the user program.
 runIO :: StateT BS.ByteString IO a -> IO a
@@ -72,35 +66,26 @@ ints6' = (,,,,,) <$> int' <*> int' <*> int' <*> int' <*> int' <*> int'
 -- * Readers
 
 -- | Reads one line from the state.
-getLine' :: (MonadState BS.ByteString m) => m BS.ByteString
-getLine' = state $ BS.span (/= '\n') . BS.dropWhile isSpace
+line' :: (MonadState BS.ByteString m) => m BS.ByteString
+line' = state $ BS.span (/= '\n') . BS.dropWhile isSpace
 
 -- | Reads one line from the state and runs a pure parser for it.
 withLine' :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
-withLine' f = evalState f <$> getLine'
+withLine' f = evalState f <$> line'
 
 -- * More
 
--- | Parses one line via the `ReadBS` class.
-auto' :: (ReadBS a, MonadState BS.ByteString m) => m a
-auto' = convertBS <$> getLine'
-
 -- | Reads an unboxed vector.
 intsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
-intsU' = U.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> getLine'
+intsU' = U.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> line'
 
 -- | Reads an unboxed vector with size @n@.
 intsN' :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
 -- intsN' n = withLine' $ U.replicateM n int'
-intsN' n = U.unfoldrExactN n (fromJust . BS.readInt . BS.dropWhile isSpace) <$> getLine'
+intsN' n = U.unfoldrExactN n (fromJust . BS.readInt . BS.dropWhile isSpace) <$> line'
 
 digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
-digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> getLine'
-
--- | Reads @h@ lines of stdin and converts them as HxW **whitespace-delimited `ByteString`** and
--- converts them into a flat vector of type @a@.
-getHW' :: (U.Unbox a, ReadBS a, MonadState BS.ByteString m) => Int -> Int -> m (U.Vector a)
-getHW' !h !w = convertNBS (h * w) <$> V.replicateM h getLine'
+digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> line'
 
 -- | Reads next @h * w@ elements as matrix of type @a@.
 getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
@@ -108,6 +93,4 @@ getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 
 -- | Reads next @h * w@ elements as a char-based grid.
 getGrid' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
-getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) . convertCharsHW <$> V.replicateM h getLine'
-
--- TODO: faster getMat' and getGrid'
+getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) char'

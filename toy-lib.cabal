@@ -19,7 +19,7 @@ flag atcoder
   manual:      True
 
 flag debug
-  description: Indicates this is for ru with debug output
+  description: Indicates if this is run with debug output
   default:     False
   manual:      True
 
@@ -221,11 +221,11 @@ library
     ToyLib.DebugGrid
     ToyLib.DebugSTree
     ToyLib.DP
-    ToyLib.IO
     ToyLib.Macro
     ToyLib.Parser
     ToyLib.Prelude
     ToyLib.Procedural
+    ToyLib.ShowBSB
 
   hs-source-dirs:   src
   ghc-options:
