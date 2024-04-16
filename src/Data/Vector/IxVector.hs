@@ -9,8 +9,10 @@ import Data.Bifunctor (first, second)
 import Data.Ix
 import Data.Tuple.Extra (both)
 import Data.Utils.Unindex
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
@@ -21,11 +23,17 @@ import ToyLib.Debug
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
   deriving (Show, Eq)
 
--- | Primary `IxVector` type notation.
+-- | Unboxed `IxVector` type notation.
 type IxUVector i a = IxVector i (U.Vector a)
 
--- | Primary `IxVector` type notation.
+-- | Boxed `IxVector` type notation.
+type IxBVector i a = IxVector i (V.Vector a)
+
+-- | Unboxed `IxVector` type notation.
 type IxMUVector s i a = IxVector i (UM.MVector s a)
+
+-- | Boxed `IxVector` type notation.
+type IxMBVector s i a = IxVector i (VM.MVector s a)
 
 -- | Partial `IxVector` accessor
 {-# INLINE (@!) #-}
@@ -61,7 +69,7 @@ lengthIV = G.length . vecIV
 -- | \(O(f N)\)
 {-# INLINE findIndexIV #-}
 findIndexIV :: (G.Vector v a, Unindex i) => (a -> Bool) -> IxVector i (v a) -> Maybe i
-findIndexIV f IxVector { .. } = unindex boundsIV <$> G.findIndex f vecIV
+findIndexIV f IxVector {..} = unindex boundsIV <$> G.findIndex f vecIV
 
 -- | \(O(f N)\)
 {-# INLINE findIndicesIV #-}
@@ -71,12 +79,12 @@ findIndicesIV f IxVector {..} = G.map (unindex boundsIV) $ G.findIndices f vecIV
 -- | \(O(f N)\)
 {-# INLINE mapIV #-}
 mapIV :: (U.Unbox a, U.Unbox b) => (a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
-mapIV !f IxVector { .. } = IxVector boundsIV $ U.map f vecIV
+mapIV !f IxVector {..} = IxVector boundsIV $ U.map f vecIV
 
 -- | \(O(f N)\)
 {-# INLINE imapIV #-}
 imapIV :: (Unindex i, U.Unbox a, U.Unbox b) => (i -> a -> b) -> IxVector i (U.Vector a) -> IxVector i (U.Vector b)
-imapIV !f IxVector{..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
+imapIV !f IxVector {..} = IxVector boundsIV $ U.imap (f . unindex boundsIV) vecIV
 
 -- | \(O(f N)\)
 {-# INLINE filterIV #-}
