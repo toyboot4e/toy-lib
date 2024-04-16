@@ -122,7 +122,7 @@ clearMUF (MUnionFind !vec) = do
   UM.set vec (MUFRoot 1)
 
 -- | \(O(N \alpha(N))\) Returns all root vertices.
-{-# groupRootMUF #-}
+{-# INLINE groupRootsMUF #-}
 groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (U.Vector Int)
 groupRootsMUF uf@(MUnionFind !vec) = U.filterM (\x -> (== x) <$> rootMUF uf x) (U.generate (GM.length vec) id)
 
