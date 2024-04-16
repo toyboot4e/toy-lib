@@ -75,15 +75,15 @@ withLine' f = evalState f <$> line'
 
 -- * More
 
--- | Reads an unboxed vector.
+-- | Reads one line an unboxed vector.
 intsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
 intsU' = U.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> line'
 
--- | Reads an unboxed vector with size @n@.
+-- | Reads n values as an unboxed vector.
 intsN' :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
--- intsN' n = withLine' $ U.replicateM n int'
-intsN' n = U.unfoldrExactN n (fromJust . BS.readInt . BS.dropWhile isSpace) <$> line'
+intsN' n = U.replicateM n int'
 
+-- | Reads one line as digits. TODO: one word might be better
 digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
 digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> line'
 
