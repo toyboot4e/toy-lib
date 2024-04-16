@@ -118,7 +118,7 @@ unBitSet n bits = U.filter (testBit bits) (U.generate n id)
 -- | \(O(N \cdot N!)\) DFS that enumerates all possible [partitions](https://en.wikipedia.org/wiki/Partition_of_a_set) of a bitset.
 -- Prefer `partitionsOfK` when you only need specific size of families.
 --
--- >>> partitionsOf 4
+-- >>> partitionsOf (bit 4 - 1)
 -- [[8,4,2,1],[12,2,1],[8,6,1],[4,10,1],[14,1],[8,4,3],[12,3],[8,2,5],[10,5],[8,7],[4,2,9],[6,9],[4,11],[2,13],[15]]
 partitionsOf :: Int -> [[Int]]
 partitionsOf = inner [] []

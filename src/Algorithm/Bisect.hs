@@ -17,7 +17,7 @@
 --
 -- >>> :{
 -- let xs = [0 :: Int .. 9]
---  in bisect (0 :: Int, 9 :: Int) (\i -> xs !! i <= 5)
+--  in bisect 0 9 (\i -> xs !! i <= 5)
 -- :}
 -- (Just 5,Just 6)
 --
