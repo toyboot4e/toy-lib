@@ -10,14 +10,3 @@ class SemigroupAction s a where
 instance (Semigroup a) => SemigroupAction a a where
   sact x y = x <> y
 
--- | Right monoid action.
-class (SemigroupAction m a, Monoid m) => MonoidAction m a where
-  -- | Right monoid aciton
-  mact :: m -> a -> a
-  {-# INLINE mact #-}
-  mact = sact
-
--- | Target self
-instance (Monoid a) => MonoidAction a a where
-  mact = sact
-

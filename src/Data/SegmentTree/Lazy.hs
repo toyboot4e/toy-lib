@@ -53,7 +53,7 @@ data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 -- | \(O(N)\) Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::
   forall a op v m.
-  (Monoid a, MonoidAction op a, U.Unbox op, GM.MVector v a,PrimMonad m) =>
+  (Monoid a, Monoid op, U.Unbox op, GM.MVector v a,PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
 newLSTreeImpl !n = do
@@ -65,13 +65,13 @@ newLSTreeImpl !n = do
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
 -- | \(O(N)\)
-newLSTree :: forall a op m. (U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
+newLSTree :: forall a op m. (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree UM.MVector a op (PrimState m))
 newLSTree = newLSTreeImpl
 
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
 generateLSTreeImpl ::
   forall v a op m.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (LazySegmentTree v a op (PrimState m))
@@ -100,12 +100,12 @@ generateLSTreeImpl !n !f = do
     childR !vertex = vertex .<<. 1 .|. 1
 
 -- | \(O(N)\)
-generateLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
+generateLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
 -- | \(O(N)\). TODO: Test it. Share the internal implementation with `genearteLSTree` takeing filling function.
 {-# INLINE buildLSTree #-}
-buildLSTree :: forall op a m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
+buildLSTree :: forall op a m. (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
 buildLSTree xs = do
   !as <- GM.unsafeNew n2
 
@@ -133,7 +133,7 @@ buildLSTree xs = do
 -- propagated when queried.
 sactLSTree ::
   forall v a op m.
-  (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -193,7 +193,7 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 -- | \(O(\log N)\) Acts on one leaf. TODO: Faster implementation.
 sactAtLSTree ::
   forall v a op m.
-  (GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   op ->
@@ -203,7 +203,7 @@ sactAtLSTree stree i = sactLSTree stree i i
 -- | \(O(\log N)\)
 foldLSTree ::
   forall v a m op.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -237,7 +237,7 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                !la' <- mact <$> UM.read ops l <*> GM.read as l
+                !la' <- sact <$> UM.read ops l <*> GM.read as l
                 let !la'' = lAcc <> la'
                 return (succ l, la'')
               else return (l, lAcc)
@@ -246,7 +246,7 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                !ra' <- mact <$> UM.read ops r <*> GM.read as r
+                !ra' <- sact <$> UM.read ops r <*> GM.read as r
                 let !ra'' = ra' <> rAcc
                 return (pred r, ra'')
               else return (r, rAcc)
@@ -257,7 +257,7 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 readLSTree ::
   forall a op v m.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m a
@@ -266,7 +266,7 @@ readLSTree stree i = foldLSTree stree i i
 -- | \(O(\log N)\)
 foldMayLSTree ::
   forall a op v m.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -281,7 +281,7 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
 -- | \(O(\log N)\)
 foldAllLSTree ::
   forall a op v m.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   m a
 -- TODO: faster implementation
@@ -291,7 +291,7 @@ foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length 
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (HasCallStack, GM.MVector v a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -311,7 +311,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
       UM.modify ops (op <>) $! childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
-      GM.modify as (mact op) vertex
+      GM.modify as (sact op) vertex
       UM.write ops vertex mempty
   where
     !nVerts = GM.length as
@@ -322,7 +322,7 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
 _evalToRoot ::
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, SemigroupAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   m ()
@@ -334,8 +334,8 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- mact <$!> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
-    !aR' <- mact <$!> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
+    !aL' <- sact <$!> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
+    !aR' <- sact <$!> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
     GM.write as vertex $! aL' <> aR'
   where
     !nVerts = GM.length as
@@ -351,7 +351,7 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
 {-# INLINE bisectLSTree #-}
 bisectLSTree ::
   forall v a m op.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -370,7 +370,7 @@ bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
 {-# INLINE bisectLSTreeL #-}
 bisectLSTreeL ::
   forall v a m op.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->
@@ -382,7 +382,7 @@ bisectLSTreeL stree l r f = fst <$> bisectLSTree stree l r f
 {-# INLINE bisectLSTreeR #-}
 bisectLSTreeR ::
   forall v a m op.
-  (HasCallStack, GM.MVector v a, Monoid a, MonoidAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree v a op (PrimState m) ->
   Int ->
   Int ->

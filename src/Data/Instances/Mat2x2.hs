@@ -84,6 +84,4 @@ newtype instance U.Vector (V2 a) = V_V2 (U.Vector (V2Repr a))
 deriving instance (U.Unbox a) => GM.MVector UM.MVector (V2 a)
 deriving instance (U.Unbox a) => G.Vector U.Vector (V2 a)
 instance (U.Unbox a) => U.Unbox (V2 a)
-
-instance (Num a) => MonoidAction (Mat2x2 a) (V2 a)
 {- ORMOLU_ENABLE -}
