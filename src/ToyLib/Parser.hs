@@ -22,17 +22,17 @@ runFileIO f path = evalStateT f =<< BS.readFile path
 
 -- | Parses an `Int`.
 int' :: (MonadState BS.ByteString m) => m Int
-int' = state $ fromJust . BS.readInt . BS.dropWhile isSpace
+int' = state $ fromJust . BS.readInt . BS.dropSpace
 
 -- | Parses an `Int` and substracts one.
 int1' :: (MonadState BS.ByteString m) => m Int
 int1' = subtract 1 <$> int'
 
 char' :: (MonadState BS.ByteString m) => m Char
-char' = state $ fromJust . BS.uncons . BS.dropWhile isSpace
+char' = state $ fromJust . BS.uncons . BS.dropSpace
 
 word' :: (MonadState BS.ByteString m) => m BS.ByteString
-word' = state $ BS.break isSpace . BS.dropWhile isSpace
+word' = state $ BS.break isSpace . BS.dropSpace
 
 -- | Parsers an `Int` and converts it into a `Double`.
 --
@@ -67,7 +67,7 @@ ints6' = (,,,,,) <$> int' <*> int' <*> int' <*> int' <*> int' <*> int'
 
 -- | Reads one line from the state.
 line' :: (MonadState BS.ByteString m) => m BS.ByteString
-line' = state $ BS.span (/= '\n') . BS.dropWhile isSpace
+line' = state $ BS.span (/= '\n') . BS.dropSpace
 
 -- | Reads one line from the state and runs a pure parser for it.
 withLine' :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
@@ -77,7 +77,7 @@ withLine' f = evalState f <$> line'
 
 -- | Reads one line an unboxed vector.
 intsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
-intsU' = U.unfoldr (BS.readInt . BS.dropWhile isSpace) <$> line'
+intsU' = U.unfoldr (BS.readInt . BS.dropSpace) <$> line'
 
 -- | Reads n values as an unboxed vector.
 intsN' :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
