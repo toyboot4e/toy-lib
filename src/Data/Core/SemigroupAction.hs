@@ -17,3 +17,7 @@ class (SemigroupAction m a, Monoid m) => MonoidAction m a where
   {-# INLINE mact #-}
   mact = sact
 
+-- | Target self
+instance (Monoid a) => MonoidAction a a where
+  mact = sact
+
