@@ -103,11 +103,31 @@ generateLSTreeImpl !n !f = do
 generateLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree UM.MVector a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
--- | \(O(N)\)
+-- | \(O(N)\). TODO: Test it. Share the internal implementation with `genearteLSTree` takeing filling function.
 {-# INLINE buildLSTree #-}
-buildLSTree :: forall a op m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
--- TODO: replace with a faster implementation with unsafeCopy
-buildLSTree xs = generateLSTreeImpl (U.length xs) (xs U.!)
+buildLSTree :: forall op a m. (HasCallStack, U.Unbox a, Monoid a, MonoidAction op a, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree UM.MVector a op (PrimState m))
+buildLSTree xs = do
+  !as <- GM.unsafeNew n2
+
+  -- Fill leaves:
+  U.unsafeCopy (GM.unsafeSlice nLeaves (U.length xs) as) xs
+  forM_ [U.length xs .. nLeaves - 1] $ \i ->
+    GM.write as (nLeaves + i) mempty
+
+  -- Fill parents from bottom to top:
+  forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
+    !l <- GM.read as (childL i)
+    !r <- GM.read as (childR i)
+    GM.write as i $! l <> r
+
+  !ops <- UM.replicate n2 mempty
+  return $ LazySegmentTree as ops h
+  where
+    !n = U.length xs
+    (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
+    !nLeaves = n2 `div` 2
+    childL !vertex = vertex .<<. 1
+    childR !vertex = vertex .<<. 1 .|. 1
 
 -- | \(O(\log N)\) Appends the lazy operator monoid monoids over a span. They are just stored and
 -- propagated when queried.
