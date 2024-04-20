@@ -46,7 +46,7 @@ swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
 
 -- | Converts undirected edges into directed edges.
 {-# INLINE swapDupeW #-}
-swapDupeW :: U.Vector (Int, Int, Int) -> U.Vector (Int, Int, Int)
+swapDupeW :: (U.Unbox w) => U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
 swapDupeW = U.concatMap (\(!v1, !v2, !d) -> U.fromListN 2 [(v1, v2, d), (v2, v1, d)])
 
 {-# INLINE ortho4 #-}
