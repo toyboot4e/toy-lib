@@ -151,6 +151,34 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
+-- | More generic `genericDj`. TODO: Replace
+dj' :: forall w. (U.Unbox w, Monoid w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
+dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
+  !dist <- UM.replicate nVerts undef
+  !heap <- newMinBinaryHeap (nEdges + 1)
+  -- !last <- UM.replicate nVerts (-1 :: Vertex)
+
+  U.forM_ vs0 $ \v -> do
+    UM.write dist v mempty
+    insertBH heap (mempty, v)
+
+  fix $ \loop ->
+    deleteBH heap >>= \case
+      Nothing -> return ()
+      Just (!w1, !v1) -> do
+        !newVisit <- (== w1) <$> UM.read dist v1
+        when newVisit $ do
+          U.forM_ (gr v1) $ \(!v2, !dw2) -> do
+            !w2 <- UM.read dist v2
+            let !w2' = w1 <> dw2
+            when (w2 == undef || w2' < w2) $ do
+              UM.write dist v2 w2'
+              -- UM.write last v2 v1
+              insertBH heap (w2', v2)
+        loop
+
+  return dist
+
 -- | \(O((E+V) \log {V})\) Dijkstra's algorithm with sparse heap.
 --
 -- TODO: test
@@ -193,6 +221,8 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
 -- usually like @maxBound `div` 2@.
 --
 -- It's strict about path connection and invalid paths are ignored.
+--
+-- REMARK: Use @maxBound@ for the @undef@ value.
 distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
   !vec <- UM.replicate (nVerts * nVerts) undef
