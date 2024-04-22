@@ -80,7 +80,7 @@ maxFlow' !nVerts !src !sink !edges = do
   !flow <- runMaxFlow src sink container
   return (flow, container)
 
--- | Handy API for retrieving edge information @(v1, v2, cap, flow@ from the `maxFlow` results.
+-- | Handy API for retrieving edge information @(v1, v2, cap, flow)@ from the `maxFlow` results.
 --
 -- Be warned that it contains reverse edges and edge from/to source/sink.
 edgesMF :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))

@@ -2,13 +2,16 @@
 module ToyLib.Parser where
 
 import Control.Monad.State.Class
+import Control.Monad.Primitive (PrimMonad)
 import Control.Monad.Trans.State.Strict (State, evalState, StateT, evalStateT)
 import Data.Bifunctor (first)
+import Data.Ix
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
 import Data.Maybe
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Reads the whole stdin and runs the user program.
 runIO :: StateT BS.ByteString IO a -> IO a
