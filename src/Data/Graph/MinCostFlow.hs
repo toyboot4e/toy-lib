@@ -6,6 +6,7 @@
 -- = Typical problems
 --
 -- - [min_cost_b_flow](https://judge.yosupo.jp/problem/min_cost_b_flow)
+-- - [PAST 08 K - ニワトリのお見合い](https://atcoder.jp/contests/past202109-open/tasks/past202109_k)
 module Data.Graph.MinCostFlow where
 
 -- TODO: unify Cost and Capacity with c
@@ -93,7 +94,9 @@ relaxedCostFlow ::
 relaxedCostFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
   fst <$> relaxedCostFlow' toRelax nVerts src sink targetFlow edges
 
--- | Returns @(minCost, flow)@.
+-- | Returns @(minCost, flow)@. REMARK: Invalid (negative cost) edges should not be filtered.
+-- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
+-- the current implementation)
 minCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
@@ -114,7 +117,9 @@ minCostFlow' ::
   m ((Min (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
 minCostFlow' = relaxedCostFlow' Min
 
--- | Returns @(minCost, flow)@.
+-- | Returns @(maxCost, flow)@. REMARK: Invalid (negative cost) edges should not be filtered.
+-- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
+-- the current implementation)
 maxCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
