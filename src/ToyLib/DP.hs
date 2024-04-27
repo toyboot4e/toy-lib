@@ -191,3 +191,79 @@ lcsOf !s !t = U.last . vecIV . constructIV bnd $ \sofar i -> case i of
         | otherwise = 0
   where
     bnd = ((0, 0), (BS.length s, BS.length t))
+
+-- | \(O(W N) (W = 26)\) Returns a vector. @vec V.! c U.! i@ indicates the last occurrence index of
+-- @c@ (@i@ and the returning index is 1-based). This is for subsequence DP.
+--
+-- - NOTE: Input is limited to lower case characters.
+-- - NOTE: If character at @i1@ is @c@ and want to know the last @c@, use @i0@ to get it.
+lastCharOccurrences :: BS.ByteString -> V.Vector (U.Vector Int)
+lastCharOccurrences s = runST $ do
+  !vec <- V.replicateM 26 (UM.replicate (BS.length s + 1) 0)
+
+  forM_ (zip [1 :: Int ..] (BS.unpack s)) $ \(!i, !c_) -> do
+    V.forM_ vec $ \indices -> do
+      UM.write indices i =<< UM.read indices (i - 1)
+    let !c = ord c_ - ord 'a'
+    UM.write (vec V.! c) i i
+
+  V.mapM U.unsafeFreeze vec
+
+-- -- | \(O(NM)\) Counts unique common subsequences. Duplicates are counted multple times.
+-- --
+-- -- = Typical problem
+-- -- - [PAST 11 K - 部分列](https://atcoder.jp/contests/past202206-open/tasks/past202206_k)
+-- countCommonSubsequence :: BS.ByteString -> BS.ByteString -> MyModInt
+-- countCommonSubsequence s t = done $ constructIV bnd f
+--   where
+--     done = subtract 1 . U.last . vecIV
+--     bnd = ((0, 0), (BS.length s, BS.length t))
+--     sOccur = lastCharOccurrences s
+--     tOccur = lastCharOccurrences t
+--     f sofar (_, 0) = modInt 1
+--     f sofar (0, _) = modInt 1
+--     -- REMARK: It's cumulative sum
+--     f sofar (!i1, !i2) = cumulativePart + augPart
+--       where
+--         -- when we don't consume the pair as part of the subsequence
+--         cumulativePart =
+--           let !x1 = sofar @! (i1 - 1, i2 - 1)
+--               !x2 = sofar @! (i1, i2 - 1)
+--               !x3 = sofar @! (i1 - 1, i2)
+--            in x2 + x3 - x1
+--         -- when we consume the pair as part of the subsequence
+--         augPart
+--           | BS.index s (i1 - 1) /= BS.index t (i2 - 1) = modInt 0
+--           | otherwise =
+--               -- be sure to diminish..
+--               let !x1 = bool (sofar @! (i1' - 1, i2' - 1)) 0 $ i1' == 0 || i2' == 0
+--                   !x2 = bool (sofar @! (i1 - 1, i2' - 1)) 0 $ i2' == 0
+--                   !x3 = bool (sofar @! (i1' - 1, i2 - 1)) 0 $ i1' == 0
+--                   !x4 = sofar @! (i1 - 1, i2 - 1)
+--                in x4 - (x2 + x3 - x1)
+--           where
+--             !c = ord (BS.index s (i1 - 1)) - ord 'a'
+--             !i1' = sOccur V.! c U.! (i1 - 1)
+--             !i2' = tOccur V.! c U.! (i2 - 1)
+
+-- -- | \(O(N \log N)\) Counts unique subsequences of a string. Could be faster (\(O(N)\)).
+-- --
+-- -- = Typical problem
+-- -- - [PAST 11 K - 部分列](https://atcoder.jp/contests/past202206-open/tasks/past202206_k)
+-- countSubsequences :: BS.ByteString -> MyModInt
+-- countSubsequences s = runST $ do
+--   -- char -> last occurrence index
+--   lastAt <- UM.replicate 26 (0 :: Int)
+--
+--   -- last charcter index -> stirng count (NOTE: we could instead use an @MVector@ of cumulative sum)
+--   stree <- newSTree @(Sum MyModInt) (BS.length s + 1)
+--   writeSTree stree 0 (Sum (modInt 1))
+--
+--   forM_ (zip [1 :: Int ..] (BS.unpack s)) $ \(!i, !c_) -> do
+--     let !c = ord c_ - ord 'a' -- small char only
+--     !lastI <- UM.exchange lastAt c i
+--     !s <- foldSTree stree lastI (i - 1)
+--     writeSTree stree i s
+--
+--   subtract 1 . getSum <$> foldAllSTree stree
+
