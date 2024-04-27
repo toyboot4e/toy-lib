@@ -104,6 +104,17 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "writeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
+-- | \(O(\log N)\) Writes a leaf value and returns the old value.
+exchangeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m a
+exchangeSTree (SegmentTree vec nValidLeaves) i x = do
+  let v0 = nLeaves + i
+  !ret <- GM.unsafeExchange vec v0 x
+  _unsafeUpdateParentNodes vec v0
+  return ret
+  where
+    !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "exchangeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
+    nLeaves = GM.length vec .>>. 1
+
 -- | \(O(\log N)\) Modifies a leaf value.
 modifySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree (SegmentTree vec nValidLeaves) f i = do
