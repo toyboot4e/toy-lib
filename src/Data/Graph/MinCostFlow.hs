@@ -14,6 +14,8 @@ module Data.Graph.MinCostFlow where
 -- - addEdge
 -- - etc.
 
+-- TODO: when and why loops?
+
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -65,8 +67,6 @@ data MinCostFlowBuffer r s c = MinCostFlowBuffer
   }
 
 -- | Returns the wrapped cost for getting the flow, or Nothing when impossible.
---
--- TODO: Return tuple just like ACL.
 relaxedCostFlow' ::
   (Show (f (CostMCF c)), Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   (CostMCF c -> f (CostMCF c)) ->
@@ -75,7 +75,7 @@ relaxedCostFlow' ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  m (Maybe (f (CostMCF c)), MinCostFlow (PrimState m) c)
+  m ((f (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
 relaxedCostFlow' toRelax !nVerts !src !sink !targetFlow !edges = do
   !container <- buildMinCostFlow nVerts edges
   !minCost <- runMinCostFlow toRelax src sink targetFlow container
@@ -89,13 +89,11 @@ relaxedCostFlow ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  Maybe (f (CostMCF c))
+  (f (CostMCF c), CapacityMCF c)
 relaxedCostFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
   fst <$> relaxedCostFlow' toRelax nVerts src sink targetFlow edges
 
--- | Returns the minimum cost for getting the flow, or Nothing when impossible.
---
--- TODO: Return tuple just like ACL.
+-- | Returns @(minCost, flow)@. WARNING: It returns @mempty@ on no flow.
 minCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
@@ -103,7 +101,7 @@ minCostFlow ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  Maybe (Min (CostMCF c))
+  (Min (CostMCF c), CapacityMCF c)
 minCostFlow = relaxedCostFlow Min
 
 minCostFlow' ::
@@ -113,12 +111,10 @@ minCostFlow' ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  m (Maybe (Min (CostMCF c)), MinCostFlow (PrimState m) c)
+  m ((Min (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
 minCostFlow' = relaxedCostFlow' Min
 
--- | Returns the minimum cost for getting the flow, or Nothing when impossible.
---
--- TODO: Return tuple just like ACL.
+-- | Returns @(minCost, flow)@. WARNING: It returns @mempty@ on no flow.
 maxCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
@@ -126,7 +122,7 @@ maxCostFlow ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  Maybe (Max (CostMCF c))
+  (Max (CostMCF c), CapacityMCF c)
 maxCostFlow = relaxedCostFlow Max
 
 maxCostFlow' ::
@@ -136,7 +132,7 @@ maxCostFlow' ::
   Int ->
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
-  m (Maybe (Max (CostMCF c)), MinCostFlow (PrimState m) c)
+  m ((Max (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
 maxCostFlow' = relaxedCostFlow' Max
 
 -- | Retrieves edge information @(v1, v2, cap, flow, cost)@ from the `maxFlow` results.
@@ -214,7 +210,7 @@ buildMinCostFlow !nVertsMCF !edges = do
     -- be sure to consider reverse edges
     !nEdgesMCF = G.length edges * 2
 
--- TODO: Does `Bounded` work for `Double` for example?
+-- TODO: Does `Bounded` work for `Double` for example? <-- NO.
 
 -- | Runs the MinCostFlow algorithm.
 runMinCostFlow ::
@@ -225,7 +221,7 @@ runMinCostFlow ::
   Vertex ->
   FlowMCF c ->
   MinCostFlow (PrimState m) c ->
-  m (Maybe (f (CostMCF c)))
+  m ((f (CostMCF c)), CapacityMCF c)
 runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
   bufs@MinCostFlowBuffer {..} <-
     -- distsMCF, prevVertMCF, prevEdgeMCF
@@ -237,8 +233,8 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
   let run !accCost !restFlow
         -- TODO: Is it ok to flow too much?
         | restFlow <= 0 =
-            let !_ = dbgAssert (restFlow == 0) "flew too much?"
-             in return $ Just accCost
+            let !_ = dbgAssert (restFlow == 0) "minCostFlow: flew too much?"
+             in return $ (accCost, targetFlow - restFlow)
         | otherwise = do
             -- clear buffers
             GM.set distsMCF mempty
@@ -246,16 +242,16 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
             GM.set prevEdgeMCF undefMCF
 
             -- get the shortest path
-            let !_ = dbg ("short")
+            -- let !_ = dbg ("short")
             runMinCostFlowShortests toRelax src container bufs
-            let !_ = dbg ("let's DFS")
+            -- let !_ = dbg ("let's run DFS")
 
             !distSink <- UM.read distsMCF sink
             if distSink == mempty
               then do
                 -- TODO: Is it ok to return less than the target flow?
-                let !_ = dbg ("failure")
-                return Nothing
+                let !_ = dbg ("min cost flow: less than the target flow")
+                return (accCost, targetFlow - restFlow)
               else do
                 -- let !_ = dbg ("flow", distSink)
                 -- go back to the source from the sink, collection the shortest capacity
@@ -265,11 +261,11 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                     else do
                       !v1 <- UM.read prevVertMCF v2
                       !i12 <- UM.read prevEdgeMCF v2
-                      let !_ = dbg ("read", v1, v2, i12)
+                      -- let !_ = dbg ("read", v1, v2, i12)
                       !cap12 <- UM.read edgeCapMCF i12
                       loop (min flow cap12, v1)
 
-                let !_ = dbg (deltaFlow)
+                -- let !_ = dbg (deltaFlow)
                 let !_ = dbgAssert (deltaFlow >= 0) $ "negative delta flow?"
 
                 let accCost' = accCost + toRelax deltaFlow * distSink
@@ -326,7 +322,7 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
             let !cost12 = edgeCostMCF U.! i12
             !d2 <- UM.read distsMCF v2
             let d2' = d1 + toRelax cost12
-            let !_ = dbg ((v1, v2), (d1, d2, d2'), d2 /= d2' && (d2 <> d2' == d2'))
+            -- let !_ = dbg ((v1, v2), (d1, d2, d2'), d2 /= d2' && (d2 <> d2' == d2'))
             -- let !_ = dbgAssert (d1 >= 0 && d2 >= 0) $ "negative distance?: " ++ show (d1, d2)
             -- TODO: ask which is better in a simple way
             if cap12 > 0 && d2 /= d2' && (d2 <> d2' == d2')
