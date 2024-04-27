@@ -93,7 +93,7 @@ relaxedCostFlow ::
 relaxedCostFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
   fst <$> relaxedCostFlow' toRelax nVerts src sink targetFlow edges
 
--- | Returns @(minCost, flow)@. WARNING: It returns @mempty@ on no flow.
+-- | Returns @(minCost, flow)@.
 minCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
@@ -114,7 +114,7 @@ minCostFlow' ::
   m ((Min (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
 minCostFlow' = relaxedCostFlow' Min
 
--- | Returns @(minCost, flow)@. WARNING: It returns @mempty@ on no flow.
+-- | Returns @(minCost, flow)@.
 maxCostFlow ::
   (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
   Int ->
