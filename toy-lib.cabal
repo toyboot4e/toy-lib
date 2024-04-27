@@ -250,11 +250,17 @@ test-suite toy-lib-test
   -- import:           deps
   default-language: GHC2021
   type:             exitcode-stdio-1.0
-  main-is:          Spec.hs
-  hs-source-dirs:   test
+  main-is:          Main.hs
+  hs-source-dirs:   tests
+  other-modules: Tests.Bisect
   build-depends:
-    , base         ==4.17.2.0
+    , base                           ^>=4.17.2.0
     , toy-lib
+    , tasty                          ^>= 1.4.3
+    , tasty-hspec                    ^>= 1.2.0.3
+    , tasty-hunit                    ^>= 0.10.0.3
+    , tasty-quickcheck               ^>= 0.10.2
+    , vector                         ^>=0.13.0.0
 
   -- , toy-lib
   ghc-options:      -Wall
