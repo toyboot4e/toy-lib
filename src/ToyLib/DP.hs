@@ -8,10 +8,12 @@ import Control.Monad.ST
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as BS
+import Data.Char (ord)
 import Data.Ix
 import Data.SegmentTree.Strict
 import Data.Semigroup
 import Data.Utils.Unindex
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -266,4 +268,3 @@ lastCharOccurrences s = runST $ do
 --     writeSTree stree i s
 --
 --   subtract 1 . getSum <$> foldAllSTree stree
-
