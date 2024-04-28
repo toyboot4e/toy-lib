@@ -10,7 +10,7 @@ module Math.Manhattan where
 -- pair.
 --
 -- 2D Manhattan distance is definned as \(\Delta x + \Delta y\). After this transformation, it's
--- calculated with \(\Delta x + \Delta y\).
+-- calculated with \(\mathrm{max}(x, y)\).
 --
 -- This transformation applies
 -- \(\frac {1} {\sqrt 2} \begin{bmatrix} 1 && -1 \\ 1 && 1 \end{bmatrix} \),
@@ -19,5 +19,6 @@ module Math.Manhattan where
 -- = Typical problems
 --
 -- - [Typical 036 - Max Manhattan Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_aj)
+-- - [ABC 351 E - Jump Distance Sum](https://atcoder.jp/contests/abc351/tasks/abc351_e)
 rot45 :: (Int, Int) -> (Int, Int)
 rot45 (!x, !y) = (x - y, x + y)
