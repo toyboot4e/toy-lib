@@ -1,4 +1,6 @@
-packages: ./toy-lib.cabal
+packages:
+  ./toy-lib.cabal
+  verify/verify.cabal
 
 -- constraints: bitvec +libgmp,
 --              clock +llvm,

@@ -1,0 +1,27 @@
+* =verify=
+
+Verify =toy-lib= with past submission codes with libraries updated.
+
+** Prerequisites
+
+[[https://github.com/online-judge-tools/verification-helper][verification-helper]]:
+
+#+BEGIN_SRC sh
+$ # installation and activation with `venv`:
+$ python -m venv .venv
+(.venv) $ # source .venv/bin/activate # activate (on bash)
+(.venv) $ pip3 install online-judge-verify-helper
+
+$ # deactivation:
+(.venv) $ deactivate
+#+END_SRC
+
+** How to verify
+
+From the repository root, run the following commands:
+
+#+BEGIN_SRC sh
+$ export DROPBOX_TOKEN=<your_token>
+$ ./scripts/verify-all
+#+END_SRC
+
