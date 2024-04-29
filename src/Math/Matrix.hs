@@ -10,7 +10,6 @@ import Data.Vector.Extra (chunksOfG)
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
-import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 import ToyLib.Prelude (zero2)
 
@@ -21,7 +20,7 @@ type Mat a = IxUVector (Int, Int) a
 type Col a = U.Vector a
 
 -- | \(O(HW)\) Multiplies HxW matrix to a Hx1 column vector.
-mulMatToCol :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Col e -> Col e
+mulMatToCol :: (Num e, U.Unbox e) => Mat e -> Col e -> Col e
 mulMatToCol !mat !col = U.convert $ G.map (G.sum . flip (G.zipWith (*)) col) rows
   where
     !n = G.length col
@@ -29,7 +28,7 @@ mulMatToCol !mat !col = U.convert $ G.map (G.sum . flip (G.zipWith (*)) col) row
     rows = chunksOfG n (vecIV mat)
 
 -- | \(O(HW)\) Multiplies HxW matrix to a Hx1 column vector, taking the modulus.
-mulMatToColMod :: (HasCallStack, Num e, U.Unbox e, Integral e) => e -> Mat e -> Col e -> Col e
+mulMatToColMod :: (Num e, U.Unbox e, Integral e) => e -> Mat e -> Col e -> Col e
 mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip (G.zipWith mulMod_) col) rows
   where
     !n = G.length col
@@ -39,7 +38,7 @@ mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip
     mulMod_ x y = (x * y) `mod` modulus
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix.
-mulMat :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
+mulMat :: (Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
 mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
   U.sum $ U.zipWith (*) (rows1 V.! row) (cols2 V.! col)
   where
@@ -54,7 +53,7 @@ mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b U.! (w' * row + col)
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
-mulMatMod :: (HasCallStack, Num e, U.Unbox e, Integral e) => e -> Mat e -> Mat e -> Mat e
+mulMatMod :: (Num e, U.Unbox e, Integral e) => e -> Mat e -> Mat e -> Mat e
 mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
   U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 V.! row) (cols2 V.! col)
   where
