@@ -21,8 +21,8 @@ solve = do
   abs <- U.replicateM n ints2'
   cds <- U.replicateM m ints2'
 
-  -- For such a maximixation (+counting) proble, write a formulate and sort it out with respect to
-  -- ther indices. Then it's made of constributions:
+  -- For such a maximixation (+counting) proble, write a formula and sort it out with respect to
+  -- ther indices. Then it's made of constributions from each item:
   -- (a1 + a2) / ((a1 + b1) + (a2 + b2)) >= P
   -- (a1 - P (a1 + b1)) + (a2 - P (a2 + b2)) >= 0
 
