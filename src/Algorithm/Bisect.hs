@@ -25,7 +25,6 @@
 module Algorithm.Bisect where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.Bifunctor (bimap)
 import Data.Functor.Identity
 import Data.Maybe
 import qualified Data.Vector.Generic as G
@@ -44,12 +43,12 @@ import qualified Data.Vector.Generic.Mutable as GM
 -- - @lowOut@: Nearest low index that is NOT included in the range.
 -- - @highOut@: Nearest high index that is NOT included in the range.
 bisectImpl :: forall i m. (Ord i, Monad m) => (i -> i -> Maybe i) -> i -> i -> (i -> m Bool) -> m (Maybe i, Maybe i)
-bisectImpl getMid lowOut highOut p = bimap (wrap lowOut) (wrap highOut) <$> inner lowOut highOut
+bisectImpl getMid lowOut highOut p = done <$> inner lowOut highOut
   where
-    wrap :: i -> i -> Maybe i
-    wrap out i
-      | i == out = Nothing
-      | otherwise = Just i
+    done (!l, !r)
+      | l == lowOut = (Nothing, Just r)
+      | r == highOut = (Just l, Nothing)
+      | otherwise = (Just l, Just r)
     inner :: i -> i -> m (i, i)
     inner !y !n
       | Just m <- getMid y n =
@@ -140,6 +139,7 @@ bisectRF64 :: Double -> Double -> Double -> (Double -> Bool) -> Maybe Double
 bisectRF64 !eps !l !r !p = snd $! bisectF64 eps l r p
 
 -- * Binary search over a vector
+
 -- | \(O(f \log N)\) `bisectM` over a vector.
 {-# INLINE bsearchM #-}
 bsearchM :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> (a -> Bool) -> m (Maybe Int, Maybe Int)
