@@ -130,7 +130,9 @@ hldOf tree = runST $ do
               then return (size, (eBig, vBig))
               else do
                 size2 <- loop v1 v2
-                return (size + size2, if size >= size2 then (eBig, vBig) else (e2, v2))
+                -- NOTE: It's `>` because we should swap at least once if there's some vertex other
+                -- that the parent.
+                return (size + size2, if size > size2 then (eBig, vBig) else (e2, v2))
 
           -- move the biggest subtree's head to the first adjacent vertex
           when (eBig /= -1) $ do
