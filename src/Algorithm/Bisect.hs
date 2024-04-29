@@ -36,18 +36,19 @@ import qualified Data.Vector.Generic.Mutable as GM
 -- * Common bisection method implementation
 
 -- | \(O(f \log N)\) Bisection method implementation. It's generalized over both the index type
---- and the monad.
+-- and the monad.
 --
 -- = Parameters
 -- - @getMid@: Returns the mid index between two. Returns @Nothing@ if the two indices are close enough.
 -- - @lowOut@: Nearest low index that is NOT included in the range.
 -- - @highOut@: Nearest high index that is NOT included in the range.
-bisectImpl :: forall i m. (Ord i, Monad m) => (i -> i -> Maybe i) -> i -> i -> (i -> m Bool) -> m (Maybe i, Maybe i)
-bisectImpl getMid lowOut highOut p = done <$> inner lowOut highOut
+bisectImpl :: forall i m. (Eq i, Monad m) => (i -> i -> Maybe i) -> i -> i -> i -> i -> (i -> m Bool) -> m (Maybe i, Maybe i)
+bisectImpl getMid l0 r0 lowOut highOut p = done <$> inner lowOut highOut
   where
+    done :: (i, i) -> (Maybe i, Maybe i)
     done (!l, !r)
-      | l == lowOut = (Nothing, Just r)
-      | r == highOut = (Just l, Nothing)
+      | l == lowOut = (Nothing, Just l0)
+      | r == highOut = (Just r0, Nothing)
       | otherwise = (Just l, Just r)
     inner :: i -> i -> m (i, i)
     inner !y !n
@@ -76,7 +77,7 @@ getMidDouble eps l r
 -- | \(O(f \log N)\) Monadic binary search for an `Int` range.
 {-# INLINE bisectM #-}
 bisectM :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int, Maybe Int)
-bisectM !l !r !p = bisectImpl getMidInt (l - 1) (r + 1) p
+bisectM !l !r !p = bisectImpl getMidInt l r (l - 1) (r + 1) p
 
 -- | \(O(f \log N)\)
 {-# INLINE bisectML #-}
@@ -111,7 +112,7 @@ bisectR !l !r !p = snd $! bisect l r p
 -- | \(O(f \log N)\) Monadic binary search for an `Double` range.
 {-# INLINE bisectMF64 #-}
 bisectMF64 :: forall m. (Monad m) => Double -> Double -> Double -> (Double -> m Bool) -> m (Maybe Double, Maybe Double)
-bisectMF64 !eps !l !r !p = bisectImpl (getMidDouble eps) (l - eps) (r + eps) p
+bisectMF64 !eps !l !r !p = bisectImpl (getMidDouble eps) l r (l - eps) (r + eps) p
 
 -- | \(O(f \log N)\)
 {-# INLINE bisectMLF64 #-}

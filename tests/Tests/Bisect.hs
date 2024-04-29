@@ -4,6 +4,7 @@ import Algorithm.Bisect
 import Data.List qualified as L
 import Data.Vector.Unboxed qualified as U
 import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 
 intPartition :: Int -> Int -> (Int -> Bool) -> U.Vector Int -> (Maybe Int, Maybe Int)
@@ -22,7 +23,7 @@ intBisectProps :: TestTree
 intBisectProps =
   testGroup
     "Int bisect properties"
-    [ QC.testProperty "bisect" $ do
+    [ QC.testProperty "bisect (Int)" $ do
         -- O(N^2 logN) (N = 100)
         n <- QC.chooseInt (1, 100)
         p <- QC.chooseInt (-25, 25)
@@ -35,12 +36,25 @@ intBisectProps =
             ( \(l, r) ->
                 let (il, ir) = bisect l r isYes
                  in (il, ir) == intPartition l r (<= p) xs'
-                    && (il, ir) == (bisectL l r isYes, bisectR l r isYes)
+                      && (il, ir) == (bisectL l r isYes, bisectR l r isYes)
             )
             lrs
     ]
 
--- TODO: test double bisect
+doubleBisectProps :: TestTree
+doubleBisectProps =
+  testGroup
+    "Double bisect properties"
+    [ testCase "bisect (Double) accuracy" $ do
+        let eps = 10.0 ** (-12.0) :: Double
+        let (Just l, Just r) = bisectF64 eps 0.0 1.0 (<= 0.5)
+        assertBool "bisect left EPS" (5.0 - l < eps)
+        assertBool "bisect right EPS" (r - 5.0 < eps),
+      testCase "bisect (Double) boundaries" $ do
+        let eps = 10.0 ** (-12.0) :: Double
+        bisectF64 eps 0.0 1.0 (const True) @?= (Just 1.0, Nothing)
+        bisectF64 eps 0.0 1.0 (const False) @?= (Nothing, Just 0.0)
+    ]
 
 tests :: TestTree
 tests = testGroup "Algorithm.Bisect" [intBisectProps]
