@@ -30,15 +30,14 @@ data HLD = HLD
 
 -- | \(O(log V)\).
 lcaHLD :: HLD -> Vertex -> Vertex -> Vertex
-lcaHLD HLD {..} v1 v2 = inner v1 v2
+lcaHLD HLD {..} = inner
   where
-    inner x (-1) = 0 -- root
+    -- inner x (-1) = 0 -- root
     inner !x !y
       -- sort for easier processing
       -- TODO: @case compare ix iy@ would be easier for me to understand
       | ix > iy = inner y x
       -- @x@ and @y@ are in other paths:
-      -- TODO: why is it hx /= hy? isn't it ix /= iy? <-- because it's not path index?
       | hx /= hy = inner x $ parentHLD U.! hy
       -- @x@ and @y@ are within the same path:
       -- select the smaller one, which is closer to the root and that is the LCA.
