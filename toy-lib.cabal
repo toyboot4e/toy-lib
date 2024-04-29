@@ -183,6 +183,7 @@ library
     Data.Graph.MaxFlow
     Data.Graph.MinCostFlow
     Data.Graph.Sparse
+    Data.Graph.Tree.Hld
     Data.Graph.Tree.Lca
     Data.Graph.Tree.TreeSG
     Data.Graph.TwoSat
@@ -252,15 +253,15 @@ test-suite toy-lib-test
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   hs-source-dirs:   tests
-  other-modules: Tests.Bisect
+  other-modules:    Tests.Bisect
   build-depends:
-    , base                           ^>=4.17.2.0
+    , base              ^>=4.17.2.0
+    , tasty             ^>=1.4.3
+    , tasty-hspec       ^>=1.2.0.3
+    , tasty-hunit       ^>=0.10.0.3
+    , tasty-quickcheck  ^>=0.10.2
     , toy-lib
-    , tasty                          ^>= 1.4.3
-    , tasty-hspec                    ^>= 1.2.0.3
-    , tasty-hunit                    ^>= 0.10.0.3
-    , tasty-quickcheck               ^>= 0.10.2
-    , vector                         ^>=0.13.0.0
+    , vector            ^>=0.13.0.0
 
   -- , toy-lib
   ghc-options:      -Wall
