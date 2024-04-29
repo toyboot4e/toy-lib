@@ -14,6 +14,8 @@ type BlockIndex = Int
 --
 -- = Typical problems
 -- - [ABC 339 G - Smaller Sum](https://atcoder.jp/contests/abc339/tasks/abc339_g) (easy)
+--
+-- TODO: Add read parameter?
 data Sqrd b ret act m = Sqrd
   { blockLenSqrd :: !Int,
     -- Fold

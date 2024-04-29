@@ -71,7 +71,7 @@ solve = do
         UM.modify cnt (subtract 1) c
 
   !res <- U.unsafeFreeze ans
-  printVec res
+  printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://atcoder.jp/contests/abc133/tasks/abc133_f
 -- #HLD (lcaHLD)
