@@ -122,6 +122,10 @@ executable past08-k-exe
   import:           verify
   main-is:          past08-k.hs
 
+executable abc133-f-exe
+  import:           verify
+  main-is:          abc133-f.hs
+
 executable abc276-f-exe
   import:           verify
   main-is:          abc276-f.hs
