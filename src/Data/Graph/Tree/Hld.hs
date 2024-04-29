@@ -15,14 +15,15 @@ import Data.Maybe
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
-type PathIndexHLD = Int
+-- | Vertex re-ordered by HLD.
+type VertexHLD = Vertex
 
 -- | Heavy-light decomposition.
 data HLD = HLD
   { -- | Vertex -> Parent vertex.
     parentHLD :: U.Vector Vertex,
     -- | Vertex -> Reorderd index.
-    orderHLD :: U.Vector PathIndexHLD,
+    indexHLD :: U.Vector VertexHLD,
     -- | Vertex -> Their path's head vertex.
     pathHeadHLD :: U.Vector Vertex
   }
@@ -43,30 +44,40 @@ lcaHLD HLD {..} = inner
       -- select the smaller one, which is closer to the root and that is the LCA.
       | otherwise = x
       where
-        !ix = orderHLD U.! x
-        !iy = orderHLD U.! y
+        !ix = indexHLD U.! x
+        !iy = indexHLD U.! y
         hx = pathHeadHLD U.! x
         hy = pathHeadHLD U.! y
 
--- | \(O(log V)\)
-pathHLD :: HLD -> Vertex -> Vertex -> [(PathIndexHLD, PathIndexHLD)]
-pathHLD HLD {..} = inner
+-- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
+-- TODO: know the details
+-- TODO: consider direction
+pathHLD' :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
+pathHLD' HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
   where
-    -- TODO: when `y` is `-1`?
-    inner !x !y
+    inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
+    inner (-2, !_) = Nothing
+    inner (!x, !y)
       -- sort for easier processing
-      | ix > iy = inner y x
+      | ix > iy = inner (y, x)
       | hx /= hy =
-          let !ihy = orderHLD U.! hy
-              !iy' = iy + 1
-           in (ihy, iy') : inner x (parentHLD U.! hy)
-      | ix == iy = []
-      | otherwise = [(ix + 1, iy + 1)]
+          let !ihy = indexHLD U.! hy
+           in Just ((ihy, iy), (x, parentHLD U.! hy))
+      | ix == iy = Nothing
+      | otherwise = Just ((ix + 1, iy), (-2, -2))
       where
-        !ix = orderHLD U.! x
-        !iy = orderHLD U.! y
+        !ix = indexHLD U.! x
+        !iy = indexHLD U.! y
         hx = pathHeadHLD U.! x
         hy = pathHeadHLD U.! y
+
+-- | Folds commutative monoid on a tree using HLD.
+foldCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldCommuteHLD hld f v1 v2 = do
+  -- TODO: strict fold?
+  (\g -> U.foldM' g mempty (pathHLD' hld v1 v2)) $ \ !acc (!u, !v) -> do
+    !x <- f u v
+    return $! acc <> x
 
 -- | Heavy-light decomposition or Centroid Path Decomposition.
 --
