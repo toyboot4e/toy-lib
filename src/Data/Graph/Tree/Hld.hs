@@ -76,6 +76,27 @@ pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
 
 -- | Folds commutative monoid on a tree using HLD.
 --
+-- = Segment tree
+-- HLD path folding is often done with a segment tree. It uses `VertexHLD` as indices. If edges
+-- have weights, you can either treat edges as new vertices or put weight to the depper index (when
+-- (v1 /= v2) always holds.
+--
+-- Idea 1. Edges as new vertices
+--
+-- @
+-- o--o--o  -> o-x-o-x-o
+-- @
+--
+-- Idea 2. Put weight to deeper vertex
+--
+-- @
+--   o
+--   | <--- edge 1
+--   o <- write w1 here
+--   | <--- edge 1
+--   o <- write w2 here
+-- @
+--
 -- = Typical Problems
 -- [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
 foldCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
