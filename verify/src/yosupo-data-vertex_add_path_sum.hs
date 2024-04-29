@@ -20,43 +20,28 @@ import Data.SegmentTree.Strict
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  n <- int'
-  es <- U.replicateM (n - 1) ints110'
-  q <- int'
+  (!n, !q) <- ints2'
+  xs <- intsU'
+  es <- U.replicateM (n - 1) ints2'
   qs <- U.replicateM q ints3'
 
-  when (n == 1) $ do
-    let cnt = U.length $ U.filter ((== 2) . fst3) qs
-    printBSB $ unlinesBSB $ U.replicate cnt (0 :: Int)
-    liftIO exitSuccess
-
-  -- vertex [0, n): original vertices
-  -- vertex [n, n + n - 1): edges as vertices
-  let n' = n + (n - 1)
-  let es' = (`U.concatMap` U.indexed es) $ \(!i, (!v1, !v2, !_)) ->
-        U.fromListN 2 [(v1, n + i), (n + i, v2)]
-
-  let !gr = buildSG (0, n' - 1) $ swapDupeU es'
+  let !gr = buildSG (0, n - 1) $ swapDupeU es
   let !hld = hldOf gr
 
-  stree <- newSTree @(Sum Int) n'
-  U.iforM_ es $ \i (!_, !_, !w) -> do
-    -- be sure to use `VertexHLD`
-    let !i' = indexHLD hld U.! (n + i)
-    writeSTree stree i' (Sum w)
+  let xs' = U.update (U.replicate n (Sum 0)) $ U.imap (\i x -> (indexHLD hld U.! i, Sum x)) xs
+  stree <- buildSTree xs'
 
   res <- (`U.mapMaybeM` qs) $ \case
-    (1, pred -> !iEdge, !w') -> do
-      -- be sure to use `VertexHLD`
-      let !i' = indexHLD hld U.! (n + iEdge)
-      writeSTree stree i' (Sum w')
+    (0, !p, !x) -> do
+      modifySTree stree (<> Sum x) (indexHLD hld U.! p)
       return Nothing
-    (2, pred -> !v1, pred -> !v2) -> do
-      Just . getSum <$> foldEdgesCommuteHLD hld (foldSTree stree) v1 v2
+    (1, !u, !v) -> do
+      -- let !_ = dbg (u, v, vertPathHLD hld u v)
+      Just . getSum <$> foldVertsCommuteHLD hld (foldSTree stree) u v
+    _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
 
--- verification-helper: PROBLEM https://atcoder.jp/contests/abc294/tasks/abc294_g
--- #HLD (foldCommuteHLD)
+-- verification-helper: PROBLEM https://judge.yosupo.jp/problem/vertex_add_path_sum
 main :: IO ()
 main = runIO solve

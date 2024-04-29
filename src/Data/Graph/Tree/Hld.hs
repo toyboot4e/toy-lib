@@ -2,6 +2,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Heavy-light decomposition. Heavily inspired by @cojna/iota@.
+--
+-- = Edge path and vertex path
 module Data.Graph.Tree.Hld where
 
 import Control.Monad
@@ -52,11 +54,10 @@ lcaHLD HLD {..} = inner
         hx = pathHeadHLD U.! x
         hy = pathHeadHLD U.! y
 
--- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
--- - TODO: know the details
+-- | \(O(log V)\) Returns inclusive edge vertex pairs per HLD path.
 -- - TODO: consider direction
-pathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
-pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
+edgePathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
+edgePathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
   where
     inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
     inner (-2, !_) = Nothing
@@ -66,8 +67,33 @@ pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
       | hx /= hy =
           let !ihy = indexHLD U.! hy
            in Just ((ihy, iy), (x, parentHLD U.! hy))
+      -- >>>
       | ix == iy = Nothing
       | otherwise = Just ((ix + 1, iy), (-2, -2))
+      -- <<<
+      where
+        !ix = indexHLD U.! x
+        !iy = indexHLD U.! y
+        hx = pathHeadHLD U.! x
+        hy = pathHeadHLD U.! y
+
+-- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
+-- - TODO: consider direction
+vertPathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
+vertPathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
+  where
+    inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
+    inner (-2, !_) = Nothing
+    inner (!x, !y)
+      -- sort for easier processing
+      | ix > iy = inner (y, x)
+      | hx /= hy =
+          let !ihy = indexHLD U.! hy
+           in Just ((ihy, iy), (x, parentHLD U.! hy))
+      -- >>>
+      | ix == iy = Just ((ix, ix), (-2, -2))
+      | otherwise = Just ((ix, iy), (-2, -2))
+      -- <<<
       where
         !ix = indexHLD U.! x
         !iy = indexHLD U.! y
@@ -99,10 +125,15 @@ pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
 --
 -- = Typical Problems
 -- [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
-foldCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldCommuteHLD hld f v1 v2 = do
-  -- TODO: strict fold?
-  (\g -> U.foldM' g mempty (pathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
+foldEdgesCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldEdgesCommuteHLD hld f v1 v2 = do
+  (\g -> U.foldM' g mempty (edgePathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
+    !x <- f u v
+    return $! acc <> x
+
+foldVertsCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldVertsCommuteHLD hld f v1 v2 = do
+  (\g -> U.foldM' g mempty (vertPathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
     !x <- f u v
     return $! acc <> x
 
