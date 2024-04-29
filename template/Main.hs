@@ -2,7 +2,7 @@
 
 {-# LANGUAGE BlockArguments, DataKinds, DefaultSignatures, DerivingVia, LambdaCase, MagicHash #-}
 {-# LANGUAGE MultiWayIf, NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies #-}
+{-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies, ViewPatterns #-}
 
 -- TODO: overloaded lists (not working for the union-find module?)
 -- {-# LANGUAGE OverloadedLists, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}

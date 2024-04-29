@@ -52,8 +52,8 @@ lcaHLD HLD {..} = inner
 -- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
 -- TODO: know the details
 -- TODO: consider direction
-pathHLD' :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
-pathHLD' HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
+pathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
+pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
   where
     inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
     inner (-2, !_) = Nothing
@@ -75,7 +75,7 @@ pathHLD' HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
 foldCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldCommuteHLD hld f v1 v2 = do
   -- TODO: strict fold?
-  (\g -> U.foldM' g mempty (pathHLD' hld v1 v2)) $ \ !acc (!u, !v) -> do
+  (\g -> U.foldM' g mempty (pathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
     !x <- f u v
     return $! acc <> x
 

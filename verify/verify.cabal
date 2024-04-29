@@ -126,6 +126,10 @@ executable abc276-f-exe
   import:           verify
   main-is:          abc276-f.hs
 
+executable abc294-g-exe
+  import:           verify
+  main-is:          abc294-g.hs
+
 executable abc348e-exe
   import:           verify
   main-is:          abc348e.hs
