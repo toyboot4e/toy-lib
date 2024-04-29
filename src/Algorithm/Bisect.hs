@@ -106,10 +106,13 @@ bisectR !l !r !p = snd $! bisect l r p
 
 -- * Bisection method for @Double@ range
 
+-- REMARK: Is your `eps` small enough?
+-- let !eps = 10.0 ** (-12.0) :: Double
+
 -- | \(O(f \log N)\) Monadic binary search for an `Double` range.
 {-# INLINE bisectMF64 #-}
 bisectMF64 :: forall m. (Monad m) => Double -> Double -> Double -> (Double -> m Bool) -> m (Maybe Double, Maybe Double)
-bisectMF64 !eps !l !r !p = bisectImpl (getMidDouble eps) (l - 1) (r + 1) p
+bisectMF64 !eps !l !r !p = bisectImpl (getMidDouble eps) (l - eps) (r + eps) p
 
 -- | \(O(f \log N)\)
 {-# INLINE bisectMLF64 #-}
