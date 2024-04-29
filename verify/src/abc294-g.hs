@@ -12,6 +12,7 @@ import ToyLib.Prelude
 import ToyLib.ShowBSB
 import Data.Graph.Sparse
 import Data.Graph.Tree.Hld
+import Data.SegmentTree.Strict
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
@@ -26,13 +27,13 @@ solve = do
 
   when (n == 1) $ do
     let cnt = U.length $ U.filter ((== 2) . fst3) qs
-    putBSB $ unlinesBSB $ U.replicate cnt (0 :: Int)
+    printBSB $ unlinesBSB $ U.replicate cnt (0 :: Int)
     liftIO exitSuccess
 
   -- vertex [0, n): original vertices
   -- vertex [n, n + n - 1): edges as vertices
   let n' = n + (n - 1)
-  let es' = (`U.concatMap` U.indexed es) $ \(!i, (!v1, !v2, !w)) ->
+  let es' = (`U.concatMap` U.indexed es) $ \(!i, (!v1, !v2, !_)) ->
         U.fromListN 2 [(v1, n + i), (n + i, v2)]
 
   let !gr = buildSG (0, n' - 1) $ swapDupeU es'
@@ -53,7 +54,7 @@ solve = do
     (2, pred -> !v1, pred -> !v2) -> do
       Just . getSum <$> foldCommuteHLD hld (foldSTree stree) v1 v2
 
-  putBSB $ unlinesBSB res
+  printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://atcoder.jp/contests/abc294/tasks/abc294_g
 -- #HLD (foldCommuteHLD)
