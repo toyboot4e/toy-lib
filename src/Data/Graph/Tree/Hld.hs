@@ -30,6 +30,9 @@ data HLD = HLD
   deriving (Show, Eq)
 
 -- | \(O(log V)\).
+--
+-- = Typical Problems
+-- [ABC 133 - F](https://atcoder.jp/contests/abc133/tasks/abc133_f)
 lcaHLD :: HLD -> Vertex -> Vertex -> Vertex
 lcaHLD HLD {..} = inner
   where
@@ -50,8 +53,8 @@ lcaHLD HLD {..} = inner
         hy = pathHeadHLD U.! y
 
 -- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
--- TODO: know the details
--- TODO: consider direction
+-- - TODO: know the details
+-- - TODO: consider direction
 pathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
 pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
   where
@@ -72,6 +75,9 @@ pathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
         hy = pathHeadHLD U.! y
 
 -- | Folds commutative monoid on a tree using HLD.
+--
+-- = Typical Problems
+-- [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
 foldCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldCommuteHLD hld f v1 v2 = do
   -- TODO: strict fold?
