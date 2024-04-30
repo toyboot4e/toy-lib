@@ -16,6 +16,7 @@ import Data.Graph.Sparse
 import Data.Maybe
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import ToyLib.Debug
 
 -- | Vertex re-ordered by HLD.
 type VertexHLD = Vertex
@@ -66,7 +67,6 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
       | hx == hy && isEdge = case compare ix iy of
           LT -> (up, (ix {- edge -} + 1, iy) : down)
           GT -> ((ix, iy {- edge -} + 1) : up, down)
-          -- edge
           EQ -> (up, down)
       | hx == hy && not isEdge = case compare ix iy of
           LT -> (up, (ix, iy) : down)
@@ -99,6 +99,15 @@ edgePathHLD = _pathHLD True
 vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 vertPathHLD = _pathHLD False
 
+_foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+_foldHLD isEdge hld f b v1 v2 = do
+  (\g -> foldM g mempty (_pathHLD isEdge hld v1 v2)) $ \ !acc (!u, !v) -> do
+    !x <-
+      if u <= v
+        then f u v
+        else b v u
+    return $! acc <> x
+
 -- | Folds commutative monoid on tree edges using HLD.
 --
 -- = Segment tree
@@ -126,26 +135,25 @@ vertPathHLD = _pathHLD False
 -- = Typical Problems
 -- - [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
 foldEdgesCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldEdgesCommuteHLD hld f v1 v2 = do
-  (\g -> foldM g mempty (edgePathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
-    !x <-
-      if u <= v
-        then f u v
-        else f v u
-    return $! acc <> x
+foldEdgesCommuteHLD hld f = _foldHLD True hld f f
+
+-- | TODO: verify
+foldEdgesNonCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldEdgesNonCommuteHLD hld f b = _foldHLD True hld f b
 
 -- | Folds commutative monoid on tree vertices using HLD.
 --
 -- = Typical Problems
 -- - [Vertex Add Path Sum - Library Checker](https://judge.yosupo.jp/problem/vertex_add_path_sum)
 foldVertsCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldVertsCommuteHLD hld f v1 v2 = do
-  (\g -> foldM g mempty (vertPathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
-    !x <-
-      if u <= v
-        then f u v
-        else f v u
-    return $! acc <> x
+foldVertsCommuteHLD hld f = _foldHLD False hld f f
+
+-- | Folds non-commutative monoid on tree vertices using HLD.
+--
+-- = Typical Problems
+-- - [Vertex Set Path Composite - Library Checker](https://judge.yosupo.jp/problem/vertex_set_path_composite)
+foldVertsNonCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldVertsNonCommuteHLD hld f b = _foldHLD False hld f b
 
 -- | Heavy-light decomposition or Centroid Path Decomposition.
 --
@@ -210,4 +218,5 @@ hldOf tree = runST $ do
   HLD parent <$> U.unsafeFreeze order <*> U.unsafeFreeze pathHead
   where
     n = nVertsSG tree
+    !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
     !root = 0 :: Vertex
