@@ -8,12 +8,15 @@ module Data.Graph.Tree.Hld where
 
 import Control.Monad
 import Control.Monad.Fix
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Control.Monad.State.Class
-import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
+import Control.Monad.Trans.State.Strict (execStateT)
 import Data.Graph.Alias
 import Data.Graph.Sparse
 import Data.Maybe
+import Data.Monoid (Dual (..))
+import Data.SegmentTree.Strict
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug
@@ -31,6 +34,72 @@ data HLD = HLD
     pathHeadHLD :: U.Vector Vertex
   }
   deriving (Show, Eq)
+
+-- | Heavy-light decomposition or Centroid Path Decomposition.
+--
+-- = About
+-- HLD builds a smaller tree on top of an existing tree, combining vertices into paths.
+--
+-- = References
+-- - https://take44444.github.io/Algorithm-Book/graph/tree/hld/main.html
+hldOf :: forall w. SparseGraph Int w -> HLD
+hldOf tree = runST $ do
+  -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
+  --
+  -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
+  -- DFS would be harder.
+  let (!tree', !parent) = runST $ do
+        adjVec <- U.thaw (adjacentsSG tree)
+        parent <- UM.unsafeNew n
+
+        _ <- (\f -> fix f (-1) root) $ \loop p v1 -> do
+          UM.write parent v1 p
+          -- TODO: no need of vBig?
+          (!size, (!eBig, !_vBig)) <- (\f -> U.foldM' f (1 :: Int, (-1, -1)) (tree `eAdj` v1)) $ \(!size, (!eBig, !vBig)) (!e2, !v2) -> do
+            if v2 == p
+              then return (size, (eBig, vBig))
+              else do
+                size2 <- loop v1 v2
+                -- NOTE: It's `>` because we should swap at least once if there's some vertex other
+                -- that the parent.
+                return (size + size2, if size > size2 then (eBig, vBig) else (e2, v2))
+
+          -- move the biggest subtree's head to the first adjacent vertex
+          when (eBig /= -1) $ do
+            UM.swap adjVec eBig $ fst (U.head (tree `eAdj` v1))
+          return size
+
+        !vec <- U.unsafeFreeze adjVec
+        (tree {adjacentsSG = vec},) <$> U.unsafeFreeze parent
+
+  -- vertex -> reordered vertex index
+  order <- UM.replicate n (-1 :: Int)
+
+  -- vertex -> head vertex of the path
+  pathHead <- UM.replicate n (-1 :: Int)
+
+  -- reorderd vertex index is stored as the state
+  _ <- (`execStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
+    UM.write order v1 =<< get
+    modify' (+ 1)
+
+    UM.write pathHead v1 h
+    let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
+
+    -- when the first vertex is within the same path:
+    when (adj1 /= p) $ do
+      loop h v1 adj1
+
+    -- the others are in other paths:
+    U.forM_ rest $ \v2 -> do
+      when (v2 /= p) $ do
+        loop v2 v1 v2
+
+  HLD parent <$> U.unsafeFreeze order <*> U.unsafeFreeze pathHead
+  where
+    n = nVertsSG tree
+    !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
+    !root = 0 :: Vertex
 
 -- | \(O(log V)\).
 --
@@ -153,70 +222,62 @@ foldVertsCommuteHLD hld f = _foldHLD False hld f f
 -- = Typical Problems
 -- - [Vertex Set Path Composite - Library Checker](https://judge.yosupo.jp/problem/vertex_set_path_composite)
 foldVertsNonCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldVertsNonCommuteHLD hld f b = _foldHLD False hld f b
+foldVertsNonCommuteHLD = _foldHLD False
 
--- | Heavy-light decomposition or Centroid Path Decomposition.
---
--- = About
--- HLD builds a smaller tree on top of an existing tree, combining vertices into paths.
---
--- = References
--- - https://take44444.github.io/Algorithm-Book/graph/tree/hld/main.html
-hldOf :: forall w. SparseGraph Int w -> HLD
-hldOf tree = runST $ do
-  -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
-  --
-  -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
-  -- DFS would be harder.
-  let (!tree', !parent) = runST $ do
-        adjVec <- U.thaw (adjacentsSG tree)
-        parent <- UM.unsafeNew n
+-- | API for folding a tree path of monoids with `HLD`.
+data TreeMonoid a s = TreeMonoid
+  { hldTM :: HLD,
+    -- | Is it targetting commutative monoids?
+    isCommuteTM :: Bool,
+    -- | Is it targetting edge weights? (It's targetting vertex weights on no).
+    isEdgeTM :: Bool,
+    -- | Segment tree for folding upwards.
+    streeFTM :: SegmentTree UM.MVector s a,
+    -- | Segment tree in folding downwards. Only created when the monoid is not commutative.
+    streeBTM :: SegmentTree UM.MVector s (Dual a)
+  }
 
-        (\f -> fix f (-1) root) $ \loop p v1 -> do
-          UM.write parent v1 p
-          -- TODO: no need of vBig?
-          (!size, (!eBig, !_vBig)) <- (\f -> U.foldM' f (1, (-1, -1)) (tree `eAdj` v1)) $ \(!size, (!eBig, !vBig)) (!e2, !v2) -> do
-            if v2 == p
-              then return (size, (eBig, vBig))
-              else do
-                size2 <- loop v1 v2
-                -- NOTE: It's `>` because we should swap at least once if there's some vertex other
-                -- that the parent.
-                return (size + size2, if size > size2 then (eBig, vBig) else (e2, v2))
+buildTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
+buildTM hldTM@HLD {..} isCommuteTM isEdgeTM xs_ = do
+  let !xs = U.update (U.replicate (U.length xs_) mempty) $ U.imap (\i x -> (indexHLD U.! i, x)) xs_
+  streeFTM <- buildSTree xs
+  streeBTM <-
+    if isCommuteTM
+      then buildSTree U.empty -- FIXME: is this safe?
+      else buildSTree $ U.map Dual xs
+  return $ TreeMonoid {..}
 
-          -- move the biggest subtree's head to the first adjacent vertex
-          when (eBig /= -1) $ do
-            UM.swap adjVec eBig $ fst (U.head (tree `eAdj` v1))
-          return size
+foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> Int -> m a
+foldTM TreeMonoid {..} v1 v2
+  | isCommuteTM = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
+  | otherwise = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
 
-        !vec <- U.unsafeFreeze adjVec
-        (tree {adjacentsSG = vec},) <$> U.unsafeFreeze parent
+readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> m a
+readTM TreeMonoid {..} i_ = do
+  let !i = indexHLD hldTM U.! i_
+  readSTree streeFTM i
 
-  -- vertex -> reordered vertex index
-  order <- UM.replicate n (-1 :: Int)
+writeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> a -> m ()
+writeTM TreeMonoid {..} i_ x = do
+  let !i = indexHLD hldTM U.! i_
+  writeSTree streeFTM i x
+  -- TODO: resolve statically
+  unless isCommuteTM $ do
+    writeSTree streeBTM i $ Dual x
 
-  -- vertex -> head vertex of the path
-  pathHead <- UM.replicate n (-1 :: Int)
+exchangeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> a -> m a
+exchangeTM TreeMonoid {..} i_ x = do
+  let !i = indexHLD hldTM U.! i_
+  !res <- exchangeSTree streeFTM i x
+  -- TODO: resolve statically
+  unless isCommuteTM $ do
+    writeSTree streeBTM i $ Dual x
+  return res
 
-  -- reorderd vertex index is stored as the state
-  (`runStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
-    UM.write order v1 =<< get
-    modify' (+ 1)
-
-    UM.write pathHead v1 h
-    let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
-
-    -- when the first vertex is within the same path:
-    when (adj1 /= p) $ do
-      loop h v1 adj1
-
-    -- the others are in other paths:
-    U.forM_ rest $ \v2 -> do
-      when (v2 /= p) $ do
-        loop v2 v1 v2
-
-  HLD parent <$> U.unsafeFreeze order <*> U.unsafeFreeze pathHead
-  where
-    n = nVertsSG tree
-    !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
-    !root = 0 :: Vertex
+modifyTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> (a -> a) -> Int -> m ()
+modifyTM TreeMonoid {..} f i_ = do
+  let !i = indexHLD hldTM U.! i_
+  modifySTree streeFTM f i
+  -- TODO: resolve statically
+  unless isCommuteTM $ do
+    modifySTree streeBTM (Dual . f . getDual) i
