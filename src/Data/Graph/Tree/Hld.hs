@@ -4,6 +4,7 @@
 -- | Heavy-light decomposition. Heavily inspired by @cojna/iota@.
 --
 -- = Edge path and vertex path
+-- TODO: write about it.
 module Data.Graph.Tree.Hld where
 
 import Control.Monad
@@ -237,27 +238,50 @@ data TreeMonoid a s = TreeMonoid
     streeBTM :: SegmentTree UM.MVector s (Dual a)
   }
 
-buildTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
-buildTM hldTM@HLD {..} isCommuteTM isEdgeTM xs_ = do
-  let !xs = U.update (U.replicate (U.length xs_) mempty) $ U.imap (\i x -> (indexHLD U.! i, x)) xs_
-  streeFTM <- buildSTree xs
+buildRawTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
+buildRawTM hldTM isCommuteTM isEdgeTM xsRaw = do
+  streeFTM <- buildSTree xsRaw
   streeBTM <-
     if isCommuteTM
       then buildSTree U.empty -- FIXME: is this safe?
-      else buildSTree $ U.map Dual xs
+      else buildSTree $ U.map Dual xsRaw
   return $ TreeMonoid {..}
 
-foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> Int -> m a
+-- | Builds a tree monoid on vertices.
+buildVertTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
+buildVertTM hld@HLD {indexHLD} isCommuteTM xs_ = do
+  let !xs = U.update (U.replicate (U.length xs_) mempty) $ U.imap (\i x -> (indexHLD U.! i, x)) xs_
+  buildRawTM hld isCommuteTM False xs
+
+-- | Map weightened edges into @(Vertex, a)@ pairs. The output is the input to `buildEdgeTM`.
+edgeVertsHLD :: (U.Unbox a) => HLD -> U.Vector (Vertex, Vertex, a) -> U.Vector (Vertex, a)
+edgeVertsHLD HLD {indexHLD} =
+  U.map
+    ( \(!u, !v, !w) ->
+        -- REMARK: Return in `Vertex`, not in `VertexHLD` so that `writeTM` etc. work as expected.
+        if indexHLD U.! u >= indexHLD U.! v
+          then (u, w)
+          else (v, w)
+    )
+
+-- | Builds a tree monoid on edges. **The input must be the output of `edgeVertsHLD`.**
+buildEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector (Vertex, a) -> m (TreeMonoid a (PrimState m))
+buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
+  let !n = U.length indexHLD
+  let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD U.! v, x)) ixs
+  buildRawTM hld isCommuteTM True xs
+
+foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
 foldTM TreeMonoid {..} v1 v2
   | isCommuteTM = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
   | otherwise = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
 
-readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> m a
+readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 readTM TreeMonoid {..} i_ = do
   let !i = indexHLD hldTM U.! i_
   readSTree streeFTM i
 
-writeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> a -> m ()
+writeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m ()
 writeTM TreeMonoid {..} i_ x = do
   let !i = indexHLD hldTM U.! i_
   writeSTree streeFTM i x
@@ -265,7 +289,7 @@ writeTM TreeMonoid {..} i_ x = do
   unless isCommuteTM $ do
     writeSTree streeBTM i $ Dual x
 
-exchangeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Int -> a -> m a
+exchangeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m a
 exchangeTM TreeMonoid {..} i_ x = do
   let !i = indexHLD hldTM U.! i_
   !res <- exchangeSTree streeFTM i x

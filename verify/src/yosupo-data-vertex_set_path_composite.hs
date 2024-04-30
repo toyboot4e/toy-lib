@@ -34,7 +34,7 @@ solve = do
 
   let !gr = buildSG (0, n - 1) $ swapDupeU uvs
   let !hld = hldOf gr
-  !tm <- buildTM hld False False $ U.map (\(!a, !b) -> Affine2d (modInt a, modInt b)) abs
+  !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Affine2d (modInt a, modInt b)) abs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !p, !c, !d) -> do
