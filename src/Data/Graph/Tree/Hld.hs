@@ -54,66 +54,66 @@ lcaHLD HLD {..} = inner
         hx = pathHeadHLD U.! x
         hy = pathHeadHLD U.! y
 
--- | \(O(log V)\) Returns inclusive edge vertex pairs per HLD path.
--- - TODO: consider direction
-edgePathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
-edgePathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
+-- | Shared implementation of `edgePathHLD` and `vertPathHLD`.
+_pathHLD :: Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+_pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
   where
-    inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
-    inner (-2, !_) = Nothing
-    inner (!x, !y)
-      -- sort for easier processing
-      | ix > iy = inner (y, x)
-      | hx /= hy =
-          let !ihy = indexHLD U.! hy
-           in Just ((ihy, iy), (x, parentHLD U.! hy))
-      -- >>>
-      | ix == iy = Nothing
-      | otherwise = Just ((ix + 1, iy), (-2, -2))
-      -- <<<
+    done (!up, !down) = reverse up ++ down
+    -- @up@: bottom to top. [(max, min)]
+    -- @down@: top to bottom. [(min, max)]
+    inner :: Vertex -> [(VertexHLD, VertexHLD)] -> Vertex -> [(VertexHLD, VertexHLD)] -> ([(VertexHLD, VertexHLD)], [(VertexHLD, VertexHLD)])
+    inner x up y down
+      | hx == hy && isEdge = case compare ix iy of
+          LT -> (up, (ix {- edge -} + 1, iy) : down)
+          GT -> ((ix, iy {- edge -} + 1) : up, down)
+          -- edge
+          EQ -> (up, down)
+      | hx == hy && not isEdge = case compare ix iy of
+          LT -> (up, (ix, iy) : down)
+          _ -> ((ix, iy) : up, down)
+      | otherwise = case compare ix iy of
+          LT -> inner x up phy ((ihy, iy) : down)
+          GT -> inner phx ((ix, ihx) : up) y down
+          EQ -> error "unreachable"
       where
+        ix, iy :: VertexHLD
         !ix = indexHLD U.! x
         !iy = indexHLD U.! y
+        hx, hy :: Vertex
         hx = pathHeadHLD U.! x
         hy = pathHeadHLD U.! y
+        ihx, ihy :: VertexHLD
+        ihx = indexHLD U.! hx
+        ihy = indexHLD U.! hy
+        phx, phy :: VertexHLD
+        phx = parentHLD U.! hx
+        phy = parentHLD U.! hy
 
--- | \(O(log V)\) Returns inclusive vertex pairs per HLD path.
+-- | \(O(log V)\) Returns inclusive edge vertex pairs.
 -- - TODO: consider direction
-vertPathHLD :: HLD -> Vertex -> Vertex -> U.Vector (VertexHLD, VertexHLD)
-vertPathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
-  where
-    inner :: (Vertex, Vertex) -> Maybe ((VertexHLD, VertexHLD), (Vertex, Vertex))
-    inner (-2, !_) = Nothing
-    inner (!x, !y)
-      -- sort for easier processing
-      | ix > iy = inner (y, x)
-      | hx /= hy =
-          let !ihy = indexHLD U.! hy
-           in Just ((ihy, iy), (x, parentHLD U.! hy))
-      -- >>>
-      | ix == iy = Just ((ix, ix), (-2, -2))
-      | otherwise = Just ((ix, iy), (-2, -2))
-      -- <<<
-      where
-        !ix = indexHLD U.! x
-        !iy = indexHLD U.! y
-        hx = pathHeadHLD U.! x
-        hy = pathHeadHLD U.! y
+edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+edgePathHLD = _pathHLD True
 
--- | Folds commutative monoid on a tree using HLD.
+-- | \(o(log V)\) Returns inclusive vertex pairs per HLD path.
+-- - TODO: consider direction
+vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+vertPathHLD = _pathHLD False
+
+-- | Folds commutative monoid on tree edges using HLD.
 --
 -- = Segment tree
+--
 -- HLD path folding is often done with a segment tree. It uses `VertexHLD` as indices. If edges
 -- have weights, you can either treat edges as new vertices or put weight to the depper index (when
 -- (v1 /= v2) always holds.
 --
--- Idea 1. Edges as new vertices
+-- Idea 1. Treat edges as new vertices. This is done with `foldVertsCommuteHLD`:
 --
 -- @
 -- o--o--o  -> o-x-o-x-o
 -- @
 --
--- Idea 2. Put weight to deeper vertex
+-- Idea 2. Put weight to deeper vertex. This is the idea of `foldEdgesCommuteHLD`:
 --
 -- @
 --   o
@@ -124,17 +124,27 @@ vertPathHLD HLD {..} x0 y0 = U.unfoldr inner (x0, y0)
 -- @
 --
 -- = Typical Problems
--- [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
+-- - [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
 foldEdgesCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldEdgesCommuteHLD hld f v1 v2 = do
-  (\g -> U.foldM' g mempty (edgePathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
-    !x <- f u v
+  (\g -> foldM g mempty (edgePathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
+    !x <-
+      if u <= v
+        then f u v
+        else f v u
     return $! acc <> x
 
+-- | Folds commutative monoid on tree vertices using HLD.
+--
+-- = Typical Problems
+-- - [Vertex Add Path Sum - Library Checker](https://judge.yosupo.jp/problem/vertex_add_path_sum)
 foldVertsCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldVertsCommuteHLD hld f v1 v2 = do
-  (\g -> U.foldM' g mempty (vertPathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
-    !x <- f u v
+  (\g -> foldM g mempty (vertPathHLD hld v1 v2)) $ \ !acc (!u, !v) -> do
+    !x <-
+      if u <= v
+        then f u v
+        else f v u
     return $! acc <> x
 
 -- | Heavy-light decomposition or Centroid Path Decomposition.
@@ -156,7 +166,8 @@ hldOf tree = runST $ do
 
         (\f -> fix f (-1) root) $ \loop p v1 -> do
           UM.write parent v1 p
-          (!size, (!eBig, !vBig)) <- (\f -> U.foldM' f (1, (-1, -1)) (tree `eAdj` v1)) $ \(!size, (!eBig, !vBig)) (!e2, !v2) -> do
+          -- TODO: no need of vBig?
+          (!size, (!eBig, !_vBig)) <- (\f -> U.foldM' f (1, (-1, -1)) (tree `eAdj` v1)) $ \(!size, (!eBig, !vBig)) (!e2, !v2) -> do
             if v2 == p
               then return (size, (eBig, vBig))
               else do
