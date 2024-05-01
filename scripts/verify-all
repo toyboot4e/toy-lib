@@ -8,5 +8,6 @@ cd verify
 # (see `:/verify/README.org`)
 source .venv/bin/activate
 
+touch src/*.hs
 oj-verify run src/*.hs # -j 8
 
