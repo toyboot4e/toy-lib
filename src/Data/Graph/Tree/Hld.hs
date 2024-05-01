@@ -3,7 +3,7 @@
 
 -- | Heavy-light decomposition. Heavily inspired by @cojna/iota@ and @maspypy/library@.
 --
--- HeavHLD lets you find LCA in \(O(\log V)\) time and lets you fold monoids on a path in
+-- HLD lets you find LCA in \(O(\log V)\) time and lets you fold monoids on a path in
 -- \(O(\log^2 V)\) time with the help of segment trees.
 module Data.Graph.Tree.Hld where
 
@@ -25,80 +25,78 @@ import ToyLib.Debug
 -- | Vertex reindexed by `indexHLD`.
 type VertexHLD = Vertex
 
--- | HLD splits a tree into lines. "Lines" are often called "paths", but here we say "lines" for
+-- | HLD splits a tree into lines. Lines are often called "paths", but here we say "lines" for
 -- avoiding word conflicts.
 --
 -- = Example
---
--- Below is an example of HLD applied to a tree.
 --
 -- == Original tree
 --
 -- Consider a tree with arbitrary vertex order:
 --
 -- @
---  0--8--7--3--1--2
---     |        |
--- 10--5        10--8--6
+--  0==8==7==3==1==2==12==13==15==15     XX: vertex
+--     |        |                         ==: edge on the same line
+-- 10==5        11==8==6                  --: edge between different lines
 --     |
 --     4
 -- @
 --
 -- == `indexHLD` visualized
 --
--- The tree vertices are reindexed with `indexHLD`, ensuring each line have consuctive numbers.
--- Imagine you have a segment tree along with the HLD that packs all the lines' monoids:
+-- The tree vertices are reindexed with `indexHLD`, ensuring vertices in each line have consecutive
+-- numbers:
 --
 -- @
---  0--1--2--3--4--5
+--  0==1==2==3==4==5==6==7==8==9
 --     |        |
--- 10--9        6--7--8
+-- 14==13       10==11==12
 --     |
--- 
+--     15
 -- @
 --
 -- Note that vertices on higher lines are assigned smaller numbers.
 --
 -- == `headHLD` visualized
 --
--- `headHLD` can be used for finding LCA of two vertices. To find the LCA, move to the head, go up
--- to the parent line, move up to the head, and repeat until they are on the same line.
+-- `headHLD` can be used for finding LCA of two vertices. To find the LCA, move up to the head, go
+-- up to the parental line's vertex and repeat until they are on the same line.
 --
 -- @
---  0--0--0--0--0--0
---     |        |
---  9--9        6--6--6
+--  0==0==0==0==0==0==0==0==0==0
+--     |     |
+-- 13==13     10==10==10
 --     |
---    11
+--     15
 -- @
 --
--- `headHLD` also works for identifying the line. When the two vertices are on the same line, they
--- have the same head.
+-- `headHLD` also works for identifying lines. When the two vertices are on the same line, they have
+-- the same head.
 --
 -- == `parentHLD` visualized
 --
 -- `parentHLD` lets you go up to the parental line's vertex from a head:
 --
 -- @
--- -1--0--1--2--3--4
---     |        |
---  9--1        4--6--7
---     |
---     9
+-- (-1)==0==1==2==3==4==5==6==-7==8
+--       |        |
+--   13==1        4==10==11
+--       |
+--      13
 -- @
 --
 -- = Segment tree integration
 --
--- With HLD, we can find a path between two vertices @u@, @v@ (@u@ -> @lca(u, v)@ -> @v@). The path
+-- With HLD, we can find a path between two vertices @u@, @v@: @u@ -> @lca(u, v)@ -> @v@. The path
 -- is composed of line slices, which can be fastly folded with a segment tree.
 --
 -- == Vertex monoid folding on a path
 --
--- If vertices have weightsm use `foldVertsCommuteHLD` or `foldVertsHLD`.
+-- If vertices have weights, use `foldVertsCommuteHLD` or `foldVertsHLD`.
 --
 -- == Edge monoid folding on a path
 --
--- If edges have weights, you can either treat edges as new vertices or put weight to the depper
+-- If edges have weights, you can either treat the edges as new vertices or put weight to the depper
 -- index.
 --
 -- Idea 1. Treat edges as new vertices.
@@ -107,7 +105,8 @@ type VertexHLD = Vertex
 -- o--o--o  -> o-x-o-x-o
 -- @
 --
--- Idea 2. Put weight to deeper vertex. This is the idea of `foldEdgesCommuteHLD` and `foldEdgesHLD`:
+-- Idea 2. Assign edge weight to the deeper vertex. This is the idea of `foldEdgesCommuteHLD` and
+-- `foldEdgesHLD`:
 --
 -- @
 --   o
@@ -117,19 +116,18 @@ type VertexHLD = Vertex
 --   o <- write wegiht 2 here
 -- @
 data HLD = HLD
-  { -- | Vertex -> Parent vertex.
+  { -- | `Vertex` -> Parent `Vertex`.
     parentHLD :: !(U.Vector Vertex),
-    -- | Vertex -> Reindexed index.
+    -- | `Vertex` -> Reindexed vertex (`VertexHLD`).
     indexHLD :: !(U.Vector VertexHLD),
-    -- | Vertex -> The line's head vertex.
+    -- | `Vertex` -> The line's head `Vertex`.
     headHLD :: !(U.Vector Vertex)
   }
   deriving (Show, Eq)
 
+-- * Construction
+
 -- | \(O(V)\) Heavy-light decomposition or Centroid Path Decomposition construction.
---
--- = References
--- - https://take44444.github.io/Algorithm-Book/graph/tree/hld/main.html
 hldOf :: forall w. SparseGraph Int w -> HLD
 hldOf tree = runST $ do
   -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
@@ -193,7 +191,9 @@ hldOf tree = runST $ do
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
     !root = 0 :: Vertex
 
--- | \(O(log V)\) HLD calculation.
+-- * LCA and paths
+
+-- | \(O(\log V)\) HLD calculation.
 --
 -- = Typical Problems
 -- [ABC 133 - F](https://atcoder.jp/contests/abc133/tasks/abc133_f)
@@ -250,15 +250,17 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
         phx = parentHLD U.! hx
         phy = parentHLD U.! hy
 
--- | \(O(log V)\) Returns inclusive edge vertex pairs.
+-- | \(O(\log V)\) Returns inclusive edge vertex pairs.
 edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 edgePathHLD = _pathHLD True
 
--- | \(o(log V)\) Returns inclusive vertex pairs per HLD line.
+-- | \(O(\log V)\) Returns inclusive vertex pairs per HLD line.
 vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 vertPathHLD = _pathHLD False
 
--- | \(o(log V)\) The common implementation of @foldEdges*HLD@ variants.
+-- * Folding methods
+
+-- | \(O(\log V)\) The common implementation of @foldEdges*HLD@ variants.
 _foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 _foldHLD isEdge hld f b v1 v2 = do
   foldM
@@ -272,7 +274,7 @@ _foldHLD isEdge hld f b v1 v2 = do
     mempty
     (_pathHLD isEdge hld v1 v2)
 
--- | \(o(log V)\) Folds commutative monoids on a tree edges using HLD. Prefer to use the wrapper
+-- | \(O(\log V)\) Folds commutative monoids on a tree edges using HLD. Prefer to use the wrapper
 -- `TreeMonoid`.
 --
 -- = Typical Problems
@@ -283,8 +285,8 @@ foldEdgesCommuteHLD hld f = _foldHLD True hld f f
 -- | Folds commutative monoids on a tree vertices using HLD. Prefer to use the wrapper `TreeMonoid`.
 --
 -- TODO: verify
-foldEdgesNonCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldEdgesNonCommuteHLD hld f b = _foldHLD True hld f b
+foldEdgesHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldEdgesHLD hld f b = _foldHLD True hld f b
 
 -- | Folds commutative monoids on a tree vertices using HLD. Prefer to use the wrapper `TreeMonoid`.
 --
@@ -298,22 +300,26 @@ foldVertsCommuteHLD hld f = _foldHLD False hld f f
 --
 -- = Typical Problems
 -- - [Vertex Set Path Composite - Library Checker](https://judge.yosupo.jp/problem/vertex_set_path_composite)
-foldVertsNonCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldVertsNonCommuteHLD = _foldHLD False
+foldVertsHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldVertsHLD = _foldHLD False
 
--- | HLD wrapper for folding a tree path of monoids using `HLD` and segment tree(s).
+-- * `TreeMonoid`
+
+-- | HLD wrapper for folding paths on a tree using `HLD` and segment tree(s).
 data TreeMonoid a s = TreeMonoid
   { -- | Borrowed HLD.
     hldTM :: !HLD,
-    -- | Is it targetting commutative monoids?
+    -- | Indicates if it's targetting commutative monoids.
     isCommuteTM :: !Bool,
-    -- | Is it targetting edge weights? (It's targetting vertex weights on no).
+    -- | Indicates if it's targetting edge weights. (If not, it's targetting vertex weights on no).
     isEdgeTM :: !Bool,
     -- | Segment tree for folding upwards.
     streeFTM :: !(SegmentTree UM.MVector s a),
-    -- | Segment tree in folding downwards. Only created when the monoid is not commutative.
+    -- | Segment tree for folding downwards. Only created when the monoid is not commutative.
     streeBTM :: !(SegmentTree UM.MVector s (Dual a))
   }
+
+-- ** Construction
 
 -- | \(O(V)\) Shared implementation of `buildVertTM` and `buildEdgeTM`.
 _buildRawTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
@@ -348,6 +354,8 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
   let !n = U.length indexHLD
   let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD U.! v, x)) ixs
   _buildRawTM hld isCommuteTM True xs
+
+-- ** Segment tree methods
 
 -- | \(O(log^2 V)\) Folds `TreeMonoid` on a path between two vertices
 foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
