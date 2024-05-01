@@ -150,3 +150,11 @@ executable yosupo-data-vertex_set_path_composite-exe
   import:           verify
   main-is:          yosupo-data-vertex_set_path_composite.hs
 
+executable yosupo-graph-lca-HLD-exe
+  import:           verify
+  main-is:          yosupo-graph-lca-HLD.hs
+
+executable yosupo-graph-lca-BL-exe
+  import:           verify
+  main-is:          yosupo-graph-lca-BL.hs
+

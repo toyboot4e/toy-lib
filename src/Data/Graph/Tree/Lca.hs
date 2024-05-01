@@ -1,4 +1,8 @@
--- | Least common ancestor and folding via that.
+-- | Lowest common ancestor and tree path folding via LCA (binary lifting).
+--
+-- = Warning
+--
+-- The current `lca` is really slow. TODO: Fix it to be \(\log N\).
 module Data.Graph.Tree.Lca where
 
 import Algorithm.Bisect
@@ -11,7 +15,7 @@ import GHC.Stack (HasCallStack)
 -- | `(parents, depths, parents')`
 type LcaCache a = (U.Vector Int, TransitionalSemigroup a, VecBL (TransitionalSemigroup a))
 
--- | \(O(\log N)\) Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
+-- | \(O(\log^2 N)\) Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.
 {-# INLINE lca #-}
 lca :: (HasCallStack, U.Unbox a) => LcaCache a -> Vertex -> Vertex -> (Vertex, Int)
@@ -35,7 +39,7 @@ lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
 
     !vLCA = parentN dLCA v1'
 
--- | \(O(\log N)\) Retrieves the length between given two vertices with the help of LCA.
+-- | \(O(\log^2 N)\) Retrieves the length between given two vertices with the help of LCA.
 {-# INLINE lcaLen #-}
 lcaLen :: (HasCallStack, U.Unbox a) => LcaCache a -> Int -> Int -> Int
 lcaLen cache@(!depths, !_, !_) !v1 !v2 =
@@ -44,7 +48,7 @@ lcaLen cache@(!depths, !_, !_) !v1 !v2 =
       !d2 = depths U.! v2
    in (d1 - d) + (d2 - d)
 
--- | \(O(\log N + \mathit{sact} \cdot \mathit{popCount}(V)))\)
+-- | \(O(\log^2 N + \mathit{sact} \cdot \mathit{popCount}(V)))\)
 -- Calculates the folding value of the path between two vertices in a tree.
 --
 -- = Typical problems
