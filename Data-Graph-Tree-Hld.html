@@ -6,20 +6,20 @@
 10--5        11--8--6                   |: edge
     |
     4
-</pre><h2><code><a href="Data-Graph-Tree-Hld.html#v:indexHLD" title="Data.Graph.Tree.Hld">indexHLD</a></code> visualized</h2><p>The tree vertices are reindexed with <code><a href="Data-Graph-Tree-Hld.html#v:indexHLD" title="Data.Graph.Tree.Hld">indexHLD</a></code>, ensuring vertices in each line have consecutive
+</pre><h2><code>indexHLD: Vertex -&gt; vertexHLD</code></h2><p>The tree vertices are reindexed with <code><a href="Data-Graph-Tree-Hld.html#v:indexHLD" title="Data.Graph.Tree.Hld">indexHLD</a></code>, ensuring vertices in each line have consecutive
  numbers:</p><pre> 0==1==2==3==4==5==6==7==8==9     XX: vertex
     |        |                     ==: edge on the same line
 14==13       10==11==12            |: edge between different lines
     |
     15
-</pre><p>Note that vertices on higher lines are assigned smaller numbers.</p><h2><code><a href="Data-Graph-Tree-Hld.html#v:headHLD" title="Data.Graph.Tree.Hld">headHLD</a></code> visualized</h2><p><code><a href="Data-Graph-Tree-Hld.html#v:headHLD" title="Data.Graph.Tree.Hld">headHLD</a></code> can be used for finding LCA of two vertices. To find the LCA, move up to the head, go
+</pre><p>Note that vertices on higher lines are assigned smaller numbers.</p><h2>`headHLD: Vertex -&gt; Vertex`</h2><p><code><a href="Data-Graph-Tree-Hld.html#v:headHLD" title="Data.Graph.Tree.Hld">headHLD</a></code> can be used for finding LCA of two vertices. To find the LCA, move up to the head, go
  up to the parental line's vertex and repeat until they are on the same line.</p><pre> 0==0==0==0==0==0==0==0==0==0
     |     |
-13==13     10==10==10
+ 5==5      11==11==11
     |
-    15
+    4
 </pre><p><code><a href="Data-Graph-Tree-Hld.html#v:headHLD" title="Data.Graph.Tree.Hld">headHLD</a></code> also works for identifying lines. When two vertices are on the same line, they have the
- same head.</p><h2><code><a href="Data-Graph-Tree-Hld.html#v:parentHLD" title="Data.Graph.Tree.Hld">parentHLD</a></code> visualized</h2><p><code><a href="Data-Graph-Tree-Hld.html#v:parentHLD" title="Data.Graph.Tree.Hld">parentHLD</a></code> lets you go up to the parental line's vertex from a head:</p><pre>(-1)==0==1==2==3==4==5==6==-7==8
+ same head.</p><h2>`parentHLD: Vertex -&gt; Vertex`</h2><p><code><a href="Data-Graph-Tree-Hld.html#v:parentHLD" title="Data.Graph.Tree.Hld">parentHLD</a></code> lets you go up to the parental line's vertex from a head:</p><pre>(-1)==0==1==2==3==4==5==6==-7==8
       |        |
   13==1        4==10==11
       |
