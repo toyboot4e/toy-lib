@@ -5,5 +5,6 @@ solve = do
 
   printBSB "TODO"
 
+-- verification-helper: PROBLEM <<url>>
 main :: IO ()
 main = runIO solve
