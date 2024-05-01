@@ -36,14 +36,14 @@ type VertexHLD = Vertex
 -- Consider a tree with arbitrary vertex order:
 --
 -- @
---  0--8--7--3--1--2--12--13--15--15     XX: vertex
+--  0--8--7--3--1--2--12--13--15--14     XX: vertex
 --     |        |                         --: edge
 -- 10--5        11--8--6                   |: edge
 --     |
 --     4
 -- @
 --
--- == `indexHLD` visualized
+-- == @indexHLD: Vertex -> vertexHLD@
 --
 -- The tree vertices are reindexed with `indexHLD`, ensuring vertices in each line have consecutive
 -- numbers:
@@ -58,7 +58,7 @@ type VertexHLD = Vertex
 --
 -- Note that vertices on higher lines are assigned smaller numbers.
 --
--- == `headHLD` visualized
+-- == `headHLD: Vertex -> Vertex`
 --
 -- `headHLD` can be used for finding LCA of two vertices. To find the LCA, move up to the head, go
 -- up to the parental line's vertex and repeat until they are on the same line.
@@ -66,24 +66,24 @@ type VertexHLD = Vertex
 -- @
 --  0==0==0==0==0==0==0==0==0==0
 --     |     |
--- 13==13     10==10==10
+--  5==5      11==11==11
 --     |
---     15
+--     4
 -- @
 --
 -- `headHLD` also works for identifying lines. When two vertices are on the same line, they have the
 -- same head.
 --
--- == `parentHLD` visualized
+-- == `parentHLD: Vertex -> Vertex`
 --
 -- `parentHLD` lets you go up to the parental line's vertex from a head:
 --
 -- @
--- (-1)==0==1==2==3==4==5==6==-7==8
+-- (-1)==0==8==7==3==1==2==12==13==15
 --       |        |
---   13==1        4==10==11
+--    5==8        1==11=8
 --       |
---      13
+--       5
 -- @
 --
 -- = Segment tree integration
