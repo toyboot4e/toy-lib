@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- | Heavy-light decomposition. Heavily inspired by @cojna/iota@.
+-- | Heavy-light decomposition. Heavily inspired by @cojna/iota@ and @maspypy/library@.
 --
 -- = Edge path and vertex path
 -- TODO: write about it.
@@ -28,18 +28,15 @@ type VertexHLD = Vertex
 -- | Heavy-light decomposition.
 data HLD = HLD
   { -- | Vertex -> Parent vertex.
-    parentHLD :: U.Vector Vertex,
+    parentHLD :: !(U.Vector Vertex),
     -- | Vertex -> Reorderd index.
-    indexHLD :: U.Vector VertexHLD,
+    indexHLD :: !(U.Vector VertexHLD),
     -- | Vertex -> Their path's head vertex.
-    pathHeadHLD :: U.Vector Vertex
+    pathHeadHLD :: !(U.Vector Vertex)
   }
   deriving (Show, Eq)
 
 -- | Heavy-light decomposition or Centroid Path Decomposition.
---
--- = About
--- HLD builds a smaller tree on top of an existing tree, combining vertices into paths.
 --
 -- = References
 -- - https://take44444.github.io/Algorithm-Book/graph/tree/hld/main.html
@@ -56,15 +53,19 @@ hldOf tree = runST $ do
         _ <- (\f -> fix f (-1) root) $ \loop p v1 -> do
           UM.write parent v1 p
           -- TODO: no need of vBig?
-          (!size, (!eBig, !_vBig)) <- (\f -> U.foldM' f (1 :: Int, (-1, -1)) (tree `eAdj` v1)) $ \(!size, (!eBig, !vBig)) (!e2, !v2) -> do
-            if v2 == p
-              then return (size, (eBig, vBig))
-              else do
-                size2 <- loop v1 v2
-                -- NOTE: It's `>` because we should swap at least once if there's some vertex other
-                -- that the parent.
-                return (size + size2, if size > size2 then (eBig, vBig) else (e2, v2))
-
+          (!size, !eBig) <-
+            U.foldM'
+              ( \(!size, !eBig) (!e2, !v2) -> do
+                  if v2 == p
+                    then return (size, eBig)
+                    else do
+                      size2 <- loop v1 v2
+                      -- NOTE: It's `>` because we should swap at least once if there's some vertex other
+                      -- that the parent.
+                      return (size + size2, if size > size2 then eBig else e2)
+              )
+              (1 :: Int, -1)
+              (tree `eAdj` v1)
           -- move the biggest subtree's head to the first adjacent vertex
           when (eBig /= -1) $ do
             UM.swap adjVec eBig $ fst (U.head (tree `eAdj` v1))
@@ -160,23 +161,25 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
         phy = parentHLD U.! hy
 
 -- | \(O(log V)\) Returns inclusive edge vertex pairs.
--- - TODO: consider direction
 edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 edgePathHLD = _pathHLD True
 
 -- | \(o(log V)\) Returns inclusive vertex pairs per HLD path.
--- - TODO: consider direction
 vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 vertPathHLD = _pathHLD False
 
 _foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 _foldHLD isEdge hld f b v1 v2 = do
-  (\g -> foldM g mempty (_pathHLD isEdge hld v1 v2)) $ \ !acc (!u, !v) -> do
-    !x <-
-      if u <= v
-        then f u v
-        else b v u
-    return $! acc <> x
+  foldM
+    ( \ !acc (!u, !v) -> do
+        !x <-
+          if u <= v
+            then f u v
+            else b v u
+        return $! acc <> x
+    )
+    mempty
+    (_pathHLD isEdge hld v1 v2)
 
 -- | Folds commutative monoid on tree edges using HLD.
 --
@@ -227,15 +230,15 @@ foldVertsNonCommuteHLD = _foldHLD False
 
 -- | API for folding a tree path of monoids with `HLD`.
 data TreeMonoid a s = TreeMonoid
-  { hldTM :: HLD,
+  { hldTM :: !HLD,
     -- | Is it targetting commutative monoids?
-    isCommuteTM :: Bool,
+    isCommuteTM :: !Bool,
     -- | Is it targetting edge weights? (It's targetting vertex weights on no).
-    isEdgeTM :: Bool,
+    isEdgeTM :: !Bool,
     -- | Segment tree for folding upwards.
-    streeFTM :: SegmentTree UM.MVector s a,
+    streeFTM :: !(SegmentTree UM.MVector s a),
     -- | Segment tree in folding downwards. Only created when the monoid is not commutative.
-    streeBTM :: SegmentTree UM.MVector s (Dual a)
+    streeBTM :: !(SegmentTree UM.MVector s (Dual a))
   }
 
 buildRawTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
@@ -243,7 +246,7 @@ buildRawTM hldTM isCommuteTM isEdgeTM xsRaw = do
   streeFTM <- buildSTree xsRaw
   streeBTM <-
     if isCommuteTM
-      then buildSTree U.empty -- FIXME: is this safe?
+      then buildSTree U.empty
       else buildSTree $ U.map Dual xsRaw
   return $ TreeMonoid {..}
 
