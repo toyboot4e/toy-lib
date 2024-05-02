@@ -4,30 +4,37 @@
 module Main (main) where
 
 import Control.Monad
+import Data.Graph.Sparse
 import Data.List qualified as L
-import Data.List.Extra (stripSuffix, nubSort)
+import Data.List.Extra (nubSort, stripSuffix)
 import Data.Map.Strict qualified as M
 import Data.Maybe
-import Data.Graph.Sparse
 import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)
 import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
+import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
 -- TODO: Refactor
 
 main :: IO ()
 main = do
+  args <- getArgs
+  if null args
+    then mainGenTemplate
+    else mainEmbedLibrary
+
+mainGenTemplate :: IO ()
+mainGenTemplate = do
+  -- Because `haskell-src-exts` does not understand `GHC2021`, collect language extensions enalbed
+  -- by `GHC2021` and give them manually to the the parser:
+  ghc2021Extensions <- getGhc2021Extensions
+
   let srcDir = installPath ++ "/src"
   files <- collectSourceFiles srcDir
 
-  -- Because `haskell-src-exts` does not understand `GHC2021`, collect language extensions enalbed
-  -- by `GHC2021` and give them manually to the the parser:
-  let ghc2021File = installPath ++ "/template/GHC2021.hs"
-  (!ghc2021Extensions, !_) <- parseFile [] ghc2021File
-
-  -- parse source files
+  -- parse all the source files
   parsedFiles <- forM files $ \path -> do
     (path,) <$> parseFile ghc2021Extensions path
   let (!failures, !successes) = partitionParseResults parsedFiles
@@ -59,6 +66,17 @@ main = do
         step (f, (exts, H.ParseFailed loc s)) (accL, accR) = ((f, exts, (loc, s)) : accL, accR)
         step (f, (exts, H.ParseOk l)) (accL, accR) = (accL, (f, exts, l) : accR)
 
+mainEmbedLibrary :: IO ()
+mainEmbedLibrary = do
+  putStrLn "TODO"
+  return ()
+
+getGhc2021Extensions :: IO [H.Extension]
+getGhc2021Extensions = do
+  let ghc2021File = installPath ++ "/template/GHC2021.hs"
+  (!ghc2021Extensions, !_) <- parseFile [] ghc2021File
+  return ghc2021Extensions
+
 -- | Recursively collects @.hs@ files.
 collectSourceFiles :: FilePath -> IO [FilePath]
 collectSourceFiles dir = do
@@ -66,9 +84,10 @@ collectSourceFiles dir = do
   let sourceFiles = filter filterSourceFiles contents
   subDirs <- filterM doesDirectoryExist contents
   L.foldl' (++) sourceFiles <$> mapM collectSourceFiles subDirs
-
-filterSourceFiles :: String -> Bool
-filterSourceFiles s = (".hs" `L.isSuffixOf` s) && not ("Macro.hs" `L.isSuffixOf` s)
+  where
+    -- Filter Haskell source files, ignoring `Macro.hs`
+    filterSourceFiles :: String -> Bool
+    filterSourceFiles s = (".hs" `L.isSuffixOf` s) && not ("Macro.hs" `L.isSuffixOf` s)
 
 -- | Collects declaratrions from a Haskell source file and minify them into one line.
 parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Module H.SrcSpanInfo))
