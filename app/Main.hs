@@ -12,9 +12,9 @@ import Language.Haskell.Exts qualified as H
 import Lib qualified
 import Lib.Parse qualified
 import Lib.Write qualified
+import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
-import System.Directory (doesDirectoryExist, getDirectoryContents)
 
 main :: IO ()
 main =
@@ -31,6 +31,8 @@ main =
       putStrLn "Not given file name to embed toy-lib modules."
     ["-e", file] -> do
       putStrLn =<< mainEmbedLibrary file
+    ["-u", file] -> do
+      putStrLn =<< mainUpdateLibraryLine file
     args -> do
       putStrLn $ "Given unknown arguments: " ++ show args
 
@@ -126,6 +128,21 @@ mainEmbedLibrary file = do
 
   let lns' = take front lns ++ [toylib] ++ drop (back + 1) lns
   return $ L.intercalate "\n" lns'
+
+-- | Replace line 15 with new library. That should be the line of minified library.
+mainUpdateLibraryLine :: FilePath -> IO String
+mainUpdateLibraryLine file = do
+  s <- readFile file
+
+  (!parsedFiles, !gr) <- getSourceFileGraph
+  ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
+  let !toylib = Lib.Write.minifyLibrary ghc2021Extensions parsedFiles
+
+  let i = 15
+  let lns = lines s
+
+  let s' = L.intercalate "\n" $ take (i - 1) lns ++ [toylib] ++ drop i lns
+  return s'
 
 -- | Geneartes toy-lib template and Writes it out to the stdout.
 generateTemplateFromInput :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()
