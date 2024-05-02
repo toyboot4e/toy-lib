@@ -19,10 +19,18 @@ import System.Exit (exitFailure)
 main :: IO ()
 main =
   getArgs >>= \case
-    [] -> mainGenTemplate
-    ["-m"] -> putStrLn "Not given module names to minify."
-    ("-m" : rest) -> mainMinifyLibrary rest
-    args -> putStrLn $ "Given unknown arguments: " ++ show args
+    [a] | a `elem` ["-h", "--help"] -> do
+      putStrLn =<< Lib.readRootFile "/app/help"
+    [] -> do
+      mainGenTemplate
+    ["-m"] -> do
+      putStrLn "Not given module names to minify."
+    ("-m" : modules) -> do
+      putStrLn =<< mainMinifyLibrary modules
+    -- ("-e" : file) -> do
+    --   mainEmbedLibrary file
+    args -> do
+      putStrLn $ "Given unknown arguments: " ++ show args
 
 -- | Sub command for generating a Haskell template.
 mainGenTemplate :: IO ()
@@ -32,7 +40,7 @@ mainGenTemplate = do
   generateTemplateFromInput sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
-mainMinifyLibrary :: [String] -> IO ()
+mainMinifyLibrary :: [String] -> IO String
 mainMinifyLibrary moduleNames = do
   (!parsedFiles, !gr) <- getSourceFileGraph
   let moduleNameToVertex =
@@ -55,8 +63,7 @@ mainMinifyLibrary moduleNames = do
          in map (parsedFiles !!) sortedReachables
 
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
-  let toylib = Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles
-  putStrLn toylib
+  return $ Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles
 
 getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int ())
 getSourceFileGraph = do
@@ -104,9 +111,9 @@ generateTemplateFromInput sortedParsedFiles = do
 
   case parsedTemplate of
     H.ParseOk templateAst -> do
-      header <- readFile $ Lib.rootPath "/template/Header.hs"
-      macros <- readFile $ Lib.rootPath "/template/Macros.hs"
-      body <- readFile $ Lib.rootPath "/template/Body.hs"
+      header <- Lib.readRootFile "/template/Header.hs"
+      macros <- Lib.readRootFile "/template/Macros.hs"
+      body <- Lib.readRootFile "/template/Body.hs"
       let toylib = Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
       putStr $ Lib.Write.generateTemplate templateExtensions templateAst toylib header macros body
     failure -> do

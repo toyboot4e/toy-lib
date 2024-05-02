@@ -24,6 +24,9 @@ installPath = $(do dir <- runIO getCurrentDirectory; [e|dir|])
 rootPath :: FilePath -> FilePath
 rootPath = (installPath ++)
 
+readRootFile :: FilePath -> IO FilePath
+readRootFile = readFile . (installPath ++)
+
 -- | Converts module name to source file path.
 modulePath :: String -> FilePath
 modulePath name = concat [installPath, "/src/", map tr name, ".hs"]
