@@ -8,6 +8,8 @@ ToyLib is my Haskell library for solving AtCoder problems.
 
 `toy-lib-exe` is the source file bunlder.
 
+### Usage
+
 Generate a template that bundles all the source files:
 
 ```sh
@@ -17,7 +19,7 @@ $ cabal run toy-lib-exe > template.hs
 Minify the toy-lib modules and their dependencies into one line:
 
 ```sh
-$ cabal run toy-lib-exe -e Data.SparseGraph Data.UnionFind.Mutable
+$ cabal run toy-lib-exe -m Data.Graph.Sparse Data.UnionFind.Mutable
 ```
 
 Embed toy-lib modules:

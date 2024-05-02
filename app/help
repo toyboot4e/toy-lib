@@ -1,0 +1,11 @@
+toy-lib-exe is a source file bundler.
+
+EXAMPLES
+  show help:
+  $ cabal run toy-lib-exe -- -h
+
+  minify toy-lib modules into one line:
+  $ cabal run toy-lib-exe -- -m Data.UnionFind.Mutable Data.Graph.Sparse
+
+  emebd toy-lib modules into a file with special declarations:
+  $ cabal run toy-lib-exe -- -e Main.hs
