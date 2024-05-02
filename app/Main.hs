@@ -27,8 +27,10 @@ main =
       putStrLn "Not given module names to minify."
     ("-m" : modules) -> do
       putStrLn =<< mainMinifyLibrary modules
-    -- ("-e" : file) -> do
-    --   mainEmbedLibrary file
+    ["-e"] -> do
+      putStrLn "Not given file name to embed toy-lib modules."
+    ["-e", file] -> do
+      putStrLn =<< mainEmbedLibrary file
     args -> do
       putStrLn $ "Given unknown arguments: " ++ show args
 
@@ -100,6 +102,10 @@ getSourceFileGraph = do
         filterSourceFiles :: String -> Bool
         filterSourceFiles s = (".hs" `L.isSuffixOf` s) && not ("Macro.hs" `L.isSuffixOf` s)
 
+mainEmbedLibrary :: FilePath -> IO String
+mainEmbedLibrary _file = do
+  return ""
+
 -- | Geneartes toy-lib template and Writes it out to the stdout.
 generateTemplateFromInput :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()
 generateTemplateFromInput sortedParsedFiles = do
@@ -111,10 +117,10 @@ generateTemplateFromInput sortedParsedFiles = do
 
   case parsedTemplate of
     H.ParseOk templateAst -> do
+      let toylib = Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
       header <- Lib.readRootFile "/template/Header.hs"
       macros <- Lib.readRootFile "/template/Macros.hs"
       body <- Lib.readRootFile "/template/Body.hs"
-      let toylib = Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
       putStr $ Lib.Write.generateTemplate templateExtensions templateAst toylib header macros body
     failure -> do
       putStrLn "Failed to parse template:"
