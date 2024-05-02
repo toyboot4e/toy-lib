@@ -4,11 +4,11 @@
 -- | `vector`-based sparse graph implementation. Heavily inspired by @cojna/iota@.
 module Data.Graph.Sparse where
 
--- TODO: separate search module
+-- TODO: remove index parameter i
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Extra (whenM)
+import Control.Monad.Extra (whenM, unlessM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -170,6 +170,20 @@ dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
       loop (d1 + w, v2)
     UM.write vis v1 False
     return $ max d1 maxDistance
+
+-- | \(O(V+E)\) Collects reachable vertices from source points.
+componentsSG :: SparseGraph Int w -> U.Vector Int -> U.Vector Int
+componentsSG gr sources = runST $ do
+  !vis <- UM.replicate (nVertsSG gr) False
+
+  let dfs v1 = do
+        unlessM (UM.exchange vis v1 True) $ do
+          U.forM_ (gr `adj` v1) $ \v2 -> do
+            unlessM (UM.read vis v2) $ do
+              dfs v2
+
+  U.forM_ sources dfs
+  U.findIndices id <$> U.unsafeFreeze vis
 
 -- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
 -- Works on a non-directed graph only.
