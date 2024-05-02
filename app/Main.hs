@@ -16,7 +16,6 @@ import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryCo
 import System.Exit (exitFailure)
 
 -- TODO: Refactor
--- TODO: Filter dependencies and do topological sort
 
 main :: IO ()
 main = do
@@ -69,7 +68,7 @@ collectSourceFiles dir = do
   L.foldl' (++) sourceFiles <$> mapM collectSourceFiles subDirs
 
 filterSourceFiles :: String -> Bool
-filterSourceFiles s = (".hs" `L.isSuffixOf` s) && (not $ ("Macro.hs" `L.isSuffixOf` s))
+filterSourceFiles s = (".hs" `L.isSuffixOf` s) && not ("Macro.hs" `L.isSuffixOf` s)
 
 -- | Collects declaratrions from a Haskell source file and minify them into one line.
 parseFile :: [H.Extension] -> String -> IO ([H.Extension], H.ParseResult (H.Module H.SrcSpanInfo))
@@ -106,12 +105,6 @@ moduleName name = do
   name1 <- L.stripPrefix (installPath ++ "/src/") name
   name2 <- stripSuffix ".hs" name1
   return $ map (\c -> if c == '/' then '.' else c) name2
-
-removeDefineMacros :: String -> String
-removeDefineMacros = unlines . filter (not . L.isPrefixOf "#define") . lines
-
-removeMacros :: String -> String
-removeMacros = unlines . filter (not . L.isPrefixOf "#") . lines
 
 -- | Geneartes `toy-lib` in one line.
 generateLibrary :: [H.Extension] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
