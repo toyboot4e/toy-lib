@@ -12,9 +12,9 @@ import Language.Haskell.Exts qualified as H
 import Lib qualified
 import Lib.Parse qualified
 import Lib.Write qualified
-import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
+import System.Directory (doesDirectoryExist, getDirectoryContents)
 
 main :: IO ()
 main =
@@ -102,9 +102,30 @@ getSourceFileGraph = do
         filterSourceFiles :: String -> Bool
         filterSourceFiles s = (".hs" `L.isSuffixOf` s) && not ("Macro.hs" `L.isSuffixOf` s)
 
+-- | Replaces imports
+--
+-- = Example file
+-- @
+-- -- {{{ toy-lib imports
+-- import Data.Graph.UnionFind
+-- import Data.Graph.Sparse;import Data.Graph.Tree
+-- -- }}} toy-lib imports
+-- @
 mainEmbedLibrary :: FilePath -> IO String
-mainEmbedLibrary _file = do
-  return ""
+mainEmbedLibrary file = do
+  -- TODO: handle failures
+  s <- readFile file
+
+  let lns = lines s
+  let front = fromJust $ L.findIndex ("-- {{{ toy-lib import" `L.isPrefixOf`) lns
+  let back = fromJust $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
+
+  let importLines = unlines . take (back - front - 1) $ drop (front + 1) lns
+  let moduleNames = filter (/= "import") $ words $ map (\case ';' -> ' '; c -> c) importLines
+  toylib <- mainMinifyLibrary moduleNames
+
+  let lns' = take front lns ++ [toylib] ++ drop (back + 1) lns
+  return $ L.intercalate "\n" lns'
 
 -- | Geneartes toy-lib template and Writes it out to the stdout.
 generateTemplateFromInput :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()

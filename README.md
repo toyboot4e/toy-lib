@@ -8,14 +8,29 @@ ToyLib is my Haskell library for solving AtCoder problems.
 
 `toy-lib-exe` is the source file bunlder.
 
-```sh
-$ # generate template that bundles all the source files:
-$ cabal run toy-lib-exe > template.hs
+Generate a template that bundles all the source files:
 
-$ # minify the toy-lib modules and their dependencies into one line:
+```sh
+$ cabal run toy-lib-exe > template.hs
+```
+
+Minify the toy-lib modules and their dependencies into one line:
+
+```sh
 $ cabal run toy-lib-exe -e Data.SparseGraph Data.UnionFind.Mutable
 ```
 
+Embed toy-lib modules:
+
+```sh
+$ cat Example.hs
+-- {{{ toy-lib import
+import Math.Manhattan
+-- }}} toy-lib import
+
+$ cabal run toy-lib-exe -e Examle.hs
+rot45 :: (Int, Int) -> (Int, Int);rot45 (!x, !y) = (x - y, x + y)
+```
 ## Project setting notes
 
 ### Installation

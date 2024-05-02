@@ -10,7 +10,6 @@ import Data.Maybe
 import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
 import Language.Haskell.TH (runIO)
-import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
 import System.Exit (exitFailure)
 import Lib qualified
 
