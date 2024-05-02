@@ -4,35 +4,17 @@ ToyLib is my Haskell library for solving AtCoder problems.
 
 [Documentation](https://toyboot4e.github.io/toy-lib/)
 
-## Features (CLI)
+## CLI
 
-`toy-lib-exe` is the source file bunlder. It has the following features.
+`toy-lib-exe` is the source file bunlder.
 
-### Source file bundling
+```sh
+$ # generate template that bundles all the source files:
+$ cabal run toy-lib-exe > template.hs
 
-Bundle the whole / part of the ToyLib modules into one `Main.hs` with a specified format.
-
-#### Available inputs
-
-| Input         | Status                       |
-|---------------|------------------------------|
-| Whole library | :heavy_check_mark: Available |
-| One module    | :construction: In progress   |
-| stdin         | :construction: In progress   |
-
-#### Available outputs
-
-| Format                      | Status                       |
-|-----------------------------|------------------------------|
-| Minify all the declarations | :heavy_check_mark: Available |
-| Minify each declaration     | :construction: In progress   |
-| Pick up declarations        | :construction: In progress   |
-
-### Templates
-
-Embed `ToyLib` modules with specified formats.
-
-TODO
+$ # minify the toy-lib modules and their dependencies into one line:
+$ cabal run toy-lib-exe -e Data.SparseGraph Data.UnionFind.Mutable
+```
 
 ## Project setting notes
 
