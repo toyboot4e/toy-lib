@@ -2,26 +2,20 @@ module Lib.Parse where
 
 import Control.Monad
 import Data.Graph.Sparse
-import Data.List qualified as L
-import Data.List.Extra (nubSort, stripSuffix)
+import Data.List.Extra (nubSort)
 import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
-import Language.Haskell.TH (runIO)
 import Lib qualified
-import Lib.Write qualified
-import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
-import System.Environment (getArgs)
-import System.Exit (exitFailure)
 
--- | Because `haskell-src-exts` does not understand `GHC2021`, collect language extensions enalbed
--- by `GHC2021` and give them to the the parser manually:
+-- | Language extensions enabled by @GHC2021@ collected mannualy for @haskell-src-exts@.
 getGhc2021Extensions :: IO [H.Extension]
 getGhc2021Extensions = do
   let ghc2021File = Lib.rootPath "/template/GHC2021.hs"
   (!ghc2021Extensions, !_) <- parseFile [] ghc2021File
   return ghc2021Extensions
+
 parseFiles :: [([H.Extension], FilePath)] -> IO ([(FilePath, [H.Extension], (H.SrcLoc, String))], [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)])
 parseFiles files = do
   parsedFiles <- forM files $ \(!exts, !path) -> do

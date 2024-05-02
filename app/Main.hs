@@ -5,6 +5,9 @@ module Main (main) where
 import Control.Monad
 import Data.Graph.Sparse
 import Data.List qualified as L
+import Data.Map.Strict qualified as M
+import Data.Maybe
+import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
 import Lib qualified
 import Lib.Parse qualified
@@ -17,8 +20,9 @@ main :: IO ()
 main =
   getArgs >>= \case
     [] -> mainGenTemplate
-    ["-e"] -> mainEmbedLibrary
-    args -> putStrLn "Given unknown arguments."
+    ["-e"] -> putStrLn "Not given module names to embed."
+    ("-e" : rest) -> mainEmbedLibrary rest
+    args -> putStrLn $ "Given unknown arguments: " ++ show args
 
 -- | Sub command for generating a Haskell template.
 mainGenTemplate :: IO ()
@@ -28,10 +32,31 @@ mainGenTemplate = do
   generateTemplateFromInput sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
-mainEmbedLibrary :: IO ()
-mainEmbedLibrary = do
+mainEmbedLibrary :: [String] -> IO ()
+mainEmbedLibrary moduleNames = do
   (!parsedFiles, !gr) <- getSourceFileGraph
-  putStrLn "TODO: filter dependent files only"
+  let moduleNameToVertex =
+        M.fromList $
+          zip
+            ( map
+                (\(!path, _, _) -> fromJust $ Lib.moduleName path)
+                parsedFiles
+            )
+            [0 :: Int ..]
+
+  -- TODO: warn instead of die on mismatch
+  let sourceVerts = map (moduleNameToVertex M.!) moduleNames
+
+  -- TODO: faster
+  let targetSourceFiles =
+        let reachables = componentsSG (revSG gr) $ U.fromList sourceVerts
+            topSortVerts = topSortSG gr
+            sortedReachables = filter (`U.elem` reachables) topSortVerts
+         in map (parsedFiles !!) sortedReachables
+
+  ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
+  let toylib = Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles
+  putStrLn toylib
 
 getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int ())
 getSourceFileGraph = do
@@ -82,7 +107,7 @@ generateTemplateFromInput sortedParsedFiles = do
       header <- readFile $ Lib.rootPath "/template/Header.hs"
       macros <- readFile $ Lib.rootPath "/template/Macros.hs"
       body <- readFile $ Lib.rootPath "/template/Body.hs"
-      let toylib = Lib.Write.generateLibrary ghc2021Extensions sortedParsedFiles
+      let toylib = Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
       putStr $ Lib.Write.generateTemplate templateExtensions templateAst toylib header macros body
     failure -> do
       putStrLn "Failed to parse template:"
