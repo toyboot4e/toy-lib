@@ -20,8 +20,8 @@ main :: IO ()
 main =
   getArgs >>= \case
     [] -> mainGenTemplate
-    ["-e"] -> putStrLn "Not given module names to embed."
-    ("-e" : rest) -> mainEmbedLibrary rest
+    ["-m"] -> putStrLn "Not given module names to minify."
+    ("-m" : rest) -> mainMinifyLibrary rest
     args -> putStrLn $ "Given unknown arguments: " ++ show args
 
 -- | Sub command for generating a Haskell template.
@@ -32,8 +32,8 @@ mainGenTemplate = do
   generateTemplateFromInput sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
-mainEmbedLibrary :: [String] -> IO ()
-mainEmbedLibrary moduleNames = do
+mainMinifyLibrary :: [String] -> IO ()
+mainMinifyLibrary moduleNames = do
   (!parsedFiles, !gr) <- getSourceFileGraph
   let moduleNameToVertex =
         M.fromList $
