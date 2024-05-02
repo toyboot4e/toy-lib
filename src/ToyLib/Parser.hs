@@ -91,10 +91,42 @@ digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
 digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> line'
 
 -- | Reads next @h * w@ elements as matrix of type @a@.
+--
+-- = Example
+--
+-- Input:
+--
+-- @
+-- 1 2 3
+-- 4 5 6
+-- @
+--
+-- Parsed result:
+--
+-- @
+-- 1 2 3
+-- 4 5 6
+-- @
 getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
 getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 
 -- | Reads next @h * w@ elements as a char-based grid.
+--
+-- = Example
+--
+-- Input:
+--
+-- @
+-- abc
+-- def
+-- @
+--
+-- Parsed result:
+--
+-- @
+-- a b c
+-- d e f
+-- @
 getGrid' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
 getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) char'
 
