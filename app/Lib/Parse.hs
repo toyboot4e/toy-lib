@@ -69,8 +69,3 @@ buildDepGraph input = buildSG (0, length input - 1) edges
     moduleNameToVertex :: M.Map String Int
     !moduleNameToVertex = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ Lib.moduleName path) input) [0 :: Int ..]
 
-topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
-topSortSourceFiles input = map (input !!) $ topSortSG gr
-  where
-    gr = buildDepGraph input
-
