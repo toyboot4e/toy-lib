@@ -47,7 +47,7 @@ collectSourceFiles dir = do
 
 -- | Geneartes toy-lib template and Writes it out to the stdout.
 generateTemplateFromInput :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()
-generateTemplateFromInput parsed = do
+generateTemplateFromInput parsedFiles = do
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
 
   -- parse template
@@ -59,7 +59,8 @@ generateTemplateFromInput parsed = do
       header <- readFile $ Lib.rootPath "/template/Header.hs"
       macros <- readFile $ Lib.rootPath "/template/Macros.hs"
       body <- readFile $ Lib.rootPath "/template/Body.hs"
-      let toylib = Lib.Write.generateLibrary ghc2021Extensions parsed
+      let sourceFiles = Lib.Parse.topSortSourceFiles parsedFiles
+      let toylib = Lib.Write.generateLibrary ghc2021Extensions sourceFiles
       putStr $ Lib.Write.generateTemplate templateExtensions templateAst toylib header macros body
     failure -> do
       putStrLn "Failed to parse template:"

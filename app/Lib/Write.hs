@@ -16,32 +16,11 @@ import Lib qualified
 
 -- | Geneartes `toy-lib` in one line.
 generateLibrary :: [H.Extension] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, String)]
-generateLibrary ghc2021Extensions parsedFiles =
-  let files = topSortSourceFiles parsedFiles
-   in map
+generateLibrary ghc2021Extensions = map
         ( \(path, exts, module_) ->
             (path, minifyDeclarations (exts ++ ghc2021Extensions) module_)
         )
-        files
   where
-    topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
-    topSortSourceFiles input =
-      let edges = U.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
-          gr = buildSG (0, pred (length input)) edges
-          vs = topSortSG gr
-       in map (input !!) vs
-      where
-        moduleNameToVert :: M.Map String Int
-        !moduleNameToVert = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ Lib.moduleName path) input) [0 :: Int ..]
-
-        -- edge from depended vertex to dependent vertex
-        edgesOf :: FilePath -> H.Module a -> [(Int, Int)]
-        edgesOf path (H.Module _ _ _ !imports _) =
-          let !v1 = moduleNameToVert M.! fromJust (Lib.moduleName path)
-              !v2s = mapMaybe ((moduleNameToVert M.!?) . (\(H.ModuleName _ s) -> s) . H.importModule) imports
-           in map (,v1) v2s
-        edgesOf _ _ = error "unexpected module data"
-
     minifyDeclarations :: [H.Extension] -> H.Module l -> String
     minifyDeclarations _ ast = minify ast
       where

@@ -25,7 +25,7 @@ getGhc2021Extensions = do
 parseFiles :: [([H.Extension], FilePath)] -> IO ([(FilePath, [H.Extension], (H.SrcLoc, String))], [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)])
 parseFiles files = do
   parsedFiles <- forM files $ \(!exts, !path) -> do
-    (path,) <$> Lib.Parse.parseFile exts path
+    (path,) <$> parseFile exts path
   return $ partitionParseResults parsedFiles
 
 -- | Collects declaratrions from a Haskell source file and minify them into one line.
@@ -49,5 +49,28 @@ parseFile ghc2021Extensions absPath = do
 partitionParseResults :: [(a, ([H.Extension], H.ParseResult b))] -> ([(a, [H.Extension], (H.SrcLoc, String))], [(a, [H.Extension], b)])
 partitionParseResults = foldr step ([], [])
   where
-    step (f, (exts, H.ParseFailed loc s)) (accL, accR) = ((f, exts, (loc, s)) : accL, accR)
-    step (f, (exts, H.ParseOk l)) (accL, accR) = (accL, (f, exts, l) : accR)
+    step (!f, (!exts, H.ParseFailed loc s)) (!accL, !accR) = ((f, exts, (loc, s)) : accL, accR)
+    step (!f, (!exts, H.ParseOk l)) (!accL, !accR) = (accL, (f, exts, l) : accR)
+
+buildDepGraph :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph Int ()
+buildDepGraph input = buildSG (0, length input - 1) edges
+  where
+    edges :: U.Vector (Int, Int)
+    edges = U.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input
+
+    -- edge from depended vertex to dependent vertex
+    edgesOf :: FilePath -> H.Module a -> [(Int, Int)]
+    edgesOf path (H.Module _ _ _ !imports _) =
+      let !v1 = moduleNameToVertex M.! fromJust (Lib.moduleName path)
+          !v2s = mapMaybe ((moduleNameToVertex M.!?) . (\(H.ModuleName _ s) -> s) . H.importModule) imports
+       in map (,v1) v2s
+    edgesOf _ _ = error "unexpected module data"
+
+    moduleNameToVertex :: M.Map String Int
+    !moduleNameToVertex = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ Lib.moduleName path) input) [0 :: Int ..]
+
+topSortSourceFiles :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)]
+topSortSourceFiles input = map (input !!) $ topSortSG gr
+  where
+    gr = buildDepGraph input
+
