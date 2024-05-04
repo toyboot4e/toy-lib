@@ -15,7 +15,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- value @p(v)@ which is a relative value tested on `unifyPUF`.
 --
 -- Implementation based on: <https://qiita.com/drken/items/cce6fc5c579051e64fab>
-data PUnionFind s = DUnionFind
+data PUnionFind s = PUnionFind
   { -- | Node data (@MUFParent size | MUFNode parent@).
     nodesPUF :: UM.MVector s MUFNode,
     -- | Diffierencial potencial of each vertex.
@@ -28,7 +28,7 @@ data PUnionFind s = DUnionFind
 
 -- | Creates a new union-find tree under a differencial-potencal system.
 newPUF :: (PrimMonad m) => Int -> m (PUnionFind (PrimState m))
-newPUF n = DUnionFind <$> UM.replicate n (MUFRoot 1) <*> UM.replicate n (0 :: Int)
+newPUF n = PUnionFind <$> UM.replicate n (MUFRoot 1) <*> UM.replicate n (0 :: Int)
 
 -- | Returns root to the given vertex, after updating the internal differencial potencials.
 rootPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> m Int
@@ -123,4 +123,8 @@ clearPUF !uf = do
   UM.set (potencialPUF uf) (0 :: Int)
   UM.set (nodesPUF uf) (MUFRoot 1)
 
--- TODO: groups
+groupsPUF :: (HasCallStack, PrimMonad m) => PUnionFind (PrimState m) -> m (IM.IntMap [Int])
+groupsPUF uf@(PUnionFind !vec !_) = do
+  rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootPUF uf v)
+  return $ IM.fromListWith (flip (++)) $ V.toList rvs
+
