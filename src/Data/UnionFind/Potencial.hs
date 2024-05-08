@@ -8,7 +8,10 @@ module Data.UnionFind.Potencial where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import qualified Data.IntMap as IM
 import Data.UnionFind.Mutable (MUFNode (..), _unwrapMUFRoot)
+import qualified Data.Vector as V
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Union-Find tree under a differencial constraint systems. Each vertex @v@ is given potencial
