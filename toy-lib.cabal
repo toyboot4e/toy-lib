@@ -240,6 +240,11 @@ executable toy-lib-exe
   default-language: GHC2021
   main-is:          Main.hs
   hs-source-dirs:   app
+  other-modules:
+    Lib
+    Lib.Parse
+    Lib.Write
+
   build-depends:
     , haskell-src-exts
     , temporary
