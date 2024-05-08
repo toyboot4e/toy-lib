@@ -6,6 +6,7 @@
 module ToyLib.DP where
 
 import Control.Monad (forM_)
+import Control.Monad.Fix
 import Control.Monad.ST
 import Data.Bits
 import Data.Bool (bool)
