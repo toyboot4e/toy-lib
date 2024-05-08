@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- | Typical DP utilities
 --
 -- TODO: Refactor `relaxMany` variants.
@@ -14,6 +16,7 @@ import Data.SegmentTree.Strict
 import Data.Semigroup
 import Data.Utils.Unindex
 import qualified Data.Vector as V
+import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -210,6 +213,24 @@ lastCharOccurrences s = runST $ do
     UM.write (vec V.! c) i i
 
   V.mapM U.unsafeFreeze vec
+
+-- | \(O(N \log N!)\) But unique. It's much faster when there are duplicate entries.
+--
+-- >>> ghci> lexPerms $ U.fromList ([1, 1, 2] :: [Int])
+-- [[1,1,2],[1,2,1],[2,1,1]]
+lexPerms :: (G.Vector v a, Ord a) => v a -> [v a]
+lexPerms xs = runST $ do
+  vec <- G.unsafeThaw $ G.modify VAI.sort xs
+  fix $ \loop -> do
+    -- TODO: lazy evaluation and unsafeFreeze
+    vec' <- G.freeze vec
+    fmap (vec' :) $
+      GM.nextPermutation vec >>= \case
+        True -> loop
+        False -> return []
+
+lexPerms' :: (G.Vector v a, Ord a) => v a -> [[a]]
+lexPerms' = map G.toList . lexPerms
 
 -- -- | \(O(NM)\) Counts unique common subsequences. Duplicates are counted multple times.
 -- --
