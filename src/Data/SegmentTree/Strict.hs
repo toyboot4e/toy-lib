@@ -67,6 +67,8 @@ buildSTree leaves = do
 
   -- write leaf values
   G.unsafeCopy (GM.unsafeSlice nLeaves (G.length leaves) verts) leaves
+  forM_ [U.length leaves .. nLeaves - 1] $ \i ->
+    GM.write verts (nLeaves + i) mempty
 
   -- write node values
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
