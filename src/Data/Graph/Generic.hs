@@ -7,6 +7,7 @@ module Data.Graph.Generic where
 -- TODO: separate search module
 
 import Control.Monad
+import Control.Monad.Cont (callCC, evalContT)
 import Control.Monad.Extra (unlessM)
 import Control.Monad.Fix
 import Control.Monad.ST
@@ -38,7 +39,48 @@ componentsOf gr nVerts start = runST $ do
 
   U.findIndices id <$> U.unsafeFreeze vis
 
--- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
+-- | \(O(V+E)\) Depth-first search.
+genericDfs :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> U.Vector Int
+genericDfs !gr !nVerts !src = runST $ do
+  let !undef = -1 :: Int
+  !dist <- UM.replicate nVerts undef
+  -- !parent <- UM.replicate nVerts undef
+
+  (\f -> fix f (0 :: Int) src) $ \loop depth v1 -> do
+    UM.write dist v1 depth
+    U.forM_ (gr v1) $ \v2 -> do
+      !d <- UM.read dist v2
+      when (d == undef) $ do
+        -- UM.write parent v2 v1
+        loop (depth + 1) v2
+
+  -- (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze parent
+  U.unsafeFreeze dist
+
+-- | \(O(V!)\) Depth-first search for finding a path with length @L@. The complexity is for dense
+-- graph and IT CAN BE MUCH LOWER on different sparse graphs.
+genericDfsEveryPath :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> Int -> Maybe (U.Vector Int)
+genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
+  let !undef = -1 :: Int
+  !dist <- UM.replicate nVerts undef
+
+  !res <- evalContT $ callCC $ \exit -> do
+    (\f -> fix f (0 :: Int) source) $ \loop d1 v1 -> do
+      -- let !_ = dbg (v1, d1, targetLen)
+      UM.write dist v1 d1
+      when (d1 == targetLen - 1) $ do
+        -- let !_ = dbg ("found!")
+        exit True
+      !v2s <- U.filterM (fmap (== undef) . UM.read dist) $ gr v1
+      U.forM_ v2s $ \v2 -> do
+        loop (d1 + 1) v2
+      UM.write dist v1 undef
+      return False
+
+  if res then Just <$> U.unsafeFreeze dist else return Nothing
+
+
+-- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !source = U.create $ do
   let !undef = -1 :: Int
