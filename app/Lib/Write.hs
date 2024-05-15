@@ -1,17 +1,8 @@
 -- | Library for the command line app.
 module Lib.Write where
 
-import Control.Monad
-import Data.Graph.Sparse
 import Data.List qualified as L
-import Data.List.Extra (nubSort, stripSuffix)
-import Data.Map.Strict qualified as M
-import Data.Maybe
-import Data.Vector.Unboxed qualified as U
 import Language.Haskell.Exts qualified as H
-import Language.Haskell.TH (runIO)
-import System.Exit (exitFailure)
-import Lib qualified
 
 -- | Minifies `toy-lib` modules into one line.
 minifyLibrary :: [H.Extension] -> [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> String
@@ -25,9 +16,9 @@ minifyLibrary ghc2021Extensions =
     minifyDeclarations :: [H.Extension] -> H.Module l -> String
     minifyDeclarations _ ast = minify ast
       where
-        pretty :: H.Module l -> String
-        pretty (H.Module _ _ _ _ decls) = unlines $ map (H.prettyPrintWithMode pphsMode) decls
-        pretty _ = ""
+        -- pretty :: H.Module l -> String
+        -- pretty (H.Module _ _ _ _ decls) = unlines $ map (H.prettyPrintWithMode pphsMode) decls
+        -- pretty _ = ""
 
         minify :: H.Module l -> String
         minify (H.Module _ _ _ _ decls) = L.intercalate ";" (map (hack . H.prettyPrintWithMode pphsMode) decls)

@@ -28,7 +28,7 @@ solve = do
     printBSB $ unlinesBSB $ U.replicate cnt (0 :: Int)
     liftIO exitSuccess
 
-  let !gr = buildWSG (0, n - 1) $ swapDupeW es
+  let !gr = buildWSG n $ swapDupeW es
   let !hld = hldOf gr
 
   -- REMARK: put edge weights to the deeper vertices

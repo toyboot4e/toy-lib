@@ -32,7 +32,7 @@ solve = do
   uvs <- U.replicateM (n - 1) ints2'
   qs <- U.replicateM q ints4'
 
-  let !gr = buildSG (0, n - 1) $ swapDupeU uvs
+  let !gr = buildSG n $ swapDupeU uvs
   let !hld = hldOf gr
   !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Affine2d (modInt a, modInt b)) abs
 

@@ -4,17 +4,10 @@
 -- | Library for the command line app.
 module Lib where
 
-import Control.Monad
-import Data.Graph.Sparse
 import Data.List qualified as L
-import Data.List.Extra (nubSort, stripSuffix)
-import Data.Map.Strict qualified as M
-import Data.Maybe
-import Data.Vector.Unboxed qualified as U
-import Language.Haskell.Exts qualified as H
+import Data.List.Extra (stripSuffix)
 import Language.Haskell.TH (runIO)
-import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
-import System.Exit (exitFailure)
+import System.Directory (getCurrentDirectory)
 
 -- | Returns the root directory of the project.
 installPath :: FilePath

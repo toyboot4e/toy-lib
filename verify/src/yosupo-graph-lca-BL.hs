@@ -24,7 +24,7 @@ solve = do
   ps <- intsU'
   qs <- U.replicateM q ints2'
 
-  let !gr = buildSG (0, n - 1) $ swapDupeU $ U.imap ((,) . succ) ps
+  let !gr = buildSG n $ swapDupeU $ U.imap ((,) . succ) ps
   let !lcaCache = lcaCacheSG gr 0
 
   printBSB . unlinesBSB $ U.map (fst . uncurry (lca lcaCache)) qs

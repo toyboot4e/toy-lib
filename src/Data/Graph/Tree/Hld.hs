@@ -130,7 +130,7 @@ data HLD = HLD
 -- * Construction
 
 -- | \(O(V)\) Constructs HLD.
-hldOf :: forall w. SparseGraph Int w -> HLD
+hldOf :: forall w. SparseGraph w -> HLD
 hldOf tree = runST $ do
   -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
   --
@@ -189,7 +189,7 @@ hldOf tree = runST $ do
 
   HLD parent <$> U.unsafeFreeze indices <*> U.unsafeFreeze heads
   where
-    n = nVertsSG tree
+    !n = nVertsSG tree
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
     !root = 0 :: Vertex
 

@@ -28,7 +28,7 @@ solve = do
   q <- int'
   qs <- U.replicateM q ints11'
 
-  let !gr = buildSG (0, n - 1) $ swapDupeU es
+  let !gr = buildSG n $ swapDupeU es
 
   let (!tree, !restVerts) = runST $ do
         uf <- newMUF n
@@ -40,10 +40,10 @@ solve = do
             pushBack rest v1
           return b
 
-        let tree = buildSG (0, n - 1) $ swapDupeU es'
+        let tree = buildSG n $ swapDupeU es'
         (tree,) <$> unsafeFreezeBuffer rest
 
-  let !bfs = V.map (vecIV . bfsSG gr) $ U.convert restVerts
+  let !bfs = V.map (bfsSG gr) $ U.convert restVerts
   let !lcaCache = lcaCacheSG tree 0
 
   let fixed x

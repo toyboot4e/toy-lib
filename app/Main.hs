@@ -69,7 +69,7 @@ mainMinifyLibrary moduleNames = do
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
   return $ Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles
 
-getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int ())
+getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph ())
 getSourceFileGraph = do
   parsedFiles <- getAllTheSourceFiles
   let gr = Lib.Parse.buildDepGraph parsedFiles
@@ -134,7 +134,7 @@ mainUpdateLibraryLine :: FilePath -> IO String
 mainUpdateLibraryLine file = do
   s <- readFile file
 
-  (!parsedFiles, !gr) <- getSourceFileGraph
+  (!parsedFiles, !_gr) <- getSourceFileGraph
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
   let !toylib = Lib.Write.minifyLibrary ghc2021Extensions parsedFiles
 

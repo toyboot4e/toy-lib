@@ -217,7 +217,7 @@ lastCharOccurrences s = runST $ do
 
 -- | \(O(N \log N!)\) But unique. It's much faster when there are duplicate entries.
 --
--- >>> ghci> lexPerms $ U.fromList ([1, 1, 2] :: [Int])
+-- >>> lexPerms $ U.fromList ([1, 1, 2] :: [Int])
 -- [[1,1,2],[1,2,1],[2,1,1]]
 lexPerms :: (G.Vector v a, Ord a) => v a -> [v a]
 lexPerms xs = runST $ do

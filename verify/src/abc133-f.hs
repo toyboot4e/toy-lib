@@ -24,7 +24,7 @@ solve = do
   es <- U.replicateM (n - 1) ((\a b c d -> (a, b, (c, d))) <$> int1' <*> int1' <*> int' <*> int')
   !qs <- U.replicateM q ((,,,) <$> int' <*> int' <*> int1' <*> int1')
 
-  let !gr = buildWSG (0, n - 1) $ swapDupeW es
+  let !gr = buildWSG n $ swapDupeW es
 
   -- HLD for LCA only
   let !hld = dbgId $ hldOf gr

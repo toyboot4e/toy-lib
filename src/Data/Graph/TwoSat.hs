@@ -70,7 +70,7 @@ addOrClauseTSB' TwoSatBuilder {..} x1 b1 x2 b2 = case (b1, b2) of
 solveTS :: Int -> U.Vector (Int, Int) -> Maybe (U.Vector Bool)
 solveTS !nVars !constraints = do
   -- TODO: better SCC output
-  let gr = buildSG (0, 2 * nVars - 1) constraints
+  let gr = buildSG (2 * nVars) constraints
   let !sccs = revTopSccSG gr
   let !groups = U.create $ do
         !vec <- UM.replicate (2 * nVars) (-1 :: Int)
