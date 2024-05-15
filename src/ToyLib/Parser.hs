@@ -57,6 +57,9 @@ ints3' = (,,) <$> int' <*> int' <*> int'
 ints110' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
 ints110' = (,,) <$> int1' <*> int1' <*> int'
 
+ints111' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints111' = (,,) <$> int1' <*> int1' <*> int1'
+
 ints4' :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int)
 ints4' = (,,,) <$> int' <*> int' <*> int' <*> int'
 
