@@ -40,10 +40,9 @@ instance (KnownNat p) => Num (ModInt p) where
   signum _ = 1
   fromInteger = ModInt . fromInteger
 
--- TODO: prefer @recip@?
 instance (KnownNat p) => Fractional (ModInt p) where
   -- Reciprocal of x (inverse of x).
-  -- REMARK: This is TOO slow. Do cache when possible.
+  -- FIXME: use exgcd instead.
   recip (ModInt !x) = ModInt $! invModF (fromInteger (natVal' (proxy# @p))) x
   fromRational !r = ModInt n / ModInt d
     where

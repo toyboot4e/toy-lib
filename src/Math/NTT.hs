@@ -77,9 +77,12 @@ bitReverse x0 =
    in x4
 
 -- | Grow to the length of a power two. FIXME: faster.
+--
+-- >>> grow2 $ U.fromList [0 :: Int, 1, 2, 3, 4]
+-- [0,1,2,3,4,0,0,0]
 grow2 :: forall a. (Num a, U.Unbox a) => U.Vector a -> U.Vector a
 grow2 xs
   | U.length xs < bit n = xs U.++ U.replicate (bit n - U.length xs) (0 :: a)
   | otherwise = xs
   where
-    n = until (\i -> bit i >= U.length xs) (.<<. 1) (1 :: Int)
+    n = until (\i -> bit i >= U.length xs) (+ 1) (1 :: Int)
