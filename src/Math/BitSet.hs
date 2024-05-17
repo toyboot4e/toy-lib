@@ -41,40 +41,37 @@ bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
 
 -- TODO: super efficient bit operations
 
--- | Log base of two or bit floor.
+-- | Log base of two, floored.
 -- <https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-Bits.html#v:countLeadingZeros>
+--
+-- >>> log2 (0b11 :: Int)
+-- 1
+-- >>> log2 (0b111 :: Int)
+-- 2
 {-# INLINE log2 #-}
 log2 :: (FiniteBits b) => b -> Int
 log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 
 -- | Ceiling of log base 2 of an `Int`.
 --
--- = Example
---
--- @
--- > log2 3
--- 1
--- > ceil2 3
+-- >>> bitCeil (0b11 :: Int)
 -- 2
--- @
-{-# INLINE ceil2 #-}
-ceil2 :: Int -> Int
-ceil2 !x = msb + ceiling_
+-- >>> bitCeil (0b111 :: Int)
+-- 3
+{-# INLINE bitCeil #-}
+bitCeil :: Int -> Int
+bitCeil !x = msb + ceiling_
   where
     !msb = log2 x
     !ceiling_ = if clearBit x msb > 0 then 1 else 0
 
 -- | Calculates the smallest integral power of two that is not smaller than @x@.
 --
--- = Example
---
--- @
--- > bitCeil 3
+-- >>> ceil2 3
 -- 4
--- @
-{-# INLINE bitCeil #-}
-bitCeil :: Int -> Int
-bitCeil = bit . ceil2
+{-# INLINE ceil2 #-}
+ceil2 :: Int -> Int
+ceil2 = bit . bitCeil
 
 -- | \(O(2^N)\) Originally by @yamate11
 {-# INLINE powersetM_ #-}
