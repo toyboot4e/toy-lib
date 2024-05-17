@@ -54,12 +54,12 @@ log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 -- @
 -- > log2 3
 -- 1
--- > log2CeilInt 3
+-- > ceil2 3
 -- 2
 -- @
-{-# INLINE log2CeilInt #-}
-log2CeilInt :: Int -> Int
-log2CeilInt !x = msb + ceiling_
+{-# INLINE ceil2 #-}
+ceil2 :: Int -> Int
+ceil2 !x = msb + ceiling_
   where
     !msb = log2 x
     !ceiling_ = if clearBit x msb > 0 then 1 else 0
@@ -74,7 +74,7 @@ log2CeilInt !x = msb + ceiling_
 -- @
 {-# INLINE bitCeil #-}
 bitCeil :: Int -> Int
-bitCeil = bit . log2CeilInt
+bitCeil = bit . ceil2
 
 -- | \(O(2^N)\) Originally by @yamate11
 {-# INLINE powersetM_ #-}
