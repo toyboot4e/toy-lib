@@ -1,4 +1,4 @@
 #!/usr/bin/env -S bash -euE
 
-cabal repl --with-ghc=doctest --repl-options='-w -Wdefault'
+cabal build && cabal repl --with-ghc=doctest --repl-options='-w -Wdefault'
 
