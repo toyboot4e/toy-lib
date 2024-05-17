@@ -27,7 +27,7 @@ newtype ModInt p = ModInt {unModInt :: Int}
   deriving (Eq, P.Prim)
   deriving newtype (Ord, Read, Show)
 
-instance (p) => ShowBSB (ModInt p) where
+instance ShowBSB (ModInt p) where
   showBSB = BSB.intDec . unModInt
 
 deriving newtype instance (KnownNat p) => Real (ModInt p)

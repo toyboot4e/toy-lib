@@ -22,7 +22,7 @@ import Data.SegmentTree.Strict
 
 {- ORMOLU_DISABLE -}
 type MyModulo = (998244353 :: Nat) -- (1_000_000_007 :: Nat)
-type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @MyModulo proxy# ; {-# INLINE modInt #-} ; modInt :: Int -> MyModInt ; modInt = ModInt . (`rem` myMod) ; instance ShowBSB MyModInt where showBSB = BSB.intDec . unModInt ;
+type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @MyModulo proxy# ; {-# INLINE modInt #-} ; modInt :: Int -> MyModInt ; modInt = ModInt . (`rem` myMod) ;
 {- ORMOLU_ENABLE -}
 
 solve :: StateT BS.ByteString IO ()
