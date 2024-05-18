@@ -56,5 +56,5 @@ doubleBisectProps =
         bisectF64 eps 0.0 1.0 (const False) @?= (Nothing, Just 0.0)
     ]
 
-tests :: TestTree
-tests = testGroup "Algorithm.Bisect" [intBisectProps]
+tests :: [TestTree]
+tests = [testGroup "Algorithm.Bisect" [intBisectProps]]
