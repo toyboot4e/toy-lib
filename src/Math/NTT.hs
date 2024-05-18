@@ -35,7 +35,7 @@ bitRevSort =
 -- >>> :set -XDataKinds
 -- >>> ntt $ U.fromList $ map (ModInt @998244353) [1, 1, 1, 1]
 -- [4,0,0,0]
--- >>> ntt $ U.fromList $ map (ModInt @469762049) [123, 0, 0]
+-- >>> ntt $ U.fromList $ map (ModInt @469762049) [123, 0, 0, 0]
 -- [123,123,123,123]
 ntt :: (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p)
 ntt xs =
@@ -93,12 +93,12 @@ butterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m) (
 butterfly xs = do
   -- g^{p-1/2^m} = 1 \pmod p
   let !p = fromInteger (natVal' (proxy# @p)) :: Int
-  let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) `div` bit iMaxBit)
+  let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) .>>. iMaxBit)
   -- let !_ = traceShow ("minRot", minRot) ()
   let !rots = U.iterateN iMaxBit (\x -> x * x) minRot
   -- let !_ = traceShow ("rots", rots) ()
   U.iforM_ (U.reverse rots) $ \iBit0 rotN1 -> do
-    -- xs' <- U.unsafeFreeze xs
+    xs' <- U.unsafeFreeze xs
     -- let !_ = traceShow xs' ()
     -- let !_ = traceShow (iBit0, rotN1)
     butterfly1 xs rotN1 iMaxBit (iBit0 + 1)
@@ -126,11 +126,10 @@ butterfly1 xs rotN1 iMaxBit iBit = do
       let !i2 = i1 + interval
       !x1 <- UM.read xs i1
       !x2 <- UM.read xs i2
-      let !_ = traceShow (i1, i2) ()
       -- let !_ = traceShow (iBox, iPair, i1, i2) ()
       UM.write xs i1 $! x1 + x2 * rotNK
       UM.write xs i2 $! x1 - x2 * rotNK
-      -- let !_ = traceShow (rotNK, rotN1, (x1, x2), (x1 + x2 * rotNK, x1 - x2 * rotNK)) ()
+      -- let !_ = traceShow (rotNK, (x1, x2), (x1 + x2 * rotNK, x1 - x2 * rotNK)) ()
       return $ rotNK * rotN1
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
@@ -139,9 +138,10 @@ butterfly1 xs rotN1 iMaxBit iBit = do
 invButterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m) (ModInt p) -> m ()
 invButterfly xs = do
   let !p = fromInteger (natVal' (proxy# @p)) :: Int
-  let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) `div` bit iMaxBit)
+  let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) .>>. iMaxBit)
   -- let !_ = traceShow ("minRot", minRot) ()
-  let !rots = U.iterateN iMaxBit (\x -> x * x) minRot
+  -- FIXME: I think `recip` should go to the fowarding `butterfly`
+  let !rots = U.map recip $ U.iterateN iMaxBit (\x -> x * x) minRot
   U.iforM_ rots $ \iBit0 rotN1 -> do
     xs' <- U.unsafeFreeze xs
     -- let !_ = traceShow xs' ()
@@ -160,7 +160,7 @@ invButterfly1 xs rotN1 iMaxBit iBit = do
   let !interval = bit (iBit - 1)
   -- let !_ = traceShow ("counts", nBoxes, bit (iBit - 1) :: Int) ()
   -- FIXME: replace with rangeUR or enumFromTo
-  forM_ (if nBoxes == 1 then [0] else [nBoxes - 1, (nBoxes - 2) .. 0]) $ \iBox -> do
+  forM_ [0 .. nBoxes - 1] $ \iBox -> do
     -- let !_ = traceShow ("box", iBox) ()
     (\f -> U.foldM'_ f (1 :: ModInt p) (U.generate (bit (iBit - 1)) id)) $ \rotNK iPair -> do
       -- FIXME: iBox * bit iBit can be combined
@@ -168,6 +168,7 @@ invButterfly1 xs rotN1 iMaxBit iBit = do
       let !i2 = i1 + interval
       !x1 <- UM.read xs i1
       !x2 <- UM.read xs i2
+      -- let !_ = traceShow (i1, i2) ()
       UM.write xs i1 $! x1 + x2
       UM.write xs i2 $! (x1 - x2) * rotNK
       -- let !_ = traceShow (iBit, rotNK, (x1, x2), (x1 + x2, (x1 - x2) * rotNK)) ()

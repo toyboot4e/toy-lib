@@ -1,7 +1,11 @@
 module Main where
 
 import Test.Tasty
-import qualified Tests.Bisect
+import Tests.Bisect qualified
+import Tests.NTT qualified
 
 main :: IO ()
-main = defaultMain Tests.Bisect.tests
+main =
+  defaultMain $
+    testGroup "topLevel" $
+      Tests.Bisect.tests ++ Tests.NTT.tests
