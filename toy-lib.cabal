@@ -259,7 +259,10 @@ test-suite toy-lib-test
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   hs-source-dirs:   tests
-  other-modules:    Tests.Bisect
+  other-modules:
+    Tests.Bisect
+    Tests.NTT
+
   build-depends:
     , base              ^>=4.17.2.0
     , tasty             ^>=1.4.3

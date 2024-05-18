@@ -142,6 +142,10 @@ executable abc348e-exe
   import:           verify
   main-is:          abc348e.hs
 
+executable acl-convolution-exe
+  import:           verify
+  main-is:          acl-convolution.hs
+
 executable yosupo-data-vertex_add_path_sum-exe
   import:           verify
   main-is:          yosupo-data-vertex_add_path_sum.hs
