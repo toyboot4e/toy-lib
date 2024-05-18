@@ -7,8 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 
-intPartition :: Int -> Int -> (Int -> Bool) -> U.Vector Int -> (Maybe Int, Maybe Int)
-intPartition l r p xs = case (U.null ls, U.null rs) of
+naiveIntPartition :: Int -> Int -> (Int -> Bool) -> U.Vector Int -> (Maybe Int, Maybe Int)
+naiveIntPartition l r p xs = case (U.null ls, U.null rs) of
   (True, True) -> error "unreachable"
   (False, True) -> (Just l', Nothing)
   (True, False) -> (Nothing, Just r')
@@ -35,7 +35,7 @@ intBisectProps =
           all
             ( \(l, r) ->
                 let (il, ir) = bisect l r isYes
-                 in (il, ir) == intPartition l r (<= p) xs'
+                 in (il, ir) == naiveIntPartition l r (<= p) xs'
                       && (il, ir) == (bisectL l r isYes, bisectR l r isYes)
             )
             lrs

@@ -11,8 +11,8 @@ import Math.NTT
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
 
-slowBitReverse :: Int -> Int
-slowBitReverse x0 = U.ifoldl' f (0 :: Int) $ U.reverse $ U.generate 32 $ testBit x0
+naiveBitReverse :: Int -> Int
+naiveBitReverse x0 = U.ifoldl' f (0 :: Int) $ U.reverse $ U.generate 32 $ testBit x0
   where
     f acc _ False = acc
     f acc i True = setBit acc i
@@ -23,7 +23,7 @@ bitReverseProps =
     "Bit reverse properties"
     [ QC.testProperty "implementation" $ do
         x <- QC.chooseInt (0, bit 32 - 1)
-        return $ slowBitReverse x QC.=== bitReverse x
+        return $ naiveBitReverse x QC.=== bitReverse x
     ]
 
 inttNtt :: (KnownNat p) => U.Vector (ModInt p) -> QC.Property
@@ -34,8 +34,8 @@ inttNtt xs = U.take (U.length xs) (intt (ntt xs)) QC.=== xs
 -- nttIntt xs = U.take (U.length xs) (ntt (intt xs)) QC.=== xs
 
 -- \(O(N^2)\) Convolution.
-slowConvolute :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
-slowConvolute xs1 xs2 = U.generate (len1 + len2 - 1) f
+naiveConvolute :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
+naiveConvolute xs1 xs2 = U.generate (len1 + len2 - 1) f
   where
     len1 = U.length xs1
     len2 = U.length xs2
@@ -69,7 +69,7 @@ convoluteProps =
         xs1 <- U.fromList . map (ModInt @998244353) <$> QC.vectorOf n1 (QC.chooseInt (0, 998244353 - 1))
         n2 <- QC.chooseInt (1, size)
         xs2 <- U.fromList . map (ModInt @998244353) <$> QC.vectorOf n2 (QC.chooseInt (0, 998244353 - 1))
-        return $ convolute xs1 xs2 QC.=== slowConvolute xs1 xs2
+        return $ convolute xs1 xs2 QC.=== naiveConvolute xs1 xs2
     ]
 
 tests :: [TestTree]
