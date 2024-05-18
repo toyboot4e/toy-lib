@@ -5,6 +5,7 @@
 module Math.NTT where
 
 import Control.Monad (forM_)
+import Control.Monad.ST
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bits
 import Data.ModInt
@@ -62,27 +63,30 @@ intt xs =
 -- >>> :set -XDataKinds
 -- >>> convolute @998244353 (U.fromList [1, 1, 1, 0]) (U.fromList [1, 1, 1, 0])
 -- [1,2,3,2,1,0,0]
--- >>> convolute @998244353 (U.fromList [1, 1, 1]] (U.fromList [1, 1, 1, 0])
+-- >>> convolute @998244353 (U.fromList [1, 1, 1]) (U.fromList [1, 1, 1, 0])
 -- [1,2,3,2,1,0]
 convolute :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
 convolute xs1 xs2
   | U.length xs1 < U.length xs2 = convolute xs2 xs1
-convolute xs1 xs2 = U.create $ do
-  vec <- UM.replicate len (ModInt 0)
+convolute xs1 xs2 = runST $ do
+  -- F(a)
+  vec1 <- U.unsafeThaw $ bitRevSort $ xs1 U.++ U.replicate (len - len1) (ModInt 0)
+  butterfly vec1
 
-  -- F(a) F(b):
-  U.unsafeCopy (UM.take len1 vec) $ U.take len1 (ntt xs1)
-  U.iforM_ (ntt xs2) $ \i y -> do
-    UM.modify vec (* y) i
+  -- F(b)
+  vec2 <- U.unsafeThaw $ bitRevSort $ xs2 U.++ U.replicate (len - len2) (ModInt 0)
+  butterfly vec2
+
+  -- F(a) F(b)
+  vec2' <- U.unsafeFreeze vec2
+  U.iforM_ vec2' $ \i y -> do
+    UM.modify vec1 (* y) i
 
   -- F^{-1}(F(a) F(b)):
-  invButterfly vec
+  invButterfly vec1
 
-  let !invN = ModInt 1 / ModInt len
-  U.forM_ (U.generate len id) $ \i ->
-    UM.modify vec (* invN) i
-
-  return vec
+  let !invLen = recip $ ModInt len
+  U.map (* invLen) . U.take (len1 + len2 - 1) . bitRevSort <$> U.unsafeFreeze vec1
   where
     !len1 = U.length xs1
     !len2 = U.length xs2
@@ -134,7 +138,7 @@ butterfly1 xs rotN1 iMaxBit iBit = do
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
 
--- | \(\Theta(N \log N)\)
+-- | \(\Theta(N \log N)\). Does not contain scaling and index sorting.
 invButterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m) (ModInt p) -> m ()
 invButterfly xs = do
   let !p = fromInteger (natVal' (proxy# @p)) :: Int
