@@ -93,7 +93,7 @@ butterfly xs = do
   -- g^{p-1/2^m} = 1 \pmod p
   let !p = fromInteger (natVal' (proxy# @p)) :: Int
   let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) .>>. iMaxBit)
-  let !rots = U.iterateN iMaxBit (\x -> x * x) minRot
+  let !rots = U.map recip $ U.iterateN iMaxBit (\x -> x * x) minRot
   U.iforM_ (U.reverse rots) $ \iBit0 rotN1 -> do
     butterfly1 xs rotN1 iMaxBit (iBit0 + 1)
   where
@@ -130,8 +130,7 @@ invButterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m
 invButterfly xs = do
   let !p = fromInteger (natVal' (proxy# @p)) :: Int
   let !minRot = ModInt @p $ powModConst p (primRoot p) ((p - 1) .>>. iMaxBit)
-  -- FIXME: I think `recip` should go to the fowarding `butterfly`
-  let !rots = U.map recip $ U.iterateN iMaxBit (\x -> x * x) minRot
+  let !rots = U.iterateN iMaxBit (\x -> x * x) minRot
   U.iforM_ rots $ \iBit0 rotN1 -> do
     invButterfly1 xs rotN1 iMaxBit (iMaxBit - iBit0)
   where
