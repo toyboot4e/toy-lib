@@ -162,3 +162,6 @@ executable yosupo-graph-lca-BL-exe
   import:           verify
   main-is:          yosupo-graph-lca-BL.hs
 
+executable yosupo-convolution-convolution-exe
+  import:           verify
+  main-is:          yosupo-convolution-convolution.hs
