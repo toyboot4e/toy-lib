@@ -8,6 +8,8 @@ import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Bits
+import Data.Coerce
+import Data.Maybe (fromJust)
 import Data.ModInt
 import Data.Ord (comparing)
 import qualified Data.Vector.Algorithms.Intro as VAI
@@ -17,6 +19,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
 import GHC.TypeLits
 import Math.BitSet (ceil2)
+import Math.Exgcd
 import Math.PowMod (powModConst)
 import ToyLib.Debug
 
@@ -87,8 +90,46 @@ convoluteMod xs1 xs2 = runST $ do
     !len2 = U.length xs2
     !len = ceil2 (len1 + len2 - 1)
 
+-- | Modulo type variable for CRT in `convolute64`.
+type M1 = (754974721 :: Nat)
+
+-- | Modulo type variable for CRT in `convolute64`.
+type M2 = (167772161 :: Nat)
+
+-- | Modulo type variable for CRT in `convolute64`.
+type M3 = (469762049 :: Nat)
+
+-- | \(\Theta((N+M)\log(N+M))\) Convolution without mod (much heavier than `convoluteMod`).
+--
+-- See also: [convolution_ll (ACL)](https://github.com/atcoder/ac-library/blob/master/atcoder/convolution.hpp).
 convolute64 :: U.Vector Int -> U.Vector Int -> U.Vector Int
-convolute64 _xs1 _xs2 = error "TODO"
+convolute64 !xs1 !xs2 =
+  let !c1 = U.map coerce $ convoluteMod @M1 (U.map coerce xs1) (U.map coerce xs2)
+      !c2 = U.map coerce $ convoluteMod @M2 (U.map coerce xs1) (U.map coerce xs2)
+      !c3 = U.map coerce $ convoluteMod @M3 (U.map coerce xs1) (U.map coerce xs2)
+   in (\f -> U.zipWith3 f c1 c2 c3) $ \x1 x2 x3 ->
+        let !x =
+              (x1 * i1) `mod` m1 * m2m3
+                + (x2 * i2) `mod` m2 * m3m1
+                + (x3 * i3) `mod` m3 * m1m2
+            -- TODO: safeMod??
+            !diff = x1 - (x `mod` m1)
+            !diff' = if diff < 0 then diff + m1 else diff
+         in x - offsets U.! (diff' `mod` 5)
+  where
+    !m1 = 754974721 :: Int -- 2^24
+    !m2 = 167772161 :: Int -- 2^25
+    !m3 = 469762049 :: Int -- 2^26
+    !m2m3 = m2 * m3
+    !m3m1 = m3 * m1
+    !m1m2 = m1 * m2
+    !m1m2m3 = m1 * m2 * m3
+    !i1 = fromJust $ invModGcd m2m3 m1
+    !i2 = fromJust $ invModGcd m3m1 m2
+    !i3 = fromJust $ invModGcd m1m2 m3
+    !offsets = U.fromListN 5 [0, 0, m1m2m3, 2 * m1m2m3, 3 * m1m2m3]
+
+-- TODO: bang or not
 
 -- | \(\Theta(N \log N)\)
 butterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m) (ModInt p) -> m ()
@@ -184,7 +225,9 @@ grow2 xs
 -- | Primitive root.
 primRoot :: Int -> Int
 primRoot 998244353 = 3 -- on wolfarm alpha, PrimitiveRoot[p].
+primRoot 754974721 = 11
 primRoot 469762049 = 3
+primRoot 167772161 = 3
 primRoot 2305843009213693951 = 37 -- 2^61 - 1
 primRoot 2147483647 = 7 -- 2^31 - 1
 primRoot 4294967291 = 2 -- 2^32 - 5
