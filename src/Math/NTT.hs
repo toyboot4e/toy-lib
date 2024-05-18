@@ -49,21 +49,21 @@ intt xs =
   where
     !invN = recip (ModInt (U.length xs))
 
--- | \(\Theta(N \log N)\) Convolution.
+-- | \(\Theta((N + M) \log (N + M))\) Convolution with mod.
 --
 -- \(\mathcal{F}[f*g](\omega) = \mathcal{F}[f](\omega) \mathcal{F}[g](\omega)\).
 --
 -- \(\mathbb{a} * \mathbb{b} = \mathcal{F^{-1}}(\mathcal{F}(\mathbb{a}) \mathcal{F}(\mathbb{b}))\)
 --
 -- >>> :set -XDataKinds
--- >>> convolute @998244353 (U.fromList [1, 1, 1, 0]) (U.fromList [1, 1, 1, 0])
+-- >>> convoluteMod @998244353 (U.fromList [1, 1, 1, 0]) (U.fromList [1, 1, 1, 0])
 -- [1,2,3,2,1,0,0]
--- >>> convolute @998244353 (U.fromList [1, 1, 1]) (U.fromList [1, 1, 1, 0])
+-- >>> convoluteMod @998244353 (U.fromList [1, 1, 1]) (U.fromList [1, 1, 1, 0])
 -- [1,2,3,2,1,0]
-convolute :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
-convolute xs1 xs2
+convoluteMod :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
+convoluteMod xs1 xs2
   | U.null xs1 || U.null xs2 = U.empty
-convolute xs1 xs2 = runST $ do
+convoluteMod xs1 xs2 = runST $ do
   -- F(a)
   vec1 <- U.unsafeThaw $ bitRevSort $ xs1 U.++ U.replicate (len - len1) (ModInt 0)
   butterfly vec1
@@ -134,7 +134,6 @@ invButterfly xs = do
   U.iforM_ rots $ \iBit0 rotN1 -> do
     invButterfly1 xs rotN1 iMaxBit (iMaxBit - iBit0)
   where
-    -- TODO: validate the number of digits
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
     !iMaxBit = countTrailingZeros $ UM.length xs
 
@@ -181,7 +180,10 @@ grow2 xs
 
 -- | Primitive root.
 primRoot :: Int -> Int
-primRoot 998244353 = 3
+primRoot 998244353 = 3 -- on wolfarm alpha, PrimitiveRoot[p].
 primRoot 469762049 = 3
+primRoot 2305843009213693951 = 37 -- 2^61 - 1
+primRoot 2147483647 = 7 -- 2^31 - 1
+primRoot 4294967291 = 2 -- 2^32 - 5
 primRoot 2 = 1
 primRoot _ = error "TODO: primitive root"

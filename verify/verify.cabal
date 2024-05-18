@@ -118,14 +118,6 @@ common verify
     -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
     -Wno-missing-export-lists
 
-executable past06-o-exe
-  import:           verify
-  main-is:          past06-o.hs
-
-executable past08-k-exe
-  import:           verify
-  main-is:          past08-k.hs
-
 executable abc133-f-exe
   import:           verify
   main-is:          abc133-f.hs
@@ -142,9 +134,21 @@ executable abc348e-exe
   import:           verify
   main-is:          abc348e.hs
 
-executable acl-convolution-exe
+executable acl-practice-f-exe
   import:           verify
-  main-is:          acl-convolution.hs
+  main-is:          acl-practice-f.hs
+
+executable past06-o-exe
+  import:           verify
+  main-is:          past06-o.hs
+
+executable past08-k-exe
+  import:           verify
+  main-is:          past08-k.hs
+
+executable past10-n-exe
+  import:           verify
+  main-is:          past10-n.hs
 
 executable yosupo-data-vertex_add_path_sum-exe
   import:           verify
