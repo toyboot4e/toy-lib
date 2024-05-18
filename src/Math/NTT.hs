@@ -10,6 +10,7 @@ import Data.Bits
 import Data.ModInt
 import Data.Ord (Down (..), comparing)
 import qualified Data.Vector.Algorithms.Intro as VAI
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import Data.Word
@@ -22,6 +23,12 @@ import ToyLib.Debug
 import ToyLib.Debug (dbgAssert)
 import Unsafe.Coerce
 
+bitRevSort :: (G.Vector v a, G.Vector v (Int, a)) => v a -> v a
+bitRevSort =
+  G.map snd
+    . G.modify (VAI.sortBy (comparing (bitReverse . fst)))
+    . G.indexed
+
 -- | \(\Theta(N \log N)\) Number-theoretic transform (integer DFT).
 -- TODO: re-sorting the output?
 --
@@ -33,17 +40,13 @@ import Unsafe.Coerce
 ntt :: (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p)
 ntt xs =
   U.modify butterfly
-    . U.map snd
-    . U.modify (VAI.sortBy (comparing (bitReverse . fst)))
-    $ U.indexed (grow2 xs)
+    . bitRevSort
+    $ grow2 xs
 
 -- | \(\Theta(N \log N)\) Inverse number-theoretic transform (integer DFT).
 intt :: (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p)
 intt xs =
-  U.map snd
-    . U.modify (VAI.sortBy (comparing (bitReverse . fst)))
-    . U.indexed
-    -- TODO: put it inside the sort for fusion
+  bitRevSort
     . U.map (* invN)
     . U.modify invButterfly
     $ grow2 xs
@@ -123,6 +126,7 @@ butterfly1 xs rotN1 iMaxBit iBit = do
       let !i2 = i1 + interval
       !x1 <- UM.read xs i1
       !x2 <- UM.read xs i2
+      let !_ = traceShow (i1, i2) ()
       -- let !_ = traceShow (iBox, iPair, i1, i2) ()
       UM.write xs i1 $! x1 + x2 * rotNK
       UM.write xs i2 $! x1 - x2 * rotNK
