@@ -5,24 +5,21 @@
 module Math.NTT where
 
 import Control.Monad (forM_)
-import Control.Monad.ST
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.ST
 import Data.Bits
 import Data.ModInt
-import Data.Ord (Down (..), comparing)
+import Data.Ord (comparing)
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Data.Word
 import Debug.Trace
 import GHC.Exts (proxy#)
 import GHC.TypeLits
 import Math.BitSet (ceil2)
 import Math.PowMod (powModConst)
 import ToyLib.Debug
-import ToyLib.Debug (dbgAssert)
-import Unsafe.Coerce
 
 bitRevSort :: (G.Vector v a, G.Vector v (Int, a)) => v a -> v a
 bitRevSort =
@@ -67,7 +64,7 @@ intt xs =
 -- [1,2,3,2,1,0]
 convolute :: forall p. (KnownNat p) => U.Vector (ModInt p) -> U.Vector (ModInt p) -> U.Vector (ModInt p)
 convolute xs1 xs2
-  | U.length xs1 < U.length xs2 = convolute xs2 xs1
+  | U.null xs1 || U.null xs2 = U.empty
 convolute xs1 xs2 = runST $ do
   -- F(a)
   vec1 <- U.unsafeThaw $ bitRevSort $ xs1 U.++ U.replicate (len - len1) (ModInt 0)
@@ -180,13 +177,15 @@ invButterfly1 xs rotN1 iMaxBit iBit = do
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
 
--- | https://www.linkedin.com/pulse/%E7%B5%B6%E5%AF%BE%E3%81%AB%E3%82%84%E3%81%A3%E3%81%A6%E3%81%AF%E3%81%84%E3%81%91%E3%81%AA%E3%81%84%E3%83%93%E3%83%83%E3%83%88%E5%8F%8D%E8%BB%A2-masayuki-tatebe?articleId=6539466321338425345
+-- | Bit reversal up to 32 bits.
+-- <https://www.linkedin.com/pulse/%E7%B5%B6%E5%AF%BE%E3%81%AB%E3%82%84%E3%81%A3%E3%81%A6%E3%81%AF%E3%81%84%E3%81%91%E3%81%AA%E3%81%84%E3%83%93%E3%83%83%E3%83%88%E5%8F%8D%E8%BB%A2-masayuki-tatebe?articleId=6539466321338425345>
 bitReverse :: Int -> Int
 bitReverse x0 =
-  let !x1 = (x0 .&. 0x55555555) .<<. 1 .|. (x0 .>>. 1) .&. 0x55555555
-      !x2 = (x1 .&. 0x33333333) .<<. 2 .|. (x1 .>>. 2) .&. 0x33333333
-      !x3 = (x2 .&. 0x0F0F0F0F) .<<. 4 .|. (x2 .>>. 4) .&. 0x0F0F0F0F
-      !x4 = (x3 .<<. 24) .|. ((x3 .&. 0xFF00) .<<. 8) .|. ((x3 .>>. 8) .&. 0xFF00) .|. (x3 .>>. 24)
+  let !x1 = ((x0 .&. 0x55555555) .<<. 1) .|. ((x0 .>>. 1) .&. 0x55555555)
+      !x2 = ((x1 .&. 0x33333333) .<<. 2) .|. ((x1 .>>. 2) .&. 0x33333333)
+      !x3 = ((x2 .&. 0x0F0F0F0F) .<<. 4) .|. ((x2 .>>. 4) .&. 0x0F0F0F0F)
+      -- be sure to mask the up 32 bits
+      !x4 = ((x3 .<<. 24) .|. ((x3 .&. 0xFF00) .<<. 8) .|. ((x3 .>>. 8) .&. 0xFF00) .|. (x3 .>>. 24)) .&. 0xFFFFFFFF
    in x4
 
 -- | Grow to the length of a power two.
