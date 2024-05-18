@@ -87,6 +87,9 @@ convoluteMod xs1 xs2 = runST $ do
     !len2 = U.length xs2
     !len = ceil2 (len1 + len2 - 1)
 
+convolute64 :: U.Vector Int -> U.Vector Int -> U.Vector Int
+convolute64 _xs1 _xs2 = error "TODO"
+
 -- | \(\Theta(N \log N)\)
 butterfly :: forall p m. (KnownNat p, PrimMonad m) => UM.MVector (PrimState m) (ModInt p) -> m ()
 butterfly xs = do
