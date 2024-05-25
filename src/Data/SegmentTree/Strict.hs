@@ -60,7 +60,7 @@ newSTree nValidLeaves = do
   where
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
 
--- | \(O(\log N)\) Creates a segment tree from the given leaf values.
+-- | \(\Theta(N)\) Creates a segment tree from the given leaf values.
 buildSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree UM.MVector (PrimState m) a)
 buildSTree leaves = do
   verts <- GM.unsafeNew nVerts
@@ -96,7 +96,7 @@ _unsafeUpdateParentNodes vec v0 = do
     GM.unsafeWrite vec v x'
     when (v > 1) $ loop (v .>>. 1)
 
--- | \(O(\log N)\) Writes a leaf value.
+-- | \(\Theta(\log N)\) Writes a leaf value.
 writeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 writeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
@@ -106,7 +106,7 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "writeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
--- | \(O(\log N)\) Writes a leaf value and returns the old value.
+-- | \(\Theta(\log N)\) Writes a leaf value and returns the old value.
 exchangeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m a
 exchangeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
@@ -117,7 +117,7 @@ exchangeSTree (SegmentTree vec nValidLeaves) i x = do
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "exchangeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
--- | \(O(\log N)\) Modifies a leaf value.
+-- | \(\Theta(\log N)\) Modifies a leaf value.
 modifySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree (SegmentTree vec nValidLeaves) f i = do
   let v0 = nLeaves + i
@@ -180,3 +180,13 @@ bsearchSTreeL stree l0 r0 f = fst <$> bsearchSTree stree l0 r0 f
 -- | \(O(\log^2 N)\)
 bsearchSTreeR :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeR stree l0 r0 f = snd <$> bsearchSTree stree l0 r0 f
+
+-- | \(\Theta(N)\) Freezes the leaf values making a copy.
+freezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
+freezeLeavesSTree (SegmentTree vec nLeaves) = do
+  G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.freeze vec
+
+-- | \(\Theta(1)\) Freezes the leaf values without making a copy.
+unsafeFreezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
+unsafeFreezeLeavesSTree (SegmentTree vec nLeaves) = do
+  G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.unsafeFreeze vec
