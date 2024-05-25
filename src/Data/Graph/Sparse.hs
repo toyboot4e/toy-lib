@@ -177,9 +177,14 @@ allComponentsSG gr = runST $ do
 
   (,groupVerts) <$> U.unsafeFreeze components
 
--- | \(O(V+E)\) breadth-first search. Unreachable vertices are given distance of @-1@.
+-- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 bfsSG :: SparseGraph w -> Vertex -> U.Vector Int
 bfsSG gr@SparseGraph {..} = genericBfs (gr `adj`) nVertsSG
+
+-- | \(O(V+E)\) 01-BFS. Unreachable vertices are given distance of @-1@.
+bfs01SG :: SparseGraph Int -> U.Vector Vertex -> U.Vector Int
+bfs01SG gr@SparseGraph {..} sources =
+  vecIV $ genericBfs01 (0, nVertsSG - 1) (gr `adjW`) nEdgesSG sources
 
 -- | \(O((E+V) \log {V})\) Dijkstra's algorithm.
 --
