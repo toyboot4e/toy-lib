@@ -123,14 +123,18 @@ iwiSpansU :: Int -> Int -> U.Vector (Span, Span)
 iwiSpansU !l !r = U.map (\len -> ((l, l + len - 1), (l + len + 1, r))) $ rangeU 0 (r - l)
 
 -- | Returns two nullables splits and a non-null mid point of a span.
+--
 -- >>> iwiSpansU' 3 6
 -- [((3,2),3,(4,6)),((3,3),4,(5,6)),((3,4),5,(6,6)),((3,5),6,(7,6))]
+--
+-- Be sure to exclude the @l@ and @r@ points on three-point merge: @iwiSpansU' (l + 1) (r - 1)@.
 {-# INLINE iwiSpansU' #-}
 iwiSpansU' :: Int -> Int -> U.Vector (Span, Int, Span)
 iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r))) $ rangeU 0 (r - l)
 
--- | Span-based DP with preset index patterns.
--- REMARK: @@sofar @! (l, r)@@
+-- | \(O(N^3)\) Span-based DP with preset index patterns.
+--
+-- REMARK: @sofar@ is accessed as @@sofar @! (len, l)@@.
 spanDP :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (U.Vector a)
 spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
   if spanLen == 0 || spanL >= (n + 1 - spanLen)
