@@ -38,10 +38,8 @@ word' :: (MonadState BS.ByteString m) => m BS.ByteString
 word' = state $ BS.break isSpace . BS.dropSpace
 
 -- | Parsers an `Int` and converts it into a `Double`.
---
--- TODO: read and word'
 double' :: (MonadState BS.ByteString m) => m Double
-double' = fromIntegral <$> int'
+double' = read . BS.unpack <$> word'
 
 -- * Tuples
 
