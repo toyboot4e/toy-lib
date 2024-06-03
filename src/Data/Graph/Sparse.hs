@@ -24,6 +24,7 @@ import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.IxVector
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug (dbgAssert)
 

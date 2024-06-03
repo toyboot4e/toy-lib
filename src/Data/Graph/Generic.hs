@@ -79,7 +79,6 @@ genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
 
   if res then Just <$> U.unsafeFreeze dist else return Nothing
 
-
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !source = U.create $ do
