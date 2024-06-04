@@ -4,12 +4,13 @@
 # Run from the repository root.
 
 file="$(basename "$(ls verify/src/*.hs | fzf)")"
-
 cd verify
 
 # assuming `verifycation-helper` package is installed via `venv`
 # (see `:/verify/README.org`)
-source .venv/bin/activate
+# $ python -m venv .venv
+# (.venv) $ # source .venv/bin/activate # activate (on bash)
+# (.venv) $ pip3 install online-judge-verify-helper
 
-oj-verify run "src/$file" # -j 8
+./.venv/bin/oj-verify run "src/$file" # -j 8
 

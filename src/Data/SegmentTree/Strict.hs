@@ -128,7 +128,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
--- (so this is @unsafezfoldSTree@).
+-- (so this is actually @unsafeFoldSTree@).
 foldSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where

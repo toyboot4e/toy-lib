@@ -17,7 +17,7 @@ import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
 main :: IO ()
-main =
+main = do
   getArgs >>= \case
     [a] | a `elem` ["-h", "--help"] -> do
       putStrLn =<< Lib.readRootFile "/app/help"
