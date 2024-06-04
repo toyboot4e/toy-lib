@@ -53,7 +53,7 @@ data LazySegmentTree v a op s = LazySegmentTree !(v s a) !(UM.MVector s op) !Int
 -- | \(O(N)\) Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::
   forall a op v m.
-  (Monoid a, Monoid op, U.Unbox op, GM.MVector v a,PrimMonad m) =>
+  (Monoid a, Monoid op, U.Unbox op, GM.MVector v a, PrimMonad m) =>
   Int ->
   m (LazySegmentTree v a op (PrimState m))
 newLSTreeImpl !n = do
@@ -170,25 +170,16 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
     glitchLoopUpdate !l !r
       | l > r = return ()
       | otherwise = do
-          !l' <-
-            if isRightChild l
-              then do
-                -- REMARK: The new coming operator operator always comes from the left.
-                UM.modify ops (op <>) l
-                return $ l + 1
-              else return l
+          when (isRightChild l) $ do
+            -- REMARK: The new coming operator operator always comes from the left.
+            UM.modify ops (op <>) l
 
-          !r' <-
-            -- NOTE: I'm using inclusive range
-            if isLeftChild r
-              then do
-                -- REMARK: The new coming operator operator always comes from the left.
-                UM.modify ops (op <>) r
-                return $ r - 1
-              else return r
+          when (isLeftChild r) $ do
+            -- REMARK: The new coming operator operator always comes from the left.
+            UM.modify ops (op <>) r
 
           -- go up to the parent segment
-          glitchLoopUpdate (l' .>>. 1) (r' .>>. 1)
+          glitchLoopUpdate ((l + 1) .>>. 1) ((r - 1) .>>. 1)
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Faster implementation.
 sactAtLSTree ::
@@ -233,26 +224,24 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
     glitchFold !l !r !lAcc !rAcc
       | l > r = return $! lAcc <> rAcc
       | otherwise = do
-          (!l', !lAcc') <-
+          !lAcc' <-
             if isRightChild l
               then do
                 -- Evaluate the target segmnent and append the result:
-                !la' <- sact <$> UM.read ops l <*> GM.read as l
-                let !la'' = lAcc <> la'
-                return (succ l, la'')
-              else return (l, lAcc)
+                !la' <- (lAcc <>) <$> (sact <$> UM.read ops l <*> GM.read as l)
+                return la'
+              else return lAcc
 
-          (!r', !rAcc') <-
+          !rAcc' <-
             if isLeftChild r
               then do
                 -- Evaluate the target segmnent and append the result:
-                !ra' <- sact <$> UM.read ops r <*> GM.read as r
-                let !ra'' = ra' <> rAcc
-                return (pred r, ra'')
-              else return (r, rAcc)
+                !ra' <- (<> rAcc) <$> (sact <$> UM.read ops r <*> GM.read as r)
+                return ra'
+              else return rAcc
 
           -- go up to the parent segment
-          glitchFold (l' .>>. 1) (r' .>>. 1) lAcc' rAcc'
+          glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 readLSTree ::
@@ -389,4 +378,3 @@ bisectLSTreeR ::
   (a -> Bool) ->
   m (Maybe Int)
 bisectLSTreeR stree l r f = snd <$> bisectLSTree stree l r f
-
