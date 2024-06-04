@@ -8,6 +8,7 @@ import Data.Bifunctor (first)
 import Data.Ix
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
+import Data.List (unfoldr)
 import Data.Maybe
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
@@ -78,6 +79,10 @@ withLine' :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
 withLine' f = evalState f <$> line'
 
 -- * More
+
+-- | Reads one line an unboxed vector.
+ints' :: (MonadState BS.ByteString m) => m [Int]
+ints' = unfoldr (BS.readInt . BS.dropSpace) <$> line'
 
 -- | Reads one line an unboxed vector.
 intsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
