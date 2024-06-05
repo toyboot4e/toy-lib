@@ -27,7 +27,7 @@ import Control.Monad.State.Class
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Cont
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
+import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT, modifyM)
 import Data.Bifunctor
 import Data.Bits
 import Data.Bool (bool)
