@@ -195,6 +195,7 @@ library
     Data.ModInt
     Data.MultiSet
     Data.MultiSetVec
+    Data.RangeMap
     Data.RollingHash
     Data.SafeList
     Data.SegmentTree.Lazy

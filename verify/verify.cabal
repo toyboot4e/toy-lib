@@ -146,6 +146,10 @@ executable past06-o-exe
   import:           verify
   main-is:          past06-o.hs
 
+executable past06-m-exe
+  import:           verify
+  main-is:          past06-m.hs
+
 executable past08-k-exe
   import:           verify
   main-is:          past08-k.hs
