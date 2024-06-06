@@ -27,6 +27,9 @@ instance Bifunctor T2 where
   {-# INLINE second #-}
   second g (T2 a b) = let !b' = g b in T2 a b'
 
+instance (Ord a, Ord b) => Ord (T2 a b) where
+  compare (T2 x y) (T2 x' y') = compare x x' <> compare y y'
+
 ----------------------------------------------------------------------------------------------------
 -- Unbox
 ----------------------------------------------------------------------------------------------------

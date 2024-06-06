@@ -13,8 +13,8 @@ import GHC.Stack (HasCallStack)
 -- TODO: faster implementation
 -- TODO: quickcheck (e.g., adjacent ranges have different values, compare it with naive vector-based solution)
 
-data RangeMap a = RangeMap
-  { unRM :: !(M.Map (Int, Int) a)
+newtype RangeMap a = RangeMap
+  { unRM :: M.Map (Int, Int) a
   }
 
 infRM :: Int
