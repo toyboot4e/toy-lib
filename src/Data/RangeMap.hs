@@ -15,7 +15,6 @@ import qualified Data.IntMap.Strict as IM
 import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
--- TODO: RangeSet
 -- TODO: faster implementation
 -- TODO: quickcheck (e.g., adjacent ranges have different values, compare it with naive vector-based solution)
 

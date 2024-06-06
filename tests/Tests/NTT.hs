@@ -69,7 +69,7 @@ convoluteProps =
         xs1 <- U.fromList . map (ModInt @998244353) <$> QC.vectorOf n1 (QC.chooseInt (0, 998244353 - 1))
         n2 <- QC.chooseInt (1, size)
         xs2 <- U.fromList . map (ModInt @998244353) <$> QC.vectorOf n2 (QC.chooseInt (0, 998244353 - 1))
-        return $ convolute xs1 xs2 QC.=== naiveConvolute xs1 xs2
+        return $ convoluteMod xs1 xs2 QC.=== naiveConvolute xs1 xs2
     ]
 
 tests :: [TestTree]
