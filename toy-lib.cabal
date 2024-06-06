@@ -196,6 +196,7 @@ library
     Data.MultiSet
     Data.MultiSetVec
     Data.RangeMap
+    Data.RangeSet
     Data.RollingHash
     Data.SafeList
     Data.SegmentTree.Lazy

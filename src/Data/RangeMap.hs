@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
--- | Range map
+-- | Range map.
 --
 -- Typically used with @StateT@.
 --
@@ -213,12 +213,12 @@ deleteMRM l0 r0 onDel (RangeMap map0) = do
             return map'
 
 -- | Pure variant of `insertMRM`.
-deleteRM :: (Eq a) => Int -> Int -> RangeMap a -> RangeMap a
+deleteRM :: Int -> Int -> RangeMap a -> RangeMap a
 deleteRM l r rm = runIdentity (deleteMRM l r onDel rm)
   where
     onDel _ _ _ = pure ()
 
--- | REMARK: The range map has to be like a set.
+-- | REMARK: The range map has to be like a set. Use @maxRS@ when possible.
 mexRM :: RangeMap a -> Int
 mexRM (RangeMap map) = case IM.lookupLE 0 map of
   Just (!l', (!r', !_))
