@@ -1,4 +1,9 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 -- | Range map
+--
+-- Typically used with @StateT@.
 --
 -- = Typical problems
 -- - [PAST 06 M - 等しい数](https://atcoder.jp/contests/past202104-open/tasks/past202104_m)
@@ -10,6 +15,7 @@ import qualified Data.IntMap.Strict as IM
 import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
+-- TODO: RangeSet
 -- TODO: faster implementation
 -- TODO: quickcheck (e.g., adjacent ranges have different values, compare it with naive vector-based solution)
 
@@ -17,15 +23,12 @@ newtype RangeMap a = RangeMap
   { -- | @l@ -> @(r, a)@
     unRM :: IM.IntMap (Int, a)
   }
+  deriving newtype (Show, Eq)
 
-infRM :: Int
-infRM = maxBound `div` 2
-
-newRM :: RangeMap a
-newRM = RangeMap IM.empty
+emptyRM :: RangeMap a
+emptyRM = RangeMap IM.empty
 
 -- | Creates a range map combining successive equal values into one.
--- TODO: faster.
 fromVecMRM :: (G.Vector v a, Eq a, Monad m) => v a -> (Int -> Int -> a -> m ()) -> m (RangeMap a)
 fromVecMRM xs onAdd = fmap (RangeMap . fst) $ foldM step (IM.empty, 0 :: Int) $ G.group xs
   where
@@ -34,6 +37,12 @@ fromVecMRM xs onAdd = fmap (RangeMap . fst) $ foldM step (IM.empty, 0 :: Int) $ 
           !map' = IM.insert l (l' - 1, G.head xs') map
       onAdd l (l' - 1) (G.head xs')
       return (map', l')
+
+-- | Pure variant of `fromVecMRM`
+fromVecRM :: (G.Vector v a, Eq a) => v a -> RangeMap a
+fromVecRM xs = runIdentity (fromVecMRM xs onAdd)
+  where
+    onAdd _ _ _ = pure ()
 
 -- | Looks up a range that contains @[l, r]@.
 lookupRM :: Int -> Int -> RangeMap a -> Maybe (Int, Int, a)
@@ -164,3 +173,54 @@ insertRM l r x rm = runIdentity (insertMRM l r x onAdd onDel rm)
   where
     onAdd _ _ _ = pure ()
     onDel _ _ _ = pure ()
+
+deleteMRM :: (Monad m) => Int -> Int -> (Int -> Int -> a -> m ()) -> RangeMap a -> m (RangeMap a)
+deleteMRM l0 r0 onDel (RangeMap map0) = do
+  (!r, !map) <- handleRight l0 r0 map0
+  !map' <- handleLeft l0 r map
+  return $ RangeMap map'
+  where
+    handleRight l r map = case IM.lookupGE l map of
+      Just range0@(!_, (!_, !_)) -> run range0 l r map
+      Nothing -> return (r, map)
+
+    run (!l', (!r', !x')) l r map
+      | l' >= r + 1 = do
+          return (r, map)
+      | r' <= r = do
+          onDel l' r' x'
+          let !map' = IM.delete l' map
+          case IM.lookupGT l' map' of
+            Just rng -> run rng l r map'
+            Nothing -> return (r, map')
+      | otherwise = do
+          onDel l' r x'
+          let !map' = IM.insert (r + 1) (r', x') $ IM.delete l' map
+          return (r, map')
+
+    handleLeft l r map = case IM.lookupLT l map of
+      Nothing -> return map
+      Just (!l', (!r', !x'))
+        | r' < l -> do
+            return map
+        | r' > r -> do
+            onDel l' r' x'
+            let !map' = IM.insert (r + 1) (r', x') $ IM.insert l' (l - 1, x') $ IM.delete l' map
+            return map'
+        | otherwise -> do
+            onDel l r' x'
+            let !map' = IM.insert l' (l - 1, x') $ IM.delete l' map
+            return map'
+
+-- | Pure variant of `insertMRM`.
+deleteRM :: (Eq a) => Int -> Int -> RangeMap a -> RangeMap a
+deleteRM l r rm = runIdentity (deleteMRM l r onDel rm)
+  where
+    onDel _ _ _ = pure ()
+
+-- | REMARK: The range map has to be like a set.
+mexRM :: RangeMap a -> Int
+mexRM (RangeMap map) = case IM.lookupLE 0 map of
+  Just (!l', (!r', !_))
+    | l' == 0 -> r' + 1
+  Nothing -> 0

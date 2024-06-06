@@ -130,9 +130,13 @@ executable abc294-g-exe
   import:           verify
   main-is:          abc294-g.hs
 
-executable abc348e-exe
+executable abc330-e-exe
   import:           verify
-  main-is:          abc348e.hs
+  main-is:          abc330-e.hs
+
+executable abc348-e-exe
+  import:           verify
+  main-is:          abc348-e.hs
 
 executable acl-practice-f-exe
   import:           verify
