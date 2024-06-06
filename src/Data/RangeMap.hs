@@ -6,7 +6,7 @@ module Data.RangeMap where
 
 import Control.Monad (foldM)
 import Control.Monad.Identity (runIdentity)
-import qualified Data.Map.Strict as M
+import qualified Data.IntMap.Strict as IM
 import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
@@ -14,41 +14,42 @@ import GHC.Stack (HasCallStack)
 -- TODO: quickcheck (e.g., adjacent ranges have different values, compare it with naive vector-based solution)
 
 newtype RangeMap a = RangeMap
-  { unRM :: M.Map (Int, Int) a
+  { -- | @l@ -> @(r, a)@
+    unRM :: IM.IntMap (Int, a)
   }
 
 infRM :: Int
 infRM = maxBound `div` 2
 
 newRM :: RangeMap a
-newRM = RangeMap M.empty
+newRM = RangeMap IM.empty
 
 -- | Creates a range map combining successive equal values into one.
 -- TODO: faster.
 fromVecMRM :: (G.Vector v a, Eq a, Monad m) => v a -> (Int -> Int -> a -> m ()) -> m (RangeMap a)
-fromVecMRM xs onAdd = fmap (RangeMap . fst) $ foldM step (M.empty, 0 :: Int) $ G.group xs
+fromVecMRM xs onAdd = fmap (RangeMap . fst) $ foldM step (IM.empty, 0 :: Int) $ G.group xs
   where
     step (!map, !l) !xs' = do
       let !l' = l + G.length xs'
-          !map' = M.insert (l, l' - 1) (G.head xs') map
+          !map' = IM.insert l (l' - 1, G.head xs') map
       onAdd l (l' - 1) (G.head xs')
       return (map', l')
 
 -- | Looks up a range that contains @[l, r]@.
-lookupRM :: Int -> Int -> RangeMap a -> Maybe ((Int, Int), a)
+lookupRM :: Int -> Int -> RangeMap a -> Maybe (Int, Int, a)
 lookupRM l r (RangeMap map)
   | r < l = Nothing
-  | otherwise = case M.lookupLE (l, r) map of
-      Just ((!l', !r'), !a)
-        | r <= r' -> Just ((l', r'), a)
+  | otherwise = case IM.lookupLE l map of
+      Just (!l', (!r', !a))
+        | r <= r' -> Just (l', r', a)
       _ -> Nothing
 
 -- | Looks up a range that contains @[l, r]@ reads out the value.
 readMayRM :: Int -> Int -> RangeMap a -> Maybe a
 readMayRM l r (RangeMap map)
   | r < l = Nothing
-  | otherwise = case M.lookupLE (l, r) map of
-      Just ((!_, !r'), !a)
+  | otherwise = case IM.lookupLE l map of
+      Just (!_, (!r', !a))
         | r <= r' -> Just a
       _ -> Nothing
 
@@ -62,8 +63,8 @@ readRM l r rm = case readMayRM l r rm of
 intersectsRM :: Int -> Int -> RangeMap a -> Bool
 intersectsRM l r (RangeMap map)
   | r < l = False
-  | otherwise = case M.lookupLE (l, r) map of
-      Just ((!_, !r'), !_) -> r <= r'
+  | otherwise = case IM.lookupLE l map of
+      Just (!_, (!r', !_)) -> r <= r'
       _ -> False
 
 -- | Point variant of `intersectsRM`.
@@ -77,11 +78,11 @@ insertMRM l0 r0 x onAdd onDel (RangeMap map0) = do
   (!r, !map) <- handleRight l0 r0 map0
   (!l', !r', !map') <- handleLeft l0 r map
   onAdd l' r' x
-  let !map'' = M.insert (l', r') x map'
+  let !map'' = IM.insert l' (r', x) map'
   return $! RangeMap map''
   where
-    handleRight l r map = case M.lookupGE (l, -infRM) map of
-      Just range0@((!_, !_), !_) -> run range0 l r map
+    handleRight l r map = case IM.lookupGE l map of
+      Just range0@(!_, (!_, !_)) -> run range0 l r map
       Nothing -> return (r, map)
 
     -- Looks into ranges with @l' >= l0@.
@@ -89,7 +90,7 @@ insertMRM l0 r0 x onAdd onDel (RangeMap map0) = do
     -- (i)            *--------]   overwrite if it's x
     -- (ii)   [-------]*      delete anyways
     -- (iii)    *(------]     overwrite if it's x, or
-    run ((!l', !r'), !x') l r map
+    run (!l', (!r', !x')) l r map
       | l' > r + 1 = do
           -- not adjacent: end.
           return (r, map)
@@ -97,7 +98,7 @@ insertMRM l0 r0 x onAdd onDel (RangeMap map0) = do
       | l' == r + 1 && x' == x = do
           -- adjacent range with the same value: merge into one.
           onDel (r + 1) r' x'
-          let !map' = M.delete (l', r') map
+          let !map' = IM.delete l' map
           return (r', map')
       | l' == r + 1 = do
           -- adjacent range with different values: nothing to do.
@@ -106,31 +107,31 @@ insertMRM l0 r0 x onAdd onDel (RangeMap map0) = do
       | r' <= r = do
           -- inside the range: delete and continue
           onDel l' r' x'
-          let !map' = M.delete (l', r') map
+          let !map' = IM.delete l' map
           -- TODO: wrap it (DRY)
-          case M.lookupGT (l', r') map' of
+          case IM.lookupGT l' map' of
             Just rng -> run rng l r map'
             Nothing -> return (r, map')
       -- (iii)
       | x' == x = do
           -- intersecting range with the same value: merge into one.
           onDel l' r' x'
-          let !map' = M.delete (l', r') map
+          let !map' = IM.delete l' map
           return (r', map')
       | otherwise = do
           -- intersecting range with a different value: delete the intersection.
           onDel l' r x'
-          let !map' = M.insert (r + 1, r') x' $ M.delete (l', r') map
+          let !map' = IM.insert (r + 1) (r', x') $ IM.delete l' map
           return (r, map')
 
-    handleLeft l r map = case M.lookupLT (l, infRM) map of
+    handleLeft l r map = case IM.lookupLT l map of
       Nothing -> return (l, r, map)
-      Just ((!l', !r'), !x')
+      Just (!l', (!r', !x'))
         -- (i): adjacent range
         | r' + 1 == l0 && x' == x -> do
             -- adjacent range with the same value: merge into one.
             onDel l' r' x'
-            let !map' = M.delete (l', r') map
+            let !map' = IM.delete l' map
             return (l', r, map')
         | r' + 1 == l -> do
             -- adjacent range with different values: nothing to do.
@@ -142,19 +143,19 @@ insertMRM l0 r0 x onAdd onDel (RangeMap map0) = do
         | x' == x -> do
             -- insersecting range with the same value: merge into one.
             onDel l' r' x'
-            let !map' = M.delete (l', r') map
+            let !map' = IM.delete l' map
             return (min l l', max r r', map')
         | r' > r -> do
             -- intersecting range with a different value: split into three.
             onDel l' r' x'
             onAdd l' (l - 1) x'
             onAdd (r + 1) r' x'
-            let !map' = M.insert (r + 1, r') x' $ M.insert (l', l - 1) x' $ M.delete (l', r') map
+            let !map' = IM.insert (r + 1) (r', x') $ IM.insert l' (l - 1, x') $ IM.delete l' map
             return (l, r, map')
         | otherwise -> do
             -- insersecting range with a different value: delete.
             onDel l r' x'
-            let !map' = M.insert (l', l - 1) x' $ M.delete (l', r') map
+            let !map' = IM.insert l' (l - 1, x') $ IM.delete l' map
             return (l, r, map')
 
 -- | Pure variant of `insertMRM`.
