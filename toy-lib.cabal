@@ -220,6 +220,7 @@ library
     Math.NTT
     Math.PowMod
     Math.Primes
+    ToyLib.Compat
     ToyLib.Debug
     ToyLib.DebugGrid
     ToyLib.DebugSTree
