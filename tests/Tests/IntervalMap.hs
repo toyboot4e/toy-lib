@@ -1,13 +1,13 @@
--- | Compares `RangeMap` with naive implementation.
+-- | Compares `IntervalMap` with naive implementation.
 
-module Tests.RangeMap where
+module Tests.IntervalMap where
 
 -- `groupBy`, but with adjacent elements
 
 import Data.IntMap qualified as IM
 import Data.List qualified as L
 import Data.List.HT qualified as HT
-import Data.RangeMap
+import Data.IntervalMap
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
 
@@ -33,15 +33,15 @@ foldNaive = map g . HT.groupBy f . IM.assocs
           !x = snd (head ixs)
        in (l, (r, x))
 
-rangeMap :: [(Bool, (Int, Int, Int))] -> RangeMap Int
-rangeMap =
+intervalMap :: [(Bool, (Int, Int, Int))] -> IntervalMap Int
+intervalMap =
   L.foldl'
     ( \rm (!b, (!l, !r, !x)) ->
         if b
-          then insertRM l r x rm
-          else deleteRM l r rm
+          then insertIM l r x rm
+          else deleteIM l r rm
     )
-    emptyRM
+    emptyIM
 
 valueSpanGen :: Int -> Int -> Int -> Int -> Gen (Bool, (Int, Int, Int))
 valueSpanGen l0 r0 xl xr = do
@@ -58,23 +58,23 @@ commandGen l0 r0 xl xr = do
   x <- QC.chooseInt (xl, xr)
   return (e == 1, (l, r, x))
 
-rangeMapProps :: TestTree
-rangeMapProps =
+intervalMapProps :: TestTree
+intervalMapProps =
   testGroup
-    "RangeMap properties"
-    [ QC.testProperty "RangeMap: insert" $ do
+    "IntervalMap properties"
+    [ QC.testProperty "IntervalMap: insert" $ do
         QC.forAll (QC.chooseInt (1, 100)) $ \n -> do
           QC.forAll (QC.vectorOf n (valueSpanGen (-50) 50 (-50) 50)) $ \commands -> do
             let rm1 = foldNaive $ naive commands
-            let rm2 = IM.toList . unRM $ rangeMap commands
+            let rm2 = IM.toList . unIM $ intervalMap commands
             rm1 QC.=== rm2,
-      QC.testProperty "RangeMap: insert or delete" $ do
+      QC.testProperty "IntervalMap: insert or delete" $ do
         QC.forAll (QC.chooseInt (1, 100)) $ \n -> do
           QC.forAll (QC.vectorOf n (commandGen (-50) 50 (-50) 50)) $ \commands -> do
             let rm1 = foldNaive $ naive commands
-            let rm2 = IM.toList . unRM $ rangeMap commands
+            let rm2 = IM.toList . unIM $ intervalMap commands
             rm1 QC.=== rm2
     ]
 
 tests :: [TestTree]
-tests = [testGroup "Data.RangeMap" [rangeMapProps]]
+tests = [testGroup "Data.IntervalMap" [intervalMapProperties]]

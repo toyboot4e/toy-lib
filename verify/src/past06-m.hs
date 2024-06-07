@@ -5,7 +5,7 @@ import Control.Applicative;import Control.DeepSeq;import Control.Exception (asse
 {- ORMOLU_ENABLE -}
 
 -- {{{ toy-lib import
-import Data.RangeMap
+import Data.IntervalMap
 import Data.Vector.Extra
 import ToyLib.Compat
 import ToyLib.Debug
@@ -42,11 +42,11 @@ solve = do
         UM.modify cnt (subtract len) i
         UM.read cnt i >>= \n' -> modifyMutVar res (+ (n' * pred n' `div` 2))
 
-  (!rm0 :: RangeMap Int) <- fromVecMRM xs onAdd
+  (!rm0 :: IntervalMap Int) <- fromVecMIM xs onAdd
   (`evalStateT` rm0) $ U.forM_ lrxs $ \(!l, !r, !x) -> do
     -- let !_ = dbg (l, r, x)
-    modifyM $ insertMRM l r x onAdd onDel
-    -- state $ \rm -> let !_ = dbg (unRM rm) in ((), rm)
+    modifyM $ insertMIM l r x onAdd onDel
+    -- state $ \rm -> let !_ = dbg (unIM rm) in ((), rm)
     printBSB =<< readMutVar res
 
 -- verification-helper: PROBLEM https://atcoder.jp/contests/past202104-open/tasks/past202104_m

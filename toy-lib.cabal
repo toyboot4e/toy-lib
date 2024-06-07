@@ -192,11 +192,11 @@ library
     Data.Instances.Affine2d
     Data.Instances.Mat2x2
     Data.Instances.T2
+    Data.IntervalMap
+    Data.IntervalSet
     Data.ModInt
     Data.MultiSet
     Data.MultiSetVec
-    Data.RangeMap
-    Data.RangeSet
     Data.RollingHash
     Data.SafeList
     Data.SegmentTree.Lazy
@@ -265,17 +265,17 @@ test-suite toy-lib-test
   other-modules:
     Tests.Bisect
     Tests.NTT
-    Tests.RangeMap
+    Tests.IntervalMap
 
   build-depends:
     , base              ^>=4.17.2.0
-    , containers                     ^>=0.6.7
+    , containers        ^>=0.6.7
     , tasty             ^>=1.4.3
     , tasty-hspec       ^>=1.2.0.3
     , tasty-hunit       ^>=0.10.0.3
     , tasty-quickcheck  ^>=0.10.2
     , toy-lib
-    , utility-ht                     ^>=0.0.17
+    , utility-ht        ^>=0.0.17
     , vector            ^>=0.13.0.0
 
   -- , toy-lib

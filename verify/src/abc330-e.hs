@@ -7,7 +7,7 @@ import Control.Applicative;import Control.DeepSeq;import Control.Exception (asse
 
 -- {{{ toy-lib import
 import Data.MultiSet
-import Data.RangeSet
+import Data.IntervalSet
 import Data.Vector.Extra
 import ToyLib.Compat
 import ToyLib.Parser
@@ -30,7 +30,7 @@ solve = do
   vec <- U.thaw xs
   let !ms0 = fromListMS $ U.toList xs
   (`evalStateT` ms0) $ do
-    let !rm0 = U.foldl' (\rm x -> insertRS x x rm) emptyRS xs
+    let !rm0 = U.foldl' (\rm x -> insertIS x x rm) emptyIS xs
     (`evalStateT` rm0) $ do
       U.forM_ ixs $ \(!i, !x') -> do
         !x <- UM.exchange vec i x'
@@ -39,14 +39,14 @@ solve = do
         -- delete x
         lift $ modify' $ decMS x
         unlessM (lift $ gets (memberMS x)) $ do
-          modify' $ deleteRS x x
+          modify' $ deleteIS x x
 
         -- insert x'
         lift $ modify' $ incMS x'
         whenM (lift $ gets ((== 1) . getMS x')) $ do
-          modify' $ insertRS x' x'
+          modify' $ insertIS x' x'
 
-        printBSB =<< gets mexRS
+        printBSB =<< gets mexIS
 
 -- verification-helper: PROBLEM https://atcoder.jp/contests/abc330/tasks/abc330_e
 -- #range-map
