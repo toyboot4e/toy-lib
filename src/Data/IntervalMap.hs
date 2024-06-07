@@ -15,9 +15,7 @@ import qualified Data.IntMap.Strict as IM
 import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
--- TODO: faster implementation
--- TODO: quickcheck (e.g., adjacent ranges have different values, compare it with naive vector-based solution)
-
+-- | @IntervalMap@ is a sparse map that manages non-overlapping @(l, r, x)@ value pairs.
 newtype IntervalMap a = IntervalMap
   { -- | @l@ -> @(r, a)@
     unIM :: IM.IntMap (Int, a)
@@ -80,8 +78,8 @@ intersectsIM l r (IntervalMap map)
 containsIM :: Int -> IntervalMap a -> Bool
 containsIM i = intersectsIM i i
 
--- TODO: deleteMIM
-
+-- | Amortized \(O(\min(\log n, W))\) interval insertion with side effects. Old overlapping
+-- intervals are overwritten.
 insertMIM :: (Monad m, Eq a) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
 insertMIM l0 r0 x onAdd onDel (IntervalMap map0) = do
   (!r, !map) <- handleRight l0 r0 map0
@@ -167,13 +165,14 @@ insertMIM l0 r0 x onAdd onDel (IntervalMap map0) = do
             let !map' = IM.insert l' (l - 1, x') $ IM.delete l' map
             return (l, r, map')
 
--- | Pure variant of `insertMIM`.
+-- | Amortized \(O(\min(\log n, W))\) interval insertion. Old overlapping intervals are overwritten.
 insertIM :: (Eq a) => Int -> Int -> a -> IntervalMap a -> IntervalMap a
 insertIM l r x rm = runIdentity (insertMIM l r x onAdd onDel rm)
   where
     onAdd _ _ _ = pure ()
     onDel _ _ _ = pure ()
 
+-- | Amortized \(O(\min(\log n, W))\) interval deletion with side effects.
 deleteMIM :: (Monad m) => Int -> Int -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
 deleteMIM l0 r0 onDel (IntervalMap map0) = do
   (!r, !map) <- handleRight l0 r0 map0
@@ -212,13 +211,14 @@ deleteMIM l0 r0 onDel (IntervalMap map0) = do
             let !map' = IM.insert l' (l - 1, x') $ IM.delete l' map
             return map'
 
--- | Pure variant of `insertMIM`.
+-- | Amortized \(O(\min(\log n, W))\) interval deletion.
 deleteIM :: Int -> Int -> IntervalMap a -> IntervalMap a
 deleteIM l r rm = runIdentity (deleteMIM l r onDel rm)
   where
     onDel _ _ _ = pure ()
 
--- | REMARK: The interval map has to be like a set. Use @maxIS@ when possible.
+-- | \(O(\min(\log n, W))\) Mex retrieval. REMARK: The interval map has to be like a set. Use
+-- @maxIS@ when possible.
 mexIM :: IntervalMap a -> Int
 mexIM (IntervalMap map) = case IM.lookupLE 0 map of
   Just (!l', (!r', !_))
