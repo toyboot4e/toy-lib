@@ -2,9 +2,13 @@
 module Data.Vector.CSum where
 
 import Control.Monad.Primitive
+import Data.Ix
 import Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
+import ToyLib.Debug
+import ToyLib.Macro
 
 -- | \(O(N)\) Immutable cumulative sum initialization. The first element is a guard.
 {-# INLINE csum1D #-}
@@ -13,8 +17,15 @@ csum1D = U.scanl' (+) 0
 
 -- | \(O(1)\) Retrieves a range sum from an immutable cumulative sum.
 {-# INLINE (+!) #-}
-(+!) :: (Num a, U.Unbox a) => U.Vector a -> (Int, Int) -> a
+(+!) :: (HasCallStack, Num a, U.Unbox a) => U.Vector a -> (Int, Int) -> a
 (+!) csum (!l, !r) = csum U.! (r + 1) - csum U.! l
+  where
+    _
+      | debug =
+          let n = U.length csum - 1
+              !_ = dbgAssert (inRange (0, n - 1) l && inRange (0, n - 1) r) $ "(+!) invalid range: " ++ show (l, r)
+           in ()
+      | otherwise = ()
 
 -- | \(O(N)\) Initialization of a mutable cumulative sum.
 {-# INLINE newCSumU #-}
