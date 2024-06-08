@@ -33,14 +33,14 @@ import Math.Manhattan
 $ cabal run toy-lib-exe -e Examle.hs
 rot45 :: (Int, Int) -> (Int, Int);rot45 (!x, !y) = (x - y, x + y)
 ```
+
 ## Project setting notes
 
 ### Installation
 
-- GHC 9.4.5 (corresponds to [lts-21.7](https://www.stackage.org/lts-21.7))  
-  Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)
-- HLS 2.2.0  
-  See [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html)
+As of 2024, AtCoder is using GHC 9.4.5 (Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)), which roughly corresponds to [lts-21.7](https://www.stackage.org/lts-21.7)).
+
+For using recent HLS, I'm using GHC 9.4.6 in this repository. See [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html) for available HLS versions.
 
 ### `toy-lib.cabal`
 
