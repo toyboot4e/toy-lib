@@ -40,7 +40,7 @@ rot45 :: (Int, Int) -> (Int, Int);rot45 (!x, !y) = (x - y, x + y)
 
 As of 2024, AtCoder is using GHC 9.4.5 (Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)), which roughly corresponds to [lts-21.7](https://www.stackage.org/lts-21.7)).
 
-For using recent HLS, I'm using GHC 9.4.6 in this repository. See [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html) for available HLS versions.
+I'm using GHC 9.4.6 in this repository for using recent version of HLS. See also: [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html).
 
 ### `toy-lib.cabal`
 
@@ -90,9 +90,16 @@ We have limitations coming from [haskell-src-exts](https://github.com/haskell-su
 - Can't use `GHC2021` syntax  
   For example `import X qualified as Y` is not available.
 
-## Thanks
+## Similar repositories
 
-[cojna/iota](https://github.com/cojna/iota)
+- [cojna/iota](https://github.com/cojna/iota)
+  iota is surely the best resource!
+- [meooow25/haccepted](https://github.com/meooow25/haccepted)
+  Beautiful library compatible with Codeforces.
+- [minoki/my-atcoder-solutions](https://github.com/minoki/my-atcoder-solutions)
+  Solutions to EDPC and more.
+- [unnohideyuki/AtHaskell](https://github.com/unnohideyuki/AtHaskell)
+- [mizunashi-mana/haskell-atcoder-template](https://github.com/mizunashi-mana/haskell-atcoder-template)
 
 [`haddock`]: https://haskell-haddock.readthedocs.io/en/latest/index.html
 
