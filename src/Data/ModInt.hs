@@ -10,7 +10,7 @@ module Data.ModInt where
 import qualified Data.ByteString.Builder as BSB
 import Data.Coerce
 import Data.Core.SemigroupAction
-import qualified Data.Ratio as Ratio
+import Data.Ratio
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -46,8 +46,9 @@ instance (KnownNat p) => Fractional (ModInt p) where
   recip (ModInt !x) = ModInt $! invModF (fromInteger (natVal' (proxy# @p))) x
   fromRational !r = ModInt n / ModInt d
     where
-      n = fromInteger $! Ratio.numerator r
-      d = fromInteger $! Ratio.denominator r
+      -- Data.Ratio
+      n = fromInteger $! numerator r
+      d = fromInteger $! denominator r
 
 instance (KnownNat p) => Enum (ModInt p) where
   toEnum = ModInt . (`mod` fromInteger (natVal' (proxy# @p)))

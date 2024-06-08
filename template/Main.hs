@@ -63,7 +63,7 @@ import Text.Printf
 {- ORMOLU_DISABLE -}
 
 -- base
-import qualified Data.Ratio as Ratio
+import Data.Ratio
 
 -- array
 import Data.Array.IArray
