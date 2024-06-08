@@ -1,7 +1,4 @@
 -- | Multi set backed by `IntMap`.
---
--- Tip: `MultiSet` is for light calculation only. Do not use `MultiSet` for, for example, sqrt
--- decomposition. Do index compression and use @MultiSetVec@ or maybe just a mutable vector.
 module Data.MultiSet where
 
 import qualified Data.IntMap.Strict as IM
