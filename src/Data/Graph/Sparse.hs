@@ -441,7 +441,7 @@ revTopSccSG gr = collectSccPreorderSG $ topSortSG gr
       filter (not . null) <$> mapM (revTopScc1SG gr' vis) topVerts
 
 -- | \(O(V+E)\) Collectes strongly connected components, topologically sorted.
--- Downstream vertices come first, e.g., @v3 -> v2 -> v1@.
+-- Downstream vertices come first, e.g., @v1 <- v2 <- v3@.
 topSccSG :: (U.Unbox w) => SparseGraph w -> [[Int]]
 topSccSG = map reverse . revTopSccSG
 
