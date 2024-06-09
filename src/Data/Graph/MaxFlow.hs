@@ -1,11 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- TODO: rename the module to MaxFlow
-
 -- | \(O(V^2 E)\) Max flow algorithm (Dinic's algorithm). Heavily inspired by @cojna/iota@.
 --
--- Just run `maxFlowD` to get the result. All the other functions are used internally.
+-- Just run `maxFlow` to get the result. `maxFlow'` returns result with context.
 --
 -- = Typical problems
 --
@@ -83,7 +81,7 @@ maxFlow' !nVerts !src !sink !edges = do
 -- | Handy API for retrieving edge information @(v1, v2, cap, flow)@ from the `maxFlow` results.
 --
 -- Be warned that it contains reverse edges and edge from/to source/sink.
-edgesMF :: (PrimMonad m, U.Unbox c, Num c, Ord c, Bounded c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
+edgesMF :: (PrimMonad m, U.Unbox c, Num c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
 edgesMF MaxFlow {..} = do
   !edgeCap <- U.unsafeFreeze edgeCapMF
 
@@ -96,7 +94,7 @@ edgesMF MaxFlow {..} = do
           flow = edgeCap U.! i21
           cap = edgeCap U.! i12 + edgeCap U.! i21
 
-  return $ U.unfoldrExactN nEdgesMF next ((0 :: Vertex), 0 :: Int)
+  return $ U.unfoldrExactN nEdgesMF next (0 :: Vertex, 0 :: Int)
 
 undefMF :: Int
 undefMF = -1
@@ -104,7 +102,7 @@ undefMF = -1
 -- | Builds `MaxFlow` from edges.
 buildMaxFlow ::
   forall c m.
-  (U.Unbox c, Num c, PrimMonad m) =>
+  (U.Unbox c, PrimMonad m) =>
   Int ->
   U.Vector (Vertex, Vertex, c) ->
   m (MaxFlow (PrimState m) c)
@@ -117,10 +115,9 @@ buildMaxFlow !nVertsMF !edges = do
         return degs
 
   (!edgeDstMF, !edgeRevIndexMF, !edgeCapMF) <- do
-    -- TODO: use unsafeNew
-    !edgeDst <- UM.replicate nEdgesMF undefMF
-    !edgeRevIndex <- UM.replicate nEdgesMF undefMF
-    !edgeCap <- UM.replicate nEdgesMF (0 :: c)
+    !edgeDst <- UM.unsafeNew nEdgesMF
+    !edgeRevIndex <- UM.unsafeNew nEdgesMF
+    !edgeCap <- UM.unsafeNew nEdgesMF
 
     -- add the edges and the reverse edges
     -- TODO: reuse it as `iterMF`
