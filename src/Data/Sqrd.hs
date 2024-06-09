@@ -4,8 +4,7 @@
 module Data.Sqrd where
 
 import Control.Monad
-import Control.Monad.Primitive (PrimMonad, PrimState)
-import qualified Data.Vector.Mutable as VM
+import Control.Monad.Primitive (PrimMonad)
 import qualified Data.Vector.Unboxed as U
 
 type BlockIndex = Int
@@ -73,6 +72,7 @@ actSqrd Sqrd {..} act l r = do
 --         return $ csum U.! i
 --
 --   let {-# INLINE readPartSqrd #-}
+--       -- @l@ and @r@ are in global coordinates
 --       readPartSqrd !iBlock !l !r = do
 --         let !xs' = xss V.! iBlock
 --         !x <- get
@@ -82,9 +82,11 @@ actSqrd Sqrd {..} act l r = do
 --       mergeSqrd x y = return $ x + y
 --
 --   let {-# INLINE actFullSqrd #-}
---       actFullSqrd _ (_ :: Int) = return ()
+--       actFullSqrd _iBlock (_ :: Int) = return ()
 --
 --   let {-# INLINE actPartSqrd #-}
---       actPartSqrd _ (_ :: Int) _ _ = return ()
+--       -- @l@ and @r@ are in local coordinates in the block
+--       readPartSqrd !iBlock !l !r = do
+--       actPartSqrd _iBlock (_ :: Int) _lLocal _rLocal = return ()
 --
 --   return Sqrd {..}

@@ -77,6 +77,7 @@ relaxMany' !vec0 !input !expander = U.create $ do
 
   return vec
 
+-- TODO: Example here or in verify
 {-# INLINE pushBasedConstructN #-}
 pushBasedConstructN :: (HasCallStack, G.Vector v a, G.Vector v (Int, a)) => (a -> a -> a) -> v a -> (Int -> v a -> v (Int, a)) -> v a
 pushBasedConstructN !relax !vec0 !expander = G.create $ do

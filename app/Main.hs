@@ -123,6 +123,7 @@ mainEmbedLibrary file = do
   let back = fromJust $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
 
   let importLines = unlines . take (back - front - 1) $ drop (front + 1) lns
+  -- FIXME: ToyLib.Debug resolution
   let moduleNames = filter (/= "import") $ words $ map (\case ';' -> ' '; c -> c) importLines
   toylib <- mainMinifyLibrary moduleNames
 

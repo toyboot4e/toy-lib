@@ -25,7 +25,6 @@ debug = False
 
 -- }}}
 
-
 -- | (acc, c)
 type OpRepr = (Int, Int)
 
@@ -56,7 +55,7 @@ solve = do
   !cs <- intsN' n
 
   let !gr = buildSG n $ swapDupeU es
-  let !_ = dbg (scanTreeU gr (0 ::Int) sact (\v -> Acc (0, cs U.! v)) (Op . unAcc))
+  let !_ = dbg (scanTreeU gr (0 :: Int) sact (\v -> Acc (0, cs U.! v)) (Op . unAcc))
 
   let !res = dbgId $ foldTreeAllSG gr (\v -> Acc (0, cs U.! v)) (Op . unAcc)
   printBSB $ U.minimum $ U.map (fst . unAcc) res
