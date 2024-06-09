@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Minimum cost flow calculation (Ford-Fulkerson algorithm).
@@ -69,7 +68,7 @@ data MinCostFlowBuffer r s c = MinCostFlowBuffer
 
 -- | Returns the wrapped cost for getting the flow, or Nothing when impossible.
 relaxedCostFlow' ::
-  (Show (f (CostMCF c)), Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), PrimMonad m, Num c, U.Unbox c, Ord c) =>
   (CostMCF c -> f (CostMCF c)) ->
   Int ->
   Int ->
@@ -83,7 +82,7 @@ relaxedCostFlow' toRelax !nVerts !src !sink !targetFlow !edges = do
   return (minCost, container)
 
 relaxedCostFlow ::
-  (Show (f (CostMCF c)), Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), U.Unbox c, Integral c) =>
   (CostMCF c -> f (CostMCF c)) ->
   Int ->
   Int ->
@@ -98,7 +97,7 @@ relaxedCostFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
 -- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
 -- the current implementation)
 minCostFlow ::
-  (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (U.Unbox c, Integral c, Bounded c) =>
   Int ->
   Int ->
   Int ->
@@ -108,7 +107,7 @@ minCostFlow ::
 minCostFlow = relaxedCostFlow Min
 
 minCostFlow' ::
-  (PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (PrimMonad m, U.Unbox c, Integral c, Bounded c) =>
   Int ->
   Int ->
   Int ->
@@ -121,7 +120,7 @@ minCostFlow' = relaxedCostFlow' Min
 -- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
 -- the current implementation)
 maxCostFlow ::
-  (Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (U.Unbox c, Integral c, Bounded c) =>
   Int ->
   Int ->
   Int ->
@@ -131,7 +130,7 @@ maxCostFlow ::
 maxCostFlow = relaxedCostFlow Max
 
 maxCostFlow' ::
-  (PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (PrimMonad m, U.Unbox c, Integral c, Bounded c) =>
   Int ->
   Int ->
   Int ->
@@ -144,7 +143,7 @@ maxCostFlow' = relaxedCostFlow' Max
 --
 -- Be warned that it contains reverse edges and edges from/to source/sink.
 edgesMCF ::
-  (PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (PrimMonad m, Num c, U.Unbox c) =>
   MinCostFlow (PrimState m) c ->
   m (U.Vector (Int, Int, CapacityMCF c, FlowMCF c, CostMCF c))
 edgesMCF MinCostFlow {..} = do
@@ -169,7 +168,7 @@ undefMCF = -1
 -- | Builds `MinCostFlow` from edges.
 buildMinCostFlow ::
   forall c m.
-  (PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (PrimMonad m,  Num c, U.Unbox c,  Ord c) =>
   Int ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   m (MinCostFlow (PrimState m) c)
@@ -182,11 +181,10 @@ buildMinCostFlow !nVertsMCF !edges = do
         return degs
 
   (!edgeDstMCF, !edgeRevIndexMCF, !edgeCostMCF, !edgeCapMCF) <- do
-    -- TODO: use unsafeNew
-    !edgeDst <- UM.replicate nEdgesMCF undefMCF
-    !edgeRevIndex <- UM.replicate nEdgesMCF undefMCF
-    !edgeCost <- UM.replicate nEdgesMCF (0 :: CostMCF c)
-    !edgeCap <- UM.replicate nEdgesMCF (0 :: CapacityMCF c)
+    !edgeDst <- UM.unsafeNew nEdgesMCF
+    !edgeRevIndex <- UM.unsafeNew nEdgesMCF
+    !edgeCost <- UM.unsafeNew nEdgesMCF
+    !edgeCap <- UM.unsafeNew nEdgesMCF
 
     -- add the edges and the reverse edges
     !edgeCounter <- U.thaw offsetsMCF
@@ -220,13 +218,13 @@ buildMinCostFlow !nVertsMCF !edges = do
 -- | Runs the MinCostFlow algorithm.
 runMinCostFlow ::
   forall f c m.
-  (Show (f (CostMCF c)), Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), PrimMonad m, Show c, Num c, U.Unbox c, Integral c, Ord c, Bounded c) =>
+  (Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), PrimMonad m, Num c, U.Unbox c, Ord c) =>
   (CostMCF c -> f (CostMCF c)) ->
   Vertex ->
   Vertex ->
   FlowMCF c ->
   MinCostFlow (PrimState m) c ->
-  m ((f (CostMCF c)), CapacityMCF c)
+  m (f (CostMCF c), CapacityMCF c)
 runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
   bufs@MinCostFlowBuffer {..} <-
     -- distsMCF, prevVertMCF, prevEdgeMCF
@@ -255,7 +253,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
             if distSink == mempty
               then do
                 -- TODO: Is it ok to return less than the target flow?
-                let !_ = dbg ("min cost flow: less than the target flow")
+                let !_ = dbg "min cost flow: less than the target flow"
                 return (accCost, targetFlow - restFlow)
               else do
                 -- let !_ = dbg ("flow", distSink)
@@ -302,7 +300,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
 -- TODO: replace with dijkstra with potencials.
 runMinCostFlowShortests ::
   -- forall c m.
-  (Show (f (CostMCF c)), U.Unbox (f (CostMCF c)), Monoid (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), Show c, U.Unbox c, Num c, Ord c, Bounded c, PrimMonad m) =>
+  (U.Unbox (f (CostMCF c)), Monoid (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), U.Unbox c, Num c, Ord c, PrimMonad m) =>
   (CostMCF c -> f (CostMCF c)) ->
   Vertex ->
   MinCostFlow (PrimState m) c ->
