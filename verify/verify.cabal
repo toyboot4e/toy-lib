@@ -146,6 +146,10 @@ executable acl-practice-f-exe
   import:           verify
   main-is:          acl-practice-f.hs
 
+executable acl-practice-h-exe
+  import:           verify
+  main-is:          acl-practice-h.hs
+
 executable acl-practice-k-exe
   import:           verify
   main-is:          acl-practice-k.hs
