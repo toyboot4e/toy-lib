@@ -7,13 +7,8 @@ import Control.Applicative;import Control.DeepSeq;import Control.Exception (asse
 
 -- {{{ toy-lib import
 
-import Data.Core.SemigroupAction
 import Data.Graph.MaxFlow
-import Data.Instances.Mat2x2
-import Data.ModInt
-import Data.SegmentTree.Lazy
 import Data.Vector.IxVector
-import Math.NTT
 import ToyLib.Debug
 import ToyLib.Parser
 import ToyLib.Prelude
