@@ -71,7 +71,7 @@ solveTS :: Int -> U.Vector (Int, Int) -> Maybe (U.Vector Bool)
 solveTS !nVars !constraints = do
   -- TODO: better SCC output
   let gr = buildSG (2 * nVars) constraints
-  let !sccs = revTopSccSG gr
+  let !sccs = topSccSG gr
   let !groups = U.create $ do
         !vec <- UM.replicate (2 * nVars) (-1 :: Int)
         forM_ (zip [0 :: Int ..] sccs) $ \(!iScc, !scc) -> do
