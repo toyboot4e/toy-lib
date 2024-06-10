@@ -196,6 +196,7 @@ library
     Data.IntervalSet
     Data.ModInt
     Data.MultiSet
+    Data.MultiSet2
     Data.MultiSetVec
     Data.RollingHash
     Data.SafeList
@@ -264,8 +265,8 @@ test-suite toy-lib-test
   hs-source-dirs:   tests
   other-modules:
     Tests.Bisect
-    Tests.NTT
     Tests.IntervalMap
+    Tests.NTT
 
   build-depends:
     , base              ^>=4.17.2.0

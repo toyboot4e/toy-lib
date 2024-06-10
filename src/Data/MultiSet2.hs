@@ -1,7 +1,7 @@
 -- | Multi set backed by `Map`.
-module Data.MultiSet where
+module Data.MultiSet2 where
 
-import qualified Data.IntMap.Strict as IM
+import qualified Data.Map.Strict as M
 import Data.List (foldl')
 import GHC.Stack (HasCallStack)
 
