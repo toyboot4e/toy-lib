@@ -1,4 +1,4 @@
--- | Compares `IntervalMap` with naive implementation.
+-- | `IntervalMap` tests.
 
 module Tests.IntervalMap where
 
@@ -77,4 +77,4 @@ intervalMapProps =
     ]
 
 tests :: [TestTree]
-tests = [testGroup "Data.IntervalMap" [intervalMapProperties]]
+tests = [testGroup "Data.IntervalMap" [intervalMapProps]]
