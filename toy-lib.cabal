@@ -176,6 +176,7 @@ library
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
+    Data.ByteString.SuffixArray
     Data.ByteString.ZFunction
     Data.Core.SemigroupAction
     Data.Core.Semiring
