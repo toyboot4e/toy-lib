@@ -269,6 +269,7 @@ test-suite toy-lib-test
     Tests.Bisect
     Tests.IntervalMap
     Tests.NTT
+    Tests.SuffixArray
     Tests.ZFunction
 
   build-depends:

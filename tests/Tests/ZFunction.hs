@@ -21,6 +21,7 @@ zFunctionProps =
         return $ zOfNaive s QC.=== zOf s
     ]
 
+-- FIXME: sometimes fails?
 tests :: [TestTree]
-tests = [testGroup "Data.ZFunction" [zFunctionProps]]
+tests = [testGroup "Data.ByteString.ZFunction" [zFunctionProps]]
 
