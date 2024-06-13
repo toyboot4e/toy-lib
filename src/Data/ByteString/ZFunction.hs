@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | [Z function](https://cp-algorithms.com/string/z-function.html) calculation.
-module Data.ZFunction where
+module Data.ByteString.ZFunction where
 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Unsafe as BSU

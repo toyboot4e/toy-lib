@@ -176,6 +176,7 @@ library
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
+    Data.ByteString.ZFunction
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.Graph.Alias
@@ -211,7 +212,6 @@ library
     Data.Vector.CSum
     Data.Vector.Extra
     Data.Vector.IxVector
-    Data.ZFunction
     Heuristic.Randoms
     Math.BitSet
     Math.Digits
