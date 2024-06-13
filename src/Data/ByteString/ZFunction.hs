@@ -1,6 +1,18 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | [Z function](https://cp-algorithms.com/string/z-function.html) calculation.
+--
+-- = Definition
+--
+-- \(z[i]\) is defined as the length of the longest common prefix between \(s[0:]\) and \(s[i:]\).
+-- \(z[0]\) is exceptionally defined as zero.
+--
+-- \[
+-- \begin{aligned}
+-- z[0] &:= 0 \\
+-- z[i] &:= \mathcal{lcp}(s[0:], s[i:])
+-- \end{aligned}
+-- \]
 module Data.ByteString.ZFunction where
 
 import qualified Data.ByteString.Char8 as BS
