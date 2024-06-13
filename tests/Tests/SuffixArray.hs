@@ -5,11 +5,11 @@ import Data.ByteString.Char8 qualified as BS
 import Data.ByteString.SuffixArray
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
+import ToyLib.Debug
 
 genBS :: Gen BS.ByteString
 genBS = do
-  -- len <- choose (1, 100)
-  len <- choose (1, 5)
+  len <- choose (1, 100)
   BS.pack <$> vectorOf len (QC.oneof [QC.choose ('a', 'z'), QC.choose ('A', 'Z')])
 
 suffixArrayProps :: TestTree
@@ -18,8 +18,9 @@ suffixArrayProps =
     "Suffix Array properties"
     [ QC.testProperty "naiveSA == fastSA" $ do
         s <- genBS
+        let !_ = dbg s
         return
-          . QC.counterexample (show (BS.unpack s, saOfNaive s, saOf s))
+          . QC.counterexample (show s)
           $ saOfNaive s QC.=== saOf s
     ]
 

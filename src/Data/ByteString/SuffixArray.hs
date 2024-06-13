@@ -8,9 +8,9 @@
 -- after sort for all the suffixes.
 module Data.ByteString.SuffixArray where
 
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Control.Monad.ST (runST)
-import Control.Monad.Trans.State.Strict (evalStateT, get, modify')
+import Control.Monad.Trans.State.Strict (execStateT, get, modify')
 import Data.Bits
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (chr, ord)
@@ -29,9 +29,11 @@ saOfNaive bs =
   U.convert
     . V.map fst
     . V.modify (VAI.sortBy (comparing snd))
-    $ V.generate n (\i -> (i, BS.drop (n - 1 - i) bs))
+    $ V.generate n (\i -> (i, BS.drop i bs))
+    -- $ V.generate n (\i -> (i, BS.snoc (BS.drop i bs) c0))
   where
     n = BS.length bs
+    c0 = chr 0
 
 -- vector<int> p(n), c(n), cnt(max(alphabet, n), 0);
 -- for (int i = 0; i < n; i++)
@@ -53,16 +55,15 @@ saOfNaive bs =
 -- TODO: non-alphabet input?
 
 -- | \(O(N)\) Auxiliary function to `saOf`.
-sortCyclicShifts :: BS.ByteString -> (U.Vector Int, U.Vector Int)
-sortCyclicShifts bs = (classes, perm)
+sortCyclicShifts :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
+sortCyclicShifts bs = (nClasses, classes, perm)
   where
     !n = BS.length bs
-    !alphabet = 255
+    !alphabet = 256
     !_ = dbg "sorting.."
     -- @p[i]@ is the index of the @i@ -th substring in the sorted order
     !perm = U.create $ do
-      vec <- UM.replicate n (-1 :: Int) -- GM.unsafeNew n
-      GM.write vec 0 (0 :: Int)
+      vec <- UM.unsafeNew n
       -- TODO: reuse the `cnt` vector
       cnt <-
         U.unsafeThaw
@@ -78,13 +79,21 @@ sortCyclicShifts bs = (classes, perm)
         i' <- GM.read cnt c
         GM.write vec i' i
       return vec
-    !classes =
-      -- TODO: replace zipWith with scanl' for benchmarking
-      U.scanl' (+) (0 :: Int) $
-        U.zipWith
-          (\i1 i2 -> if BS.index bs i1 == BS.index bs i2 then 0 else 1)
-          (U.tail perm)
-          perm
+    (!nClasses, !classes) = runST $ do
+      vec <- UM.replicate n (-1) -- UM.unsafeNew n 0
+      UM.write vec (perm U.! 0) 0
+      -- why drop 1
+      !nClasses <-
+        fmap (+ 1) . (`execStateT` (0 :: Int)) $
+          U.zipWithM_
+            ( \i1 i2 -> do
+                when (BS.index bs i1 /= BS.index bs i2) $ do
+                  modify' (+ 1)
+                UM.write vec i1 =<< get
+            )
+            (U.tail perm)
+            perm
+      (nClasses,) <$> U.unsafeFreeze vec
 
 -- | \(O(N \log N)\) Suffix array calculation.
 --
@@ -92,50 +101,54 @@ sortCyclicShifts bs = (classes, perm)
 --
 -- Binary lifting with smart sort.
 saOf :: BS.ByteString -> U.Vector Int
-saOf bs0 = U.tail $ lastClasses (bit 1 :: Int) classes0 perm0
+-- TODO: why start with one??
+saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
   where
     !c0 = chr 0
     !bs = BS.snoc bs0 c0
     !n = BS.length bs
-    !alphabet = 255
     -- zero character (null character in ASCII table)
-    (!classes0, !perm0) = sortCyclicShifts bs
+    (!nClasses0, !classes0, !perm0) = sortCyclicShifts bs
     !_ = dbg "done sort"
-    lastClasses :: Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
-    lastClasses len classes perm
-      | len >= n = classes
-      | otherwise = lastClasses (len .<<. 1) classes' perm'
+    lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
+    lastPerm len nClasses classes perm
+      | len >= n = perm
+      | otherwise = lastPerm (len .<<. 1) nClasses' classes' perm''
       where
         -- this sort in details
         !_ = note "perm" perm
+        !_ = note "classes" classes
         perm' = note "perm'" $ U.map (\p -> fastMod1 n (p - len)) perm
           where
             fastMod1 n i
               | i < 0 = i + n
               | otherwise = i
-        nClass = U.last classes + 1
-        classes' = U.create $ do
+        perm'' = U.create $ do
+          cnt <-
+            U.unsafeThaw
+              . dbgId
+              . G.scanl1' (+)
+              . G.accumulate (+) (G.replicate nClasses (0 :: Int))
+              -- TODO: is backpermute faster?
+              $ G.map (\i -> (classes G.! i, 1)) perm'
+          vec <- UM.replicate n (-1 :: Int)
+          UM.write vec (U.head perm') 0
+          -- TODO: reverse?
+          U.forM_ (U.reverse perm') $ \i -> do
+            let !c = classes U.! i
+            GM.modify cnt (subtract 1) c
+            i' <- GM.read cnt c
+            GM.write vec i' i
+          return vec
+        (!nClasses', !classes') = note "classes'" $ runST $ do
           -- TODO: reuse cnt vec
           -- TODO: in-place update
           -- TODO: why perm''??
-          let !perm'' = U.create $ do
-                cnt <-
-                  U.unsafeThaw
-                    . G.scanl1' (+)
-                    -- FIXME: the length can be `nClass`?
-                    . G.accumulate (+) (G.replicate alphabet (0 :: Int))
-                    -- TODO: is backpermute faster?
-                    $ G.map (\i -> (classes G.! i, 1)) perm'
-                vec <- UM.replicate nClass (0 :: Int)
-                U.forM_ perm' $ \i -> do
-                  let !c = classes U.! i
-                  GM.modify cnt (subtract 1) c
-                  i' <- GM.read cnt c
-                  GM.write vec i' i
-                return vec
 
-          vec <- UM.replicate n (0 :: Int)
-          (`evalStateT` (0 :: Int)) $
+          vec <- UM.replicate n (-1 :: Int)
+          UM.write vec (U.head perm'') 0
+          -- UM.write vec (classes U.! (perm'' U.! 0)) 0
+          !nClasses' <- fmap (+ 1) $ (`execStateT` (0 :: Int)) $
             U.zipWithM_
               ( \i1 i2 -> do
                   let !c11 = (G.!) classes i1
@@ -148,7 +161,7 @@ saOf bs0 = U.tail $ lastClasses (bit 1 :: Int) classes0 perm0
               )
               (U.tail perm'')
               perm''
-          return vec
+          (nClasses',) <$> U.unsafeFreeze vec
           where
             fastMod2 n i
               | i >= n = i - n
