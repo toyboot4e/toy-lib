@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 -- | [Suffix Array](https://cp-algorithms.com/string/suffix-array.html) calculation.
 --
 -- = Definition
@@ -21,7 +19,6 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import ToyLib.Debug
 
 -- | \(O(N^2)\) Suffix array calculation.
 saOfNaive :: BS.ByteString -> U.Vector Int
@@ -30,25 +27,8 @@ saOfNaive bs =
     . V.map fst
     . V.modify (VAI.sortBy (comparing snd))
     $ V.generate n (\i -> (i, BS.drop i bs))
-    -- $ V.generate n (\i -> (i, BS.snoc (BS.drop i bs) c0))
   where
     n = BS.length bs
-    c0 = chr 0
-
--- vector<int> p(n), c(n), cnt(max(alphabet, n), 0);
--- for (int i = 0; i < n; i++)
---     cnt[s[i]]++;
--- for (int i = 1; i < alphabet; i++)
---     cnt[i] += cnt[i-1];
--- for (int i = 0; i < n; i++)
---     p[--cnt[s[i]]] = i;
--- c[p[0]] = 0;
--- int classes = 1;
--- for (int i = 1; i < n; i++) {
---     if (s[p[i]] != s[p[i-1]])
---         classes++;
---     c[p[i]] = classes - 1;
--- }
 
 -- TODO: use `unsafeIndex`
 -- TODO: is is faster to convert ByteString to Vector in preprocessing?
@@ -60,7 +40,6 @@ sortCyclicShifts bs = (nClasses, classes, perm)
   where
     !n = BS.length bs
     !alphabet = 256
-    !_ = dbg "sorting.."
     -- @p[i]@ is the index of the @i@ -th substring in the sorted order
     !perm = U.create $ do
       vec <- UM.unsafeNew n
@@ -109,16 +88,13 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
     !n = BS.length bs
     -- zero character (null character in ASCII table)
     (!nClasses0, !classes0, !perm0) = sortCyclicShifts bs
-    !_ = dbg "done sort"
     lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
     lastPerm len nClasses classes perm
       | len >= n = perm
       | otherwise = lastPerm (len .<<. 1) nClasses' classes' perm''
       where
         -- this sort in details
-        !_ = note "perm" perm
-        !_ = note "classes" classes
-        perm' = note "perm'" $ U.map (\p -> fastMod1 n (p - len)) perm
+        perm' = U.map (\p -> fastMod1 n (p - len)) perm
           where
             fastMod1 n i
               | i < 0 = i + n
@@ -126,7 +102,6 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
         perm'' = U.create $ do
           cnt <-
             U.unsafeThaw
-              . dbgId
               . G.scanl1' (+)
               . G.accumulate (+) (G.replicate nClasses (0 :: Int))
               -- TODO: is backpermute faster?
@@ -140,27 +115,28 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
             i' <- GM.read cnt c
             GM.write vec i' i
           return vec
-        (!nClasses', !classes') = note "classes'" $ runST $ do
+        (!nClasses', !classes') = runST $ do
           -- TODO: reuse cnt vec
           -- TODO: in-place update
-          -- TODO: why perm''??
 
           vec <- UM.replicate n (-1 :: Int)
           UM.write vec (U.head perm'') 0
           -- UM.write vec (classes U.! (perm'' U.! 0)) 0
-          !nClasses' <- fmap (+ 1) $ (`execStateT` (0 :: Int)) $
-            U.zipWithM_
-              ( \i1 i2 -> do
-                  let !c11 = (G.!) classes i1
-                      !c12 = (G.!) classes . fastMod2 n $ i1 + len
-                      !c21 = (G.!) classes i2
-                      !c22 = (G.!) classes . fastMod2 n $ i2 + len
-                  unless (c11 == c21 && c12 == c22) $ do
-                    modify' (+ 1)
-                  UM.write vec i1 =<< get
-              )
-              (U.tail perm'')
-              perm''
+          !nClasses' <-
+            fmap (+ 1) $
+              (`execStateT` (0 :: Int)) $
+                U.zipWithM_
+                  ( \i1 i2 -> do
+                      let !c11 = (G.!) classes i1
+                          !c12 = (G.!) classes . fastMod2 n $ i1 + len
+                          !c21 = (G.!) classes i2
+                          !c22 = (G.!) classes . fastMod2 n $ i2 + len
+                      unless (c11 == c21 && c12 == c22) $ do
+                        modify' (+ 1)
+                      UM.write vec i1 =<< get
+                  )
+                  (U.tail perm'')
+                  perm''
           (nClasses',) <$> U.unsafeFreeze vec
           where
             fastMod2 n i
