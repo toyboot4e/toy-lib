@@ -61,22 +61,23 @@ zOf bs = U.create $ do
   z <- UM.unsafeNew n
   UM.unsafeWrite z 0 0
 
-  let calc l0 r0 i
+  -- kind of @constructN@ with states.
+  let inner l0 r0 i
         | i >= n = return ()
-        -- starting with unknown point
-        | r0 <= i = do
+        -- starting with no context
+        | i >= r0 = do
             let !r = lcpSearch 0 i
             UM.unsafeWrite z i (r - i)
-            calc i r (i + 1)
-        -- starting with a known point
+            inner i r (i + 1)
+        -- starting within a z-box
         | otherwise = do
             let !i' = i - l0
-            !d0 <- min (n - i) <$> UM.unsafeRead z i'
-            let !r = lcpSearch (i' + d0) (i + d0)
+            !d0 <- min (r0 - i) <$> UM.unsafeRead z i'
+            let !r = lcpSearch d0 (i + d0)
             UM.unsafeWrite z i (r - i)
             if r0 < r
-              then calc i r (i + 1)
-              else calc l0 r0 (i + 1)
+              then inner i r (i + 1)
+              else inner l0 r0 (i + 1)
       lcpSearch i' i
         | i >= n = i
         | c' == c = lcpSearch (i' + 1) (i + 1)
@@ -85,5 +86,5 @@ zOf bs = U.create $ do
           c' = BSU.unsafeIndex bs i'
           c = BSU.unsafeIndex bs i
 
-  calc 0 0 1
+  inner 0 0 1
   return z
