@@ -20,7 +20,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | \(O(N^2)\) Suffix array calculation.
+-- | \(O(N^2 \log N)\) Suffix array calculation.
 saOfNaive :: BS.ByteString -> U.Vector Int
 saOfNaive bs =
   U.convert
@@ -94,7 +94,7 @@ sortByCharacter bs = (nClasses, classes, perm)
             perm
       (nClasses,) <$> G.unsafeFreeze vec
 
--- | Sort cyclic substrings of length @no.
+-- | Sort cyclic substrings of length @n@.
 sortCyclicShifts :: BS.ByteString -> U.Vector Int
 sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
   where
@@ -114,6 +114,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
       where
         !x' = x - y
 
+    -- binary lifting
     lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
     lastPerm len nClasses classes perm
       | len >= n = perm
