@@ -47,9 +47,9 @@ sortCyclicShifts bs = (nClasses, classes, perm)
       cnt <-
         U.unsafeThaw
           -- FIXME: smaller allocation as in the book??
-          . U.scanl1' (+)
-          . U.accumulate (+) (U.replicate alphabet (0 :: Int))
-          . U.map ((,1) . ord)
+          . G.scanl1' (+)
+          . G.accumulate (+) (U.replicate alphabet (0 :: Int))
+          . G.map ((,1) . ord)
           . U.fromList
           $ BS.unpack bs
       forM_ [0 .. n - 1] $ \i -> do
@@ -59,18 +59,18 @@ sortCyclicShifts bs = (nClasses, classes, perm)
         GM.write vec i' i
       return vec
     (!nClasses, !classes) = runST $ do
-      vec <- UM.replicate n (-1) -- UM.unsafeNew n 0
-      UM.write vec (perm U.! 0) 0
+      vec <- UM.unsafeNew n
+      GM.write vec (perm G.! 0) 0
       -- why drop 1
       !nClasses <-
         fmap (+ 1) . (`execStateT` (0 :: Int)) $
-          U.zipWithM_
+          G.zipWithM_
             ( \i1 i2 -> do
                 when (BS.index bs i1 /= BS.index bs i2) $ do
                   modify' (+ 1)
-                UM.write vec i1 =<< get
+                GM.write vec i1 =<< get
             )
-            (U.tail perm)
+            (G.tail perm)
             perm
       (nClasses,) <$> U.unsafeFreeze vec
 
@@ -81,7 +81,7 @@ sortCyclicShifts bs = (nClasses, classes, perm)
 -- Binary lifting with smart sort.
 saOf :: BS.ByteString -> U.Vector Int
 -- TODO: why start with one??
-saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
+saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
   where
     !c0 = chr 0
     !bs = BS.snoc bs0 c0
@@ -94,7 +94,7 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
       | otherwise = lastPerm (len .<<. 1) nClasses' classes' perm''
       where
         -- this sort in details
-        perm' = U.map (\p -> fastMod1 n (p - len)) perm
+        perm' = G.map (\p -> fastMod1 n (p - len)) perm
           where
             fastMod1 n i
               | i < 0 = i + n
@@ -104,13 +104,12 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
             U.unsafeThaw
               . G.scanl1' (+)
               . G.accumulate (+) (G.replicate nClasses (0 :: Int))
-              -- TODO: is backpermute faster?
               $ G.map (\i -> (classes G.! i, 1)) perm'
           vec <- UM.replicate n (-1 :: Int)
-          UM.write vec (U.head perm') 0
-          -- TODO: reverse?
-          U.forM_ (U.reverse perm') $ \i -> do
-            let !c = classes U.! i
+          GM.write vec (G.head perm') 0
+          -- TODO: no reverse?
+          G.forM_ (G.reverse perm') $ \i -> do
+            let !c = classes G.! i
             GM.modify cnt (subtract 1) c
             i' <- GM.read cnt c
             GM.write vec i' i
@@ -119,13 +118,12 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
           -- TODO: reuse cnt vec
           -- TODO: in-place update
 
-          vec <- UM.replicate n (-1 :: Int)
-          UM.write vec (U.head perm'') 0
-          -- UM.write vec (classes U.! (perm'' U.! 0)) 0
+          vec <- UM.unsafeNew n
+          GM.write vec (G.head perm'') 0
           !nClasses' <-
             fmap (+ 1) $
               (`execStateT` (0 :: Int)) $
-                U.zipWithM_
+                G.zipWithM_
                   ( \i1 i2 -> do
                       let !c11 = (G.!) classes i1
                           !c12 = (G.!) classes . fastMod2 n $ i1 + len
@@ -133,9 +131,9 @@ saOf bs0 = U.tail $ lastPerm 1 nClasses0 classes0 perm0
                           !c22 = (G.!) classes . fastMod2 n $ i2 + len
                       unless (c11 == c21 && c12 == c22) $ do
                         modify' (+ 1)
-                      UM.write vec i1 =<< get
+                      GM.write vec i1 =<< get
                   )
-                  (U.tail perm'')
+                  (G.tail perm'')
                   perm''
           (nClasses',) <$> U.unsafeFreeze vec
           where
