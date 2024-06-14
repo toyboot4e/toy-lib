@@ -39,15 +39,14 @@ zOfNaive bs = U.generate (BS.length bs) z
 --
 -- @
 -- String: [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
---          *-----+-----o
---          0           r' = r0 - l0 + 1
---                i' = i - l
---  Z-Box:        *-----+--------o
---                l0          r0
---                      i
---  Next Z-Box:         *--+---][-+----o
---                         |      |
---                         |      Known by new search
+--         [------+------)
+--          0     |      r' = r0 - l0 + 1
+--                i' = i - l0
+--  Z-Box:        [-----+--------)
+--                l0    i        r0
+--  Next Z-Box:        [---+---][---+---)
+--                         |        |
+--                         |        Known by new search
 --                         +-- Known by z[i']
 -- @
 --
