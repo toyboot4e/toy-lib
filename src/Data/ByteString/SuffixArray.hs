@@ -30,14 +30,32 @@ saOfNaive bs =
   where
     n = BS.length bs
 
+-- | \(O(N \log N)\) Suffix array calculation.
+--
+-- = The \(O(N \log N)\) algorithm
+--
+-- Binary lifting with smart sort.
+--
+-- @
+--      a    b    a    $
+--     $a   ab   ba   a$
+--   ba$a a$ab aba$ $aba
+-- @
+saOf :: BS.ByteString -> U.Vector Int
+saOf bs0 = sortCyclicShifts (BS.snoc bs0 c0)
+  where
+    -- zero character (null character in ASCII table)
+    !c0 = chr 0
+
 -- TODO: use `unsafeIndex`
 -- TODO: is is faster to convert ByteString to Vector in preprocessing?
 -- TODO: non-alphabet input?
 -- TODO: reuse the `cnt` and `perm'` vector
+-- TODO: Is StateT slow?
 
--- | \(O(N)\) Auxiliary function to `saOf`.
-sortCyclicShifts :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
-sortCyclicShifts bs = (nClasses, classes, perm)
+-- | \(O(N)\) Preprocessing function to `sortCyclicShifts`.
+sortByCharacter :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
+sortByCharacter bs = (nClasses, classes, perm)
   where
     !n = BS.length bs
     !alphabet = 256
@@ -63,7 +81,7 @@ sortCyclicShifts bs = (nClasses, classes, perm)
     -- record equal character classes and assign them to the characters.
     (!nClasses, !classes) = runST $ do
       vec <- UM.unsafeNew n
-      GM.write vec (perm G.! 0) 0
+      GM.write vec (G.head perm) 0
       !nClasses <-
         fmap (+ 1) . (`execStateT` (0 :: Int)) $
           G.zipWithM_
@@ -76,26 +94,25 @@ sortCyclicShifts bs = (nClasses, classes, perm)
             perm
       (nClasses,) <$> U.unsafeFreeze vec
 
--- | \(O(N \log N)\) Suffix array calculation.
---
--- = The \(O(N \log N)\) algorithm
---
--- Binary lifting with smart sort.
---
--- @
---      a    b    a    $
---     $a   ab   ba   a$
---   ba$a a$ab aba$ $aba
--- @
-saOf :: BS.ByteString -> U.Vector Int
-saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
+-- | Sort cyclic substrings of length @no.
+sortCyclicShifts :: BS.ByteString -> U.Vector Int
+sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
   where
-    -- zero character (null character in ASCII table)
-    !c0 = chr 0
-    !bs = BS.snoc bs0 c0
     !n = BS.length bs
+    (!nClasses0, !classes0, !perm0) = sortByCharacter bs
 
-    (!nClasses0, !classes0, !perm0) = sortCyclicShifts bs
+    fastAddMod m x y
+      | x' >= m = x - m
+      | otherwise = x'
+      where
+        !x' = x + y
+
+    fastSubMod m x y
+      | x' < 0 = x' + m
+      | otherwise = x'
+      where
+        !x' = x - y
+
     lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
     lastPerm len nClasses classes perm
       | len >= n = perm
@@ -105,11 +122,7 @@ saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
       where
         -- In the original index (perm[i]), move back @len@ characters. This is where the left half
         -- of the new substring is at (see also the above diagram):
-        leftHalves = G.map (\p -> fastMod1 n (p - len)) perm
-          where
-            fastMod1 n i
-              | i < 0 = i + n
-              | otherwise = i
+        leftHalves = G.map (\p -> fastSubMod n p len) perm
 
         -- sort by the left halves of the substrings using counting sort.
         perm' = U.create $ do
@@ -139,9 +152,9 @@ saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
                 G.zipWithM_
                   ( \i1 i2 -> do
                       let !c11 = (G.!) classes i1
-                          !c12 = (G.!) classes . fastMod2 n $ i1 + len
+                          !c12 = (G.!) classes $ fastAddMod n i1 len
                           !c21 = (G.!) classes i2
-                          !c22 = (G.!) classes . fastMod2 n $ i2 + len
+                          !c22 = (G.!) classes $ fastAddMod n i2 len
                       unless (c11 == c21 && c12 == c22) $ do
                         modify' (+ 1)
                       GM.write vec i1 =<< get
@@ -149,7 +162,3 @@ saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
                   (G.tail perm')
                   perm'
           (nClasses',) <$> U.unsafeFreeze vec
-          where
-            fastMod2 n i
-              | i >= n = i - n
-              | otherwise = i
