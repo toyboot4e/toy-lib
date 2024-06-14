@@ -42,7 +42,7 @@ saOfNaive bs =
 --   ba$a a$ab aba$ $aba
 -- @
 saOf :: BS.ByteString -> U.Vector Int
-saOf bs0 = sortCyclicShifts (BS.snoc bs0 c0)
+saOf bs0 = G.tail $ sortCyclicShifts (BS.snoc bs0 c0)
   where
     -- zero character (null character in ASCII table)
     !c0 = chr 0
@@ -92,7 +92,7 @@ sortByCharacter bs = (nClasses, classes, perm)
             )
             (G.tail perm)
             perm
-      (nClasses,) <$> U.unsafeFreeze vec
+      (nClasses,) <$> G.unsafeFreeze vec
 
 -- | Sort cyclic substrings of length @no.
 sortCyclicShifts :: BS.ByteString -> U.Vector Int
@@ -101,8 +101,9 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
     !n = BS.length bs
     (!nClasses0, !classes0, !perm0) = sortByCharacter bs
 
+    -- helper
     fastAddMod m x y
-      | x' >= m = x - m
+      | x' >= m = x' - m
       | otherwise = x'
       where
         !x' = x + y
@@ -117,8 +118,8 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
     lastPerm len nClasses classes perm
       | len >= n = perm
       | otherwise =
-        let (!nClasses', classes') = getNextClasses ()
-         in lastPerm (len .<<. 1) nClasses' classes' perm'
+          let (!nClasses', !classes') = getNextClasses ()
+           in lastPerm (len .<<. 1) nClasses' classes' perm'
       where
         -- In the original index (perm[i]), move back @len@ characters. This is where the left half
         -- of the new substring is at (see also the above diagram):
@@ -130,7 +131,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
             U.unsafeThaw
               . G.scanl1' (+)
               . G.accumulate (+) (G.replicate nClasses (0 :: Int))
-              $ G.map (\i -> (classes G.! i, 1)) perm'
+              $ G.map (\i -> (classes G.! i, 1)) leftHalves
 
           vec <- UM.unsafeNew n
           GM.write vec (G.head leftHalves) 0
@@ -147,18 +148,17 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
           vec <- UM.unsafeNew n
           GM.write vec (G.head perm') 0
           !nClasses' <-
-            fmap (+ 1) $
-              (`execStateT` (0 :: Int)) $
-                G.zipWithM_
-                  ( \i1 i2 -> do
-                      let !c11 = (G.!) classes i1
-                          !c12 = (G.!) classes $ fastAddMod n i1 len
-                          !c21 = (G.!) classes i2
-                          !c22 = (G.!) classes $ fastAddMod n i2 len
-                      unless (c11 == c21 && c12 == c22) $ do
-                        modify' (+ 1)
-                      GM.write vec i1 =<< get
-                  )
-                  (G.tail perm')
-                  perm'
-          (nClasses',) <$> U.unsafeFreeze vec
+            fmap (+ 1) . (`execStateT` (0 :: Int)) $
+              G.zipWithM_
+                ( \i1 i2 -> do
+                    let !l1 = (G.!) classes i1
+                        !r1 = (G.!) classes $ fastAddMod n i1 len
+                        !l2 = (G.!) classes i2
+                        !r2 = (G.!) classes $ fastAddMod n i2 len
+                    unless (l1 == l2 && r1 == r2) $ do
+                      modify' (+ 1)
+                    GM.write vec i1 =<< get
+                )
+                (G.tail perm')
+                perm'
+          (nClasses',) <$> G.unsafeFreeze vec

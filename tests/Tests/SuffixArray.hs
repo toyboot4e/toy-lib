@@ -5,7 +5,6 @@ import Data.ByteString.Char8 qualified as BS
 import Data.ByteString.SuffixArray
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import ToyLib.Debug
 
 genBS :: Gen BS.ByteString
 genBS = do
@@ -18,7 +17,6 @@ suffixArrayProps =
     "Suffix Array properties"
     [ QC.testProperty "naiveSA == fastSA" $ do
         s <- genBS
-        let !_ = dbg s
         return
           . QC.counterexample (show s)
           $ saOfNaive s QC.=== saOf s
