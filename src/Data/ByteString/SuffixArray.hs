@@ -2,8 +2,8 @@
 --
 -- = Definition
 --
--- Suffix array is defined as @sa[i] = indexOf(sa[(n - 1 - i):])@ where @indexOf@ returns the index
--- after sort for all the suffixes.
+-- Suffix array is defined as @sa[i] = indexOf(sa[(n - 1 - i):])@ where @indexOf@ returns the i-th
+-- substring in the sorted order.
 module Data.ByteString.SuffixArray where
 
 import Control.Monad (forM_, unless, when)
@@ -33,6 +33,7 @@ saOfNaive bs =
 -- TODO: use `unsafeIndex`
 -- TODO: is is faster to convert ByteString to Vector in preprocessing?
 -- TODO: non-alphabet input?
+-- TODO: reuse the `cnt` and `perm'` vector
 
 -- | \(O(N)\) Auxiliary function to `saOf`.
 sortCyclicShifts :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
@@ -40,28 +41,29 @@ sortCyclicShifts bs = (nClasses, classes, perm)
   where
     !n = BS.length bs
     !alphabet = 256
-    -- @p[i]@ is the index of the @i@ -th substring in the sorted order
+
+    -- sort the characters using counting sort.
     !perm = U.create $ do
-      vec <- UM.unsafeNew n
-      -- TODO: reuse the `cnt` vector
       cnt <-
         U.unsafeThaw
-          -- FIXME: smaller allocation as in the book??
+          -- TODO: smaller allocation in non-ascii input?
           . G.scanl1' (+)
           . G.accumulate (+) (U.replicate alphabet (0 :: Int))
           . G.map ((,1) . ord)
           . U.fromList
           $ BS.unpack bs
+      vec <- UM.unsafeNew n
       forM_ [0 .. n - 1] $ \i -> do
         let !c = ord $ BS.index bs i
         GM.modify cnt (subtract 1) c
         i' <- GM.read cnt c
         GM.write vec i' i
       return vec
+
+    -- record equal character classes and assign them to the characters.
     (!nClasses, !classes) = runST $ do
       vec <- UM.unsafeNew n
       GM.write vec (perm G.! 0) 0
-      -- why drop 1
       !nClasses <-
         fmap (+ 1) . (`execStateT` (0 :: Int)) $
           G.zipWithM_
@@ -79,47 +81,58 @@ sortCyclicShifts bs = (nClasses, classes, perm)
 -- = The \(O(N \log N)\) algorithm
 --
 -- Binary lifting with smart sort.
+--
+-- @
+--      a    b    a    $
+--     $a   ab   ba   a$
+--   ba$a a$ab aba$ $aba
+-- @
 saOf :: BS.ByteString -> U.Vector Int
--- TODO: why start with one??
 saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
   where
+    -- zero character (null character in ASCII table)
     !c0 = chr 0
     !bs = BS.snoc bs0 c0
     !n = BS.length bs
-    -- zero character (null character in ASCII table)
+
     (!nClasses0, !classes0, !perm0) = sortCyclicShifts bs
     lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
     lastPerm len nClasses classes perm
       | len >= n = perm
-      | otherwise = lastPerm (len .<<. 1) nClasses' classes' perm''
+      | otherwise =
+        let (!nClasses', classes') = getNextClasses ()
+         in lastPerm (len .<<. 1) nClasses' classes' perm'
       where
-        -- this sort in details
-        perm' = G.map (\p -> fastMod1 n (p - len)) perm
+        -- In the original index (perm[i]), move back @len@ characters. This is where the left half
+        -- of the new substring is at (see also the above diagram):
+        leftHalves = G.map (\p -> fastMod1 n (p - len)) perm
           where
             fastMod1 n i
               | i < 0 = i + n
               | otherwise = i
-        perm'' = U.create $ do
+
+        -- sort by the left halves of the substrings using counting sort.
+        perm' = U.create $ do
           cnt <-
             U.unsafeThaw
               . G.scanl1' (+)
               . G.accumulate (+) (G.replicate nClasses (0 :: Int))
               $ G.map (\i -> (classes G.! i, 1)) perm'
-          vec <- UM.replicate n (-1 :: Int)
-          GM.write vec (G.head perm') 0
+
+          vec <- UM.unsafeNew n
+          GM.write vec (G.head leftHalves) 0
           -- TODO: no reverse?
-          G.forM_ (G.reverse perm') $ \i -> do
+          G.forM_ (G.reverse leftHalves) $ \i -> do
             let !c = classes G.! i
             GM.modify cnt (subtract 1) c
             i' <- GM.read cnt c
             GM.write vec i' i
           return vec
-        (!nClasses', !classes') = runST $ do
-          -- TODO: reuse cnt vec
-          -- TODO: in-place update
 
+        -- record equal substring classes and assign them to the substrings.
+        getNextClasses () = runST $ do
           vec <- UM.unsafeNew n
-          GM.write vec (G.head perm'') 0
+          GM.write vec (G.head perm') 0
           !nClasses' <-
             fmap (+ 1) $
               (`execStateT` (0 :: Int)) $
@@ -133,8 +146,8 @@ saOf bs0 = G.tail $ lastPerm 1 nClasses0 classes0 perm0
                         modify' (+ 1)
                       GM.write vec i1 =<< get
                   )
-                  (G.tail perm'')
-                  perm''
+                  (G.tail perm')
+                  perm'
           (nClasses',) <$> U.unsafeFreeze vec
           where
             fastMod2 n i
