@@ -73,7 +73,7 @@ sortByCharacter bs = (nClasses, classes, perm)
 
       vec <- UM.unsafeNew n
       -- Indices are reversed for stable sorting. It doesn't make any difference after all, but
-      -- it's for consistency with the `lastPerm` implementation below.
+      -- it's for consistency with the `sortCyclicShifts'` implementation below.
       forM_ [n - 1, n - 2 .. 0] $ \i -> do
         let !c = ord $ BS.index bs i
         GM.modify cnt (subtract 1) c
@@ -97,13 +97,21 @@ sortByCharacter bs = (nClasses, classes, perm)
             perm
       (nClasses,) <$> G.unsafeFreeze vec
 
--- | Sort cyclic substrings of length @n@.
+-- | \(O(N \log N)\) Sorts cyclic substrings of @bs@ of length @n@.
 sortCyclicShifts :: BS.ByteString -> U.Vector Int
-sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
+sortCyclicShifts bs = sortCyclicShifts' n 1 nClasses0 classes0 perm0
   where
-    !n = BS.length bs
     (!nClasses0, !classes0, !perm0) = sortByCharacter bs
+    !n = BS.length bs
 
+-- | \(O(N \log N)\) Binary lifting part of `sortCyclicShifts`.
+sortCyclicShifts' :: Int ->Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
+sortCyclicShifts' n len nClasses classes perm
+  | len >= n = perm
+  | otherwise =
+      let (!nClasses', !classes') = getNextClasses ()
+       in sortCyclicShifts' n (len .<<. 1) nClasses' classes' perm'
+  where
     -- Helpers
     fastAddMod m x y
       | x' >= m = x' - m
@@ -117,53 +125,45 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
       where
         !x' = x - y
 
-    -- Binary lifting
-    lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
-    lastPerm len nClasses classes perm
-      | len >= n = perm
-      | otherwise =
-          let (!nClasses', !classes') = getNextClasses ()
-           in lastPerm (len .<<. 1) nClasses' classes' perm'
-      where
-        -- In the original index (perm[i]), move back @len@ characters. This is where the left half
-        -- of the new substring is at (see also the above diagram):
-        leftHalves = G.map (\p -> fastSubMod n p len) perm
+    -- In the original index (perm[i]), move back @len@ characters. This is where the left half
+    -- of the new substring is at (see also the above diagram):
+    leftHalves = G.map (\p -> fastSubMod n p len) perm
 
-        -- Sort by the left halves of the substrings using counting sort.
-        perm' = U.create $ do
-          cnt <-
-            U.unsafeThaw
-              . G.scanl1' (+)
-              . G.accumulate (+) (G.replicate nClasses (0 :: Int))
-              $ G.map (\i -> (classes G.! i, 1)) leftHalves
+    -- Sort by the left halves of the substrings using counting sort.
+    perm' = U.create $ do
+      cnt <-
+        U.unsafeThaw
+          . G.scanl1' (+)
+          . G.accumulate (+) (G.replicate nClasses (0 :: Int))
+          $ G.map (\i -> (classes G.! i, 1)) leftHalves
 
-          vec <- UM.unsafeNew n
-          GM.write vec (G.head leftHalves) 0
-          -- The `reverse` is for stable sorting, which preserves the result of the last sort by
-          -- the right halves.
-          G.forM_ (G.reverse leftHalves) $ \i -> do
-            let !c = classes G.! i
-            GM.modify cnt (subtract 1) c
-            i' <- GM.read cnt c
-            GM.write vec i' i
-          return vec
+      vec <- UM.unsafeNew n
+      GM.write vec (G.head leftHalves) 0
+      -- The `reverse` is for stable sorting, which preserves the result of the last sort by
+      -- the right halves of the substrings.
+      G.forM_ (G.reverse leftHalves) $ \i -> do
+        let !c = classes G.! i
+        GM.modify cnt (subtract 1) c
+        i' <- GM.read cnt c
+        GM.write vec i' i
+      return vec
 
-        -- Record equal substring classes and assign them to the substrings.
-        getNextClasses () = runST $ do
-          vec <- UM.unsafeNew n
-          GM.write vec (G.head perm') 0
-          !nClasses' <-
-            fmap (+ 1) . (`execStateT` (0 :: Int)) $
-              G.zipWithM_
-                ( \i1 i2 -> do
-                    let !l1 = (G.!) classes i1
-                        !r1 = (G.!) classes $ fastAddMod n i1 len
-                        !l2 = (G.!) classes i2
-                        !r2 = (G.!) classes $ fastAddMod n i2 len
-                    unless (l1 == l2 && r1 == r2) $ do
-                      modify' (+ 1)
-                    GM.write vec i1 =<< get
-                )
-                (G.tail perm')
-                perm'
-          (nClasses',) <$> G.unsafeFreeze vec
+    -- Record equal substring classes and assign them to the substrings.
+    getNextClasses () = runST $ do
+      vec <- UM.unsafeNew n
+      GM.write vec (G.head perm') 0
+      !nClasses' <-
+        fmap (+ 1) . (`execStateT` (0 :: Int)) $
+          G.zipWithM_
+            ( \i1 i2 -> do
+                let !l1 = (G.!) classes i1
+                    !r1 = (G.!) classes $ fastAddMod n i1 len
+                    !l2 = (G.!) classes i2
+                    !r2 = (G.!) classes $ fastAddMod n i2 len
+                unless (l1 == l2 && r1 == r2) $ do
+                  modify' (+ 1)
+                GM.write vec i1 =<< get
+            )
+            (G.tail perm')
+            perm'
+      (nClasses',) <$> G.unsafeFreeze vec
