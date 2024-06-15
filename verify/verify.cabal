@@ -150,6 +150,10 @@ executable acl-practice-h-exe
   import:           verify
   main-is:          acl-practice-h.hs
 
+executable acl-practice-i-exe
+  import:           verify
+  main-is:          acl-practice-i.hs
+
 executable acl-practice-k-exe
   import:           verify
   main-is:          acl-practice-k.hs
@@ -197,3 +201,8 @@ executable yosupo-string-zalgorithm-exe
 executable yosupo-string-suffixarray-exe
   import:           verify
   main-is:          yosupo-string-suffixarray.hs
+
+executable yosupo-string-number-of-substrings-exe
+  import:           verify
+  main-is:          yosupo-string-number-of-substrings.hs
+
