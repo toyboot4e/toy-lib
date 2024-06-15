@@ -108,6 +108,7 @@ solve = do
 -- verification-helper: PROBLEM https://atcoder.jp/contests/practice2/tasks/practice2_d
 -- #max-flow
 --
+-- REMARK: The test fails but the answer is correct.
 -- TODO: allow non-perfect match
 main :: IO ()
 main = runIO solve

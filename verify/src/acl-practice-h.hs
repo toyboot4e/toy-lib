@@ -51,6 +51,7 @@ solve = do
 -- verification-helper: PROBLEM https://atcoder.jp/contests/practice2/tasks/practice2_h
 -- #two-sat
 --
--- TODO: allow other solutions to the example out files
+-- REMARK: The test fails but the answer is correct.
+-- TODO: Allow other solutions to the example out files
 main :: IO ()
 main = runIO solve
