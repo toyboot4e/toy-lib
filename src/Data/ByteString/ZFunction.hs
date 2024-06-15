@@ -18,17 +18,17 @@ import qualified Data.ByteString.Unsafe as BSU
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | \(O(\max(N, M))\) Longest common prefix calculation.
+-- | \(O(\max(N, M))\) Longest common prefix calculation. \(z[0] := |s|\).
 lcpOf :: BS.ByteString -> BS.ByteString -> Int
 lcpOf bs1 bs2 = length . takeWhile id $ BS.zipWith (==) bs1 bs2
 
--- | \(O(N^2)\) Z function calculation.
+-- | \(O(N^2)\) Z function calculation. \(z[0] := |s|\).
 zOfNaive :: BS.ByteString -> U.Vector Int
 zOfNaive bs = U.generate (BS.length bs) z
   where
     z i = lcpOf bs (BS.drop i bs)
 
--- | \(O(N)\) Z function calculation.
+-- | \(O(N)\) Z function calculation. \(z[0] := |s|\).
 --
 -- = The \(O(N)\) algorithm
 --
@@ -47,7 +47,7 @@ zOfNaive bs = U.generate (BS.length bs) z
 --                         +-- Known by z[i']
 -- @
 --
--- z[i] can be calculated utilizing z[i'] because s[i..r] = s[i' .. r']
+-- \(z[i]\) can be calculated utilizing \(z[i']\) because \(s[i..r] = s[i' .. r']\)
 zOf :: BS.ByteString -> U.Vector Int
 zOf bs
   | BS.null bs = U.empty

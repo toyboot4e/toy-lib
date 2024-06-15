@@ -2,8 +2,8 @@
 --
 -- = Definition
 --
--- Suffix array is defined as @sa[i] = indexOf(sa[(n - 1 - i):])@ where @indexOf@ returns the i-th
--- substring in the sorted order.
+-- \(\mathcal{sa}[i] = \mathcal{originalOrderOf}(\mathcal{sa}[(n-1-i):])\) where
+-- \(\mathcal{originalOrderOf(i)}\) returns the order of i-th suffix.
 module Data.ByteString.SuffixArray where
 
 import Control.Monad (forM_, unless, when)
@@ -55,6 +55,13 @@ saOf bs0 = G.tail $ sortCyclicShifts (BS.snoc bs0 c0)
 -- - TODO: Is StateT slow?
 -- TODO: SA-IS
 
+-- | \(O(N \log N)\) Sorts cyclic substrings of @bs@ of length @n@.
+sortCyclicShifts :: BS.ByteString -> U.Vector Int
+sortCyclicShifts bs = sortCyclicShifts' n 1 nClasses0 classes0 perm0
+  where
+    (!nClasses0, !classes0, !perm0) = sortByCharacter bs
+    !n = BS.length bs
+
 -- | \(O(N)\) Preprocessing function to `sortCyclicShifts`.
 sortByCharacter :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
 sortByCharacter bs = (nClasses, classes, perm)
@@ -98,13 +105,6 @@ sortByCharacter bs = (nClasses, classes, perm)
             (G.tail perm)
             perm
       (nClasses,) <$> G.unsafeFreeze vec
-
--- | \(O(N \log N)\) Sorts cyclic substrings of @bs@ of length @n@.
-sortCyclicShifts :: BS.ByteString -> U.Vector Int
-sortCyclicShifts bs = sortCyclicShifts' n 1 nClasses0 classes0 perm0
-  where
-    (!nClasses0, !classes0, !perm0) = sortByCharacter bs
-    !n = BS.length bs
 
 -- | \(O(N \log N)\) Binary lifting part of `sortCyclicShifts`.
 sortCyclicShifts' :: Int ->Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
