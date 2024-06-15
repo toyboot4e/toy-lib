@@ -5,11 +5,9 @@
 -- = Definition
 --
 -- \(z[i]\) is defined as the length of the longest common prefix between \(s[0:]\) and \(s[i:]\).
--- \(z[0]\) is exceptionally defined as zero.
 --
 -- \[
 -- \begin{aligned}
--- z[0] &:= 0 \\
 -- z[i] &:= \mathcal{lcp}(s[0:], s[i:])
 -- \end{aligned}
 -- \]
@@ -28,7 +26,6 @@ lcpOf bs1 bs2 = length . takeWhile id $ BS.zipWith (==) bs1 bs2
 zOfNaive :: BS.ByteString -> U.Vector Int
 zOfNaive bs = U.generate (BS.length bs) z
   where
-    z 0 = 0
     z i = lcpOf bs (BS.drop i bs)
 
 -- | \(O(N)\) Z function calculation.
@@ -58,7 +55,7 @@ zOf bs
 zOf bs = U.create $ do
   let !n = BS.length bs
   z <- UM.unsafeNew n
-  UM.unsafeWrite z 0 0
+  UM.unsafeWrite z 0 n
 
   -- kind of @constructN@ with states.
   let inner l0 r0 i
