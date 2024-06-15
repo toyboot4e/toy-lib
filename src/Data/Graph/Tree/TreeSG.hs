@@ -117,15 +117,15 @@ foldTreeAllSG !tree !acc0At !toOp =
         !dp <- UM.unsafeNew (nVertsSG tree)
         let reroot parent parentOp v1 = do
               let !children = U.filter (/= parent) $ tree `adj` v1
-              let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp U.! v2) op0 children
-              let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp U.! v2) op0 children
+              let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp G.! v2) op0 children
+              let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp G.! v2) op0 children
 
               -- save
               let !x1 = (parentOp <> U.last opL) `sact` acc0At v1
               UM.unsafeWrite dp v1 x1
 
               U.iforM_ children $ \i2 v2 -> do
-                let !lrOp = (opL U.! i2) <> (opR U.! succ i2)
+                let !lrOp = (opL G.! i2) <> (opR G.! succ i2)
                 let !v1Acc = (parentOp <> lrOp) `sact` acc0At v1
                 let !op' = toOp v1Acc
                 reroot v1 op' v2

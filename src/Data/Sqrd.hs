@@ -69,7 +69,7 @@ actSqrd Sqrd {..} act l r = do
 --         !x <- get
 --         let !csum = blocks V.! iBlock :: U.Vector Int
 --         let !i = maybe 0 (+ 1) $ bsearchL dict (<= x)
---         return $ csum U.! i
+--         return $ csum G.! i
 --
 --   let {-# INLINE readPartSqrd #-}
 --       -- @l@ and @r@ are in global coordinates

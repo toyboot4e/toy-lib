@@ -153,9 +153,9 @@ sliceRH (RollingHash !_ !bn !s) !i0 !i1
   | i0 > i1 = emptyHS
   | otherwise =
       let !len = i1 - i0 + 1
-          !s1 = s U.! i1
+          !s1 = s G.! i1
           !s0 = fromMaybe 0 $ s U.!? pred i0
-          !value = (s1 - (bn U.! len) * s0) `mod` p
+          !value = (s1 - (bn G.! len) * s0) `mod` p
        in HashSlice value len
   where
     !p = fromInteger $ natVal (Proxy @p) :: Int
@@ -165,7 +165,7 @@ consHS :: forall b p. (KnownNat p) => RollingHash b p -> HashSlice p -> HashSlic
 consHS (RollingHash !_ !bn !_) (HashSlice !v0 !l0) (HashSlice !v1 !l1) = HashSlice value len
   where
     !p = fromInteger $ natVal (Proxy @p) :: Int
-    !value = ((bn U.! l1) * v0 + v1) `mod` p
+    !value = ((bn G.! l1) * v0 + v1) `mod` p
     !len = l0 + l1
 
 -- | \(O(1)\) Creates an empty rolling hash slice.

@@ -86,13 +86,13 @@ edgesMF MaxFlow {..} = do
   !edgeCap <- U.unsafeFreeze edgeCapMF
 
   let next (!i12, !v1)
-        | i12 == offsetsMF U.! (v1 + 1) = next (i12, v1 + 1)
+        | i12 == offsetsMF G.! (v1 + 1) = next (i12, v1 + 1)
         | otherwise = ((v1, v2, cap, flow), (i12 + 1, v1))
         where
-          v2 = edgeDstMF U.! i12
-          i21 = edgeRevIndexMF U.! i12
-          flow = edgeCap U.! i21
-          cap = edgeCap U.! i12 + edgeCap U.! i21
+          v2 = edgeDstMF G.! i12
+          i21 = edgeRevIndexMF G.! i12
+          flow = edgeCap G.! i21
+          cap = edgeCap G.! i12 + edgeCap G.! i21
 
   return $ U.unfoldrExactN nEdgesMF next (0 :: Vertex, 0 :: Int)
 
@@ -205,13 +205,13 @@ runMaxFlowBfs !src !sink MaxFlow {..} MaxFlowBuffer {..} = do
         -- TODO: rather, stop on filling sink?
         !notEnd <- (== undefMF) <$> UM.read distsMF sink
         when notEnd $ do
-          let !iStart = offsetsMF U.! v1
-              !iEnd = offsetsMF U.! (v1 + 1)
+          let !iStart = offsetsMF G.! v1
+              !iEnd = offsetsMF G.! (v1 + 1)
 
           -- visit neighbors
           !dist1 <- UM.read distsMF v1
           U.forM_ (U.generate (iEnd - iStart) (+ iStart)) $ \i12 -> do
-            let !v2 = edgeDstMF U.! i12
+            let !v2 = edgeDstMF G.! i12
             !cap12 <- UM.read edgeCapMF i12
             !notVisited <- (== undefMF) <$> UM.read distsMF v2
             when (cap12 > 0 && notVisited) $ do
@@ -237,7 +237,7 @@ runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
       | otherwise = fix $ \visitNeighbor -> do
           -- `iterMF` holds neighbor iteration counters
           !i1 <- UM.read iterMF v1
-          if i1 >= offsetsMF U.! (v1 + 1)
+          if i1 >= offsetsMF G.! (v1 + 1)
             then do
               -- visited all the neighbors. no flow
               return 0
@@ -246,7 +246,7 @@ runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
               UM.write iterMF v1 (i1 + 1)
 
               -- go if it can flow
-              let !v2 = edgeDstMF U.! i1
+              let !v2 = edgeDstMF G.! i1
               !cap12 <- UM.read edgeCapMF i1
               !connected <- (<) <$> UM.read distsMF v1 <*> UM.read distsMF v2
               if cap12 > 0 && connected
@@ -263,4 +263,4 @@ runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
 
     modifyFlow !i1 !flow = do
       UM.modify edgeCapMF (subtract flow) i1
-      UM.modify edgeCapMF (+ flow) (edgeRevIndexMF U.! i1)
+      UM.modify edgeCapMF (+ flow) (edgeRevIndexMF G.! i1)

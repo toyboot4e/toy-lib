@@ -50,7 +50,7 @@ mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     h' = y2' + 1 - y1'
     !_ = dbgAssert (w == h') $ "matrix size mismatch: " ++ show (boundsIV a) ++ " - " ++ show (boundsIV b)
     rows1 = chunksOfG w (vecIV a)
-    cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b U.! (w' * row + col)
+    cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
 mulMatMod :: (Num e, U.Unbox e, Integral e) => e -> Mat e -> Mat e -> Mat e
@@ -65,7 +65,7 @@ mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     h' = y2' + 1 - y1'
     !_ = dbgAssert (w == h') $ "matrix size mismatch: " ++ show (boundsIV a) ++ " - " ++ show (boundsIV b)
     rows1 = chunksOfG w (vecIV a)
-    cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b U.! (w' * row + col)
+    cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
     addMod_ x y = (x + y) `mod` m
     mulMod_ x y = (x * y) `mod` m
 

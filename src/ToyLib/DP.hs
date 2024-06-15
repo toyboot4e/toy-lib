@@ -272,8 +272,8 @@ lexPerms' = map G.toList . lexPerms
 --                in x4 - (x2 + x3 - x1)
 --           where
 --             !c = ord (BS.index s (i1 - 1)) - ord 'a'
---             !i1' = sOccur V.! c U.! (i1 - 1)
---             !i2' = tOccur V.! c U.! (i2 - 1)
+--             !i1' = sOccur V.! c G.! (i1 - 1)
+--             !i2' = tOccur V.! c G.! (i2 - 1)
 
 -- -- | \(O(N \log N)\) Counts unique subsequences of a string. Could be faster (\(O(N)\)).
 -- --

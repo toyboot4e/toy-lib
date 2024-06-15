@@ -5,6 +5,7 @@ module Math.PowMod where
 
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as G
 import Math.BitSet (bitsOf)
 
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
@@ -48,7 +49,7 @@ powModCache !modulo !base = (modulo, U.iterateN 63 (\x -> x * x `rem` modulo) ba
 powModByCache :: (Int, U.Vector Int) -> Int -> Int
 powModByCache (!modulo, !cache) power = U.foldl' step 1 (bitsOf power)
   where
-    step !acc nBit = acc * (cache U.! nBit) `rem` modulo
+    step !acc nBit = acc * (cache G.! nBit) `rem` modulo
 
 -- | \(O(W)\) \(1/d = d^{p-2} \bmod p\)
 --
@@ -71,6 +72,6 @@ factModsN !modulo !n = U.scanl' (mulMod modulo) (1 :: Int) $ U.generate n (+ 1)
 -- | \(O(N)\) nCr `mod` m (binominal cofficient).
 {-# INLINE bcMod #-}
 bcMod :: Int -> Int -> Int -> Int
-bcMod !n !r !modulo = foldl' (divModF modulo) (facts U.! n) [facts U.! r, facts U.! (n - r)]
+bcMod !n !r !modulo = foldl' (divModF modulo) (facts G.! n) [facts G.! r, facts G.! (n - r)]
   where
     facts = factModsN modulo n

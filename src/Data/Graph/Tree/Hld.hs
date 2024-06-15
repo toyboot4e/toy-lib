@@ -19,6 +19,7 @@ import Data.Graph.Sparse
 import Data.Maybe
 import Data.Monoid (Dual (..))
 import Data.SegmentTree.Strict
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug
@@ -208,15 +209,15 @@ lcaHLD HLD {..} = inner
       -- TODO: @case compare ix iy@ would be easier for me to understand
       | ix > iy = inner y x
       -- @x@ and @y@ are in other lines:
-      | hx /= hy = inner x $ parentHLD U.! hy
+      | hx /= hy = inner x $ parentHLD G.! hy
       -- @x@ and @y@ are within the same line:
       -- select the smaller one, which is closer to the root and that is the LCA.
       | otherwise = x
       where
-        !ix = indexHLD U.! x
-        !iy = indexHLD U.! y
-        hx = headHLD U.! x
-        hy = headHLD U.! y
+        !ix = indexHLD G.! x
+        !iy = indexHLD G.! y
+        hx = headHLD G.! x
+        hy = headHLD G.! y
 
 -- | \(O(\log V)\) Shared implementation of `edgePathHLD` and `vertPathHLD`.
 _pathHLD :: Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
@@ -240,17 +241,17 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
           EQ -> error "unreachable"
       where
         ix, iy :: VertexHLD
-        !ix = indexHLD U.! x
+        !ix = indexHLD G.! x
         !iy = indexHLD U.! y
         hx, hy :: Vertex
-        hx = headHLD U.! x
-        hy = headHLD U.! y
+        hx = headHLD G.! x
+        hy = headHLD G.! y
         ihx, ihy :: VertexHLD
-        ihx = indexHLD U.! hx
-        ihy = indexHLD U.! hy
+        ihx = indexHLD G.! hx
+        ihy = indexHLD G.! hy
         phx, phy :: VertexHLD
-        phx = parentHLD U.! hx
-        phy = parentHLD U.! hy
+        phx = parentHLD G.! hx
+        phy = parentHLD G.! hy
 
 -- | \(O(\log V)\) Returns inclusive edge vertex pairs.
 edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
@@ -338,7 +339,7 @@ _buildRawTM hldTM isCommuteTM isEdgeTM xsRaw = do
 -- | \(O(V)\) Builds a `TreeMonoid` on vertices.
 buildVertTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
 buildVertTM hld@HLD {indexHLD} isCommuteTM xs_ = do
-  let !xs = U.update (U.replicate (U.length xs_) mempty) $ U.imap (\i x -> (indexHLD U.! i, x)) xs_
+  let !xs = U.update (U.replicate (U.length xs_) mempty) $ U.imap (\i x -> (indexHLD G.! i, x)) xs_
   _buildRawTM hld isCommuteTM False xs
 
 -- | \(O(V)\) Map weightened edges into @(Vertex, a)@ pairs. The output is the input to `buildEdgeTM`.
@@ -347,7 +348,7 @@ edgeVertsHLD HLD {indexHLD} =
   U.map
     ( \(!u, !v, !w) ->
         -- REMARK: Return in `Vertex`, not in `VertexHLD` so that `writeTM` etc. work as expected.
-        if indexHLD U.! u >= indexHLD U.! v
+        if indexHLD G.! u >= indexHLD G.! v
           then (u, w)
           else (v, w)
     )
@@ -356,7 +357,7 @@ edgeVertsHLD HLD {indexHLD} =
 buildEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector (Vertex, a) -> m (TreeMonoid a (PrimState m))
 buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
   let !n = U.length indexHLD
-  let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD U.! v, x)) ixs
+  let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD G.! v, x)) ixs
   _buildRawTM hld isCommuteTM True xs
 
 -- ** Segment tree methods
@@ -370,13 +371,13 @@ foldTM TreeMonoid {..} v1 v2
 -- | \(O(log V)\) Reads a `TreeMonoid` value on a `Vertex`.
 readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 readTM TreeMonoid {..} i_ = do
-  let !i = indexHLD hldTM U.! i_
+  let !i = indexHLD hldTM G.! i_
   readSTree streeFTM i
 
 -- | \(O(log V)\) Write a `TreeMonoid` value on a `Vertex`.
 writeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m ()
 writeTM TreeMonoid {..} i_ x = do
-  let !i = indexHLD hldTM U.! i_
+  let !i = indexHLD hldTM G.! i_
   writeSTree streeFTM i x
   -- TODO: resolve statically
   unless isCommuteTM $ do
@@ -385,7 +386,7 @@ writeTM TreeMonoid {..} i_ x = do
 -- | \(O(log V)\) Exchanges a `TreeMonoid` value on a `Vertex`.
 exchangeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m a
 exchangeTM TreeMonoid {..} i_ x = do
-  let !i = indexHLD hldTM U.! i_
+  let !i = indexHLD hldTM G.! i_
   !res <- exchangeSTree streeFTM i x
   -- TODO: resolve statically
   unless isCommuteTM $ do
@@ -395,7 +396,7 @@ exchangeTM TreeMonoid {..} i_ x = do
 -- | \(O(log V)\) Modifies a `TreeMonoid` value on a `Vertex`.
 modifyTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> (a -> a) -> Int -> m ()
 modifyTM TreeMonoid {..} f i_ = do
-  let !i = indexHLD hldTM U.! i_
+  let !i = indexHLD hldTM G.! i_
   modifySTree streeFTM f i
   -- TODO: resolve statically
   unless isCommuteTM $ do

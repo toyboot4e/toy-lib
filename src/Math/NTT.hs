@@ -115,7 +115,7 @@ convolute64 !xs1 !xs2 =
             -- TODO: safeMod??
             !diff = x1 - (x `mod` m1)
             !diff' = if diff < 0 then diff + m1 else diff
-         in x - offsets U.! (diff' `mod` 5)
+         in x - offsets G.! (diff' `mod` 5)
   where
     !m1 = 754974721 :: Int -- 2^24
     !m2 = 167772161 :: Int -- 2^25

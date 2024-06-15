@@ -315,7 +315,7 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
       | v' == -1 = Just (v, -2)
       | otherwise = Just (v, v')
       where
-        v' = toParent U.! v
+        v' = toParent G.! v
 
 ----------------------------------------------------------------------------------------------------
 -- Digraph

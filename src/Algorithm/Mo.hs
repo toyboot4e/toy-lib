@@ -29,8 +29,8 @@ sortMo !maxL !lrs = U.modify (VAI.sortBy compareF) (G.generate (G.length lrs) id
     !blockLength = max 1 . ceiling @Double $ (fromIntegral maxL / sqrt (fromIntegral q))
     -- compare by block, then compare by right
     compareF !i1 !i2 =
-      let (!l1, !r1) = lrs U.! i1
-          (!l2, !r2) = lrs U.! i2
+      let (!l1, !r1) = lrs G.! i1
+          (!l2, !r2) = lrs G.! i2
           !b1 = l1 `div` blockLength
           !b2 = l2 `div` blockLength
           !res = compare b1 b2 <> bool (compare r2 r1) (compare r1 r2) (even b1)
@@ -47,7 +47,7 @@ runMoG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = do
     !maxL = U.maximum (U.map fst lrs)
 
     step result ((!l0, !r0), !s0) iLrs = do
-      let (!l, !r) = lrs U.! iLrs
+      let (!l, !r) = lrs G.! iLrs
       !s' <- do
         !s1 <- U.foldM' onInsL s0 (slice l (l0 - 1) xs)
         !s2 <- U.foldM' onInsR s1 (slice (r0 + 1) r xs)

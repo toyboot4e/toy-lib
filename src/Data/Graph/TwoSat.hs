@@ -10,6 +10,7 @@ import Data.Bool (bool)
 import Data.Buffer
 import Data.Graph.Sparse
 import Data.Ix
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug (dbgAssert)
@@ -79,7 +80,7 @@ solveTS !nVars !constraints = do
             UM.write vec v iScc
         return vec
 
-  let !saturatable = U.all (\x -> groups U.! x /= groups U.! (x + nVars)) (U.generate nVars id)
+  let !saturatable = U.all (\x -> groups G.! x /= groups G.! (x + nVars)) (U.generate nVars id)
   if not saturatable
     then Nothing
     else Just $ U.map (== 1) $ U.create $ do

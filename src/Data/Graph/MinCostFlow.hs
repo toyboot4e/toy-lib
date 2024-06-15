@@ -150,14 +150,14 @@ edgesMCF MinCostFlow {..} = do
   !edgeCap <- U.unsafeFreeze edgeCapMCF
 
   let next (!i12, !v1)
-        | i12 == offsetsMCF U.! (v1 + 1) = next (i12, v1 + 1)
+        | i12 == offsetsMCF G.! (v1 + 1) = next (i12, v1 + 1)
         | otherwise = ((v1, v2, cap, flow, cost), (i12 + 1, v1))
         where
-          v2 = edgeDstMCF U.! i12
-          i21 = edgeRevIndexMCF U.! i12
-          flow = edgeCap U.! i21
-          cap = edgeCap U.! i12 + edgeCap U.! i21
-          cost = edgeCostMCF U.! i12
+          v2 = edgeDstMCF G.! i12
+          i21 = edgeRevIndexMCF G.! i12
+          flow = edgeCap G.! i21
+          cap = edgeCap G.! i12 + edgeCap G.! i21
+          cost = edgeCostMCF G.! i12
 
   return $ U.unfoldrExactN nEdgesMCF next (0 :: EdgeId, 0 :: Vertex)
 
@@ -281,7 +281,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                     else do
                       !v1 <- UM.read prevVertMCF v2
                       !i12 <- UM.read prevEdgeMCF v2
-                      let !i21 = edgeRevIndexMCF U.! i12
+                      let !i21 = edgeRevIndexMCF G.! i12
                       UM.modify edgeCapMCF (subtract deltaFlow) i12
                       UM.modify edgeCapMCF (+ deltaFlow) i21
 
@@ -317,12 +317,12 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
           -- unreachable. skip
           return anyUpdate
         else do
-          let !iStart = offsetsMCF U.! v1
-              !iEnd = offsetsMCF U.! (v1 + 1)
+          let !iStart = offsetsMCF G.! v1
+              !iEnd = offsetsMCF G.! (v1 + 1)
           (\f -> U.foldM' f anyUpdate (U.generate (iEnd - iStart) (+ iStart))) $ \ !anyUpdate i12 -> do
-            let !v2 = edgeDstMCF U.! i12
+            let !v2 = edgeDstMCF G.! i12
             !cap12 <- UM.read edgeCapMCF i12
-            let !cost12 = edgeCostMCF U.! i12
+            let !cost12 = edgeCostMCF G.! i12
             !d2 <- UM.read distsMCF v2
             let d2' = d1 + toRelax cost12
             -- let !_ = dbg ((v1, v2), (d1, d2, d2'), d2 /= d2' && (d2 <> d2' == d2'))

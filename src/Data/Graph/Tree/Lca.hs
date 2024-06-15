@@ -10,6 +10,7 @@ import Data.BinaryLifting
 import Data.Graph.Alias (Vertex)
 import Data.Maybe
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
 -- | `(parents, depths, parents')`
@@ -19,11 +20,11 @@ type LcaCache a = (U.Vector Int, TransitionalSemigroup a, VecBL (TransitionalSem
 -- REMARK: Use 0-based index for the graph vertices.
 {-# INLINE lca #-}
 lca :: (HasCallStack, U.Unbox a) => LcaCache a -> Vertex -> Vertex -> (Vertex, Int)
-lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
+lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths G.! vLCA)
   where
     -- depths
-    !d1 = depths U.! v1
-    !d2 = depths U.! v2
+    !d1 = depths G.! v1
+    !d2 = depths G.! v2
 
     -- parentN n v -> p_{v, n}
     parentN = sactBL toParentN
@@ -44,8 +45,8 @@ lca (!depths, !_, !toParentN) !v1 !v2 = (vLCA, depths U.! vLCA)
 lcaLen :: (HasCallStack, U.Unbox a) => LcaCache a -> Int -> Int -> Int
 lcaLen cache@(!depths, !_, !_) !v1 !v2 =
   let (!_, !d) = lca cache v1 v2
-      !d1 = depths U.! v1
-      !d2 = depths U.! v2
+      !d1 = depths G.! v1
+      !d2 = depths G.! v2
    in (d1 - d) + (d2 - d)
 
 -- | \(O(\log^2 N + \mathit{sact} \cdot \mathit{popCount}(V)))\)
@@ -59,8 +60,8 @@ foldPathViaLca :: forall a. (HasCallStack, U.Unbox a, Semigroup a) => LcaCache a
 foldPathViaLca cache@(!depths, !_, !toParentBL) (!v1, !a1) (!v2, !a2) = a'
   where
     (!_, !d) = lca cache v1 v2
-    d1 = depths U.! v1
-    d2 = depths U.! v2
+    d1 = depths G.! v1
+    d2 = depths G.! v2
     (!_, !a1') = sactBL toParentBL (d1 - d) (v1, a1)
     (!_, !a2') = sactBL toParentBL (d2 - d) (v2, a2)
     !a' = a1' <> a2'
