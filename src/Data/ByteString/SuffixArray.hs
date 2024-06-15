@@ -38,8 +38,8 @@ saOfNaive bs =
 --
 -- @
 --      a    b    a    $
---     $a   ab   ba   a$
---   ba$a a$ab aba$ $aba
+--     ab   ba   a$   $a
+--   aba$ ba$a a$ab $aba
 -- @
 saOf :: BS.ByteString -> U.Vector Int
 saOf bs0 = G.tail $ sortCyclicShifts (BS.snoc bs0 c0)
@@ -47,11 +47,13 @@ saOf bs0 = G.tail $ sortCyclicShifts (BS.snoc bs0 c0)
     -- Zero character (null character in ASCII table)
     !c0 = chr 0
 
--- TODO: use `unsafeIndex`
--- TODO: is is faster to convert ByteString to Vector in preprocessing?
--- TODO: non-ascii input?
--- TODO: reuse the `cnt` and `perm'` vector
--- TODO: Is StateT slow?
+-- TODO: non-ascii input? (compress in pre-processing?)
+-- TODO: Efficiency
+-- - TODO: is is faster to convert ByteString to Vector in preprocessing?
+-- - TODO: use `unsafeIndex`
+-- - TODO: reuse the `cnt` and `perm'` vector
+-- - TODO: Is StateT slow?
+-- TODO: SA-IS
 
 -- | \(O(N)\) Preprocessing function to `sortCyclicShifts`.
 sortByCharacter :: BS.ByteString -> (Int, U.Vector Int, U.Vector Int)
@@ -125,9 +127,9 @@ sortCyclicShifts' n len nClasses classes perm
       where
         !x' = x - y
 
-    -- In the original index (perm[i]), move back @len@ characters. This is where the left half
-    -- of the new substring is at (see also the above diagram):
-    leftHalves = G.map (\p -> fastSubMod n p len) perm
+    -- In the original index (perm[i]), go forward @len@ characters. This is where the left half
+    -- of the new substring is at (see also the diagram in `saOf`):
+    rightHalves = G.map (\p -> fastSubMod n p len) perm
 
     -- Sort by the left halves of the substrings using counting sort.
     perm' = U.create $ do
@@ -135,13 +137,13 @@ sortCyclicShifts' n len nClasses classes perm
         U.unsafeThaw
           . G.scanl1' (+)
           . G.accumulate (+) (G.replicate nClasses (0 :: Int))
-          $ G.map (\i -> (classes G.! i, 1)) leftHalves
+          $ G.map (\i -> (classes G.! i, 1)) rightHalves
 
       vec <- UM.unsafeNew n
-      GM.write vec (G.head leftHalves) 0
+      GM.write vec (G.head rightHalves) 0
       -- The `reverse` is for stable sorting, which preserves the result of the last sort by
       -- the right halves of the substrings.
-      G.forM_ (G.reverse leftHalves) $ \i -> do
+      G.forM_ (G.reverse rightHalves) $ \i -> do
         let !c = classes G.! i
         GM.modify cnt (subtract 1) c
         i' <- GM.read cnt c
