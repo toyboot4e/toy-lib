@@ -44,12 +44,12 @@ saOfNaive bs =
 saOf :: BS.ByteString -> U.Vector Int
 saOf bs0 = G.tail $ sortCyclicShifts (BS.snoc bs0 c0)
   where
-    -- zero character (null character in ASCII table)
+    -- Zero character (null character in ASCII table)
     !c0 = chr 0
 
 -- TODO: use `unsafeIndex`
 -- TODO: is is faster to convert ByteString to Vector in preprocessing?
--- TODO: non-alphabet input?
+-- TODO: non-ascii input?
 -- TODO: reuse the `cnt` and `perm'` vector
 -- TODO: Is StateT slow?
 
@@ -60,7 +60,7 @@ sortByCharacter bs = (nClasses, classes, perm)
     !n = BS.length bs
     !alphabet = 256
 
-    -- sort the characters using counting sort.
+    -- Sort the characters using counting sort.
     !perm = U.create $ do
       cnt <-
         U.unsafeThaw
@@ -70,15 +70,18 @@ sortByCharacter bs = (nClasses, classes, perm)
           . G.map ((,1) . ord)
           . U.fromList
           $ BS.unpack bs
+
       vec <- UM.unsafeNew n
-      forM_ [0 .. n - 1] $ \i -> do
+      -- Indices are reversed for stable sorting. It doesn't make any difference after all, but
+      -- it's for consistency with the `lastPerm` implementation below.
+      forM_ [n - 1, n - 2 .. 0] $ \i -> do
         let !c = ord $ BS.index bs i
         GM.modify cnt (subtract 1) c
         i' <- GM.read cnt c
         GM.write vec i' i
       return vec
 
-    -- record equal character classes and assign them to the characters.
+    -- Record equal character classes and assign them to the characters.
     (!nClasses, !classes) = runST $ do
       vec <- UM.unsafeNew n
       GM.write vec (G.head perm) 0
@@ -101,7 +104,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
     !n = BS.length bs
     (!nClasses0, !classes0, !perm0) = sortByCharacter bs
 
-    -- helper
+    -- Helpers
     fastAddMod m x y
       | x' >= m = x' - m
       | otherwise = x'
@@ -114,7 +117,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
       where
         !x' = x - y
 
-    -- binary lifting
+    -- Binary lifting
     lastPerm :: Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
     lastPerm len nClasses classes perm
       | len >= n = perm
@@ -126,7 +129,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
         -- of the new substring is at (see also the above diagram):
         leftHalves = G.map (\p -> fastSubMod n p len) perm
 
-        -- sort by the left halves of the substrings using counting sort.
+        -- Sort by the left halves of the substrings using counting sort.
         perm' = U.create $ do
           cnt <-
             U.unsafeThaw
@@ -136,7 +139,8 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
 
           vec <- UM.unsafeNew n
           GM.write vec (G.head leftHalves) 0
-          -- TODO: no reverse?
+          -- The `reverse` is for stable sorting, which preserves the result of the last sort by
+          -- the right halves.
           G.forM_ (G.reverse leftHalves) $ \i -> do
             let !c = classes G.! i
             GM.modify cnt (subtract 1) c
@@ -144,7 +148,7 @@ sortCyclicShifts bs = lastPerm 1 nClasses0 classes0 perm0
             GM.write vec i' i
           return vec
 
-        -- record equal substring classes and assign them to the substrings.
+        -- Record equal substring classes and assign them to the substrings.
         getNextClasses () = runST $ do
           vec <- UM.unsafeNew n
           GM.write vec (G.head perm') 0
