@@ -16,13 +16,6 @@ import ToyLib.ShowBSB
 
 debug = False
 
-countUniqueSubstrings :: BS.ByteString -> Int
-countUniqueSubstrings bs = (n * (n + 1)) `div` 2 - U.sum lcp
-  where
-    !n = BS.length bs
-    !sa = saOf bs
-    !lcp = lcpOfSa bs sa
-
 solve :: StateT BS.ByteString IO ()
 solve = do
   s <- line'

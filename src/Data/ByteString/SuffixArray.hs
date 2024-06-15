@@ -199,3 +199,12 @@ lcpOfSa bs sa = U.create $ do
     testMatch sa i j len
       | i + len >= n || j + len >= n = False
       | otherwise = BSU.unsafeIndex bs (i + len) == BSU.unsafeIndex bs (j + len)
+
+-- | \(O(N \log N)\) Counts unique substrings.
+countUniqueSubstrings :: BS.ByteString -> Int
+countUniqueSubstrings bs = (n * (n + 1)) `div` 2 - U.sum lcp
+  where
+    !n = BS.length bs
+    !sa = saOf bs
+    !lcp = lcpOfSa bs sa
+
