@@ -11,6 +11,7 @@ import Control.Monad.ST (runST)
 import Control.Monad.Trans.State.Strict (execStateT, get, modify')
 import Data.Bits
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Unsafe as BSU
 import Data.Char (chr, ord)
 import Data.Ord (comparing)
 import qualified Data.Vector as V
@@ -107,7 +108,7 @@ sortByCharacter bs = (nClasses, classes, perm)
       (nClasses,) <$> G.unsafeFreeze vec
 
 -- | \(O(N \log N)\) Binary lifting part of `sortCyclicShifts`.
-sortCyclicShifts' :: Int ->Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
+sortCyclicShifts' :: Int -> Int -> Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
 sortCyclicShifts' n len nClasses classes perm
   | len >= n = perm
   | otherwise =
@@ -171,33 +172,30 @@ sortCyclicShifts' n len nClasses classes perm
       (nClasses',) <$> G.unsafeFreeze vec
 
 -- | Creates an LCP array of length @n-1@:
--- \(\mathcal{lcp}[i'] = \mathcal{lcp}(\mathcal{sa}[i], \mathcal{sa}[i+1])\).
-lcpOfSa :: U.Vector Int -> U.Vector Int
-lcpOfSa sa = U.create $ do
-  -- original index -> sorted index
-  let !revSa = U.update (U.replicate n (-1 :: Int)) $ U.imap (flip (,)) sa
-  vec <- UM.replicate (n - 1) (0 :: Int)
-  -- Calculate [lcp(i', i' + 1) | i <- [0 .. n - 1], let i' = sa U.! i, i' /= n - 1].
-  -- With this iteration order (from the longest to the shortest), we can continue with the last LCP
-  -- value when going to next the suffix.
-  U.ifoldM_
+-- \(\mathcal{lcp}[i'] = \mathcal{lcp}(\mathcal{sa}[i'], \mathcal{sa}[i'+1])\).
+lcpOfSa :: BS.ByteString -> U.Vector Int -> U.Vector Int
+lcpOfSa bs sa = U.create $ do
+  vec <- UM.unsafeNew (n - 1)
+  -- Calculate `lcp[i']` from the longest substring to the shortest.
+  G.ifoldM_
     ( \len i i' -> do
         if i' == n - 1
           then do
             return 0
           else do
-            let !j = sa U.! (i' + 1)
+            let !j = G.unsafeIndex sa (i' + 1)
             let !len' = until (not . testMatch sa i j) (+ 1) len
-            UM.unsafeWrite vec i' len'
-            -- We can reuse the last `len'` because "going from suffix `i` to the suffix `i+1` is
-            -- exactly the same as removing the first letter".
-            return $ min 0 (len' - 1)
+            GM.unsafeWrite vec i' len'
+            -- Remarkably, we can reuse the last `len'`:
+            return $ max 0 (len' - 1)
     )
     (0 :: Int)
     revSa
   return vec
   where
     !n = G.length sa
+    -- original index -> sorted index
+    !revSa = G.unsafeUpdate (U.replicate n (-1 :: Int)) $ U.imap (flip (,)) sa
     testMatch sa i j len
       | i + len >= n || j + len >= n = False
-      | otherwise = U.unsafeIndex sa (i + len) == U.unsafeIndex sa (j + len)
+      | otherwise = BSU.unsafeIndex bs (i + len) == BSU.unsafeIndex bs (j + len)
