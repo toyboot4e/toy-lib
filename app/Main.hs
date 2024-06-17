@@ -119,8 +119,8 @@ mainEmbedLibrary file = do
   s <- readFile file
 
   let lns = lines s
-  let front = fromJust $ L.findIndex ("-- {{{ toy-lib import" `L.isPrefixOf`) lns
-  let back = fromJust $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
+  let front = fromMaybe (error "cannot find front header") $ L.findIndex ("-- {{{ toy-lib import" `L.isPrefixOf`) lns
+  let back = fromMaybe (error "cannot find back header") $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
 
   let importLines = unlines . take (back - front - 1) $ drop (front + 1) lns
   -- FIXME: ToyLib.Debug resolution
