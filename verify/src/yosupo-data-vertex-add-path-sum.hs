@@ -15,6 +15,7 @@ import Data.SegmentTree.Strict
 -- }}} toy-lib
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
+debug = False
 -- }}}
 
 solve :: StateT BS.ByteString IO ()
