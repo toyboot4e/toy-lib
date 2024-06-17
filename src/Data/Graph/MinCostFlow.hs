@@ -202,7 +202,7 @@ buildMinCostFlow !nVertsMCF !edges = do
       GM.write edgeDst i1 v2
       GM.write edgeDst i2 v1
       GM.write edgeCap i1 cap
-      -- GM.write edgeCap i2 0
+      GM.write edgeCap i2 0
       GM.write edgeCost i1 cost
       GM.write edgeCost i2 (-cost)
 

@@ -102,7 +102,7 @@ undefMF = -1
 -- | Builds `MaxFlow` from edges.
 buildMaxFlow ::
   forall c m.
-  (U.Unbox c, PrimMonad m) =>
+  (U.Unbox c, Num c, PrimMonad m) =>
   Int ->
   U.Vector (Vertex, Vertex, c) ->
   m (MaxFlow (PrimState m) c)
@@ -134,7 +134,7 @@ buildMaxFlow !nVertsMF !edges = do
       GM.write edgeDst i1 v2
       GM.write edgeDst i2 v1
       GM.write edgeCap i1 cap
-    -- GM.write edgeCap i2 0
+      GM.write edgeCap i2 (0 :: c)
 
     (,,edgeCap) <$> G.unsafeFreeze edgeDst <*> G.unsafeFreeze edgeRevIndex
 
