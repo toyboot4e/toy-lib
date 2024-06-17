@@ -27,8 +27,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- Internally the graph is stored in a CSR (compressed sparse row).
 --
 -- = Invariants
--- - Sum of the capacities of one edge and the reverse edge never changes from the initial value
---   (Exceptions: source and sink).
+-- - Sum of the capacities of one edge and the reverse edge is zero.
 data MaxFlow s c = MaxFlow
   { nVertsMF :: !Int,
     nEdgesMF :: !Int,

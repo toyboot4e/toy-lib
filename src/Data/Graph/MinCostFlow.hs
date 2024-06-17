@@ -6,7 +6,17 @@
 --
 -- - [min_cost_b_flow](https://judge.yosupo.jp/problem/min_cost_b_flow)
 -- - [PAST 08 K - ニワトリのお見合い](https://atcoder.jp/contests/past202109-open/tasks/past202109_k)
+--
+-- = Considerations
+--
+-- - Remove negative edges in order to avoid negative, infinite loop.
+-- - Create bipass when the best cost can come with smaller flow than the target flow.
+--   - Or I should implement `min_cost_slop` alternative.
 module Data.Graph.MinCostFlow where
+
+-- TODO: ban negative edge
+-- TODO: add trick for handling negative edges
+-- TODO: add min_cost_slope (current bestFlow is bestFlowWithMaxFlowUpToTheTargetFlow)
 
 -- TODO: unify Cost and Capacity with c
 -- TODO: maybe use the same structure with Dinic
@@ -14,14 +24,13 @@ module Data.Graph.MinCostFlow where
 -- - addEdge
 -- - etc.
 
--- TODO: when and why loops?
-
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Graph.Alias (EdgeId, Vertex)
-import Data.Semigroup (Max(..), Min(..))
+import Data.Primitive.MutVar
+import Data.Semigroup (Max (..), Min (..))
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -66,8 +75,10 @@ data MinCostFlowBuffer r s c = MinCostFlowBuffer
     prevEdgeMCF :: !(UM.MVector s EdgeId)
   }
 
--- | Returns the wrapped cost for getting the flow, or Nothing when impossible.
-relaxedCostFlow' ::
+-- | Returns the wrapped cost for getting the target flow, or Nothing when impossible. Be warned
+-- that it attampts to maximize the flow (up to the target flow) even if the best result is with
+-- smaller flow. Make a bipassing edge!
+bestFlow' ::
   (Num (f (CostMCF c)), Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), PrimMonad m, Num c, U.Unbox c, Ord c) =>
   (CostMCF c -> f (CostMCF c)) ->
   Int ->
@@ -76,12 +87,12 @@ relaxedCostFlow' ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   m ((f (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
-relaxedCostFlow' toRelax !nVerts !src !sink !targetFlow !edges = do
+bestFlow' toRelax !nVerts !src !sink !targetFlow !edges = do
   !container <- buildMinCostFlow nVerts edges
   !minCost <- runMinCostFlow toRelax src sink targetFlow container
   return (minCost, container)
 
-relaxedCostFlow ::
+bestFlow ::
   (Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), U.Unbox c, Integral c) =>
   (CostMCF c -> f (CostMCF c)) ->
   Int ->
@@ -90,8 +101,8 @@ relaxedCostFlow ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   (f (CostMCF c), CapacityMCF c)
-relaxedCostFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
-  fst <$> relaxedCostFlow' toRelax nVerts src sink targetFlow edges
+bestFlow toRelax !nVerts !src !sink !targetFlow !edges = runST $ do
+  fst <$> bestFlow' toRelax nVerts src sink targetFlow edges
 
 -- | Returns @(minCost, flow)@. REMARK: Invalid (negative cost) edges should not be filtered.
 -- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
@@ -104,7 +115,7 @@ minCostFlow ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   (Min (CostMCF c), CapacityMCF c)
-minCostFlow = relaxedCostFlow Min
+minCostFlow = bestFlow Min
 
 minCostFlow' ::
   (PrimMonad m, U.Unbox c, Integral c, Bounded c) =>
@@ -114,7 +125,7 @@ minCostFlow' ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   m ((Min (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
-minCostFlow' = relaxedCostFlow' Min
+minCostFlow' = bestFlow' Min
 
 -- | Returns @(maxCost, flow)@. REMARK: Invalid (negative cost) edges should not be filtered.
 -- Instead, use them as zero-cost edges (or else we can't retrieve the best solution (at least in
@@ -127,7 +138,7 @@ maxCostFlow ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   (Max (CostMCF c), CapacityMCF c)
-maxCostFlow = relaxedCostFlow Max
+maxCostFlow = bestFlow Max
 
 maxCostFlow' ::
   (PrimMonad m, U.Unbox c, Integral c, Bounded c) =>
@@ -137,7 +148,7 @@ maxCostFlow' ::
   CapacityMCF c ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   m ((Max (CostMCF c), CapacityMCF c), MinCostFlow (PrimState m) c)
-maxCostFlow' = relaxedCostFlow' Max
+maxCostFlow' = bestFlow' Max
 
 -- | Retrieves edge information @(v1, v2, cap, flow, cost)@ from the `maxFlow` results.
 --
@@ -168,7 +179,7 @@ undefMCF = -1
 -- | Builds `MinCostFlow` from edges.
 buildMinCostFlow ::
   forall c m.
-  (PrimMonad m,  Num c, U.Unbox c,  Ord c) =>
+  (PrimMonad m, Num c, U.Unbox c, Ord c) =>
   Int ->
   U.Vector (Vertex, Vertex, CapacityMCF c, CostMCF c) ->
   m (MinCostFlow (PrimState m) c)
@@ -237,7 +248,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
         -- TODO: Is it ok to flow too much?
         | restFlow <= 0 =
             let !_ = dbgAssert (restFlow == 0) "minCostFlow: flew too much?"
-             in return $ (accCost, targetFlow - restFlow)
+             in return (accCost, targetFlow - restFlow)
         | otherwise = do
             -- clear buffers
             GM.set distsMCF mempty
@@ -249,10 +260,10 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
             runMinCostFlowShortests toRelax src container bufs
             -- let !_ = dbg ("let's run DFS")
 
+            -- find the shortest path from the source to the sink and flow as far as possible
             !distSink <- UM.read distsMCF sink
             if distSink == mempty
               then do
-                -- TODO: Is it ok to return less than the target flow?
                 let !_ = dbg "min cost flow: less than the target flow"
                 return (accCost, targetFlow - restFlow)
               else do
@@ -269,10 +280,10 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                       loop (min flow cap12, v1)
 
                 -- let !_ = dbg (deltaFlow)
-                let !_ = dbgAssert (deltaFlow >= 0) $ "negative delta flow?"
+                let !_ = dbgAssert (deltaFlow >= 0) "negative delta flow?"
 
-                let accCost' = accCost + toRelax deltaFlow * distSink
-                let restFlow' = restFlow - deltaFlow
+                let !accCost' = accCost + toRelax deltaFlow * distSink
+                let !restFlow' = restFlow - deltaFlow
 
                 -- go back to the source from the sink, modifying the capacities
                 flip fix sink $ \loop v2 -> do
@@ -294,9 +305,8 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
 
 -- | Collect shortest distances from the source vertex using Bellman-Ford algorithm.
 --
--- Hangs on negative loop.
+-- Panics on negative loop.
 --
--- TODO: break?
 -- TODO: replace with dijkstra with potencials.
 runMinCostFlowShortests ::
   -- forall c m.
@@ -308,25 +318,26 @@ runMinCostFlowShortests ::
   m ()
 runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = do
   UM.write distsMCF src (toRelax 0)
+  dbgLoop <- newMutVar (0 :: Int)
 
   fix $ \loop -> do
-    !b <- (\f -> U.foldM' f False (U.generate nVertsMCF id)) $ \ !anyUpdate v1 -> do
+    !b <- (\f -> U.foldM' f False (U.generate nVertsMCF id)) $ \ !anyUpdate0 v1 -> do
       !d1 <- UM.read distsMCF v1
       if d1 == mempty
         then do
           -- unreachable. skip
-          return anyUpdate
+          return anyUpdate0
         else do
           let !iStart = offsetsMCF G.! v1
               !iEnd = offsetsMCF G.! (v1 + 1)
-          (\f -> U.foldM' f anyUpdate (U.generate (iEnd - iStart) (+ iStart))) $ \ !anyUpdate i12 -> do
+          (\f -> U.foldM' f anyUpdate0 (U.generate (iEnd - iStart) (+ iStart))) $ \ !anyUpdate i12 -> do
             let !v2 = edgeDstMCF G.! i12
             !cap12 <- UM.read edgeCapMCF i12
             let !cost12 = edgeCostMCF G.! i12
             !d2 <- UM.read distsMCF v2
             let d2' = d1 + toRelax cost12
             -- let !_ = dbg ((v1, v2), (d1, d2, d2'), d2 /= d2' && (d2 <> d2' == d2'))
-            -- let !_ = dbgAssert (d1 >= 0 && d2 >= 0) $ "negative distance?: " ++ show (d1, d2)
+            let !_ = dbgAssert (d1 >= 0 && d2 >= 0) "negative distance?" -- ++ show (d1, d2)
             -- TODO: ask which is better in a simple way
             if cap12 > 0 && d2 /= d2' && (d2 <> d2' == d2')
               then do
@@ -339,4 +350,11 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
                 return anyUpdate
 
     when b $ do
-      loop
+      nDidLoop <- readMutVar dbgLoop
+      if nDidLoop < nVertsMCF
+        then do
+          writeMutVar dbgLoop (nDidLoop + 1)
+          loop
+        else do
+          -- this is @VertsMCF + 1@ times
+          error "negative loop detected (min cost flow)"
