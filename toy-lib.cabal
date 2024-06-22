@@ -219,6 +219,7 @@ library
     Math.DigitsVector
     Math.Divisors
     Math.Exgcd
+    Math.FloorSum
     Math.Manhattan
     Math.Matrix
     Math.NTT
