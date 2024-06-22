@@ -118,7 +118,15 @@ mainEmbedLibrary file = do
   -- TODO: handle failures
   s <- readFile file
 
-  let lns = lines s
+  -- For simplicity, resolve `#include`s manualy:
+  lns <- forM (lines s) $ \line -> do
+    if "#include" `L.isPrefixOf` line
+      then do
+        let importPath = takeWhile (/= '"') $ drop 1 $ dropWhile (/= '"') line
+        let path = reverse (dropWhile (/= '/') (reverse file)) ++ importPath
+        readFile path
+      else return line
+
   let front = fromMaybe (error "cannot find front header") $ L.findIndex ("-- {{{ toy-lib import" `L.isPrefixOf`) lns
   let back = fromMaybe (error "cannot find back header") $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
 
