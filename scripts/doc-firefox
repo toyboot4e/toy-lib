@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+firefox dist-newstyle/build/x86_64-linux/ghc-9.4.6/toy-lib-0.1.0.0/doc/html/toy-lib/index.html

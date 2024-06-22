@@ -17,8 +17,6 @@ import ToyLib.ShowBSB
 debug :: Bool
 debug = False
 
--- }}}
-
 paintGrid :: (PrimMonad m) => IxMUVector (PrimState m) (Int, Int) Char -> Int -> Int -> m ()
 paintGrid gr v1 v2
   | v1 >= h * w || v2 >= h * w = return ()

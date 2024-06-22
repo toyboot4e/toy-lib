@@ -23,5 +23,6 @@ solve = do
   printBSB . unlinesBSB $ U.map (\(!n, !m, !a, !b) -> floorSum n m a b) input
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/sum_of_floor_of_linear
+-- #floor_sum
 main :: IO ()
 main = runIO solve
