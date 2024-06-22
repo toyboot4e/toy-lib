@@ -2,11 +2,11 @@ module Math.FloorSum where
 
 import Data.Bool (bool)
 
--- | Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
+-- | \(O(\log ma)\) Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
 --
--- = Constraints
+-- = Input constraints
 -- - n > 0
--- - m > 0
+-- - m >= 0
 -- - a >= 0
 -- - b >= 0
 floorSumUnsigned :: Int -> Int -> Int -> Int -> Int
@@ -24,7 +24,11 @@ floorSumUnsigned = inner
           | qy < 1 = 0
           | otherwise = inner qy ra m ry
 
--- | Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
+-- | \(O(\log ma)\) Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
+--
+-- = Input constraints
+-- - n > 0
+-- - m >= 0
 floorSum :: Int -> Int -> Int -> Int -> Int
 floorSum n m a b = n1 + n2 + floorSumUnsigned n m a' b'
   where
