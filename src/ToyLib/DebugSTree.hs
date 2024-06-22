@@ -45,7 +45,7 @@ dbgSTreeAll (SegmentTree mVec _)
   | otherwise = return ()
 
 -- | Shows the leaves of a lazily propagated segment tree.
-dbgLSTree :: (Show a, GM.MVector v a, Monoid a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree v a op (PrimState m) -> m ()
+dbgLSTree :: (Show a, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree a op (PrimState m) -> m ()
 dbgLSTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
   let !nLeaves = GM.length vec `div` 2
   ss <- forM [0 .. nLeaves - 1] $ \i -> do
