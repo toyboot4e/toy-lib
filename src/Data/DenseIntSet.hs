@@ -38,9 +38,6 @@ data DenseIntSet s = DenseIntSet
   { -- | The number of elements.
     capacityDIS :: !Int,
     -- TODO: track the number of elements int the set
-
-    -- | Smallest \(i\) s.t. \(\mathcal{wordDIS}^{i} \ge \mathcal{capacityDIS}\). Length of @vecDIS@.
-    logSizeDIS :: !Int,
     -- | Segments.
     vecDIS :: !(V.Vector (UM.MVector s Int))
   }
@@ -50,7 +47,7 @@ newDIS :: (PrimMonad m) => Int -> m (DenseIntSet (PrimState m))
 newDIS capacityDIS = do
   vecDIS <-
     V.unfoldrExactNM
-      (max 1 logSizeDIS)
+      (max 1 logSize)
       ( \len -> do
           let !len' = (len + wordDIS - 1) `div` wordDIS
           (,len') <$> UM.replicate len' 0
@@ -58,7 +55,7 @@ newDIS capacityDIS = do
       capacityDIS
   return DenseIntSet {..}
   where
-    (!_, !logSizeDIS) =
+    (!_, !logSize) =
       until
         ((<= 1) . fst)
         (bimap ((`div` wordDIS) . (+ (wordDIS - 1))) (+ 1))
