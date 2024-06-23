@@ -25,7 +25,6 @@ wordDIS :: Int
 wordDIS = 64
 
 -- | Dense int set or a 64-ary tree that covers @[0, n)@.
---
 -- = (Internal) segments
 --
 -- The idea is very similar to [hibitset](https://docs.rs/hibitset/0.6.4/hibitset/index.html), with
@@ -41,8 +40,6 @@ data DenseIntSet s = DenseIntSet
     capacityDIS :: !Int,
     -- | The number of elements.
     sizeDIS_ :: !(UM.MVector s Int),
-    -- TODO: track the number of elements int the set
-
     -- | Segments.
     vecDIS :: !(V.Vector (UM.MVector s Int))
   }
@@ -78,13 +75,13 @@ validateKeyDIS name DenseIntSet {..} k
 
 -- | \(O(1)\) Returns the number of elements in the set.
 sizeDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m Int
-sizeDIS = (`UM.read` 0) . sizeDIS_
+sizeDIS = (`UM.unsafeRead` 0) . sizeDIS_
 
 -- | \(O(\log N)\) Tests if @k@ is in the set.
 memberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
 memberDIS is@DenseIntSet {..} k = do
   let (!q, !r) = k `divMod` wordDIS
-  (`testBit` r) <$> GM.read (G.head vecDIS) q
+  (`testBit` r) <$> GM.unsafeRead (G.unsafeHead vecDIS) q
   where
     !_ = validateKeyDIS "memberDIS" is k
 
@@ -96,11 +93,11 @@ notMemberDIS dis k = not <$> memberDIS dis k
 insertDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 insertDIS is@DenseIntSet {..} k = do
   unlessM (memberDIS is k) $ do
-    UM.modify sizeDIS_ (+ 1) 0
+    UM.unsafeModify sizeDIS_ (+ 1) 0
     V.foldM'_
       ( \i vec -> do
           let (!q, !r) = i `divMod` wordDIS
-          GM.modify vec (`setBit` r) q
+          GM.unsafeModify vec (`setBit` r) q
           return q
       )
       k
@@ -112,15 +109,15 @@ insertDIS is@DenseIntSet {..} k = do
 deleteDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 deleteDIS is@DenseIntSet {..} k = do
   whenM (memberDIS is k) $ do
-    UM.modify sizeDIS_ (subtract 1) 0
+    UM.unsafeModify sizeDIS_ (subtract 1) 0
     V.foldM'_
       ( \(!b, !i) vec -> do
           let (!q, !r) = i `divMod` wordDIS
           -- TODO: early return is possible
           unless b $ do
-            GM.modify vec (`clearBit` r) q
+            GM.unsafeModify vec (`clearBit` r) q
           -- `b` remembers if any other bit was on
-          b' <- (/= 0) <$> GM.read vec q
+          b' <- (/= 0) <$> GM.unsafeRead vec q
           return (b', q)
       )
       (False, k)
@@ -135,20 +132,20 @@ lookupGEDIS DenseIntSet {..} = inner 0
     inner h i
       | h >= V.length vecDIS = return Nothing
       -- ?
-      | q == UM.length (vecDIS G.! h) = return Nothing
+      | q == UM.length (G.unsafeIndex vecDIS h) = return Nothing
       | otherwise = do
-          d <- (.>>. r) <$> GM.read (vecDIS G.! h) q
+          d <- (.>>. r) <$> GM.unsafeRead (G.unsafeIndex vecDIS h) q
           if d == 0
             then inner (h + 1) (q + 1)
             else
               Just
                 <$> V.foldM'
                   ( \acc vec -> do
-                      !dx <- lsbOf <$> GM.read vec acc
+                      !dx <- lsbOf <$> GM.unsafeRead vec acc
                       return $ acc * wordDIS + dx
                   )
                   (i + lsbOf d)
-                  (V.reverse (V.take h vecDIS))
+                  (V.reverse (V.unsafeTake h vecDIS))
       where
         (!q, !r) = i `divMod` wordDIS
 
@@ -174,18 +171,18 @@ lookupLEDIS DenseIntSet {..} = inner 0
       | h >= V.length vecDIS = return Nothing
       | i == -1 = return Nothing
       | otherwise = do
-          d <- (.<<. (63 - r)) <$> GM.read (vecDIS G.! h) q
+          d <- (.<<. (63 - r)) <$> GM.unsafeRead (G.unsafeIndex vecDIS h) q
           if d == 0
             then inner (h + 1) (q - 1)
             else do
               Just
                 <$> V.foldM'
                   ( \acc vec -> do
-                      !dx <- msbOf <$> GM.read vec acc
+                      !dx <- msbOf <$> GM.unsafeRead vec acc
                       return $ acc * wordDIS + dx
                   )
                   (i - countLeadingZeros d)
-                  (V.reverse (V.take h vecDIS))
+                  (V.reverse (V.unsafeTake h vecDIS))
       where
         (!q, !r) = i `divMod` wordDIS
 
