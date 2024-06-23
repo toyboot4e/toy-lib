@@ -73,7 +73,7 @@ ints6' = (,,,,,) <$> int' <*> int' <*> int' <*> int' <*> int' <*> int'
 
 -- * Readers
 
--- | Reads one line from the state.
+-- | Reads one line from the state. FIXME: It ignores empty lines.
 line' :: (MonadState BS.ByteString m) => m BS.ByteString
 line' = state $ BS.span (/= '\n') . BS.dropSpace
 

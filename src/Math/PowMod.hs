@@ -30,9 +30,11 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 powModConst :: Int -> Int -> Int -> Int
 powModConst !modulo !base !power = powModByCache (powModCache modulo (base `mod` modulo)) power
 
--- | \(O(W)\) One-shot calcaulation of \(x / d \bmod p\), using Fermat's little theorem.
+-- | \(O(W)\) One-shot calcaulation of \(x / d \bmod p\), using Fermat's little theorem and binary
+-- lifting.
 {-# INLINE invModF #-}
 invModF :: Int -> Int -> Int
+-- FIXME: prefer to use invModExgcd
 invModF !modulo !d = invModFC (powModCache modulo d) modulo
 
 -- | \(O(W)\) Calculates \(x / d \bmod p\), using Fermat's little theorem.

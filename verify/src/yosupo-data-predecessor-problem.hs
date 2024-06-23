@@ -17,12 +17,13 @@ debug = False
 solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
-  t <- U.findIndices (== '1') . U.fromList . BS.unpack <$> line'
+  t <- line'
   qs <- U.replicateM q ints2'
 
-  -- TODO: build function
   set <- newDIS n
-  U.forM_ t $ insertDIS set
+  forM_ (zip [0 .. ] (BS.unpack t)) $ \(!i, !c) -> do
+    when (c == '1') $ do
+      insertDIS set i
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !k) -> do

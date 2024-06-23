@@ -67,7 +67,7 @@ newDIS capacityDIS = do
 -- buildDIS :: (PrimMonad m) => Int -> (Int -> Int) -> m (DenseIntSet (PrimState m))
 -- buildDIS capacityDIS f = runST $ do
 
--- | (Internal)
+-- | (Internal) Keys out of the range are reported as runtime error.
 validateKeyDIS :: (HasCallStack) => String -> DenseIntSet s -> Int -> ()
 validateKeyDIS name DenseIntSet {..} k
   | debug && not (inRange (0, capacityDIS - 1) k) = error $ name ++ ": out of range (" ++ show capacityDIS ++ "): " ++ show k
@@ -145,7 +145,7 @@ lookupGEDIS DenseIntSet {..} = inner 0
                       return $ acc * wordDIS + dx
                   )
                   (i + lsbOf d)
-                  (V.reverse (V.unsafeTake h vecDIS))
+                  (V.unsafeBackpermute vecDIS (V.enumFromStepN (h - 1) (-1) h))
       where
         (!q, !r) = i `divMod` wordDIS
 
@@ -182,7 +182,7 @@ lookupLEDIS DenseIntSet {..} = inner 0
                       return $ acc * wordDIS + dx
                   )
                   (i - countLeadingZeros d)
-                  (V.reverse (V.unsafeTake h vecDIS))
+                  (V.unsafeBackpermute vecDIS (V.enumFromStepN (h - 1) (-1) h))
       where
         (!q, !r) = i `divMod` wordDIS
 
