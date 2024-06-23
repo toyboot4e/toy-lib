@@ -2,7 +2,7 @@
 
 -- | Dense int set or a 64-ary tree that covers @[0, n)@.
 --
--- <https://github.com/maspypy/library>
+-- <https://github.com/maspypy/library/blob/main/ds/fastset.hpp>
 module Data.DenseIntSet where
 
 import Control.Monad

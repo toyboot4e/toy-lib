@@ -178,6 +178,18 @@ executable yosupo-convolution-convolution-exe
   import:           verify
   main-is:          yosupo-convolution-convolution.hs
 
+executable yosupo-data-associative-array-exe
+  import:           verify
+  main-is:          yosupo-data-associative-array.hs
+
+executable yosupo-data-union-find-exe
+  import:           verify
+  main-is:          yosupo-data-union-find.hs
+
+executable yosupo-data-predecessor-problem-exe
+  import:           verify
+  main-is:          yosupo-data-predecessor-problem.hs
+
 executable yosupo-data-vertex-add-path-sum-exe
   import:           verify
   main-is:          yosupo-data-vertex-add-path-sum.hs
@@ -197,10 +209,6 @@ executable yosupo-graph-lca-BL-exe
 executable yosupo-math-sum-of-floor-of-linear-exe
   import:           verify
   main-is:          yosupo-math-sum-of-floor-of-linear.hs
-
-executable yosupo-data-predecessor-problem-exe
-  import:           verify
-  main-is:          yosupo-data-predecessor-problem.hs
 
 executable yosupo-string-zalgorithm-exe
   import:           verify
