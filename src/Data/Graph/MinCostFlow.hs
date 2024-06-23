@@ -29,7 +29,6 @@ import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
 import Data.Graph.Alias (EdgeId, Vertex)
-import Data.Primitive.MutVar
 import Data.Semigroup (Max (..), Min (..))
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -318,7 +317,7 @@ runMinCostFlowShortests ::
   m ()
 runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = do
   UM.write distsMCF src (toRelax 0)
-  dbgLoop <- newMutVar (0 :: Int)
+  dbgLoop <- UM.replicate 1 (0 :: Int)
 
   fix $ \loop -> do
     !b <- (\f -> U.foldM' f False (U.generate nVertsMCF id)) $ \ !anyUpdate0 v1 -> do
@@ -350,10 +349,10 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
                 return anyUpdate
 
     when b $ do
-      nDidLoop <- readMutVar dbgLoop
+      nDidLoop <- UM.unsafeRead dbgLoop 0
       if nDidLoop < nVertsMCF
         then do
-          writeMutVar dbgLoop (nDidLoop + 1)
+          UM.unsafeWrite dbgLoop (nDidLoop + 1) 0
           loop
         else do
           -- this is @VertsMCF + 1@ times

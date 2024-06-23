@@ -17,7 +17,6 @@ import Data.Graph.Alias (EdgeId, Vertex)
 import Data.Graph.Generic
 import Data.Maybe
 import Data.Ord (comparing)
-import Data.Primitive.MutVar
 import Data.Tuple.Extra (first3, second3, thd3, third3)
 import Data.UnionFind.Mutable
 import qualified Data.Vector.Algorithms.Intro as VAI
@@ -160,15 +159,15 @@ allComponentsSG gr = runST $ do
   let !n = nVertsSG gr
   components <- UM.replicate n (-1 :: Int)
 
-  iGroupRef <- newMutVar (0 :: Int)
+  iGroupRef <- UM.replicate 1 (0 :: Int)
 
   groupVerts <- (\f -> U.foldM' f [] (U.generate n id)) $ \acc v -> do
     g <- UM.read components v
     if g /= -1
       then return acc
       else do
-        iGroup <- readMutVar iGroupRef
-        modifyMutVar iGroupRef (+ 1)
+        iGroup <- UM.unsafeRead iGroupRef 0
+        UM.unsafeModify iGroupRef (+ 1) 0
         fmap (: acc) . (`execStateT` []) $ flip fix v $ \loop v1 -> do
           UM.write components v1 iGroup
           modify' (v1 :)
@@ -346,7 +345,7 @@ data DigraphInfo = DigraphInfo
 digraphSG :: SparseGraph w -> DigraphInfo
 digraphSG gr = runST $ do
   let !n = nVertsSG gr
-  !allDigraph <- newMutVar True
+  !allDigraph <- UM.replicate 1 True
   !vertColors <- UM.replicate n (-1 :: Int)
   !vertComps <- UM.replicate n (-1 :: Int)
   !compInfo <- UM.replicate n (0 :: Int, 0 :: Int, True)
@@ -368,7 +367,7 @@ digraphSG gr = runST $ do
             c2 <- UM.read vertColors v2
             when (c2 == c1) $ do
               -- not a digraph
-              writeMutVar allDigraph False
+              UM.unsafeWrite allDigraph 0 False
               UM.modify compInfo (third3 (const False)) iComp
 
             when (c2 == -1) $ do
@@ -376,7 +375,7 @@ digraphSG gr = runST $ do
 
         return $ iComp + 1
 
-  DigraphInfo <$> readMutVar allDigraph <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
+  DigraphInfo <$> UM.unsafeRead allDigraph 0 <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
 ----------------------------------------------------------------------------------------------------
 -- Topological sort and strongly connected components

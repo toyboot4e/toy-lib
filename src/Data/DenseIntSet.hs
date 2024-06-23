@@ -12,7 +12,6 @@ import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.Ix
 import Data.Maybe
-import Data.Primitive.MutVar
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -41,7 +40,7 @@ data DenseIntSet s = DenseIntSet
   { -- | Maximum number of elements.
     capacityDIS :: !Int,
     -- | The number of elements.
-    sizeDIS_ :: !(MutVar s Int),
+    sizeDIS_ :: !(UM.MVector s Int),
     -- TODO: track the number of elements int the set
 
     -- | Segments.
@@ -59,7 +58,7 @@ newDIS capacityDIS = do
           (,len') <$> UM.replicate len' 0
       )
       capacityDIS
-  sizeDIS_ <- newMutVar (0 :: Int)
+  sizeDIS_ <- UM.replicate 1 (0 :: Int)
   return DenseIntSet {..}
   where
     (!_, !logSize) =
@@ -79,7 +78,7 @@ validateKeyDIS name DenseIntSet {..} k
 
 -- | \(O(1)\) Returns the number of elements in the set.
 sizeDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m Int
-sizeDIS = readMutVar . sizeDIS_
+sizeDIS = (`UM.read` 0) . sizeDIS_
 
 -- | \(O(\log N)\) Tests if @k@ is in the set.
 memberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
@@ -97,8 +96,7 @@ notMemberDIS dis k = not <$> memberDIS dis k
 insertDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 insertDIS is@DenseIntSet {..} k = do
   unlessM (memberDIS is k) $ do
-    -- REMARK: the size tracking takes A LOT of time though
-    modifyMutVar' sizeDIS_ (+ 1)
+    UM.modify sizeDIS_ (+ 1) 0
     V.foldM'_
       ( \i vec -> do
           let (!q, !r) = i `divMod` wordDIS
@@ -114,8 +112,7 @@ insertDIS is@DenseIntSet {..} k = do
 deleteDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 deleteDIS is@DenseIntSet {..} k = do
   whenM (memberDIS is k) $ do
-    -- REMARK: the size tracking takes A LOT of time though
-    modifyMutVar' sizeDIS_ (subtract 1)
+    UM.modify sizeDIS_ (subtract 1) 0
     V.foldM'_
       ( \(!b, !i) vec -> do
           let (!q, !r) = i `divMod` wordDIS
