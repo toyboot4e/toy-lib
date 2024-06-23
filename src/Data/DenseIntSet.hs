@@ -6,11 +6,13 @@
 module Data.DenseIntSet where
 
 import Control.Monad
+import Control.Monad.Extra (unlessM, whenM)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.Ix
 import Data.Maybe
+import Data.Primitive.MutVar
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -35,9 +37,12 @@ wordDIS = 64
 -- [......................] ..  Layer 2: more sparse (1/64^2)
 -- @
 data DenseIntSet s = DenseIntSet
-  { -- | The number of elements.
+  { -- | Maximum number of elements.
     capacityDIS :: !Int,
+    -- | The number of elements.
+    sizeDIS_ :: !(MutVar s Int),
     -- TODO: track the number of elements int the set
+
     -- | Segments.
     vecDIS :: !(V.Vector (UM.MVector s Int))
   }
@@ -53,6 +58,7 @@ newDIS capacityDIS = do
           (,len') <$> UM.replicate len' 0
       )
       capacityDIS
+  sizeDIS_ <- newMutVar (0 :: Int)
   return DenseIntSet {..}
   where
     (!_, !logSize) =
@@ -70,6 +76,10 @@ validateKeyDIS name DenseIntSet {..} k
   | not (inRange (0, capacityDIS - 1) k) = error $ name ++ ": out of range (" ++ show capacityDIS ++ "): " ++ show k
   | otherwise = ()
 
+-- | \(O(1)\) Returns the number of elements in the set.
+sizeDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m Int
+sizeDIS = readMutVar . sizeDIS_
+
 -- | \(O(\log N)\) Tests if @k@ is in the set.
 memberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
 memberDIS is@DenseIntSet {..} k = do
@@ -78,35 +88,43 @@ memberDIS is@DenseIntSet {..} k = do
   where
     !_ = validateKeyDIS "memberDIS" is k
 
+-- | \(O(\log N)\) Tests if @k@ is not in the set.
+notMemberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
+notMemberDIS dis k = not <$> memberDIS dis k
+
 -- | \(O(\log N)\) Inserts @k@ to the set.
 insertDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 insertDIS is@DenseIntSet {..} k = do
-  V.foldM'_
-    ( \i vec -> do
-        let (!q, !r) = i `divMod` wordDIS
-        GM.modify vec (`setBit` r) q
-        return q
-    )
-    k
-    vecDIS
+  unlessM (memberDIS is k) $ do
+    modifyMutVar' sizeDIS_ (+ 1)
+    V.foldM'_
+      ( \i vec -> do
+          let (!q, !r) = i `divMod` wordDIS
+          GM.modify vec (`setBit` r) q
+          return q
+      )
+      k
+      vecDIS
   where
     !_ = validateKeyDIS "insertDIS" is k
 
 -- | \(O(\log N)\) Deletes @k@ from the set.
 deleteDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 deleteDIS is@DenseIntSet {..} k = do
-  V.foldM'_
-    ( \(!b, !i) vec -> do
-        let (!q, !r) = i `divMod` wordDIS
-        -- TODO: early return is possible
-        unless b $ do
-          GM.modify vec (`clearBit` r) q
-        -- `b` remembers if any other bit was on
-        b' <- (/= 0) <$> GM.read vec q
-        return (b', q)
-    )
-    (False, k)
-    vecDIS
+  whenM (memberDIS is k) $ do
+    modifyMutVar' sizeDIS_ (subtract 1)
+    V.foldM'_
+      ( \(!b, !i) vec -> do
+          let (!q, !r) = i `divMod` wordDIS
+          -- TODO: early return is possible
+          unless b $ do
+            GM.modify vec (`clearBit` r) q
+          -- `b` remembers if any other bit was on
+          b' <- (/= 0) <$> GM.read vec q
+          return (b', q)
+      )
+      (False, k)
+      vecDIS
   where
     !_ = validateKeyDIS "deleteDIS" is k
 
