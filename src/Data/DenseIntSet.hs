@@ -15,6 +15,7 @@ import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (lsbOf, msbOf)
@@ -125,6 +126,8 @@ deleteDIS is@DenseIntSet {..} k = do
   where
     !_ = validateKeyDIS "deleteDIS" is k
 
+-- * GT / GE
+
 -- | \(O(\log N)\) Finds the smallest @k'@ s.t. @k' >= k@ in the set.
 lookupGEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
 lookupGEDIS DenseIntSet {..} = inner 0
@@ -151,17 +154,19 @@ lookupGEDIS DenseIntSet {..} = inner 0
 
 -- | \(O(\log N)\)
 findGEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
-findGEDIS fs k = fromMaybe err <$> lookupGEDIS fs k
+findGEDIS is k = fromMaybe err <$> lookupGEDIS is k
   where
     err = error $ "findGEDIS: no element >= " ++ show k
 
 -- | \(O(\log N)\)
 lookupGTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
-lookupGTDIS fs k = lookupGEDIS fs (k + 1)
+lookupGTDIS is k = lookupGEDIS is (k + 1)
 
 -- | \(O(\log N)\)
 findGTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
-findGTDIS fs k = findGEDIS fs (k + 1)
+findGTDIS is k = findGEDIS is (k + 1)
+
+-- * LT / LE
 
 -- | \(O(\log N)\) Finds the biggest @k'@ s.t. @k' <= k@ in the set.
 lookupLEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
@@ -188,14 +193,62 @@ lookupLEDIS DenseIntSet {..} = inner 0
 
 -- | \(O(\log N)\)
 findLEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
-findLEDIS fs k = fromMaybe err <$> lookupLEDIS fs k
+findLEDIS is k = fromMaybe err <$> lookupLEDIS is k
   where
     err = error $ "findLEDIS: no element <= " ++ show k
 
 -- | \(O(\log N)\)
 lookupLTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
-lookupLTDIS fs k = lookupLEDIS fs (k - 1)
+lookupLTDIS is k = lookupLEDIS is (k - 1)
 
 -- | \(O(\log N)\)
 findLTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
-findLTDIS fs k = findLEDIS fs (k - 1)
+findLTDIS is k = findLEDIS is (k - 1)
+
+-- * Min / Max
+
+-- | \(O(\log N)\) Not tested.
+lookupMinDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
+lookupMinDIS is = lookupGEDIS is 0
+
+-- | \(O(\log N)\) Not tested.
+findMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
+findMinDIS is = fromMaybe err <$> lookupMinDIS is
+  where
+    err = error "findMinDIS: not such a value"
+
+-- | \(O(\log N)\) Not tested.
+deleteFindMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
+deleteFindMinDIS is = do
+  key <- findMinDIS is
+  deleteDIS is key
+  return key
+
+-- | \(O(\log N)\) Not tested.
+lookupMaxDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
+lookupMaxDIS is = lookupLEDIS is (capacityDIS is - 1)
+
+-- | \(O(\log N)\) Not tested.
+findMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
+findMaxDIS is = fromMaybe err <$> lookupMaxDIS is
+  where
+    err = error "findMaxDIS: not such a value"
+
+-- | \(O(\log N)\) Not tested.
+deleteFindMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
+deleteFindMaxDIS is = do
+  key <- findMaxDIS is
+  deleteDIS is key
+  return key
+
+-- | \(O(N)\) Not tested.
+unsafeKeysDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (U.Vector Int)
+unsafeKeysDIS is = do
+  vec <- U.unsafeFreeze (V.head (vecDIS is))
+  return
+    . U.filter
+      ( \i ->
+          let (!q, !r) = i `divMod` wordDIS
+           in testBit (vec U.! q) r
+      )
+    $ U.generate (wordDIS * U.length vec) id
