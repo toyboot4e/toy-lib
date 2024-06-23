@@ -22,14 +22,15 @@ msbOf !x = 63 - countLeadingZeros x
 -- | Retrieves the least significant bit.
 --
 -- >>> lsbOf 0
--- 64
+-- -1
 -- >>> lsbOf maxBound
 -- 0
 -- >>> lsbOf $ 4 + 2 + 1
 -- 0
 {-# INLINE lsbOf #-}
 lsbOf :: Int -> Int
-lsbOf = countTrailingZeros
+lsbOf 0 = -1
+lsbOf x = countTrailingZeros x
 
 {-# INLINE bitsOf #-}
 bitsOf :: Int -> U.Vector Int
