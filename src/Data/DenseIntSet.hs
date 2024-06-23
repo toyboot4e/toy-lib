@@ -97,6 +97,7 @@ notMemberDIS dis k = not <$> memberDIS dis k
 insertDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 insertDIS is@DenseIntSet {..} k = do
   unlessM (memberDIS is k) $ do
+    -- REMARK: the size tracking takes A LOT of time though
     modifyMutVar' sizeDIS_ (+ 1)
     V.foldM'_
       ( \i vec -> do
@@ -113,6 +114,7 @@ insertDIS is@DenseIntSet {..} k = do
 deleteDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 deleteDIS is@DenseIntSet {..} k = do
   whenM (memberDIS is k) $ do
+    -- REMARK: the size tracking takes A LOT of time though
     modifyMutVar' sizeDIS_ (subtract 1)
     V.foldM'_
       ( \(!b, !i) vec -> do
