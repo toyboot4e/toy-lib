@@ -19,6 +19,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (lsbOf, msbOf)
+import ToyLib.Macro
 
 -- | Dense int set or a W-ary tree where @W = wordDIS@.
 wordDIS :: Int
@@ -73,7 +74,7 @@ newDIS capacityDIS = do
 -- | (Internal)
 validateKeyDIS :: (HasCallStack) => String -> DenseIntSet s -> Int -> ()
 validateKeyDIS name DenseIntSet {..} k
-  | not (inRange (0, capacityDIS - 1) k) = error $ name ++ ": out of range (" ++ show capacityDIS ++ "): " ++ show k
+  | debug && not (inRange (0, capacityDIS - 1) k) = error $ name ++ ": out of range (" ++ show capacityDIS ++ "): " ++ show k
   | otherwise = ()
 
 -- | \(O(1)\) Returns the number of elements in the set.
