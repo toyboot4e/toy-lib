@@ -78,6 +78,13 @@ decFindMinMS ms@(!_, !im) =
    in (key, decMS key ms)
 
 -- | \(O(W)\)
+{-# INLINE decFindMaxMS #-}
+decFindMaxMS :: MultiSet -> (Int, MultiSet)
+decFindMaxMS ms@(!_, !im) =
+  let !key = fst $ IM.findMax im
+   in (key, decMS key ms)
+
+-- | \(O(W)\)
 {-# INLINE lookupMS #-}
 lookupMS :: Int -> MultiSet -> Maybe Int
 lookupMS !k = IM.lookup k . innerMS
