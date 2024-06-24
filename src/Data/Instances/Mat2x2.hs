@@ -3,7 +3,12 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Mat2x2` and `V2` as a `SemigroupAction` instance. Prefer @Affine2d@ if possible.
+-- | `Mat2x2` and `V2` is a `SemigroupAction` instance. Prefer @Affine2d@ for efficiency.
+--
+-- `Mat2x2` works as a 2D affine transformation when stored as @Mat2x2 (a, b, 0, 1)@.
+--
+-- REMARK: It is super important to have @1@ as the second element in `V2`. Or else it fails to
+-- calculate comopsitional affine transformation.
 module Data.Instances.Mat2x2 where
 
 -- TODO: store in one array?
@@ -21,9 +26,13 @@ newtype Mat2x2 a = Mat2x2 (Mat2x2Repr a)
 -- | `Mat2x2` internal unboxed data representaton.
 type Mat2x2Repr a = (a, a, a, a)
 
+{-# INLINE toMat2x2 #-}
+toMat2x2 :: (Num a) => a -> a -> Mat2x2 a
+toMat2x2 a b = Mat2x2 (a, b, 0, 1)
+
 {-# INLINE unMat2x2 #-}
-unMat2x2 :: Mat2x2 a -> Mat2x2Repr a
-unMat2x2 (Mat2x2 x) = x
+unMat2x2 :: Mat2x2 a -> (a, a)
+unMat2x2 (Mat2x2 (!a, !b, !_, !_)) = (a, b)
 
 instance (Num a) => Semigroup (Mat2x2 a) where
   {-# INLINE (<>) #-}
@@ -40,7 +49,7 @@ mulM22M22 (Mat2x2 (!a11, !a12, !a21, !a22)) (Mat2x2 (!b11, !b12, !b21, !b22)) = 
     !c22 = a21 * b12 + a22 * b22
 
 instance (Num a) => Monoid (Mat2x2 a) where
-  -- | Identity matrix.
+  -- | Identity matrix or affine transformation as @x1@.
   {-# INLINE mempty #-}
   mempty = Mat2x2 (1, 0, 0, 1)
 
@@ -56,12 +65,17 @@ mulM22V2 (Mat2x2 (!a11, !a12, !a21, !a22)) (V2 (!x1, !x2)) = V2 (a11 * x1 + a12 
 -- | Two-dimensional unboxed vector. Implements `Semigroup V2` as sum.
 newtype V2 a = V2 (V2Repr a) deriving newtype (Eq, Ord, Show)
 
--- | `V2` internal unboxed data representaton.
+-- | `V2` internal unboxed data representaton. Be sure to have @1@ as the second element on
+-- construction.
 type V2Repr a = (a, a)
 
+{-# INLINE toV2 #-}
+toV2 :: (Num a) => a -> V2 a
+toV2 a = V2 (a, 1)
+
 {-# INLINE unV2 #-}
-unV2 :: V2 a -> V2Repr a
-unV2 (V2 x) = x
+unV2 :: V2 a -> a
+unV2 (V2 (!x, !_)) = x
 
 instance (Num a) => Semigroup (V2 a) where
   {-# INLINE (<>) #-}

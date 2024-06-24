@@ -230,6 +230,10 @@ executable yosupo-string-number-of-substrings-exe
   import:  verify
   main-is: yosupo-string-number-of-substrings.hs
 
+executable yosupo-data-range-affine-range-sum-exe
+  import:  verify
+  main-is: yosupo-data-range-affine-range-sum.hs
+
 executable tmp-exe
   import:  verify
   main-is: tmp.hs
