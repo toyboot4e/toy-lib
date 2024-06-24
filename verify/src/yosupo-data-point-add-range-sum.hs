@@ -33,6 +33,6 @@ solve = do
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
--- #segment-tree
+-- #lazy-segment-tree #affine-2d
 main :: IO ()
 main = runIO solve

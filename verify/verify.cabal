@@ -1,14 +1,14 @@
-cabal-version:      3.4
-name:               verify
-version:            0.1.0.0
-description:        toy-lib verification sources
-homepage:           https://github.com/toyboot4e/toy-lib#readme
-bug-reports:        https://github.com/toyboot4e/toy-lib/issues
-author:             toyboot4e
-maintainer:         toyboot4e@gmail.com
-copyright:          2023 toyboot4e
-license:            MIT
-build-type:         Simple
+cabal-version: 3.4
+name:          verify
+version:       0.1.0.0
+description:   toy-lib verification sources
+homepage:      https://github.com/toyboot4e/toy-lib#readme
+bug-reports:   https://github.com/toyboot4e/toy-lib/issues
+author:        toyboot4e
+maintainer:    toyboot4e@gmail.com
+copyright:     2023 toyboot4e
+license:       MIT
+build-type:    Simple
 
 flag atcoder
   description: Indicates this is on the AtCoder judge server
@@ -89,6 +89,7 @@ common deps
     , these                          ^>=1.2
     , these-lens                     ^>=1.0.1.3
     , time                           ^>=1.12.2
+    , toy-lib
     , transformers                   ^>=0.6.1.0
     , trifecta                       ^>=2.1.2
     , unboxing-vector                ^>=0.2.0.0
@@ -100,7 +101,6 @@ common deps
     , vector-stream                  ^>=0.1.0.0
     , vector-th-unbox                ^>=0.2.2
     , xhtml                          ^>=3000.2.2.1
-    , toy-lib
 
   if flag(atcoder)
     cpp-options: -DATCODER
@@ -119,110 +119,117 @@ common verify
     -Wno-missing-export-lists
 
 executable abc133-f-exe
-  import:           verify
-  main-is:          abc133-f.hs
+  import:  verify
+  main-is: abc133-f.hs
 
 executable abc276-f-exe
-  import:           verify
-  main-is:          abc276-f.hs
+  import:  verify
+  main-is: abc276-f.hs
 
 executable abc294-g-exe
-  import:           verify
-  main-is:          abc294-g.hs
+  import:  verify
+  main-is: abc294-g.hs
 
 executable abc330-e-exe
-  import:           verify
-  main-is:          abc330-e.hs
+  import:  verify
+  main-is: abc330-e.hs
 
 executable abc348-e-exe
-  import:           verify
-  main-is:          abc348-e.hs
+  import:  verify
+  main-is: abc348-e.hs
 
 executable acl-practice-d-exe
-  import:           verify
-  main-is:          acl-practice-d.hs
+  import:  verify
+  main-is: acl-practice-d.hs
 
 executable acl-practice-f-exe
-  import:           verify
-  main-is:          acl-practice-f.hs
+  import:  verify
+  main-is: acl-practice-f.hs
 
 executable acl-practice-h-exe
-  import:           verify
-  main-is:          acl-practice-h.hs
+  import:  verify
+  main-is: acl-practice-h.hs
 
 executable acl-practice-i-exe
-  import:           verify
-  main-is:          acl-practice-i.hs
+  import:  verify
+  main-is: acl-practice-i.hs
 
 executable acl-practice-k-exe
-  import:           verify
-  main-is:          acl-practice-k.hs
+  import:  verify
+  main-is: acl-practice-k.hs
 
 executable past06-o-exe
-  import:           verify
-  main-is:          past06-o.hs
+  import:  verify
+  main-is: past06-o.hs
 
 executable past06-m-exe
-  import:           verify
-  main-is:          past06-m.hs
+  import:  verify
+  main-is: past06-m.hs
 
 executable past08-k-exe
-  import:           verify
-  main-is:          past08-k.hs
+  import:  verify
+  main-is: past08-k.hs
 
 executable past10-n-exe
-  import:           verify
-  main-is:          past10-n.hs
+  import:  verify
+  main-is: past10-n.hs
 
 executable yosupo-convolution-convolution-exe
-  import:           verify
-  main-is:          yosupo-convolution-convolution.hs
+  import:  verify
+  main-is: yosupo-convolution-convolution.hs
 
 executable yosupo-data-associative-array-exe
-  import:           verify
-  main-is:          yosupo-data-associative-array.hs
+  import:  verify
+  main-is: yosupo-data-associative-array.hs
 
 executable yosupo-data-union-find-exe
-  import:           verify
-  main-is:          yosupo-data-union-find.hs
+  import:  verify
+  main-is: yosupo-data-union-find.hs
 
 executable yosupo-data-point-add-range-sum-exe
-  import:           verify
-  main-is:          yosupo-data-point-add-range-sum.hs
+  import:  verify
+  main-is: yosupo-data-point-add-range-sum.hs
 
 executable yosupo-data-predecessor-problem-exe
-  import:           verify
-  main-is:          yosupo-data-predecessor-problem.hs
+  import:  verify
+  main-is: yosupo-data-predecessor-problem.hs
+
+executable yosupo-data-range-affine-point-get-exe
+  import:  verify
+  main-is: yosupo-data-range-affine-point-get.hs
 
 executable yosupo-data-vertex-add-path-sum-exe
-  import:           verify
-  main-is:          yosupo-data-vertex-add-path-sum.hs
+  import:  verify
+  main-is: yosupo-data-vertex-add-path-sum.hs
 
 executable yosupo-data-vertex-set-path-composite-exe
-  import:           verify
-  main-is:          yosupo-data-vertex-set-path-composite.hs
+  import:  verify
+  main-is: yosupo-data-vertex-set-path-composite.hs
 
 executable yosupo-graph-lca-HLD-exe
-  import:           verify
-  main-is:          yosupo-graph-lca-HLD.hs
+  import:  verify
+  main-is: yosupo-graph-lca-HLD.hs
 
 executable yosupo-graph-lca-BL-exe
-  import:           verify
-  main-is:          yosupo-graph-lca-BL.hs
+  import:  verify
+  main-is: yosupo-graph-lca-BL.hs
 
 executable yosupo-math-sum-of-floor-of-linear-exe
-  import:           verify
-  main-is:          yosupo-math-sum-of-floor-of-linear.hs
+  import:  verify
+  main-is: yosupo-math-sum-of-floor-of-linear.hs
 
 executable yosupo-string-zalgorithm-exe
-  import:           verify
-  main-is:          yosupo-string-zalgorithm.hs
+  import:  verify
+  main-is: yosupo-string-zalgorithm.hs
 
 executable yosupo-string-suffixarray-exe
-  import:           verify
-  main-is:          yosupo-string-suffixarray.hs
+  import:  verify
+  main-is: yosupo-string-suffixarray.hs
 
 executable yosupo-string-number-of-substrings-exe
-  import:           verify
-  main-is:          yosupo-string-number-of-substrings.hs
+  import:  verify
+  main-is: yosupo-string-number-of-substrings.hs
 
+executable tmp-exe
+  import:  verify
+  main-is: tmp.hs

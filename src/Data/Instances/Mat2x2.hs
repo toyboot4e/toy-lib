@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Mat2x2` and `V2` as a `SemigroupAction` instance.
+-- | `Mat2x2` and `V2` as a `SemigroupAction` instance. Prefer @Affine2d@ if possible.
 module Data.Instances.Mat2x2 where
 
 -- TODO: store in one array?
