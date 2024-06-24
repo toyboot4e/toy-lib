@@ -43,6 +43,6 @@ solve = do
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/predecessor_problem
--- #dense-hash-map
+-- #dense-int-set
 main :: IO ()
 main = runIO solve

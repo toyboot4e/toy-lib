@@ -56,6 +56,6 @@ solve = do
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/associative_array
--- #dense-hash-set
+-- #dense-hash-map
 main :: IO ()
 main = runIO solve

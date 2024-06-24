@@ -181,6 +181,7 @@ library
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.DenseHashMap
+    Data.DenseIntMap
     Data.DenseIntSet
     Data.Graph.Alias
     Data.Graph.Generic
