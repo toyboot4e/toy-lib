@@ -186,6 +186,10 @@ executable yosupo-data-union-find-exe
   import:           verify
   main-is:          yosupo-data-union-find.hs
 
+executable yosupo-data-point-add-range-sum-exe
+  import:           verify
+  main-is:          yosupo-data-point-add-range-sum.hs
+
 executable yosupo-data-predecessor-problem-exe
   import:           verify
   main-is:          yosupo-data-predecessor-problem.hs
