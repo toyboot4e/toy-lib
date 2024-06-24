@@ -21,7 +21,6 @@ solve = do
   qs <- U.replicateM q ints3'
 
   stree <- buildSTree $ U.map Sum xs
-
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !i, !dx) -> do
       modifySTree stree (<> Sum dx) i

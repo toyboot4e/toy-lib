@@ -3,11 +3,9 @@
 
 -- {{{ toy-lib import
 
-import Data.Core.SemigroupAction
-import Data.Instances.Mat2x2
+import Data.Instances.Affine2d
 import Data.ModInt
 import Data.SegmentTree.Lazy
-import Math.NTT
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -26,21 +24,26 @@ type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @
 solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
-  !xs0 <- intsU'
-  !qs <- U.replicateM q $ (`fmap` ints') $ \case
-    [!x0, !x1, !x2] -> (x0, x1, x2, -1, -1)
-    [!x0, !x1, !x2, !x3, !x4] -> (x0, x1, x2, x3, x4)
-    _ -> error "unreachable"
+  !xs <- intsU'
+  !qs <- U.replicateM q $ do
+    int' >>= \case
+      0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
+      1 -> (1,,,-1,-1) <$> int' <*> int'
+      _ -> error "unreachable"
 
-  !stree <- generateLSTree n (\i -> V2 (modInt (xs0 U.! i), 1))
+  -- it is super important to have `1` as the second element
+  !stree <- buildLSTree $ U.map (toV2 . modInt) xs
 
-  G.forM_ qs $ \case
+  res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, !r, !a, !b) -> do
-      sactLSTree stree l (r - 1) (Mat2x2 (modInt a, modInt b, 0, 1))
+      sactLSTree stree l (r - 1) $ Affine2d (modInt a, modInt b)
+      return Nothing
     (1, !l, !r, -1, -1) -> do
-      V2 (!x, !_) <- foldLSTree stree l (r - 1)
-      printBSB x
+      x <- unV2 <$> foldLSTree stree l r
+      return $ Just x
     _ -> error "unreachable"
+
+  printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://atcoder.jp/contests/practice2/tasks/practice2_k
 -- #lazy-segment-tree

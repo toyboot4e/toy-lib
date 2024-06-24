@@ -12,8 +12,6 @@ import ToyLib.ShowBSB
 
 -- }}} toy-lib import
 
-import Data.Functor.Identity
-
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
@@ -32,14 +30,14 @@ solve = do
       0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
       1 -> (1,,-1,-1,-1) <$> int'
 
-  stree <- buildLSTree $ U.map (V1 . Sum . modInt) xs
+  stree <- buildLSTree $ U.map (V1 . modInt) xs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, pred -> !r, !a, !b) -> do
-      sactLSTree stree l r $ Affine2d (Sum (modInt a), Sum (modInt b))
+      sactLSTree stree l r $ Affine2d (modInt a, modInt b)
       return Nothing
     (1, !i, !_, !_, !_) -> do
-      V1 (Sum x) <- readLSTree stree i
+      V1 x <- readLSTree stree i
       return $ Just x
     _ -> error "unreachable"
 
