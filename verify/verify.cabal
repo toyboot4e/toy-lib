@@ -234,6 +234,10 @@ executable yosupo-data-range-affine-range-sum-exe
   import:  verify
   main-is: yosupo-data-range-affine-range-sum.hs
 
+executable yosupo-graph-cycle-detection-exe
+  import:  verify
+  main-is: yosupo-graph-cycle-detection.hs
+
 executable tmp-exe
   import:  verify
   main-is: tmp.hs

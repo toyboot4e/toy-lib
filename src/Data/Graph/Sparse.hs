@@ -474,3 +474,56 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
   where
     {-# INLINE expand #-}
     expand (!v1, !v2, !w) = U.fromListN 2 [(v1, v2, w), (v2, v1, w)]
+
+-- -------------------------------------------------------------------------------------------------
+-- Cycles
+-- -------------------------------------------------------------------------------------------------
+
+-- | Finds a cycle in a directed graph and collects their vertices. Embed edge information to the
+-- weight if necessary.
+--
+-- <https://drken1215.hatenablog.com/entry/2023/05/20/200517z.
+findCycleSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
+findCycleSG gr = runST $ do
+  -- visited in-order/out-order
+  visIn <- UM.replicate n False
+  visOut <- UM.replicate n False
+
+  -- (v, w) visited in-order
+  history <- newRevBuffer n
+
+  -- TODO: better way than `callCC`?
+  -- FIXME: first vertex information
+  res <- evalContT $ callCC $ \exit -> do
+    let dfs v1 = do
+          UM.write visIn v1 True
+          U.forM_ (gr `adjW` v1) $ \(!v2, !w12) -> do
+            let !_ = traceShow (v1, v2) ()
+            bIn <- UM.read visIn v2
+            when bIn $ do
+              unlessM (UM.read visOut v2) $ do
+                -- cycle detected: break
+                pushFront history (v1, w12)
+                exit $ Just v2
+            unless bIn $ do
+              pushFront history (v1, w12)
+              dfs v2
+              popFront_ history
+          UM.write visOut v1 True
+
+    U.forM_ (U.generate n id) $ \v -> do
+      unlessM (UM.read visIn v) $ do
+        clearBuffer history -- needed?
+        dfs v
+
+    return Nothing
+
+  (`mapM` res) $ \v -> do
+    his <- unsafeFreezeBuffer history
+    let !i = fromJust $ U.findIndex ((== v) . fst) his
+    -- REMARK: `reverse` is required because we're starting from the back to the front.
+    -- REMARK: `force` is required to not refer to the memory owned by the u buffer
+    return . U.force . U.reverse $ U.take (i + 1) his
+  where
+    !n = nVertsSG gr
+
