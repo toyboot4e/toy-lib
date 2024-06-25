@@ -6,6 +6,7 @@ module Data.Graph.Sparse where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Cont (callCC, evalContT)
 import Control.Monad.Extra (unlessM, whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -21,9 +22,9 @@ import Data.Tuple.Extra (first3, second3, thd3, third3)
 import Data.UnionFind.Mutable
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
+import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Data.Vector.IxVector
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug (dbgAssert)
 
@@ -498,7 +499,6 @@ findCycleSG gr = runST $ do
     let dfs v1 = do
           UM.write visIn v1 True
           U.forM_ (gr `adjW` v1) $ \(!v2, !w12) -> do
-            let !_ = traceShow (v1, v2) ()
             bIn <- UM.read visIn v2
             when bIn $ do
               unlessM (UM.read visOut v2) $ do
@@ -526,4 +526,3 @@ findCycleSG gr = runST $ do
     return . U.force . U.reverse $ U.take (i + 1) his
   where
     !n = nVertsSG gr
-

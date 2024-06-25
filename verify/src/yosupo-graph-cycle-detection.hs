@@ -30,6 +30,6 @@ solve = do
       printBSB $ unlinesBSB $ U.map snd vws
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/cycle_detection
--- #scc
+-- #cycles
 main :: IO ()
 main = runIO solve
