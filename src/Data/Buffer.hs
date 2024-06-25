@@ -19,6 +19,8 @@ data Buffer s a = Buffer
     -- the buffer is initialized as a stack or queue. The front value is at the middle of the
     -- internal buffer when initialized as a deque.
     bufferVars :: !(UM.MVector s Int),
+    -- | `bufferVars` initial values. Used in `clearBuffer`.
+    initialBufferPos :: !Int,
     -- | The storage.
     internalBuffer :: !(UM.MVector s a),
     -- | The capacity of the buffer. It's doubled when initialized as a dequeue.
@@ -33,11 +35,11 @@ _bufferBackPos = 1
 
 -- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
-newBuffer n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
+newBuffer n = Buffer <$> UM.replicate 2 0 <*> return 0 <*> UM.unsafeNew n <*> pure n
 
 -- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@.
 newRevBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
-newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> UM.unsafeNew n <*> pure n
+newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> return (n - 1) <*> UM.unsafeNew n <*> pure n
 
 type Deque s a = Buffer s a
 
@@ -46,6 +48,7 @@ newBufferAsDeque :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a
 newBufferAsDeque n =
   Buffer
     <$> UM.replicate 2 n
+    <*> pure n
     <*> UM.unsafeNew (2 * n)
     <*> pure (2 * n)
 
@@ -71,9 +74,9 @@ nullBuffer = fmap (== 0) . lengthBuffer
 
 -- | \(O(1)\)
 clearBuffer :: (PrimMonad m) => Buffer (PrimState m) a -> m ()
-clearBuffer Buffer {bufferVars} = do
-  UM.unsafeWrite bufferVars _bufferFrontPos 0
-  UM.unsafeWrite bufferVars _bufferBackPos 0
+clearBuffer Buffer {bufferVars, initialBufferPos} = do
+  UM.unsafeWrite bufferVars _bufferFrontPos initialBufferPos
+  UM.unsafeWrite bufferVars _bufferBackPos initialBufferPos
 
 -- | \(O(N)\)
 freezeBuffer ::
@@ -297,5 +300,4 @@ cloneBuffer :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Buffer (
 cloneBuffer Buffer {..} = do
   vars' <- UM.clone bufferVars
   buf' <- UM.clone internalBuffer
-  return $ Buffer vars' buf' internalBufferSize
-
+  return $ Buffer vars' initialBufferPos buf' internalBufferSize
