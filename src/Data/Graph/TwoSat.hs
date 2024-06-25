@@ -33,7 +33,7 @@ data TwoSatBuilder s = TwoSatBuilder
 
 newTSB :: (PrimMonad m) => Int -> Int -> m (TwoSatBuilder (PrimState m))
 newTSB !nVarsTSB !nMaxEdges = do
-  !bufTSB <- newBufferAsQueue nMaxEdges
+  !bufTSB <- newBuffer nMaxEdges
   return TwoSatBuilder {..}
 
 -- | Adds an or clause of $x1 = b1 || x2 = b2$.

@@ -82,7 +82,7 @@ adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
     !o1 = U.unsafeIndex offsetsSG v
     !o2 = U.unsafeIndex offsetsSG (v + 1)
 
--- | Returns @(EdgeId, Vertex)@ paris. Hardly used.
+-- | Returns @(EdgeId, Vertex)@ pairs. Hardly used.
 {-# INLINE eAdj #-}
 eAdj :: SparseGraph w -> Vertex -> U.Vector (EdgeId, Vertex)
 eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
@@ -260,7 +260,7 @@ createDfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
 createDfsTreeSG gr@SparseGraph {..} !source = U.create $ do
   let !undef = -1 :: Int
   !prev <- UM.replicate nVertsSG undef
-  !queue <- newBufferAsQueue nVertsSG
+  !queue <- newBuffer nVertsSG
 
   -- REMARK: We're not creating
   pushBack queue source
@@ -286,7 +286,7 @@ createBfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
 createBfsTreeSG gr@SparseGraph {..} !source = U.create $ do
   let !undef = -1 :: Int
   !prev <- UM.replicate nVertsSG undef
-  !queue <- newBufferAsQueue nVertsSG
+  !queue <- newBuffer nVertsSG
 
   -- REMARK: We're not creating
   pushBack queue source

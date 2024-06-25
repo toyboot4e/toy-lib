@@ -31,7 +31,7 @@ solve = do
 
   let (!tree, !restVerts) = runST $ do
         uf <- newMUF n
-        rest <- newBufferAsQueue (m - (n - 1))
+        rest <- newBuffer (m - (n - 1))
 
         es' <- (`U.filterM` es) $ \(!v1, !v2) -> do
           b <- unifyMUF uf v1 v2

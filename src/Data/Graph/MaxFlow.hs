@@ -162,7 +162,7 @@ runMaxFlow !src !sink container@MaxFlow {..} = do
     -- distsMF, queueMF, iterMF
     MaxFlowBuffer
       <$> UM.unsafeNew nVertsMF
-      <*> newBufferAsQueue nVertsMF
+      <*> newBuffer nVertsMF
       <*> U.thaw offsetsMF
 
   flip fix 0 $ \loopBfs !flow -> do

@@ -35,18 +35,9 @@ _bufferBackPos = 1
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBuffer n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
 
-type Stack s a = Buffer s a
-
--- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
-newBufferAsStack :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
-newBufferAsStack n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
-
-type Queue s a = Buffer s a
-
--- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
-newBufferAsQueue :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
--- TODO: It should have length @2 * n + 1@.
-newBufferAsQueue n = Buffer <$> UM.replicate 2 0 <*> UM.unsafeNew n <*> pure n
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@.
+newRevBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
+newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> UM.unsafeNew n <*> pure n
 
 type Deque s a = Buffer s a
 

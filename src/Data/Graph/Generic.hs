@@ -84,7 +84,7 @@ genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
 genericBfs !gr !nVerts !source = U.create $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVerts undef
-  !queue <- newBufferAsQueue nVerts
+  !queue <- newBuffer nVerts
 
   pushBack queue source
   UM.unsafeWrite dist source (0 :: Int)

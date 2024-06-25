@@ -53,7 +53,7 @@ chunksOfG k xs0 = V.unfoldrExactN n step xs0
 slideMinIndicesOn :: (G.Vector v a, Ord b) => (a -> b) -> Int -> v a -> U.Vector Int
 slideMinIndicesOn wrap len xs = runST $ do
   -- queue of minimum numbers
-  !buf <- newBufferAsQueue (G.length xs)
+  !buf <- newBuffer (G.length xs)
 
   G.generateM (G.length xs) $ \i -> do
     -- remove indices that are no longer in the span
