@@ -267,6 +267,38 @@ genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
 
   if res then Just <$> U.unsafeFreeze dist else return Nothing
 
+-- | \(O((E+V) \log {V})\) Dijkstra's algorithm with path restoration information.
+genericDjTree :: forall w. (U.Unbox w, Num w, Ord w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Int -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
+genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
+  !dist <- UM.replicate nVerts undef
+  !heap <- newMinBinaryHeap (nEdges + 1)
+  !parents <- UM.replicate nVerts (-1 :: Vertex)
+
+  U.forM_ vs0 $ \v -> do
+    UM.write dist v 0
+    insertBH heap (0, v)
+
+  fix $ \loop ->
+    deleteBH heap >>= \case
+      Nothing -> return ()
+      Just (!w1, !v1) -> do
+        !newVisit <- (== w1) <$> UM.read dist v1
+        when newVisit $ do
+          U.forM_ (gr v1) $ \(!v2, !dw2) -> do
+            !w2 <- UM.read dist v2
+            let !w2' = merge w1 dw2
+            when (w2 == undef || w2' < w2) $ do
+              UM.write dist v2 w2'
+              UM.write parents v2 v1
+              insertBH heap (w2', v2)
+        loop
+
+  (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze parents
+  where
+    {-# INLINE merge #-}
+    merge :: w -> w -> w
+    merge = (+)
+
 ----------------------------------------------------------------------------------------------------
 
 -- * Misc

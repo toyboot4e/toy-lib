@@ -304,6 +304,10 @@ bfsTreeSG gr@SparseGraph {..} !source = U.create $ do
 
   return prev
 
+-- | \(O((E+V) \log {V})\) Dijkstra's algorithm with path restoration information.
+djTreeSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
+djTreeSG gr@SparseGraph {..} = genericDjTree (gr `adjW`) nVertsSG nEdgesSG
+
 -- | \(O(V)\) Given a vector of vertex parents, restores path from the source to a sink.
 --
 -- TODO: restore without reverse?
