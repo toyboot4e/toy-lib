@@ -234,6 +234,10 @@ executable yosupo-graph-scc-exe
   import:  verify
   main-is: yosupo-graph-scc.hs
 
+executable yosupo-graph-minimum-spanning-tree-exe
+  import:  verify
+  main-is: yosupo-graph-minimum-spanning-tree.hs
+
 executable yosupo-graph-shortest-path-exe
   import:  verify
   main-is: yosupo-graph-shortest-path.hs
