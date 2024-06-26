@@ -11,6 +11,7 @@
 module Data.Graph.MaxFlow where
 
 import Control.Monad
+import Control.Monad.Extra (whenJustM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -198,26 +199,24 @@ runMaxFlowBfs !src !sink MaxFlow {..} MaxFlowBuffer {..} = do
   UM.write distsMF src 0
   pushBack queueMF src
   fix $ \loop ->
-    popFront queueMF >>= \case
-      Nothing -> return ()
-      Just !v1 -> do
-        -- TODO: rather, stop on filling sink?
-        !notEnd <- (== undefMF) <$> UM.read distsMF sink
-        when notEnd $ do
-          let !iStart = offsetsMF G.! v1
-              !iEnd = offsetsMF G.! (v1 + 1)
+    whenJustM (popFront queueMF) $ \v1 -> do
+      -- TODO: rather, stop on filling sink?
+      !notEnd <- (== undefMF) <$> UM.read distsMF sink
+      when notEnd $ do
+        let !iStart = offsetsMF G.! v1
+            !iEnd = offsetsMF G.! (v1 + 1)
 
-          -- visit neighbors
-          !dist1 <- UM.read distsMF v1
-          U.forM_ (U.generate (iEnd - iStart) (+ iStart)) $ \i12 -> do
-            let !v2 = edgeDstMF G.! i12
-            !cap12 <- UM.read edgeCapMF i12
-            !notVisited <- (== undefMF) <$> UM.read distsMF v2
-            when (cap12 > 0 && notVisited) $ do
-              UM.write distsMF v2 (dist1 + 1)
-              pushBack queueMF v2
+        -- visit neighbors
+        !dist1 <- UM.read distsMF v1
+        U.forM_ (U.generate (iEnd - iStart) (+ iStart)) $ \i12 -> do
+          let !v2 = edgeDstMF G.! i12
+          !cap12 <- UM.read edgeCapMF i12
+          !notVisited <- (== undefMF) <$> UM.read distsMF v2
+          when (cap12 > 0 && notVisited) $ do
+            UM.write distsMF v2 (dist1 + 1)
+            pushBack queueMF v2
 
-          loop
+        loop
 
 -- | Modify the flow
 runMaxFlowDfs ::

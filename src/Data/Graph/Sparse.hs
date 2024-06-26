@@ -256,18 +256,15 @@ bfsTreeSG gr@SparseGraph {..} !source !undefW = runST $ do
   UM.unsafeWrite dist source 0
 
   fix $ \loop -> do
-    -- whenJustM (popFront queue) $ \v1 -> do
-    popFront queue >>= \case
-      Nothing -> return ()
-      Just v1 -> do
-        !d1 <- UM.read dist v1
-        U.forM_ (gr `adjW` v1) $ \(!v2, !dw) -> do
-          !d2 <- UM.read dist v2
-          when (d2 == undefW) $ do
-            UM.write prev v2 v1
-            UM.write dist v2 (d1 + dw)
-            pushBack queue v2
-        loop
+    whenJustM (popFront queue) $ \v1 -> do
+      !d1 <- UM.read dist v1
+      U.forM_ (gr `adjW` v1) $ \(!v2, !dw) -> do
+        !d2 <- UM.read dist v2
+        when (d2 == undefW) $ do
+          UM.write prev v2 v1
+          UM.write dist v2 (d1 + dw)
+          pushBack queue v2
+      loop
 
   (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze prev
 

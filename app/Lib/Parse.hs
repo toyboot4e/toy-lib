@@ -46,7 +46,7 @@ partitionParseResults = foldr step ([], [])
     step (!f, (!exts, H.ParseFailed loc s)) (!accL, !accR) = ((f, exts, (loc, s)) : accL, accR)
     step (!f, (!exts, H.ParseOk l)) (!accL, !accR) = (accL, (f, exts, l) : accR)
 
-buildDepGraph :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph ()
+buildDepGraph :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph Int
 buildDepGraph input = buildSG (length input) edges
   where
     edges :: U.Vector (Int, Int)
