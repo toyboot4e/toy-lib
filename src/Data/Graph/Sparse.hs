@@ -9,7 +9,7 @@ module Data.Graph.Sparse where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Cont (callCC, evalContT)
-import Control.Monad.Extra (unlessM, whenM)
+import Control.Monad.Extra (unlessM, whenJustM, whenM)
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST
@@ -22,13 +22,12 @@ import Data.Maybe
 import Data.Ord (comparing)
 import Data.Tuple.Extra (first3, second3, thd3, third3)
 import Data.UnionFind.Mutable
+import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
-import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import GHC.Stack (HasCallStack)
 import ToyLib.Debug (dbgAssert)
 
 -- | CSR (compressed sparse row) representation of a graph, weightened or unweightened.
@@ -48,8 +47,8 @@ data SparseGraph w = SparseGraph
 
 -- | \(O(N)\) Builds an non-weightned `SparseGraph`.
 {-# INLINE buildSG #-}
-buildSG :: Int -> U.Vector (Vertex, Vertex) -> SparseGraph ()
-buildSG !nVertsSG = buildWSG nVertsSG . U.map (\(!v1, !v2) -> (v1, v2, ()))
+buildSG :: Int -> U.Vector (Vertex, Vertex) -> SparseGraph Int
+buildSG !nVertsSG = buildWSG nVertsSG . U.map (\(!v1, !v2) -> (v1, v2, 1))
 
 -- | \(O(N)\) Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
@@ -106,58 +105,19 @@ adjW SparseGraph {..} v = U.zip vs ws
     !ws = U.unsafeSlice o1 (o2 - o1) edgeWeightsSG
 
 ----------------------------------------------------------------------------------------------------
+
 -- * Graph search (DFS, BFS, 01-BFS, Dijkstra)
+
 ----------------------------------------------------------------------------------------------------
-
--- | \(O(V+E)\) Depth-first search. Returns a vector of distances to each vertex. Unreachable
--- vertices are given distance of `-1`.
-dfsSG :: SparseGraph w -> Vertex -> U.Vector Int
-dfsSG gr@SparseGraph {..} !source = U.create $ do
-  let !undef = -1 :: Int
-  !dist <- UM.replicate nVertsSG undef
-
-  flip fix (0 :: Int, source) $ \loop (!depth, !v1) -> do
-    UM.write dist v1 depth
-    U.forM_ (gr `adj` v1) $ \v2 -> do
-      !d <- UM.read dist v2
-      when (d == undef) $ do
-        loop (succ depth, v2)
-
-  return dist
-
--- | \(O(V+E)\) Depth-first search. Just a template.
---
--- = Typical problems
--- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
-dfsEveryPathSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> Vertex -> w
-dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
-  !vis <- UM.replicate nVertsSG False
-
-  flip fix (0 :: w, source) $ \loop (!d1, !v1) -> do
-    -- let !_ = dbg (source, v1)
-    UM.write vis v1 True
-    !v2s <- U.filterM (fmap not . UM.read vis . fst) $ gr `adjW` v1
-    !maxDistance <- fmap (U.foldl' max d1) . U.forM v2s $ \(!v2, !w) -> do
-      loop (d1 + w, v2)
-    UM.write vis v1 False
-    return maxDistance
 
 -- | \(O(V+E)\) Collects reachable vertices from source points.
 componentsSG :: SparseGraph w -> U.Vector Vertex -> U.Vector Vertex
-componentsSG gr sources = runST $ do
-  !vis <- UM.replicate (nVertsSG gr) False
-
-  let dfs v1 = do
-        unlessM (UM.exchange vis v1 True) $ do
-          U.forM_ (gr `adj` v1) $ \v2 -> do
-            unlessM (UM.read vis v2) $ do
-              dfs v2
-
-  U.forM_ sources dfs
-  U.findIndices id <$> U.unsafeFreeze vis
+componentsSG gr sources = genericComponentsOf (gr `adj`) (nVertsSG gr) sources
 
 -- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
 -- Works on a non-directed graph only.
+--
+-- TODO: move to the generic module.
 allComponentsSG :: SparseGraph w -> (U.Vector Int, [[Vertex]])
 allComponentsSG gr = runST $ do
   let !n = nVertsSG gr
@@ -181,9 +141,33 @@ allComponentsSG gr = runST $ do
 
   (,groupVerts) <$> U.unsafeFreeze components
 
+-- | \(O(V+E)\) Depth-first search. Returns a vector of distances to each vertex. Unreachable
+-- vertices are given distance of `-1`.
+dfsSG :: (U.Unbox w, Num w, Eq w) => SparseGraph w -> Vertex -> w -> U.Vector w
+dfsSG gr@SparseGraph {..} !source !undefW = genericDfs (gr `adjW`) nVertsSG source undefW
+
+-- | \(O(V+E)\) Depth-first search. Just a template.
+--
+-- = Typical problems
+-- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
+--
+-- TODO: move to the generic module.
+dfsEveryPathSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> Vertex -> w
+dfsEveryPathSG gr@SparseGraph {..} !source = runST $ do
+  !vis <- UM.replicate nVertsSG False
+
+  flip fix (0 :: w, source) $ \loop (!d1, !v1) -> do
+    -- let !_ = dbg (source, v1)
+    UM.write vis v1 True
+    !v2s <- U.filterM (fmap not . UM.read vis . fst) $ gr `adjW` v1
+    !maxDistance <- fmap (U.foldl' max d1) . U.forM v2s $ \(!v2, !w) -> do
+      loop (d1 + w, v2)
+    UM.write vis v1 False
+    return maxDistance
+
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
-bfsSG :: SparseGraph w -> Vertex -> U.Vector Int
-bfsSG gr@SparseGraph {..} = genericBfs (gr `adj`) nVertsSG
+bfsSG :: (U.Unbox w, Num w, Eq w) => SparseGraph w -> Vertex -> w -> U.Vector w
+bfsSG gr@SparseGraph {..} undefW = genericBfs (gr `adjW`) nVertsSG undefW
 
 -- | \(O(V+E)\) 01-BFS. Unreachable vertices are given distance of @-1@.
 bfs01SG :: SparseGraph Int -> U.Vector Vertex -> U.Vector Int
@@ -199,11 +183,13 @@ djSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Ve
 djSG gr@SparseGraph {..} = genericDj (gr `adjW`) nVertsSG nEdgesSG
 
 ----------------------------------------------------------------------------------------------------
+
 -- * Path restoration
+
 ----------------------------------------------------------------------------------------------------
 
--- | \(O(V+E)\) Returns a path from the source to the sink in reverse order.
--- Note that it is NOT not the shortest path:
+-- | \(O(V+E)\) Returns a path from the source to the sink. Note that it is NOT not the shortest
+-- path:
 --
 -- >>> reverse <$> dfsPathSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
 -- Just [0,1,2,3]
@@ -229,27 +215,6 @@ dfsPathSG gr@SparseGraph {..} !source !sink = runST $ do
 
   loop (0 :: Int) source []
 
--- | \(O(V+E)\) Returns a path from the source to the sink. Note that it is NOT not the shortest
--- path:
---
--- >>> reverse $ treeDfsPathSG (buildSG 4 (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
--- [0,1,2,3]
-treeDfsPathSG :: (HasCallStack) => SparseGraph w -> Vertex -> Vertex -> [Vertex]
-treeDfsPathSG gr !source !sink = fromJust $ runST $ do
-  let !undef = -1 :: Int
-
-  let loop !parent !v1 !stack
-        | v1 == sink = do
-            return $ Just (v1 : stack)
-        | otherwise = do
-            flip fix (U.filter (/= parent) $ gr `adj` v1) $ \visitNeighbors v2s -> case G.uncons v2s of
-              Nothing -> return Nothing
-              Just (!v2, !v2s') -> do
-                -- DFS or next neighbor
-                (<|>) <$> loop v1 v2 (v1 : stack) <*> visitNeighbors v2s'
-
-  loop undef source []
-
 -- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent. Note that it doesn't return the shortest path.
 dfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
@@ -258,18 +223,16 @@ dfsTreeSG gr@SparseGraph {..} !source = U.create $ do
   !prev <- UM.replicate nVertsSG undef
   !queue <- newBuffer nVertsSG
 
-  -- REMARK: We're not creating
   pushBack queue source
   fix $ \loop -> do
-    popFront queue >>= \case
-      Nothing -> return ()
-      Just !v1 -> do
-        U.forM_ (gr `adj` v1) $ \v2 -> do
-          !p <- UM.unsafeRead prev v2
-          when (p == undef) $ do
-            UM.unsafeWrite prev v2 v1
-            pushBack queue v2
-        loop
+    whenJustM (popFront queue) $ \v1 -> do
+      U.forM_ (gr `adj` v1) $ \v2 -> do
+        !p <- UM.unsafeRead prev v2
+        -- REMARK: Be sure to keep the source vertex's parent as `-1`:
+        when (p == undef && v2 /= source) $ do
+          UM.unsafeWrite prev v2 v1
+          pushBack queue v2
+      loop
 
   return prev
 
@@ -283,25 +246,26 @@ dfsTreeSG gr@SparseGraph {..} !source = U.create $ do
 -- >>> let ps = bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- >>> restorePath ps 3
 -- [0,1,3]
-bfsTreeSG :: (U.Unbox w, Num w) => SparseGraph w -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
+bfsTreeSG :: (U.Unbox w, Num w, Eq w) => SparseGraph w -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
 bfsTreeSG gr@SparseGraph {..} !source !undefW = runST $ do
-  let !undef = -1 :: Int
   !dist <- UM.replicate nVertsSG undefW
-  !prev <- UM.replicate nVertsSG undef
+  !prev <- UM.replicate nVertsSG (-1 :: Vertex)
   !queue <- newBuffer nVertsSG
 
-  -- REMARK: We're not creating
   pushBack queue source
+  UM.unsafeWrite dist source 0
+
   fix $ \loop -> do
+    -- whenJustM (popFront queue) $ \v1 -> do
     popFront queue >>= \case
       Nothing -> return ()
-      Just !v1 -> do
-        !d1 <- UM.unsafeRead dist v1
+      Just v1 -> do
+        !d1 <- UM.read dist v1
         U.forM_ (gr `adjW` v1) $ \(!v2, !dw) -> do
-          !p <- UM.unsafeRead prev v2
-          when (p == undef) $ do
-            UM.unsafeWrite prev v2 v1
-            UM.unsafeWrite dist v2 (d1 + dw)
+          !d2 <- UM.read dist v2
+          when (d2 == undefW) $ do
+            UM.write prev v2 v1
+            UM.write dist v2 (d1 + dw)
             pushBack queue v2
         loop
 
@@ -325,7 +289,9 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
         v' = toParent G.! v
 
 ----------------------------------------------------------------------------------------------------
+
 -- * Digraph
+
 ----------------------------------------------------------------------------------------------------
 
 -- | Tries to paint the whole graph (possible not connected) as a digraph.
@@ -386,7 +352,9 @@ digraphSG gr = runST $ do
   DigraphInfo <$> UM.unsafeRead allDigraph 0 <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
 ----------------------------------------------------------------------------------------------------
+
 -- * Topological sort and strongly connected components
+
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Topological sort
@@ -458,7 +426,9 @@ topSccSG :: (U.Unbox w) => SparseGraph w -> [[Int]]
 topSccSG = map reverse . downSccSG
 
 ----------------------------------------------------------------------------------------------------
+
 -- * MST (Minimum Spanning Tree)
+
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
@@ -492,7 +462,9 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
     expand (!v1, !v2, !w) = U.fromListN 2 [(v1, v2, w), (v2, v1, w)]
 
 -- -------------------------------------------------------------------------------------------------
+
 -- * Cycles
+
 -- -------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Finds a cycle in a directed graph and collects their vertices. Embed edge

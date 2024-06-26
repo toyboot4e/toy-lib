@@ -29,12 +29,24 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Tree diameter calculation.
-treeDiameterSG :: SparseGraph w -> Int
-treeDiameterSG gr =
-  let bfs0 = bfsSG gr 0
-      far1 = U.maxIndex bfs0
-      bfs1 = bfsSG gr far1
-   in U.maximum bfs1
+treeDiameterSG :: (U.Unbox w, Num w, Ord w) => SparseGraph w -> w -> (Vertex, Vertex, w)
+treeDiameterSG gr undefW =
+  let !dfs0 = bfsSG gr 0 undefW
+      !from = U.maxIndex dfs0
+      !dfs1 = bfsSG gr from undefW
+      !to = U.maxIndex dfs1
+      !w = U.maximum dfs1
+   in (from, to, w)
+
+-- | \(O(V+E)\) Tree diameter calculation.
+treeDiameterPathSG :: (U.Unbox w, Num w, Ord w) => SparseGraph w -> w -> ((Vertex, Vertex, w), U.Vector Vertex)
+treeDiameterPathSG gr undefW =
+  let !bfs0 = bfsSG gr 0 undefW
+      !from = U.maxIndex bfs0
+      (!bfs1, !parents) = bfsTreeSG gr from undefW
+      !to = U.maxIndex bfs1
+      !w = bfs1 U.! to
+   in ((from, to, w), restorePath parents to)
 
 -- TODO: height
 

@@ -238,6 +238,10 @@ executable yosupo-graph-minimum-spanning-tree-exe
   import:  verify
   main-is: yosupo-graph-minimum-spanning-tree.hs
 
+executable yosupo-tree-tree-diameter-exe
+  import:  verify
+  main-is: yosupo-tree-tree-diameter.hs
+
 executable yosupo-graph-shortest-path-exe
   import:  verify
   main-is: yosupo-graph-shortest-path.hs

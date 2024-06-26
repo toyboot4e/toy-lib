@@ -5,11 +5,11 @@
 module Data.Graph.Generic where
 
 -- TODO: separate search module
--- TODO: use monoid-based dijkstra only (use `Sum Int` for example)
+-- TODO: `Sum`, `Max`, `Min` into one for the Dijkstra or selective DP
 
 import Control.Monad (forM_, when)
 import Control.Monad.Cont (callCC, evalContT)
-import Control.Monad.Extra (unlessM)
+import Control.Monad.Extra (unlessM, whenJustM)
 import Control.Monad.Fix (fix)
 import Control.Monad.ST (runST)
 import Control.Monad.State.Class (gets, modify')
@@ -34,59 +34,51 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
-componentsOf :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> U.Vector Vertex
-componentsOf gr nVerts start = runST $ do
+genericComponentsOf :: (Vertex -> U.Vector Vertex) -> Int -> U.Vector Vertex -> U.Vector Vertex
+genericComponentsOf gr nVerts sources = runST $ do
   vis <- UM.replicate nVerts False
-
-  flip fix start $ \loop v1 -> do
-    UM.write vis v1 True
-    U.forM_ (gr v1) $ \v2 -> do
-      unlessM (UM.read vis v2) $ do
-        loop v2
-
+  let dfs v1 = do
+        UM.write vis v1 True
+        U.forM_ (gr v1) $ \v2 -> do
+          unlessM (UM.read vis v2) $ do
+            dfs v2
+  U.forM_ sources dfs
   U.findIndices id <$> U.unsafeFreeze vis
 
 -- | \(O(V+E)\) Depth-first search.
-genericDfs :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> U.Vector Int
-genericDfs !gr !nVerts !src = runST $ do
-  let !undef = -1 :: Int
-  !dist <- UM.replicate nVerts undef
+genericDfs :: (U.Unbox w, Num w, Eq w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> U.Vector w
+genericDfs !gr !nVerts !src !undefW = runST $ do
+  !dists <- UM.replicate nVerts undefW
   -- !parent <- UM.replicate nVerts undef
-
-  (\f -> fix f (0 :: Int) src) $ \loop depth v1 -> do
-    UM.write dist v1 depth
-    U.forM_ (gr v1) $ \v2 -> do
-      !d <- UM.read dist v2
-      when (d == undef) $ do
+  (\f -> fix f 0 src) $ \loop depth v1 -> do
+    UM.write dists v1 depth
+    U.forM_ (gr v1) $ \(!v2, !dw) -> do
+      !d <- UM.read dists v2
+      when (d == undefW) $ do
         -- UM.write parent v2 v1
-        loop (depth + 1) v2
-
-  -- (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze parent
-  U.unsafeFreeze dist
+        loop (depth + dw) v2
+  -- (,) <$> U.unsafeFreeze dists <*> U.unsafeFreeze parent
+  U.unsafeFreeze dists
 
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
-genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
-genericBfs !gr !nVerts !source = U.create $ do
-  let !undef = -1 :: Int
-  !dist <- UM.replicate nVerts undef
+genericBfs :: (U.Unbox w, Num w, Eq w) => (Int -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> U.Vector w
+genericBfs !gr !nVerts !source !undefW = U.create $ do
+  !dist <- UM.replicate nVerts undefW
   !queue <- newBuffer nVerts
 
   pushBack queue source
-  UM.unsafeWrite dist source (0 :: Int)
+  UM.unsafeWrite dist source 0
 
   -- procedural programming is great
   fix $ \loop -> do
-    popFront queue >>= \case
-      Nothing -> return ()
-      Just !v1 -> do
-        !d1 <- UM.unsafeRead dist v1
-        U.forM_ (gr v1) $ \v2 -> do
-          !lastD <- UM.unsafeRead dist v2
-          when (lastD == undef) $ do
-            UM.unsafeWrite dist v2 (d1 + 1)
-            pushBack queue v2
-
-        loop
+    whenJustM (popFront queue) $ \v1 -> do
+      !d1 <- UM.unsafeRead dist v1
+      U.forM_ (gr v1) $ \(!v2, !dw) -> do
+        !lastD <- UM.unsafeRead dist v2
+        when (lastD == undefW) $ do
+          UM.unsafeWrite dist v2 (d1 + dw)
+          pushBack queue v2
+      loop
 
   return dist
 
@@ -133,11 +125,9 @@ genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
 
   -- generic BFS = pop loop
   fix $ \loop ->
-    popFront deque >>= \case
-      Nothing -> return ()
-      Just (!w, !vExt) -> do
-        step w vExt
-        loop
+    whenJustM (popFront deque) $ \(!w, !vExt) -> do
+      step w vExt
+      loop
 
   return $ vecIV vec
 
@@ -177,7 +167,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
--- | \(O((E+V) \log {V})\) Monoid-based more generic `genericDj`. TODO: Replace
+-- | \(O((E+V) \log {V})\) Monoid-based more generic `genericDj`. TODO: Allow `Min w`.
 dj' :: forall w. (U.Unbox w, Monoid w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
@@ -247,8 +237,8 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
 
 -- | \(O(V!)\) Depth-first search for finding a path with length @L@. The complexity is for dense
 -- graph and IT CAN BE MUCH LOWER on different sparse graphs.
-genericDfsEveryPath :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> Int -> Maybe (U.Vector Int)
-genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
+genericDfsEveryPathL :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> Int -> Maybe (U.Vector Int)
+genericDfsEveryPathL !gr !nVerts !source !targetLen = runST $ do
   let !undef = -1 :: Int
   !dist <- UM.replicate nVerts undef
 

@@ -30,14 +30,14 @@ solve = do
       0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
       1 -> (1,,-1,-1,-1) <$> int'
 
-  stree <- buildLSTree $ U.map (V1 . modInt) xs
+  stree <- buildLSTree $ U.map (toV2 . modInt) xs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, pred -> !r, !a, !b) -> do
       sactLSTree stree l r $ Affine2d (modInt a, modInt b)
       return Nothing
     (1, !i, !_, !_, !_) -> do
-      V1 x <- readLSTree stree i
+      x <- unV2 <$> readLSTree stree i
       return $ Just x
     _ -> error "unreachable"
 
