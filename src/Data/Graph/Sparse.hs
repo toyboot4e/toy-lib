@@ -2,6 +2,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | `vector`-based sparse graph implementation. Heavily inspired by @cojna/iota@.
+--
+-- - TODO: move tree functions to the generic module
 module Data.Graph.Sparse where
 
 import Control.Applicative
@@ -104,7 +106,7 @@ adjW SparseGraph {..} v = U.zip vs ws
     !ws = U.unsafeSlice o1 (o2 - o1) edgeWeightsSG
 
 ----------------------------------------------------------------------------------------------------
--- DFS / BFS / 01-BFS / Dijkstra
+-- * Graph search (DFS, BFS, 01-BFS, Dijkstra)
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Depth-first search. Returns a vector of distances to each vertex. Unreachable
@@ -197,7 +199,7 @@ djSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Ve
 djSG gr@SparseGraph {..} = genericDj (gr `adjW`) nVertsSG nEdgesSG
 
 ----------------------------------------------------------------------------------------------------
--- Path restoration
+-- * Path restoration
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Returns a path from the source to the sink in reverse order.
@@ -227,8 +229,8 @@ dfsPathSG gr@SparseGraph {..} !source !sink = runST $ do
 
   loop (0 :: Int) source []
 
--- | \(O(V+E)\)Returns a path from the source to the sink in reverse order.
--- Note that it is NOT not the shortest path:
+-- | \(O(V+E)\) Returns a path from the source to the sink. Note that it is NOT not the shortest
+-- path:
 --
 -- >>> reverse $ treeDfsPathSG (buildSG 4 (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 3
 -- [0,1,2,3]
@@ -249,17 +251,9 @@ treeDfsPathSG gr !source !sink = fromJust $ runST $ do
   loop undef source []
 
 -- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
--- vertices are given `-1` as their parent.
---
--- >>> createBfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
--- [-1,0,1,1]
---
--- Retrieve a shortest path:
--- >>> let ps = createBfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
--- >>> restorePath ps 3
--- [0,1,3]
-createDfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
-createDfsTreeSG gr@SparseGraph {..} !source = U.create $ do
+-- vertices are given `-1` as their parent. Note that it doesn't return the shortest path.
+dfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
+dfsTreeSG gr@SparseGraph {..} !source = U.create $ do
   let !undef = -1 :: Int
   !prev <- UM.replicate nVertsSG undef
   !queue <- newBuffer nVertsSG
@@ -282,10 +276,15 @@ createDfsTreeSG gr@SparseGraph {..} !source = U.create $ do
 -- | \(O(V+E)\) breadth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent.
 --
--- >>> createBfsTreeSG (buildSG 4 (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> bfsTreeSG (buildSG 4 (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- [-1,0,1,1]
-createBfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
-createBfsTreeSG gr@SparseGraph {..} !source = U.create $ do
+--
+-- Retrieve a shortest path:
+-- >>> let ps = bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> restorePath ps 3
+-- [0,1,3]
+bfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
+bfsTreeSG gr@SparseGraph {..} !source = U.create $ do
   let !undef = -1 :: Int
   !prev <- UM.replicate nVertsSG undef
   !queue <- newBuffer nVertsSG
@@ -319,7 +318,7 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
         v' = toParent G.! v
 
 ----------------------------------------------------------------------------------------------------
--- Digraph
+-- * Digraph
 ----------------------------------------------------------------------------------------------------
 
 -- | Tries to paint the whole graph (possible not connected) as a digraph.
@@ -380,12 +379,13 @@ digraphSG gr = runST $ do
   DigraphInfo <$> UM.unsafeRead allDigraph 0 <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
 ----------------------------------------------------------------------------------------------------
--- Topological sort and strongly connected components
+-- * Topological sort and strongly connected components
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Topological sort
 --
 -- Upstream (not referenced) vertices come first:
+--
 -- >>> let !gr = buildSG 5 $ U.fromList ([(0, 1), (0, 2), (2, 3)] :: [(Int, Int)])
 -- >>> topSortSG gr
 -- [4,0,2,3,1]
@@ -444,7 +444,7 @@ sccSG gr = collectSccPreorderSG $ topSortSG gr
       filter (not . null) <$> mapM (scc1SG gr' vis) topVerts
 
 ----------------------------------------------------------------------------------------------------
--- MST (Minimum Spanning Tree)
+-- * MST (Minimum Spanning Tree)
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
@@ -478,7 +478,7 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
     expand (!v1, !v2, !w) = U.fromListN 2 [(v1, v2, w), (v2, v1, w)]
 
 -- -------------------------------------------------------------------------------------------------
--- Cycles
+-- * Cycles
 -- -------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Finds a cycle in a directed graph and collects their vertices. Embed edge

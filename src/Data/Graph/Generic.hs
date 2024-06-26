@@ -5,14 +5,15 @@
 module Data.Graph.Generic where
 
 -- TODO: separate search module
+-- TODO: use monoid-based dijkstra only (use `Sum Int` for example)
 
-import Control.Monad
+import Control.Monad (forM_, when)
 import Control.Monad.Cont (callCC, evalContT)
 import Control.Monad.Extra (unlessM)
-import Control.Monad.Fix
-import Control.Monad.ST
-import Control.Monad.State.Class
-import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT, execState, execStateT, runState, runStateT)
+import Control.Monad.Fix (fix)
+import Control.Monad.ST (runST)
+import Control.Monad.State.Class (gets, modify')
+import Control.Monad.Trans.State.Strict (execState)
 import Data.BinaryHeap
 import Data.Bool (bool)
 import Data.Buffer
@@ -20,11 +21,17 @@ import Data.Graph.Alias (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntMap as IM
 import Data.Ix
-import Data.Maybe
+import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+
+----------------------------------------------------------------------------------------------------
+
+-- * Graph search
+
+----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
 componentsOf :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> U.Vector Vertex
@@ -56,28 +63,6 @@ genericDfs !gr !nVerts !src = runST $ do
 
   -- (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze parent
   U.unsafeFreeze dist
-
--- | \(O(V!)\) Depth-first search for finding a path with length @L@. The complexity is for dense
--- graph and IT CAN BE MUCH LOWER on different sparse graphs.
-genericDfsEveryPath :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> Int -> Maybe (U.Vector Int)
-genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
-  let !undef = -1 :: Int
-  !dist <- UM.replicate nVerts undef
-
-  !res <- evalContT $ callCC $ \exit -> do
-    (\f -> fix f (0 :: Int) source) $ \loop d1 v1 -> do
-      -- let !_ = dbg (v1, d1, targetLen)
-      UM.write dist v1 d1
-      when (d1 == targetLen - 1) $ do
-        -- let !_ = dbg ("found!")
-        exit True
-      !v2s <- U.filterM (fmap (== undef) . UM.read dist) $ gr v1
-      U.forM_ v2s $ \v2 -> do
-        loop (d1 + 1) v2
-      UM.write dist v1 undef
-      return False
-
-  if res then Just <$> U.unsafeFreeze dist else return Nothing
 
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (Int -> U.Vector Int) -> Int -> Vertex -> U.Vector Int
@@ -161,7 +146,7 @@ genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
 -- Does pruning on heap entry pushing: <https://www.slideshare.net/yosupo/ss-46612984> P15
 --
 -- Note that longest Dijkstra can be implemented by just using a max heap.
-genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
+genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
   !heap <- newMinBinaryHeap (nEdges + 1)
@@ -192,7 +177,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     merge :: w -> w -> w
     merge = (+)
 
--- | More generic `genericDj`. TODO: Replace
+-- | \(O((E+V) \log {V})\) Monoid-based more generic `genericDj`. TODO: Replace
 dj' :: forall w. (U.Unbox w, Monoid w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
@@ -255,7 +240,37 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
     merge = (+)
 
 ----------------------------------------------------------------------------------------------------
--- Misc
+
+-- * Path restoration
+
+----------------------------------------------------------------------------------------------------
+
+-- | \(O(V!)\) Depth-first search for finding a path with length @L@. The complexity is for dense
+-- graph and IT CAN BE MUCH LOWER on different sparse graphs.
+genericDfsEveryPath :: (Vertex -> U.Vector Vertex) -> Int -> Vertex -> Int -> Maybe (U.Vector Int)
+genericDfsEveryPath !gr !nVerts !source !targetLen = runST $ do
+  let !undef = -1 :: Int
+  !dist <- UM.replicate nVerts undef
+
+  !res <- evalContT $ callCC $ \exit -> do
+    (\f -> fix f (0 :: Int) source) $ \loop d1 v1 -> do
+      -- let !_ = dbg (v1, d1, targetLen)
+      UM.write dist v1 d1
+      when (d1 == targetLen - 1) $ do
+        -- let !_ = dbg ("found!")
+        exit True
+      !v2s <- U.filterM (fmap (== undef) . UM.read dist) $ gr v1
+      U.forM_ v2s $ \v2 -> do
+        loop (d1 + 1) v2
+      UM.write dist v1 undef
+      return False
+
+  if res then Just <$> U.unsafeFreeze dist else return Nothing
+
+----------------------------------------------------------------------------------------------------
+
+-- * Misc
+
 ----------------------------------------------------------------------------------------------------
 
 -- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
