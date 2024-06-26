@@ -78,9 +78,12 @@ concatBSB :: (G.Vector v a, ShowBSB a) => v a -> BSB.Builder
 concatBSB = G.foldMap showBSB
 
 intersperseBSB :: (G.Vector v a, ShowBSB a) => BSB.Builder -> v a -> BSB.Builder
-intersperseBSB del vec
+intersperseBSB = intersperseWithBSB showBSB
+
+intersperseWithBSB :: (G.Vector v a) => (a -> BSB.Builder) -> BSB.Builder -> v a -> BSB.Builder
+intersperseWithBSB showF del vec
   | G.null vec = mempty
-  | otherwise = showBSB (G.head vec) <> G.foldMap ((del <>) . showBSB) (G.tail vec)
+  | otherwise = showF (G.head vec) <> G.foldMap ((del <>) . showF) (G.tail vec)
 
 unwordsBSB :: (ShowBSB a, G.Vector v a) => v a -> BSB.Builder
 unwordsBSB = intersperseBSB wsBSB
