@@ -39,10 +39,10 @@ solve = do
             pushBack rest v1
           return b
 
-        let tree = buildSG n $ swapDupeU es'
+        let tree = buildSG_ n $ swapDupeU es'
         (tree,) <$> unsafeFreezeBuffer rest
 
-  let !bfs = V.map (bfsSG gr) $ U.convert restVerts
+  let !bfs = V.map (bfsSG gr (-1 :: Int)) $ U.convert restVerts
   let !lcaCache = lcaCacheSG tree 0
 
   let fixed x

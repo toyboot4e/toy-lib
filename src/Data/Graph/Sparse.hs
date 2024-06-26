@@ -50,6 +50,11 @@ data SparseGraph w = SparseGraph
 buildSG :: Int -> U.Vector (Vertex, Vertex) -> SparseGraph Int
 buildSG !nVertsSG = buildWSG nVertsSG . U.map (\(!v1, !v2) -> (v1, v2, 1))
 
+-- | \(O(N)\) Builds an non-weightned `SparseGraph`.
+{-# INLINE buildSG_ #-}
+buildSG_ :: Int -> U.Vector (Vertex, Vertex) -> SparseGraph ()
+buildSG_ !nVertsSG = buildWSG nVertsSG . U.map (\(!v1, !v2) -> (v1, v2, ()))
+
 -- | \(O(N)\) Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
 buildWSG :: (UM.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> SparseGraph w

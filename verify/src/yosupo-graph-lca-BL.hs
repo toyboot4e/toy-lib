@@ -15,6 +15,7 @@ import ToyLib.ShowBSB
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()
@@ -24,7 +25,7 @@ solve = do
   qs <- U.replicateM q ints2'
 
   -- FIXME:
-  let !gr = buildWSG n $ swapDupeW $ U.imap (\i p -> (i + 1, p, ())) ps
+  let !gr = buildSG_ n $ swapDupeU $ U.imap ((,) . (+ 1)) ps
   let !lcaCache = lcaCacheSG gr 0
 
   printBSB . unlinesBSB $ U.map (fst . uncurry (lca lcaCache)) qs
