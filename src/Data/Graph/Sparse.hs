@@ -43,12 +43,12 @@ data SparseGraph w = SparseGraph
   }
   deriving (Show)
 
--- | Builds an non-weightned `SparseGraph`.
+-- | \(O(N)\) Builds an non-weightned `SparseGraph`.
 {-# INLINE buildSG #-}
 buildSG :: Int -> U.Vector (Vertex, Vertex) -> SparseGraph ()
 buildSG !nVertsSG = buildWSG nVertsSG . U.map (\(!v1, !v2) -> (v1, v2, ()))
 
--- | Builds a weightned `SparseGraph`.
+-- | \(O(N)\) Builds a weightned `SparseGraph`.
 {-# INLINE buildWSG #-}
 buildWSG :: (UM.Unbox w) => Int -> U.Vector (Vertex, Vertex, w) -> SparseGraph w
 buildWSG !nVertsSG !edges =
@@ -75,7 +75,7 @@ buildWSG !nVertsSG !edges =
         (,) <$> U.unsafeFreeze mAdjacents <*> U.unsafeFreeze mWeights
    in SparseGraph {..}
 
--- | Retrieves adjacent vertices.
+-- | \(O(1)\) Retrieves adjacent vertices.
 {-# INLINE adj #-}
 adj :: SparseGraph w -> Vertex -> U.Vector Vertex
 adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
@@ -83,7 +83,7 @@ adj SparseGraph {..} v = U.unsafeSlice o1 (o2 - o1) adjacentsSG
     !o1 = U.unsafeIndex offsetsSG v
     !o2 = U.unsafeIndex offsetsSG (v + 1)
 
--- | Returns @(EdgeId, Vertex)@ pairs. Hardly used.
+-- | \(O(1)\) Returns @(EdgeId, Vertex)@ pairs. Hardly used.
 {-# INLINE eAdj #-}
 eAdj :: SparseGraph w -> Vertex -> U.Vector (EdgeId, Vertex)
 eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
@@ -92,7 +92,7 @@ eAdj SparseGraph {..} v = U.imap ((,) . (+ o1)) vs
     !o2 = U.unsafeIndex offsetsSG (v + 1)
     !vs = U.unsafeSlice o1 (o2 - o1) adjacentsSG
 
--- | Retrieves adjacent vertices with weights.
+-- | \(O(1)\) Retrieves adjacent vertices with weights.
 {-# INLINE adjW #-}
 adjW :: (U.Unbox w) => SparseGraph w -> Vertex -> U.Vector (Vertex, w)
 adjW SparseGraph {..} v = U.zip vs ws
