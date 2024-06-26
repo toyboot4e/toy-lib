@@ -9,7 +9,6 @@ import Data.Graph.Sparse
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import ToyLib.Debug
 
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
