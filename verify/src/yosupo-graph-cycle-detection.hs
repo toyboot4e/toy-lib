@@ -24,9 +24,9 @@ solve = do
   let gr = buildWSG n es
   case findCycleDirectedSG gr of
     Nothing -> printBSB "-1"
-    Just vws -> do
-      printBSB $ U.length vws
-      printBSB $ unlinesBSB $ U.map snd vws
+    Just uvws -> do
+      printBSB $ U.length uvws
+      printBSB $ unlinesBSB $ U.map thd3 uvws
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/cycle_detection
 -- #cycles

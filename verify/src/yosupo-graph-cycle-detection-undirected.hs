@@ -25,10 +25,10 @@ solve = do
   let gr = buildWSG n $ swapDupeW es
   case findCycleUndirectedSG gr of
     Nothing -> printBSB "-1"
-    Just vws -> do
-      printBSB $ U.length vws
-      printVec $ U.map fst vws
-      printVec $ U.map snd vws
+    Just uvws -> do
+      printBSB $ U.length uvws
+      printVec $ U.map fst3 uvws
+      printVec $ U.map thd3 uvws
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/cycle_detection_undirected
 -- #cycles
