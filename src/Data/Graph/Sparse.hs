@@ -23,6 +23,7 @@ import Data.UnionFind.Mutable
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
+import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
@@ -480,12 +481,93 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
 -- Cycles
 -- -------------------------------------------------------------------------------------------------
 
--- | Finds a cycle in a directed graph and collects their vertices. Embed edge information to the
--- weight if necessary.
+-- TODO: Consider returning there-tuple.
+
+-- | \(O(V+E)\) Finds a cycle in a directed graph and collects their vertices. Embed edge
+-- information to the weight if necessary.
+findCycleDirectedSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
+findCycleDirectedSG = (`findCycleImplSG` True)
+
+-- | \(O(V+E)\) Finds a cycle in an undirected graph and collects their vertices. Embed edge
+-- information to the weight if necessary.
+findCycleUndirectedSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
+findCycleUndirectedSG gr = findCycleComplexSG gr <|> findCycleImplSG gr False
+
+-- | \(O(E)\) (Internal) Auxiliary function to `fincCycleUndirectedSG. Detects self-loop
+-- edges and multiple edges.
+--
+-- TODO: efficient implementation (findMap? and two of them in one loop?)
+findCycleComplexSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
+findCycleComplexSG gr = selfLoop <|> multiEdge
+  where
+    n = nVertsSG gr
+    selfLoop = (V.!? 0) $ V.mapMaybe f (V.generate n id)
+      where
+        f v1 = (\(!_, !w) -> U.singleton (v1, w)) <$> U.find ((== v1) . fst) (gr `adjW` v1)
+    multiEdge = (V.!? 0) $ V.mapMaybe g (V.generate n id)
+    g v1
+      | U.length (gr `adj` v1) <= 1 = Nothing
+      | Just delta <- U.findIndex id matches =
+          let (!v2, !w12) = (gr `adjW` v1) U.! delta
+              (!_, !w21) = (gr `adjW` v1) U.! (delta + 1)
+           in Just $ U.fromListN 2 [(v1, {- v2, -} w12), (v2, {- v1, -} w21)]
+      | otherwise = Nothing
+      where
+        -- FIXME: not always sorted
+        matches = U.zipWith (==) (gr `adj` v1) (U.tail (gr `adj` v1))
+
+-- | \(O(V+E)\) Finds a cycle in a directed or undirected graph and collects their vertices.
+--
+-- - @revEdgeIsCycle@: Reports reverse edge as a cycle on @True. It's set to @False@ for undirected
+-- graphs where edges are duplicated.
 --
 -- <https://drken1215.hatenablog.com/entry/2023/05/20/200517z.
-findCycleSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
-findCycleSG gr = runST $ do
+findCycleImplSG :: (U.Unbox w) => SparseGraph w -> Bool -> Maybe (U.Vector (Vertex, w))
+findCycleImplSG gr revEdgeIsCycle = runST $ do
+  -- visited in-order/out-order
+  visIn <- UM.replicate n False
+  visOut <- UM.replicate n False
+
+  -- (v, w) visited in-order
+  history <- newRevBuffer n
+
+  -- TODO: better way than `callCC`?
+  -- FIXME: first vertex information
+  res <- evalContT $ callCC $ \exit -> do
+    let dfs parent v1 = do
+          UM.write visIn v1 True
+          U.forM_ (gr `adjW` v1) $ \(!v2, !w12) -> do
+            when (revEdgeIsCycle || v2 /= parent) $ do
+              bIn <- UM.read visIn v2
+              when bIn $ do
+                unlessM (UM.read visOut v2) $ do
+                  -- cycle detected: break
+                  pushFront history (v1, w12)
+                  exit $ Just v2
+              unless bIn $ do
+                pushFront history (v1, w12)
+                dfs v1 v2
+                popFront_ history
+          UM.write visOut v1 True
+
+    U.forM_ (U.generate n id) $ \v -> do
+      unlessM (UM.read visIn v) $ do
+        clearBuffer history -- needed?
+        dfs (-1) v
+
+    return Nothing
+
+  (`mapM` res) $ \v -> do
+    his <- unsafeFreezeBuffer history
+    let !i = fromJust $ U.findIndex ((== v) . fst) his
+    -- REMARK: `reverse` is required because we're starting from the back to the front.
+    -- REMARK: `force` is required to not refer to the memory owned by the u buffer
+    return . U.force . U.reverse $ U.take (i + 1) his
+  where
+    !n = nVertsSG gr
+
+findCycleImpl :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, w))
+findCycleImpl gr = runST $ do
   -- visited in-order/out-order
   visIn <- UM.replicate n False
   visOut <- UM.replicate n False

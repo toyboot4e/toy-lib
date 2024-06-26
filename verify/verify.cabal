@@ -238,6 +238,10 @@ executable yosupo-graph-cycle-detection-exe
   import:  verify
   main-is: yosupo-graph-cycle-detection.hs
 
+executable yosupo-graph-cycle-detection-undirected-exe
+  import:  verify
+  main-is: yosupo-graph-cycle-detection-undirected.hs
+
 executable tmp-exe
   import:  verify
   main-is: tmp.hs
