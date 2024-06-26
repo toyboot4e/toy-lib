@@ -23,7 +23,8 @@ solve = do
   ps <- intsU'
   qs <- U.replicateM q ints2'
 
-  let !gr = buildSG n $ swapDupeU $ U.imap ((,) . succ) ps
+  -- FIXME:
+  let !gr = buildWSG n $ swapDupeW $ U.imap (\i p -> (i + 1, p, ())) ps
   let !lcaCache = lcaCacheSG gr 0
 
   printBSB . unlinesBSB $ U.map (fst . uncurry (lca lcaCache)) qs
