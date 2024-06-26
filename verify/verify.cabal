@@ -230,6 +230,10 @@ executable yosupo-string-number-of-substrings-exe
   import:  verify
   main-is: yosupo-string-number-of-substrings.hs
 
+executable yosupo-graph-scc-exe
+  import:  verify
+  main-is: yosupo-graph-scc.hs
+
 executable yosupo-graph-shortest-path-exe
   import:  verify
   main-is: yosupo-graph-shortest-path.hs
