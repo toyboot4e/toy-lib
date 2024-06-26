@@ -283,9 +283,10 @@ dfsTreeSG gr@SparseGraph {..} !source = U.create $ do
 -- >>> let ps = bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
 -- >>> restorePath ps 3
 -- [0,1,3]
-bfsTreeSG :: SparseGraph w -> Vertex -> U.Vector Vertex
-bfsTreeSG gr@SparseGraph {..} !source = U.create $ do
+bfsTreeSG :: (U.Unbox w, Num w) => SparseGraph w -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
+bfsTreeSG gr@SparseGraph {..} !source !undefW = runST $ do
   let !undef = -1 :: Int
+  !dist <- UM.replicate nVertsSG undefW
   !prev <- UM.replicate nVertsSG undef
   !queue <- newBuffer nVertsSG
 
@@ -295,14 +296,16 @@ bfsTreeSG gr@SparseGraph {..} !source = U.create $ do
     popFront queue >>= \case
       Nothing -> return ()
       Just !v1 -> do
-        U.forM_ (gr `adj` v1) $ \v2 -> do
+        !d1 <- UM.unsafeRead dist v1
+        U.forM_ (gr `adjW` v1) $ \(!v2, !dw) -> do
           !p <- UM.unsafeRead prev v2
           when (p == undef) $ do
             UM.unsafeWrite prev v2 v1
+            UM.unsafeWrite dist v2 (d1 + dw)
             pushBack queue v2
         loop
 
-  return prev
+  (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze prev
 
 -- | \(O((E+V) \log {V})\) Dijkstra's algorithm with path restoration information.
 djTreeSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
