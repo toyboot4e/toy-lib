@@ -2,9 +2,7 @@
 module ToyLib.Debug where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.UnionFind.Mutable
 import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
 import Debug.Trace
 import ToyLib.Macro
 
@@ -63,8 +61,3 @@ dbgVec vec
       let !_ = dbg xs'
       return ()
   | otherwise = return ()
-
--- FIXME: why such a redundant contraint is required?
--- | Shows the Union-Find vertices.
-dbgUF :: (PrimMonad m, Show (U.Vector MUFNode)) => MUnionFind (PrimState m) -> m ()
-dbgUF (MUnionFind vec) = dbgVec vec

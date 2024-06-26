@@ -231,6 +231,7 @@ library
     ToyLib.Debug
     ToyLib.DebugGrid
     ToyLib.DebugSTree
+    ToyLib.DebugUF
     ToyLib.DP
     ToyLib.Macro
     ToyLib.Parser
