@@ -42,12 +42,12 @@ modifyArray !ary !f !i = do
 
 {-# INLINE swapDupeU #-}
 swapDupeU :: U.Vector (Int, Int) -> U.Vector (Int, Int)
-swapDupeU = U.concatMap (\vs -> U.fromListN 2 [vs, swap vs])
+swapDupeU = U.concatMap (\(!u, !v) -> U.fromListN 2 [(u, v), (v, u)])
 
 -- | Converts undirected edges into directed edges.
 {-# INLINE swapDupeW #-}
 swapDupeW :: (U.Unbox w) => U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
-swapDupeW = U.concatMap (\(!v1, !v2, !d) -> U.fromListN 2 [(v1, v2, d), (v2, v1, d)])
+swapDupeW = U.concatMap (\(!u, !v, !d) -> U.fromListN 2 [(u, v, d), (v, u, d)])
 
 {-# INLINE ortho4 #-}
 ortho4 :: U.Vector (Int, Int)
