@@ -9,11 +9,11 @@ module Data.Graph.Generic where
 
 import Control.Monad (forM_, when)
 import Control.Monad.Cont (callCC, evalContT)
-import Control.Monad.Extra (unlessM, whenJustM)
+import Control.Monad.Extra (unlessM, whenJustM, whenM)
 import Control.Monad.Fix (fix)
 import Control.Monad.ST (runST)
 import Control.Monad.State.Class (gets, modify')
-import Control.Monad.Trans.State.Strict (execState)
+import Control.Monad.Trans.State.Strict (execState, execStateT)
 import Data.BinaryHeap
 import Data.Bool (bool)
 import Data.Buffer
@@ -23,6 +23,7 @@ import qualified Data.IntMap as IM
 import Data.Ix
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
+import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -45,6 +46,30 @@ genericComponentsOf gr nVerts sources = runST $ do
   U.forM_ sources dfs
   U.findIndices id <$> U.unsafeFreeze vis
 
+-- | \(O(V+E)\) DFS that paints connnected components. Returns @(vertexToComponentId, components)@.
+-- Works on non-directed graphs only.
+genericGrouping :: (Vertex -> U.Vector Vertex) -> Int -> (U.Vector Int, [[Vertex]])
+genericGrouping gr n = runST $ do
+  components <- UM.replicate n (-1 :: Int)
+  iGroupRef <- UM.replicate 1 (0 :: Int)
+
+  -- TODO: use unfoldrM
+  groupVerts <- (\f -> U.foldM' f [] (U.generate n id)) $ \acc v -> do
+    g <- UM.read components v
+    if g /= -1
+      then return acc
+      else do
+        iGroup <- UM.unsafeRead iGroupRef 0
+        UM.unsafeModify iGroupRef (+ 1) 0
+        fmap (: acc) . (`execStateT` []) $ flip fix v $ \loop v1 -> do
+          UM.write components v1 iGroup
+          modify' (v1 :)
+          U.forM_ (gr v1) $ \v2 -> do
+            whenM ((== -1) <$> UM.read components v2) $ do
+              loop v2
+
+  (,groupVerts) <$> U.unsafeFreeze components
+
 -- | \(O(V+E)\) Depth-first search.
 genericDfs :: (U.Unbox w, Num w, Eq w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> U.Vector w
 genericDfs !gr !nVerts !src !undefW = runST $ do
@@ -59,6 +84,20 @@ genericDfs !gr !nVerts !src !undefW = runST $ do
         loop (depth + dw) v2
   -- (,) <$> U.unsafeFreeze dists <*> U.unsafeFreeze parent
   U.unsafeFreeze dists
+
+-- | \(O(N N!)\) Depth-first search that finds the longest path. Just a template!
+genericDfsLongestPath :: forall w. (Num w, Ord w, U.Unbox w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Vertex -> w
+genericDfsLongestPath !gr !n !source = runST $ do
+  !vis <- UM.replicate n False
+
+  flip fix (0 :: w, source) $ \loop (!d1, !v1) -> do
+    -- let !_ = dbg (source, v1)
+    UM.write vis v1 True
+    !v2s <- U.filterM (fmap not . UM.read vis . fst) $ gr v1
+    !maxDistance <- fmap (U.foldl' max d1) . U.forM v2s $ \(!v2, !w) -> do
+      loop (d1 + w, v2)
+    UM.write vis v1 False
+    return maxDistance
 
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (U.Unbox w, Num w, Eq w) => (Int -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> U.Vector w
@@ -257,7 +296,59 @@ genericDfsEveryPathL !gr !nVerts !source !targetLen = runST $ do
 
   if res then Just <$> U.unsafeFreeze dist else return Nothing
 
--- | \(O((E+V) \log {V})\) Dijkstra's algorithm with path restoration information.
+-- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
+-- vertices are given `-1` as their parent. Note that it doesn't return the shortest path.
+genericDfsTree :: (U.Unbox w, Num w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
+genericDfsTree !gr !n !source !undefW = runST $ do
+  let !undef = (-1 :: Int)
+  !dist <- UM.replicate n undefW
+  !prev <- UM.replicate n undef
+  !queue <- newBuffer n
+
+  pushBack queue source
+  UM.unsafeWrite dist source 0
+  -- be sure to not overwrite the parent of the source vertex (it has to be `-1`!)
+
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      !d1 <- UM.unsafeRead dist v1
+      U.forM_ (gr v1) $ \(!v2, !dw) -> do
+        !p <- UM.unsafeRead prev v2
+        -- REMARK: Be sure to keep the source vertex's parent as `-1`:
+        when (p == undef && v2 /= source) $ do
+          UM.unsafeWrite prev v2 v1
+          UM.unsafeWrite dist v2 (d1 + dw)
+          pushBack queue v2
+      loop
+
+  (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze prev
+
+-- | \(O(V+E)\) breadth-first search. Returns a vector of parents. The source vertex or unrechable
+-- vertices are given `-1` as their parent.
+genericBfsTree :: (U.Unbox w, Num w, Eq w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
+genericBfsTree !gr !n !source !undefW = runST $ do
+  !dist <- UM.replicate n undefW
+  !prev <- UM.replicate n (-1 :: Vertex)
+  !queue <- newBuffer n
+
+  pushBack queue source
+  UM.unsafeWrite dist source 0
+  -- be sure to not overwrite the parent of the source vertex (it has to be `-1`!)
+
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      !d1 <- UM.read dist v1
+      U.forM_ (gr v1) $ \(!v2, !dw) -> do
+        !d2 <- UM.read dist v2
+        when (d2 == undefW) $ do
+          UM.write prev v2 v1
+          UM.write dist v2 (d1 + dw)
+          pushBack queue v2
+      loop
+
+  (,) <$> U.unsafeFreeze dist <*> U.unsafeFreeze prev
+
+-- | \(O((E+V) \log V)\) Dijkstra's algorithm with path restoration information.
 genericDjTree :: forall w. (U.Unbox w, Num w, Ord w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Int -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
 genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
   !dist <- UM.replicate nVerts undef
@@ -288,6 +379,19 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
     {-# INLINE merge #-}
     merge :: w -> w -> w
     merge = (+)
+
+-- | \(O(V)\) Given a vector of vertex parents, restores path from the source to a sink.
+--
+-- TODO: restore without reverse?
+restorePath :: U.Vector Vertex -> Vertex -> U.Vector Vertex
+restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
+  where
+    f !v
+      | v == -2 = Nothing
+      | v' == -1 = Just (v, -2)
+      | otherwise = Just (v, v')
+      where
+        v' = toParent G.! v
 
 ----------------------------------------------------------------------------------------------------
 
