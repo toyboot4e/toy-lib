@@ -220,9 +220,29 @@ lcaHLD HLD {..} = inner
         hx = headHLD G.! x
         hy = headHLD G.! y
 
--- | \(O(\log V)\) Shared implementation of `edgePathHLD` and `vertPathHLD`.
-_pathHLD :: Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
-_pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
+-- | Returns the reverse of `indexHLD`. This is for use with `pathHLD`.
+revIndexHLD :: HLD -> U.Vector Vertex
+revIndexHLD hld = U.update (U.replicate n (-1)) . U.imap (flip (,)) $ indexHLD hld
+  where
+    n = U.length $ indexHLD hld
+
+-- | \(O(\log V)\) Returns path between @u@ and @v@.
+pathHLD :: HLD -> U.Vector Vertex -> Vertex -> Vertex -> [Vertex]
+pathHLD hld revIndex u v = concatMap expand $ _segmentsHLD False hld u v
+  where
+    expand (!l, !r)
+      | l <= r = map (revIndex G.!) [l .. r]
+      | otherwise = map (revIndex G.!) [r, r - 1 .. l]
+
+-- | \(O(\log V)\) Shared implementation of `edgePathHLD` and `vertPathHLD`, which returns `[l, r]`
+-- pairs for each segment.
+--
+-- - The return type is `VertexHLD`.
+-- - Note that each @(l, r)@ pair can be @l > r@.
+-- - LCA is omitted when @isEdge@ parameter is set to @True@ (the trick to put edge weights to
+--   vertices).
+_segmentsHLD :: Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+_segmentsHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
   where
     done (!up, !down) = reverse up ++ down
     -- @up@: bottom to top. [(max, min)]
@@ -230,6 +250,7 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
     inner :: Vertex -> [(VertexHLD, VertexHLD)] -> Vertex -> [(VertexHLD, VertexHLD)] -> ([(VertexHLD, VertexHLD)], [(VertexHLD, VertexHLD)])
     inner x up y down
       | hx == hy && isEdge = case compare ix iy of
+          -- skip LCA on edge vertices
           LT -> (up, (ix {- edge -} + 1, iy) : down)
           GT -> ((ix, iy {- edge -} + 1) : up, down)
           EQ -> (up, down)
@@ -254,13 +275,15 @@ _pathHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
         phx = parentHLD G.! hx
         phy = parentHLD G.! hy
 
+-- TODO: rename from path to segments
+
 -- | \(O(\log V)\) Returns inclusive edge vertex pairs.
 edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
-edgePathHLD = _pathHLD True
+edgePathHLD = _segmentsHLD True
 
--- | \(O(\log V)\) Returns inclusive vertex pairs per HLD line.
+-- | \(O(\log V)\) Returns inclusive vertex pairs per.
 vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
-vertPathHLD = _pathHLD False
+vertPathHLD = _segmentsHLD False
 
 -- * Folding methods
 
@@ -276,7 +299,7 @@ _foldHLD isEdge hld f b v1 v2 = do
         return $! acc <> x
     )
     mempty
-    (_pathHLD isEdge hld v1 v2)
+    (_segmentsHLD isEdge hld v1 v2)
 
 -- | \(O(\log^2 V)\) Folds commutative monoids on a tree edges using HLD. Prefer to use the wrapper
 -- `TreeMonoid`.
