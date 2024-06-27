@@ -31,24 +31,23 @@ solve = do
   uvs <- U.replicateM (n - 1) ints2'
   qs <- U.replicateM q ints4'
 
-  let !gr = buildSG n $ swapDupeU uvs
+  let !gr = buildSG_ n $ swapDupeU uvs
   let !hld = hldOf gr
-  !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Affine2d (modInt a, modInt b)) abs
+  !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Dual (Affine2d (modInt a, modInt b))) abs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !p, !c, !d) -> do
-      writeTM tm p $ Affine2d (modInt c, modInt d)
+      writeTM tm p . Dual $ Affine2d (modInt c, modInt d)
       return Nothing
     (1, !u, !v, !x) -> do
-      -- let !_ = dbg (u, v, edgePathHLD hld u v)
-      !m <- foldTM tm u v
-      let !res = m `sact` modInt x
-      return $ Just res
+      Dual !m <- foldTM tm u v
+      return . Just . unV2 $ m `sact` toV2 (modInt x)
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/vertex_set_path_composite
+-- #hld #affine
 main :: IO ()
 main = runIO solve
 

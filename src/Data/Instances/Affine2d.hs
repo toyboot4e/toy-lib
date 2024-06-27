@@ -20,20 +20,23 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- | `Affine2d` represents @x -> a x + b@.
 type Affine2dRepr a = (a, a)
 
--- | Affine2d: x -> ax + b
+-- | 2D affine transformation f: x -> ax + b.
+--
+-- The acted target type is `V2`, which holds the length at the second element.
+--
+-- = Composition
+--
+-- (f_1 <> f_2) v := (f_1 . f_2) v. Be sure to wrap it in `Dual` when you need reverse order
+-- composition, like with a segment tree.
+--
+-- TODO: write latex here
 instance (Num a) => Semigroup (Affine2d a) where
   {-# INLINE (<>) #-}
   (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a2 * a1, a1 * b2 + b1)
 
--- return Act(g.b * f.b, g.b * f.c + g.c);
-
 instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
   mempty = Affine2d (1, 0)
-
-instance (Num a) => SemigroupAction (Affine2d a) a where
-  {-# INLINE sact #-}
-  sact (Affine2d (!a, !b)) x = a * x + b
 
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}
