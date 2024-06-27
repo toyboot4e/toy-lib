@@ -106,11 +106,7 @@ adjW SparseGraph {..} v = U.zip vs ws
     !vs = U.unsafeSlice o1 (o2 - o1) adjacentsSG
     !ws = U.unsafeSlice o1 (o2 - o1) edgeWeightsSG
 
-----------------------------------------------------------------------------------------------------
-
 -- * Graph search (DFS, BFS, 01-BFS, Dijkstra)
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Collects reachable vertices from source points.
 componentsSG :: SparseGraph w -> U.Vector Vertex -> U.Vector Vertex
@@ -150,9 +146,7 @@ bfs01SG gr@SparseGraph {..} sources =
 djSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Vertex -> U.Vector w
 djSG gr@SparseGraph {..} = genericDj (gr `adjW`) nVertsSG nEdgesSG
 
-----------------------------------------------------------------------------------------------------
 -- * Path restoration
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent. Note that it doesn't return the shortest path.
@@ -176,11 +170,7 @@ bfsTreeSG gr !source !undefW = genericBfsTree (gr `adjW`) (nVertsSG gr) source u
 djTreeSG :: forall w. (Num w, Ord w, U.Unbox w) => SparseGraph w -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
 djTreeSG gr@SparseGraph {..} = genericDjTree (gr `adjW`) nVertsSG nEdgesSG
 
-----------------------------------------------------------------------------------------------------
-
 -- * Digraph
-
-----------------------------------------------------------------------------------------------------
 
 -- | Tries to paint the whole graph (possible not connected) as a digraph.
 --
@@ -193,13 +183,13 @@ djTreeSG gr@SparseGraph {..} = genericDjTree (gr `adjW`) nVertsSG nEdgesSG
 -- - [PAST 10 O - 3-順列](https://atcoder.jp/contests/past202203-open/tasks/past202203_o)
 data DigraphInfo = DigraphInfo
   { -- | False if any of the connected components is not a digraph.
-    isAllDigraphDI :: Bool,
+    isAllDigraphDI :: !Bool,
     -- | Vertex -> color (0 or 1)
-    vertColorDI :: U.Vector Int,
+    vertColorDI :: !(U.Vector Int),
     -- | Vertex -> component index
-    vertComponentDI :: U.Vector Int,
+    vertComponentDI :: !(U.Vector Int),
     -- | component -> (n1, n2, isDigraph)
-    componentInfoDI :: U.Vector (Int, Int, Bool)
+    componentInfoDI :: !(U.Vector (Int, Int, Bool))
   }
 
 -- | \(O(V+E)\) Tries to paint the whole graph (possible not connected) as a digraph.
@@ -239,11 +229,7 @@ digraphSG gr = runST $ do
 
   DigraphInfo <$> UM.unsafeRead allDigraph 0 <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
-----------------------------------------------------------------------------------------------------
-
 -- * Topological sort and strongly connected components
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Topological sort
 --
@@ -313,11 +299,7 @@ downSccSG gr = collectSccPreorderSG $ topSortSG gr
 topSccSG :: (U.Unbox w) => SparseGraph w -> [[Int]]
 topSccSG = map reverse . downSccSG
 
-----------------------------------------------------------------------------------------------------
-
 -- * MST (Minimum Spanning Tree)
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
 --
@@ -349,11 +331,7 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
     {-# INLINE expand #-}
     expand (!v1, !v2, !w) = U.fromListN 2 [(v1, v2, w), (v2, v1, w)]
 
--- -------------------------------------------------------------------------------------------------
-
 -- * Cycles
-
--- -------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) Finds a cycle in a directed graph and collects their vertices. Embed edge
 -- information to the weight if necessary.

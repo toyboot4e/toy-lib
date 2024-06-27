@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- | Generic graph search.
 module Data.Graph.Generic where
@@ -28,11 +27,7 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
-----------------------------------------------------------------------------------------------------
-
 -- * Graph search
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
 genericComponentsOf :: (Vertex -> U.Vector Vertex) -> Int -> U.Vector Vertex -> U.Vector Vertex
@@ -268,11 +263,7 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
     merge :: w -> w -> w
     merge = (+)
 
-----------------------------------------------------------------------------------------------------
-
 -- * Path restoration
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V!)\) Depth-first search for finding a path with length @L@. The complexity is for dense
 -- graph and IT CAN BE MUCH LOWER on different sparse graphs.
@@ -393,11 +384,7 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
       where
         v' = toParent G.! v
 
-----------------------------------------------------------------------------------------------------
-
 -- * Misc
-
-----------------------------------------------------------------------------------------------------
 
 -- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
 -- usually like @maxBound `div` 2@.
