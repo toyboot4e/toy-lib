@@ -22,6 +22,7 @@ import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import qualified Data.Vector.Generic.Mutable as GM
 import ToyLib.Debug
 
 -- | Vertex reindexed by `indexHLD`.
@@ -142,7 +143,7 @@ hldOf tree = runST $ do
         parent <- UM.unsafeNew n
 
         _ <- (\f -> fix f (-1) root) $ \loop p v1 -> do
-          UM.write parent v1 p
+          GM.write parent v1 p
           -- TODO: no need of vBig?
           (!size, !eBig) <-
             U.foldM'
@@ -159,7 +160,7 @@ hldOf tree = runST $ do
               (tree `eAdj` v1)
           -- move the biggest subtree's head to the first adjacent vertex
           when (eBig /= -1) $ do
-            UM.swap adjVec eBig $ fst (U.head (tree `eAdj` v1))
+            GM.swap adjVec eBig $ fst (G.head (tree `eAdj` v1))
           return size
 
         !vec <- U.unsafeFreeze adjVec
@@ -173,10 +174,10 @@ hldOf tree = runST $ do
 
   -- reindexed vertex index is stored as the state
   _ <- (`execStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
-    UM.write indices v1 =<< get
+    GM.write indices v1 =<< get
     modify' (+ 1)
 
-    UM.write heads v1 h
+    GM.write heads v1 h
     let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
 
     -- when the first vertex is within the same line:
