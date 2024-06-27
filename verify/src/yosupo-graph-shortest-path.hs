@@ -6,6 +6,7 @@
 import Data.BinaryHeap
 import Data.Buffer
 import Data.Graph.Alias
+import Data.Graph.Generic (restorePath)
 import Data.Graph.Sparse
 import ToyLib.Debug
 import ToyLib.Parser

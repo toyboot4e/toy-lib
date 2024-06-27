@@ -11,6 +11,7 @@ import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (Vertex)
 import Data.Graph.Sparse
+import Data.Graph.Generic (restorePath)
 import Data.Graph.Tree.Lca
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
@@ -18,15 +19,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
-----------------------------------------------------------------------------------------------------
--- DFS / BFS
-----------------------------------------------------------------------------------------------------
-
--- TODO. Also, generalize the implementation among ordinary BFS/DFS.
-
-----------------------------------------------------------------------------------------------------
--- Diameter
-----------------------------------------------------------------------------------------------------
+-- * Diameter
 
 -- | \(O(V+E)\) Tree diameter calculation.
 treeDiameterSG :: (U.Unbox w, Num w, Ord w) => SparseGraph w -> w -> (Vertex, Vertex, w)
@@ -50,9 +43,7 @@ treeDiameterPathSG gr undefW =
 
 -- TODO: height
 
-----------------------------------------------------------------------------------------------------
--- LCA
-----------------------------------------------------------------------------------------------------
+-- * LCA (prefer HLD though)
 
 -- | \(O(N)\) Returns @(depths, parents)@.
 treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph w -> Int -> (U.Vector Int, TransitionalSemigroup w)
@@ -75,11 +66,9 @@ lcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
   where
     (!depths, !toParent) = treeDepthInfoSG gr root
 
-----------------------------------------------------------------------------------------------------
--- Tree folding
-----------------------------------------------------------------------------------------------------
+-- * Tree folding
 
--- TODO: consider to not require semigroup aciton?
+-- | \(O(N)\) Tree folding implementation. TODO: consider to not require semigroup aciton?
 foldTreeImpl :: forall m op a w. (Monad m) => SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a
 foldTreeImpl !tree !root !sact_ !acc0At !toOp !memo = inner (-1) root
   where
