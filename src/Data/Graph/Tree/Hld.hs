@@ -121,12 +121,14 @@ type VertexHLD = Vertex
 --   o <- write wegiht 2 here
 -- @
 data HLD = HLD
-  { -- | `Vertex` -> Parent `Vertex`.
+  { -- The first three is required for LCA and path folding:
+    -- | `Vertex` -> Parent `Vertex`.
     parentHLD :: !(U.Vector Vertex),
     -- | `Vertex` -> `VertexHLD` (re-indexed vertex that is contiguous in each segment).
     indexHLD :: !(U.Vector VertexHLD),
     -- | `Vertex` -> The line's head `Vertex`.
     headHLD :: !(U.Vector Vertex),
+    -- Rest fields are for enhancements:
     -- | `VertexHLD` -> `Vertex`. Used for `levelAncestorHLD` etc.
     revIndexHLD :: !(U.Vector Vertex),
     -- | Depth information for `jumpHLD` etc.
@@ -246,7 +248,7 @@ lcaHLD HLD {..} = inner
         hx = headHLD G.! x
         hy = headHLD G.! y
 
--- | \(O(\log V)\) Shared implementation of `edgePathHLD` and `vertPathHLD`, which returns `[l, r]`
+-- | \(O(\log V)\) Shared implementation of `edgeSegmentsHLD` and `vertSegmentsHLD`, which returns `[l, r]`
 -- pairs for each segment.
 --
 -- - The return type is `VertexHLD`.
@@ -287,27 +289,25 @@ _segmentsHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
         phx = parentHLD G.! hx
         phy = parentHLD G.! hy
 
--- TODO: rename from path to segments
-
 -- | \(O(\log V)\) Returns inclusive edge vertex pairs.
-edgePathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
-edgePathHLD = _segmentsHLD True
+edgeSegmentsHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+edgeSegmentsHLD = _segmentsHLD True
 
 -- | \(O(\log V)\) Returns inclusive vertex pairs per.
-vertPathHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
-vertPathHLD = _segmentsHLD False
+vertSegmentsHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+vertSegmentsHLD = _segmentsHLD False
 
 -- * Folding methods
 
--- | \(O(\log^2 V)\) The shared implementation of @fold*HLD@ variants.
-_foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-_foldHLD isEdge hld f b v1 v2 = do
+-- | \(O(\log^2 V)\) Folds path between @v1@ and @v2@. Use specialized methods for simplisity.
+foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldHLD isEdge hld foldF foldB v1 v2 = do
   foldM
     ( \ !acc (!u, !v) -> do
         !x <-
           if u <= v
-            then f u v
-            else b v u
+            then foldF u v
+            else foldB v u
         return $! acc <> x
     )
     mempty
@@ -319,14 +319,14 @@ _foldHLD isEdge hld f b v1 v2 = do
 -- == Typical Problems
 -- - [ABC 294 - G](https://atcoder.jp/contests/abc294/tasks/abc294_g)
 foldEdgesCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldEdgesCommuteHLD hld f = _foldHLD True hld f f
+foldEdgesCommuteHLD hld f = foldHLD True hld f f
 
 -- | \(O(\log^2 V)\) Folds commutative monoids on a tree vertices using HLD. Prefer to use the
 -- wrapper `TreeMonoid`.
 --
 -- TODO: verify
 foldEdgesHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldEdgesHLD hld f b = _foldHLD True hld f b
+foldEdgesHLD hld f b = foldHLD True hld f b
 
 -- | \(O(\log^2 V)\) Folds commutative monoids on a tree vertices using HLD. Prefer to use the
 -- wrapper `TreeMonoid`.
@@ -334,7 +334,7 @@ foldEdgesHLD hld f b = _foldHLD True hld f b
 -- == Typical Problems
 -- - [Vertex Add Path Sum - Library Checker](https://judge.yosupo.jp/problem/vertex_add_path_sum)
 foldVertsCommuteHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldVertsCommuteHLD hld f = _foldHLD False hld f f
+foldVertsCommuteHLD hld f = foldHLD False hld f f
 
 -- | \(O(\log^2 V)\) Folds non-commutative monoids on a tree vertices using HLD. Prefer to use the
 -- wrapper `TreeMonoid`.
@@ -342,7 +342,7 @@ foldVertsCommuteHLD hld f = _foldHLD False hld f f
 -- == Typical Problems
 -- - [Vertex Set Path Composite - Library Checker](https://judge.yosupo.jp/problem/vertex_set_path_composite)
 foldVertsHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldVertsHLD = _foldHLD False
+foldVertsHLD = foldHLD False
 
 -- * `TreeMonoid`
 
@@ -436,7 +436,8 @@ jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
 jumpHLD hld@HLD {..} u v i
   -- TODO: why need `i == 1` branch? what is it?
   | i == 1 && u == v = Nothing
-  | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
+  -- | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
+  | i == 1 && lca == u = Just $ levelAncestorHLD hld v (dv - du - 1)
   | i == 1 = Just $ parentHLD G.! u
   | i > lenU + lenV = Nothing
   | i <= lenU = Just $ levelAncestorHLD hld u i
@@ -454,8 +455,8 @@ jumpHLD hld@HLD {..} u v i
 -- | \(O(log^2 V)\) Folds `TreeMonoid` on a path between two vertices
 foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
 foldTM TreeMonoid {..} v1 v2
-  | isCommuteTM = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
-  | otherwise = _foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
+  | isCommuteTM = foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
+  | otherwise = foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
 
 -- | \(O(log V)\) Reads a `TreeMonoid` value on a `Vertex`.
 readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a

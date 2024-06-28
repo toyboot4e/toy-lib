@@ -21,7 +21,7 @@ solve = do
   qs <- U.replicateM q ints2'
 
   set <- newDIS n
-  forM_ (zip [0 .. ] (BS.unpack t)) $ \(!i, !c) -> do
+  forM_ (zip [0 :: Int .. ] (BS.unpack t)) $ \(!i, !c) -> do
     when (c == '1') $ do
       insertDIS set i
 

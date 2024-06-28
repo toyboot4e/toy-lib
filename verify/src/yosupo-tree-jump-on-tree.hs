@@ -24,7 +24,7 @@ solve = do
   qs <- U.replicateM q ints3'
   let !gr = buildSG n $ swapDupeU es
   let !hld = hldOf gr
-  let !_ = traceShow ("depth", depthHLD hld) ()
+  -- let !_ = traceShow ("depth", depthHLD hld) ()
   let !res = (`U.map` qs) $ \(!u, !v, !i) ->
         -- let !_ = traceShow ("query", u, v, i) ()
          fromMaybe (-1) $ jumpHLD hld u v i
