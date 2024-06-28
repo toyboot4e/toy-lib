@@ -9,11 +9,14 @@ import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 
--- | @gotoki_no_joe. Vertex -> size + root? (negative if it's root)
+-- | @gotoki_no_joe. Vertex -> -size | root (negative if it's root)
 type SparseUnionFind = IM.IntMap Int
 
 newSUF :: SparseUnionFind
 newSUF = IM.empty
+
+emptySUF :: SparseUnionFind
+emptySUF = IM.empty
 
 memberSUF :: Int -> SparseUnionFind -> Bool
 memberSUF = IM.member
