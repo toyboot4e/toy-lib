@@ -20,10 +20,11 @@ import Data.Maybe
 import Data.Monoid (Dual (..))
 import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import qualified Data.Vector.Generic.Mutable as GM
 import ToyLib.Debug
+import Debug.Trace
 
 -- | Vertex reindexed by `indexHLD`.
 type VertexHLD = Vertex
@@ -122,10 +123,16 @@ type VertexHLD = Vertex
 data HLD = HLD
   { -- | `Vertex` -> Parent `Vertex`.
     parentHLD :: !(U.Vector Vertex),
-    -- | `Vertex` -> Reindexed vertex (`VertexHLD`).
+    -- | `Vertex` -> `VertexHLD` (re-indexed vertex that is contiguous in each segment).
     indexHLD :: !(U.Vector VertexHLD),
     -- | `Vertex` -> The line's head `Vertex`.
-    headHLD :: !(U.Vector Vertex)
+    headHLD :: !(U.Vector Vertex),
+    -- | `VertexHLD` -> `Vertex`. Used for `levelAncestorHLD` etc.
+    revIndexHLD :: !(U.Vector Vertex),
+    -- | Depth information for `jumpHLD` etc.
+    depthHLD :: !(U.Vector Int),
+    -- | `Vertex` -> subtree size
+    subtreeSizeHLD :: !(U.Vector Int)
   }
   deriving (Show, Eq)
 
@@ -138,33 +145,45 @@ hldOf tree = runST $ do
   --
   -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
   -- DFS would be harder.
-  let (!tree', !parent) = runST $ do
+  let (!tree', !parent, !depths, !subtreeSize) = runST $ do
         adjVec <- U.thaw (adjacentsSG tree)
         parent <- UM.unsafeNew n
+        depths <- UM.unsafeNew n
+        subtreeSize <- UM.unsafeNew n
 
-        _ <- (\f -> fix f (-1) root) $ \loop p v1 -> do
+        _ <- (\f -> fix f 0 (-1) root) $ \loop depth p v1 -> do
           GM.write parent v1 p
-          -- TODO: no need of vBig?
-          (!size, !eBig) <-
+          GM.write depths v1 depth
+
+          (!size1, !eBig) <-
             U.foldM'
-              ( \(!size, !eBig) (!e2, !v2) -> do
+              ( \(!size1, !eBig) (!e2, !v2) -> do
                   if v2 == p
-                    then return (size, eBig)
+                    then return (size1, eBig)
                     else do
-                      size2 <- loop v1 v2
+                      size2 <- loop (depth + 1) v1 v2
                       -- NOTE: It's `>` because we should swap at least once if there's some vertex other
                       -- that the parent.
-                      return (size + size2, if size > size2 then eBig else e2)
+                      return (size1 + size2, if size1 > size2 then eBig else e2)
               )
               (1 :: Int, -1)
               (tree `eAdj` v1)
-          -- move the biggest subtree's head to the first adjacent vertex
+
+          -- move the biggest subtree's head to the first adjacent vertex.
+          -- it means the "heavy edge" or the longest segment.
           when (eBig /= -1) $ do
             GM.swap adjVec eBig $ fst (G.head (tree `eAdj` v1))
-          return size
+
+          -- record subtree size
+          GM.write subtreeSize v1 size1
+
+          return size1
 
         !vec <- U.unsafeFreeze adjVec
-        (tree {adjacentsSG = vec},) <$> U.unsafeFreeze parent
+        (tree {adjacentsSG = vec},,,)
+          <$> U.unsafeFreeze parent
+          <*> U.unsafeFreeze depths
+          <*> U.unsafeFreeze subtreeSize
 
   -- vertex -> reindexed vertex index
   indices <- UM.replicate n (-1 :: Int)
@@ -172,15 +191,15 @@ hldOf tree = runST $ do
   -- vertex -> head vertex of the line
   heads <- UM.replicate n (-1 :: Int)
 
-  -- reindexed vertex index is stored as the state
   _ <- (`execStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
+    -- reindex:
     GM.write indices v1 =<< get
     modify' (+ 1)
 
     GM.write heads v1 h
-    let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
 
     -- when the first vertex is within the same line:
+    let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
     when (adj1 /= p) $ do
       loop h v1 adj1
 
@@ -189,7 +208,14 @@ hldOf tree = runST $ do
       when (v2 /= p) $ do
         loop v2 v1 v2
 
-  HLD parent <$> U.unsafeFreeze indices <*> U.unsafeFreeze heads
+  !indices' <- U.unsafeFreeze indices
+  let !revIndex = U.update (U.replicate n (-1)) $ U.imap (flip (,)) indices'
+
+  HLD parent indices'
+    <$> U.unsafeFreeze heads
+    <*> return revIndex
+    <*> return depths
+    <*> return subtreeSize
   where
     !n = nVertsSG tree
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
@@ -219,20 +245,6 @@ lcaHLD HLD {..} = inner
         !iy = indexHLD G.! y
         hx = headHLD G.! x
         hy = headHLD G.! y
-
--- | Returns the reverse of `indexHLD`. This is for use with `pathHLD`.
-revIndexHLD :: HLD -> U.Vector Vertex
-revIndexHLD hld = U.update (U.replicate n (-1)) . U.imap (flip (,)) $ indexHLD hld
-  where
-    n = U.length $ indexHLD hld
-
--- | \(O(\log V)\) Returns path between @u@ and @v@.
-pathHLD :: HLD -> U.Vector Vertex -> Vertex -> Vertex -> [Vertex]
-pathHLD hld revIndex u v = concatMap expand $ _segmentsHLD False hld u v
-  where
-    expand (!l, !r)
-      | l <= r = map (revIndex G.!) [l .. r]
-      | otherwise = map (revIndex G.!) [r, r - 1 .. l]
 
 -- | \(O(\log V)\) Shared implementation of `edgePathHLD` and `vertPathHLD`, which returns `[l, r]`
 -- pairs for each segment.
@@ -383,6 +395,59 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
   let !n = U.length indexHLD
   let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD G.! v, x)) ixs
   _buildRawTM hld isCommuteTM True xs
+
+-- | \(O(\log V)\) Returns path between @u@ and @v@.
+pathHLD :: HLD -> Vertex -> Vertex -> [Vertex]
+pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
+  where
+    expand (!l, !r)
+      | l <= r = map (revIndexHLD G.!) [l .. r]
+      -- FIXME:
+      | otherwise = map (revIndexHLD G.!) $ reverse [r .. l]
+
+-- | \(O(\log N)\) Go up @i@ times from the parent node.
+levelAncestorHLD :: HLD -> Vertex -> Vertex -> Vertex
+levelAncestorHLD HLD {..} parent k0 = inner parent k0
+  where
+    !_ = dbgAssert (k0 <= depthHLD G.! parent)
+    -- !_ = traceShow ("la", parent, k0) ()
+    inner v k
+      -- on this segment
+      | k <= iv - ihv = revIndexHLD G.! (iv - k)
+      -- next segment
+      | otherwise = inner (parentHLD U.! hv) (k - (iv - ihv + 1))
+      where
+        -- !_ = traceShow ("inner", v, k) ()
+        iv = indexHLD G.! v
+        hv = headHLD G.! v
+        ihv = indexHLD G.! hv
+
+-- | \(O(1)\) Returns @True@ if @u@ is in a subtree of @p@.
+isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
+isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
+  where
+    ip = indexHLD G.! p
+    iu = indexHLD G.! u
+
+-- | \(O(?)\) Returns i-th vertex of a path between @u@, @v@.
+--
+-- <https://judge.yosupo.jp/problem/jump_on_tree>
+jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
+jumpHLD hld@HLD {..} u v i
+  -- TODO: why need `i == 1` branch? what is it?
+  | i == 1 && u == v = Nothing
+  | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
+  | i == 1 = Just $ parentHLD G.! u
+  | i > lenU + lenV = Nothing
+  | i <= lenU = Just $ levelAncestorHLD hld u i
+  | otherwise = Just $ levelAncestorHLD hld v (lenU + lenV - i)
+  where
+    lca = lcaHLD hld u v
+    du = depthHLD G.! u
+    dv = depthHLD G.! v
+    lenU = du - depthHLD G.! lca
+    lenV = dv - depthHLD G.! lca
+    -- !_ = traceShow ("jump", (u, v), lca,  (du, dv), (lenU, lenV)) ()
 
 -- ** Segment tree methods
 
