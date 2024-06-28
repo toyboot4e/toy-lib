@@ -174,13 +174,13 @@ executable past10-n-exe
   import:  verify
   main-is: past10-n.hs
 
-executable yosupo-convolution-convolution-exe
-  import:  verify
-  main-is: yosupo-convolution-convolution.hs
-
 executable yosupo-data-associative-array-exe
   import:  verify
   main-is: yosupo-data-associative-array.hs
+
+executable yosupo-data-predecessor-problem-exe
+  import:  verify
+  main-is: yosupo-data-predecessor-problem.hs
 
 executable yosupo-data-union-find-exe
   import:  verify
@@ -190,21 +190,13 @@ executable yosupo-data-point-add-range-sum-exe
   import:  verify
   main-is: yosupo-data-point-add-range-sum.hs
 
-executable yosupo-data-predecessor-problem-exe
-  import:  verify
-  main-is: yosupo-data-predecessor-problem.hs
-
 executable yosupo-data-range-affine-point-get-exe
   import:  verify
   main-is: yosupo-data-range-affine-point-get.hs
 
-executable yosupo-data-vertex-add-path-sum-exe
+executable yosupo-data-range-affine-range-sum-exe
   import:  verify
-  main-is: yosupo-data-vertex-add-path-sum.hs
-
-executable yosupo-data-vertex-set-path-composite-exe
-  import:  verify
-  main-is: yosupo-data-vertex-set-path-composite.hs
+  main-is: yosupo-data-range-affine-range-sum.hs
 
 executable yosupo-graph-lca-HLD-exe
   import:  verify
@@ -214,9 +206,49 @@ executable yosupo-graph-lca-BL-exe
   import:  verify
   main-is: yosupo-graph-lca-BL.hs
 
-executable yosupo-math-sum-of-floor-of-linear-exe
+executable yosupo-graph-scc-exe
   import:  verify
-  main-is: yosupo-math-sum-of-floor-of-linear.hs
+  main-is: yosupo-graph-scc.hs
+
+executable yosupo-graph-minimum-spanning-tree-exe
+  import:  verify
+  main-is: yosupo-graph-minimum-spanning-tree.hs
+
+executable yosupo-graph-shortest-path-exe
+  import:  verify
+  main-is: yosupo-graph-shortest-path.hs
+
+executable yosupo-graph-cycle-detection-exe
+  import:  verify
+  main-is: yosupo-graph-cycle-detection.hs
+
+executable yosupo-graph-cycle-detection-undirected-exe
+  import:  verify
+  main-is: yosupo-graph-cycle-detection-undirected.hs
+
+executable yosupo-tree-tree-diameter-exe
+  import:  verify
+  main-is: yosupo-tree-tree-diameter.hs
+
+executable yosupo-tree-jump-on-tree-exe
+  import:  verify
+  main-is: yosupo-tree-jump-on-tree.hs
+
+executable yosupo-tree-vertex-add-path-sum-exe
+  import:  verify
+  main-is: yosupo-tree-vertex-add-path-sum.hs
+
+executable yosupo-tree-vertex-set-path-composite-exe
+  import:  verify
+  main-is: yosupo-tree-vertex-set-path-composite.hs
+
+executable yosupo-convolution-convolution-exe
+  import:  verify
+  main-is: yosupo-convolution-convolution.hs
+
+executable yosupo-number-theory-sum-of-floor-of-linear-exe
+  import:  verify
+  main-is: yosupo-number-theory-sum-of-floor-of-linear.hs
 
 executable yosupo-string-zalgorithm-exe
   import:  verify
@@ -229,38 +261,6 @@ executable yosupo-string-suffixarray-exe
 executable yosupo-string-number-of-substrings-exe
   import:  verify
   main-is: yosupo-string-number-of-substrings.hs
-
-executable yosupo-graph-scc-exe
-  import:  verify
-  main-is: yosupo-graph-scc.hs
-
-executable yosupo-graph-minimum-spanning-tree-exe
-  import:  verify
-  main-is: yosupo-graph-minimum-spanning-tree.hs
-
-executable yosupo-tree-tree-diameter-exe
-  import:  verify
-  main-is: yosupo-tree-tree-diameter.hs
-
-executable yosupo-tree-jump-on-tree-exe
-  import:  verify
-  main-is: yosupo-tree-jump-on-tree.hs
-
-executable yosupo-graph-shortest-path-exe
-  import:  verify
-  main-is: yosupo-graph-shortest-path.hs
-
-executable yosupo-data-range-affine-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-range-affine-range-sum.hs
-
-executable yosupo-graph-cycle-detection-exe
-  import:  verify
-  main-is: yosupo-graph-cycle-detection.hs
-
-executable yosupo-graph-cycle-detection-undirected-exe
-  import:  verify
-  main-is: yosupo-graph-cycle-detection-undirected.hs
 
 executable tmp-exe
   import:  verify
