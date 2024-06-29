@@ -207,6 +207,7 @@ library
     Data.SegmentTree.Lazy
     Data.SegmentTree.Strict
     Data.SizedList
+    Data.SplayMap
     Data.Sqrd
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
