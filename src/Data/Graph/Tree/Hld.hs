@@ -138,7 +138,7 @@ data HLD = HLD
     revIndexHLD :: !(U.Vector Vertex),
     -- | Depth information for `jumpHLD` etc.
     depthHLD :: !(U.Vector Int),
-    -- | `Vertex` -> subtree size
+    -- | `Vertex` -> subtree size. This is for subtree folding.
     subtreeSizeHLD :: !(U.Vector Int)
   }
   deriving (Show, Eq)
@@ -481,7 +481,7 @@ foldSubtreeVertsTM TreeMonoid {..} subtreeRoot = foldSTree streeFTM l r
 -- | \(O(log V)\) Folds commute monoids on edges of a subtree. TODO: test
 foldSubtreeEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 foldSubtreeEdgeTM TreeMonoid {..} subtreeRoot
-  | l == r = mempty
+  | l == r = return mempty
   | otherwise = foldSTree streeFTM (l + 1) r
   where
     (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
