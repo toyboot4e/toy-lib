@@ -92,7 +92,7 @@ type VertexHLD = Vertex
 -- = Segment tree integration
 --
 -- With HLD, we can find a path between two vertices @u@, @v@: @u@ -> @lca(u, v)@ -> @v@. The path
--- is composed of line slices, which can be fastly folded with a segment tree.
+-- is decomposed into segments where segment trees can be integrated as in `TreeMonoid`.
 --
 -- == Vertex monoid folding on a path
 --
@@ -129,7 +129,7 @@ data HLD = HLD
     -- | `Vertex` -> The line's head `Vertex`.
     headHLD :: !(U.Vector Vertex),
     -- Rest fields are for enhancements:
-    -- | `VertexHLD` -> `Vertex`. Used for `levelAncestorHLD` etc.
+    -- | `VertexHLD` -> `Vertex`. Used for `ancestorHLD` etc.
     revIndexHLD :: !(U.Vector Vertex),
     -- | Depth information for `jumpHLD` etc.
     depthHLD :: !(U.Vector Int),
@@ -223,7 +223,7 @@ hldOf tree = runST $ do
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
     !root = 0 :: Vertex
 
--- * LCA and semgents
+-- * LCA
 
 -- | \(O(\log V)\) HLD calculation.
 --
@@ -247,6 +247,8 @@ lcaHLD HLD {..} = inner
         !iy = indexHLD G.! y
         hx = headHLD G.! x
         hy = headHLD G.! y
+
+-- * Segments and folding methods
 
 -- | \(O(\log V)\) Shared implementation of `edgeSegmentsHLD` and `vertSegmentsHLD`, which returns `[l, r]`
 -- pairs for each segment.
@@ -297,8 +299,6 @@ edgeSegmentsHLD = _segmentsHLD True
 vertSegmentsHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 vertSegmentsHLD = _segmentsHLD False
 
--- * Folding methods
-
 -- | \(O(\log^2 V)\) Folds path between @v1@ and @v2@. Use specialized methods for simplisity.
 foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldHLD isEdge hld foldF foldB v1 v2 = do
@@ -344,21 +344,11 @@ foldVertsCommuteHLD hld f = foldHLD False hld f f
 foldVertsHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldVertsHLD = foldHLD False
 
--- * Path
-
--- | \(O(\log V)\) Returns path between @u@ and @v@.
-pathHLD :: HLD -> Vertex -> Vertex -> [Vertex]
-pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
-  where
-    expand (!l, !r)
-      | l <= r = map (revIndexHLD G.!) [l .. r]
-      | otherwise = map (revIndexHLD G.!) [r, r - 1 .. l]
-
 -- * Jump
 
--- | \(O(\log N)\) Go up @i@ times from the parent node.
-levelAncestorHLD :: HLD -> Vertex -> Vertex -> Vertex
-levelAncestorHLD HLD {..} parent k0 = inner parent k0
+-- | \(O(\log N)\) Go up @i@ times from the parent node to the implicit root node.
+ancestorHLD :: HLD -> Vertex -> Vertex -> Vertex
+ancestorHLD HLD {..} parent k0 = inner parent k0
   where
     !_ = dbgAssert (k0 <= depthHLD G.! parent)
     -- !_ = traceShow ("la", parent, k0) ()
@@ -373,26 +363,16 @@ levelAncestorHLD HLD {..} parent k0 = inner parent k0
         hv = headHLD G.! v
         ihv = indexHLD G.! hv
 
--- | \(O(1)\) Returns @True@ if @u@ is in a subtree of @p@.
-isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
-isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
-  where
-    ip = indexHLD G.! p
-    iu = indexHLD G.! u
+-- TODO: levelAncestorHLD: https://37zigen.com/level-ancestor-problem/
 
 -- | \(O(?)\) Returns i-th vertex of a path between @u@, @v@.
 --
 -- <https://judge.yosupo.jp/problem/jump_on_tree>
 jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
 jumpHLD hld@HLD {..} u v i
-  -- TODO: why need `i == 1` branch? what is it?
-  | i == 1 && u == v = Nothing
-  -- | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
-  | i == 1 && lca == u = Just $ levelAncestorHLD hld v (dv - du - 1)
-  | i == 1 = Just $ parentHLD G.! u
   | i > lenU + lenV = Nothing
-  | i <= lenU = Just $ levelAncestorHLD hld u i
-  | otherwise = Just $ levelAncestorHLD hld v (lenU + lenV - i)
+  | i <= lenU = Just $ ancestorHLD hld u i
+  | otherwise = Just $ ancestorHLD hld v (lenU + lenV - i)
   where
     lca = lcaHLD hld u v
     du = depthHLD G.! u
@@ -401,7 +381,24 @@ jumpHLD hld@HLD {..} u v i
     lenV = dv - depthHLD G.! lca
     -- !_ = traceShow ("jump", (u, v), lca,  (du, dv), (lenU, lenV)) ()
 
--- * `TreeMonoid`
+-- -- | \(O(1)\) FIXME: Returns @True@ if @u@ is in a subtree of @p@.
+-- isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
+-- isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
+--   where
+--     ip = indexHLD G.! p
+--     iu = indexHLD G.! u
+
+-- * Utilities
+
+-- | \(O(\log V)\) Returns path between @u@ and @v@.
+pathHLD :: HLD -> Vertex -> Vertex -> [Vertex]
+pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
+  where
+    expand (!l, !r)
+      | l <= r = map (revIndexHLD G.!) [l .. r]
+      | otherwise = map (revIndexHLD G.!) [r, r - 1 .. l]
+
+-- * `TreeMonoid` for path folding
 
 -- | HLD wrapper for folding paths on a tree using `HLD` and segment tree(s).
 data TreeMonoid a s = TreeMonoid
