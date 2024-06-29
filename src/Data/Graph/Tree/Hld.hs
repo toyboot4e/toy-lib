@@ -223,7 +223,7 @@ hldOf tree = runST $ do
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
     !root = 0 :: Vertex
 
--- * LCA and paths
+-- * LCA and semgents
 
 -- | \(O(\log V)\) HLD calculation.
 --
@@ -326,7 +326,7 @@ foldEdgesCommuteHLD hld f = foldHLD True hld f f
 --
 -- TODO: verify
 foldEdgesHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
-foldEdgesHLD hld f b = foldHLD True hld f b
+foldEdgesHLD = foldHLD True
 
 -- | \(O(\log^2 V)\) Folds commutative monoids on a tree vertices using HLD. Prefer to use the
 -- wrapper `TreeMonoid`.
@@ -343,6 +343,63 @@ foldVertsCommuteHLD hld f = foldHLD False hld f f
 -- - [Vertex Set Path Composite - Library Checker](https://judge.yosupo.jp/problem/vertex_set_path_composite)
 foldVertsHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldVertsHLD = foldHLD False
+
+-- * Path
+
+-- | \(O(\log V)\) Returns path between @u@ and @v@.
+pathHLD :: HLD -> Vertex -> Vertex -> [Vertex]
+pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
+  where
+    expand (!l, !r)
+      | l <= r = map (revIndexHLD G.!) [l .. r]
+      | otherwise = map (revIndexHLD G.!) [r, r - 1 .. l]
+
+-- * Jump
+
+-- | \(O(\log N)\) Go up @i@ times from the parent node.
+levelAncestorHLD :: HLD -> Vertex -> Vertex -> Vertex
+levelAncestorHLD HLD {..} parent k0 = inner parent k0
+  where
+    !_ = dbgAssert (k0 <= depthHLD G.! parent)
+    -- !_ = traceShow ("la", parent, k0) ()
+    inner v k
+      -- on this segment
+      | k <= iv - ihv = revIndexHLD G.! (iv - k)
+      -- next segment
+      | otherwise = inner (parentHLD U.! hv) (k - (iv - ihv + 1))
+      where
+        -- !_ = traceShow ("inner", v, k) ()
+        iv = indexHLD G.! v
+        hv = headHLD G.! v
+        ihv = indexHLD G.! hv
+
+-- | \(O(1)\) Returns @True@ if @u@ is in a subtree of @p@.
+isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
+isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
+  where
+    ip = indexHLD G.! p
+    iu = indexHLD G.! u
+
+-- | \(O(?)\) Returns i-th vertex of a path between @u@, @v@.
+--
+-- <https://judge.yosupo.jp/problem/jump_on_tree>
+jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
+jumpHLD hld@HLD {..} u v i
+  -- TODO: why need `i == 1` branch? what is it?
+  | i == 1 && u == v = Nothing
+  -- | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
+  | i == 1 && lca == u = Just $ levelAncestorHLD hld v (dv - du - 1)
+  | i == 1 = Just $ parentHLD G.! u
+  | i > lenU + lenV = Nothing
+  | i <= lenU = Just $ levelAncestorHLD hld u i
+  | otherwise = Just $ levelAncestorHLD hld v (lenU + lenV - i)
+  where
+    lca = lcaHLD hld u v
+    du = depthHLD G.! u
+    dv = depthHLD G.! v
+    lenU = du - depthHLD G.! lca
+    lenV = dv - depthHLD G.! lca
+    -- !_ = traceShow ("jump", (u, v), lca,  (du, dv), (lenU, lenV)) ()
 
 -- * `TreeMonoid`
 
@@ -395,60 +452,6 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
   let !n = U.length indexHLD
   let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD G.! v, x)) ixs
   _buildRawTM hld isCommuteTM True xs
-
--- | \(O(\log V)\) Returns path between @u@ and @v@.
-pathHLD :: HLD -> Vertex -> Vertex -> [Vertex]
-pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
-  where
-    expand (!l, !r)
-      | l <= r = map (revIndexHLD G.!) [l .. r]
-      -- FIXME:
-      | otherwise = map (revIndexHLD G.!) $ reverse [r .. l]
-
--- | \(O(\log N)\) Go up @i@ times from the parent node.
-levelAncestorHLD :: HLD -> Vertex -> Vertex -> Vertex
-levelAncestorHLD HLD {..} parent k0 = inner parent k0
-  where
-    !_ = dbgAssert (k0 <= depthHLD G.! parent)
-    -- !_ = traceShow ("la", parent, k0) ()
-    inner v k
-      -- on this segment
-      | k <= iv - ihv = revIndexHLD G.! (iv - k)
-      -- next segment
-      | otherwise = inner (parentHLD U.! hv) (k - (iv - ihv + 1))
-      where
-        -- !_ = traceShow ("inner", v, k) ()
-        iv = indexHLD G.! v
-        hv = headHLD G.! v
-        ihv = indexHLD G.! hv
-
--- | \(O(1)\) Returns @True@ if @u@ is in a subtree of @p@.
-isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
-isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
-  where
-    ip = indexHLD G.! p
-    iu = indexHLD G.! u
-
--- | \(O(?)\) Returns i-th vertex of a path between @u@, @v@.
---
--- <https://judge.yosupo.jp/problem/jump_on_tree>
-jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
-jumpHLD hld@HLD {..} u v i
-  -- TODO: why need `i == 1` branch? what is it?
-  | i == 1 && u == v = Nothing
-  -- | i == 1 && isInSubtreeHLD hld u v = Just $ levelAncestorHLD hld v (dv - du - 1)
-  | i == 1 && lca == u = Just $ levelAncestorHLD hld v (dv - du - 1)
-  | i == 1 = Just $ parentHLD G.! u
-  | i > lenU + lenV = Nothing
-  | i <= lenU = Just $ levelAncestorHLD hld u i
-  | otherwise = Just $ levelAncestorHLD hld v (lenU + lenV - i)
-  where
-    lca = lcaHLD hld u v
-    du = depthHLD G.! u
-    dv = depthHLD G.! v
-    lenU = du - depthHLD G.! lca
-    lenV = dv - depthHLD G.! lca
-    -- !_ = traceShow ("jump", (u, v), lca,  (du, dv), (lenU, lenV)) ()
 
 -- ** Segment tree methods
 
