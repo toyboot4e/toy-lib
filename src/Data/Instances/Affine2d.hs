@@ -17,9 +17,6 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
--- | `Affine2d` represents @x -> a x + b@.
-type Affine2dRepr a = (a, a)
-
 -- | 2D affine transformation f: x -> ax + b.
 --
 -- The acted target type is `V2`, which holds the length at the second element.
@@ -30,6 +27,15 @@ type Affine2dRepr a = (a, a)
 -- composition, like with a segment tree.
 --
 -- TODO: write latex here
+newtype Affine2d a = Affine2d (Affine2dRepr a)
+  deriving newtype (Eq, Ord, Show)
+
+identAffine2d :: (Num a) => Affine2d a
+identAffine2d = Affine2d (1, 0)
+
+-- | `Affine2d` represents @x -> a x + b@.
+type Affine2dRepr a = (a, a)
+
 instance (Num a) => Semigroup (Affine2d a) where
   {-# INLINE (<>) #-}
   (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a2 * a1, a1 * b2 + b1)
@@ -41,9 +47,6 @@ instance (Num a) => Monoid (Affine2d a) where
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}
   sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a * x + b * len, len)
-
-newtype Affine2d a = Affine2d (Affine2dRepr a)
-  deriving newtype (Eq, Ord, Show)
 
 -- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine2d` for
 -- efficiency.

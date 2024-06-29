@@ -51,7 +51,7 @@ solve = do
   !cs <- intsN' n
 
   let !gr = buildSG n $ swapDupeU es
-  let !_ = dbg (scanTreeU gr (0 :: Int) sact (\v -> Acc (0, cs U.! v)) (Op . unAcc))
+  let !_ = dbg (scanTreeSG @U.Vector gr (0 :: Int) const sact (\v -> Acc (0, cs U.! v)) (Op . unAcc))
 
   let !res = dbgId $ foldTreeAllSG gr (\v -> Acc (0, cs U.! v)) (Op . unAcc)
   printBSB $ U.minimum $ U.map (fst . unAcc) res

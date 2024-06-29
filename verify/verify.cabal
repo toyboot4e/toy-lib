@@ -234,6 +234,10 @@ executable yosupo-tree-tree-diameter-exe
   import:  verify
   main-is: yosupo-tree-tree-diameter.hs
 
+executable yosupo-tree-tree-path-composite-sum-exe
+  import:  verify
+  main-is: yosupo-tree-tree-path-composite-sum.hs
+
 executable yosupo-tree-jump-on-tree-exe
   import:  verify
   main-is: yosupo-tree-jump-on-tree.hs

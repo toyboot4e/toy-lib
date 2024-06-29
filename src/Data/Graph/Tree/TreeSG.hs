@@ -68,68 +68,68 @@ lcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
 
 -- * Tree folding
 
--- | \(O(N)\) Tree folding implementation. TODO: consider to not require semigroup aciton?
-foldTreeImpl :: forall m op a w. (Monad m) => SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a
-foldTreeImpl !tree !root !sact_ !acc0At !toOp !memo = inner (-1) root
+-- | \(O(N)\) Weighted ree folding.
+foldTreeImplSG :: forall m op a w. (Monad m, U.Unbox w) => SparseGraph w -> Vertex -> (op -> (Vertex, w) -> op) -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> (Vertex -> a -> m ()) -> m a
+foldTreeImplSG !tree !root !onEdge !sact_ !acc0At !toOp !memo = inner (-1) root
   where
     inner :: Vertex -> Vertex -> m a
     inner !parent !v1 = do
       let !acc0 = acc0At v1
-      !res <- U.foldM' (\acc v2 -> (`sact_` acc) . toOp <$> inner v1 v2) acc0 v2s
+      let !v2s = U.filter ((/= parent) . fst) $ tree `adjW` v1
+      !res <- U.foldM' (\acc (!v2, !w) -> (`sact_` acc) . (`onEdge` (v1, w)) . toOp <$> inner v1 v2) acc0 v2s
       memo v1 res
       return res
-      where
-        !v2s = U.filter (/= parent) $ tree `adj` v1
 
 -- | \(O(N)\) Folds a tree from one root vertex using postorder DFS.
-foldTree :: SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> a
-foldTree !tree !root !sact_ !acc0At !toOp = runIdentity $ foldTreeImpl tree root sact_ acc0At toOp (\_ _ -> return ())
+foldTreeSG :: (U.Unbox w) => SparseGraph w -> Vertex -> (op -> (Vertex, w) -> op) -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> a
+foldTreeSG !tree !root !onEdge !sact_ !acc0At !toOp = runIdentity $ do
+  foldTreeImplSG tree root onEdge sact_ acc0At toOp (\_ _ -> return ())
 
 -- | \(O(N)\) Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
-scanTree :: (G.Vector v a) => SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> v a
-scanTree !tree !root !sact_ !acc0At !toOp = G.create $ do
+scanTreeSG :: (G.Vector v a, U.Unbox w) => SparseGraph w -> Vertex -> (op -> (Vertex, w) -> op) -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> v a
+scanTreeSG !tree !root !onEdge !sact_ !acc0At !toOp = G.create $ do
   dp <- GM.unsafeNew (nVertsSG tree)
-  !_ <- foldTreeImpl tree root sact_ acc0At toOp $ \v a -> do
+  !_ <- foldTreeImplSG tree root onEdge sact_ acc0At toOp $ \v a -> do
     GM.unsafeWrite dp v a
   return dp
 
--- | \(O(N)\) Type-restricted `scanTree`.
-scanTreeU :: (U.Unbox a) => SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> U.Vector a
-scanTreeU = scanTree
-
--- | \(O(N)\) Type-restricted `scanTree`.
-scanTreeV :: SparseGraph w -> Vertex -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> V.Vector a
-scanTreeV = scanTree
-
--- | \(O(N)\) Folds a tree for every vertex as a root using the rerooting technique.
--- REMARK: `mempty` is used for initial operator value.
+-- | \(O(N)\) Folds a not-weighted tree for every vertex as a root using the rerooting technique.
 --
 -- = Typical problems
 -- - [Typical 039 - Tree Distance (★5)](https://atcoder.jp/contests/typical90/tasks/typical90_am)
 -- - [EDPC V - Subtree](https://atcoder.jp/contests/dp/tasks/dp_v)
 -- - [TDPC N - tree](https://atcoder.jp/contests/tdpc/tasks/tdpc_tree)
-foldTreeAllSG :: forall a op w. (U.Unbox a, U.Unbox op, Monoid op, SemigroupAction op a) => SparseGraph w -> (Vertex -> a) -> (a -> op) -> U.Vector a
-foldTreeAllSG !tree !acc0At !toOp =
+foldTreeAllSG :: forall a op w. (U.Unbox a, U.Unbox op, Monoid op, SemigroupAction op a, U.Unbox w) => SparseGraph w -> (Vertex -> a) -> (a -> op) -> U.Vector a
+foldTreeAllSG !tree = foldTreeAllSG' tree const
+
+-- | \(O(N)\) Folds a weighted tree for every vertex as a root using the rerooting technique.
+--
+-- = Typical problems
+-- - [Tree Path Composite Sum](https://judge.yosupo.jp/problem/tree_path_composite_sum)
+foldTreeAllSG' :: forall a op w. (U.Unbox a, U.Unbox op, Monoid op, SemigroupAction op a, U.Unbox w) => SparseGraph w -> (op -> (Vertex, w) -> op) -> (Vertex -> a) -> (a -> op) -> U.Vector a
+foldTreeAllSG' !tree !onEdge !acc0At !toOp =
   -- Calculate tree DP for one root vertex
-  let !treeDp = scanTreeU tree root0 sact acc0At toOp
+  let !treeDp = scanTreeSG tree root0 onEdge sact acc0At toOp :: U.Vector a
       !rootDp = U.create $ do
         -- Calculate tree DP for every vertex as a root:
         !dp <- UM.unsafeNew (nVertsSG tree)
         let reroot parent parentOp v1 = do
-              let !children = U.filter (/= parent) $ tree `adj` v1
-              let !opL = U.scanl' (\op v2 -> (op <>) . toOp $ treeDp G.! v2) op0 children
-              let !opR = U.scanr' (\v2 op -> (<> op) . toOp $ treeDp G.! v2) op0 children
+              -- TODO: when the operator is not commutative?
+              let !children = U.filter ((/= parent) . fst) $ tree `adjW` v1
+              let !opL = U.scanl' (\ !op (!v2, !w) -> (op <>) . (`onEdge` (v1, w)) . toOp $ treeDp G.! v2) op0 children
+              let !opR = U.scanr' (\(!v2, !w) !op -> (<> op) . (`onEdge` (v1, w)) . toOp $ treeDp G.! v2) op0 children
 
               -- save
               let !x1 = (parentOp <> U.last opL) `sact` acc0At v1
               UM.unsafeWrite dp v1 x1
 
-              U.iforM_ children $ \i2 v2 -> do
-                let !lrOp = (opL G.! i2) <> (opR G.! succ i2)
-                let !v1Acc = (parentOp <> lrOp) `sact` acc0At v1
-                let !op' = toOp v1Acc
-                reroot v1 op' v2
+              U.iforM_ children $ \i2 (!v2, !w) -> do
+                -- composited operator excluding @v2@:
+                let !op1 = parentOp <> (opL G.! i2) <> (opR G.! succ i2)
+                let !v1Acc = op1 `sact` acc0At v1
+                let !op2 = onEdge (toOp v1Acc) (v2, w)
+                reroot v1 op2 v2
 
         reroot (-1 :: Vertex) op0 root0
 
