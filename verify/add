@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+run() {
+  read -p "title: " input_
+  title="$(printf '%s' "$input_" | sed 's; ;-;g')"
+
+  if [ title = "" ] ; then
+    return
+  fi
+
+  cat >> verify.cabal <<EOS
+
+executable ${title}-exe
+  import:  verify
+  main-is: ${title}.hs
+EOS
+
+  cp "src/__template" "src/${title}.hs"
+
+  echo ">> ${title}.hs generated"
+}
+
+run
+
