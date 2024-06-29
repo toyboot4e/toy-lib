@@ -16,6 +16,7 @@ import Control.Monad.State.Class
 import Control.Monad.Trans.State.Strict (execStateT)
 import Data.Graph.Alias
 import Data.Graph.Sparse
+import Data.Ix (inRange)
 import Data.Maybe
 import Data.Monoid (Dual (..))
 import Data.SegmentTree.Strict
@@ -24,7 +25,6 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug
-import Debug.Trace
 
 -- | Vertex reindexed by `indexHLD`.
 type VertexHLD = Vertex
@@ -120,15 +120,20 @@ type VertexHLD = Vertex
 --   | <--- edge 2
 --   o <- write wegiht 2 here
 -- @
+--
+-- = Subtree folding
+--
+-- Subtree `VertexHLD` is contiguous. We can easily find the corredponding @(l, r)@ paris of
+-- `VertexHLD` that corresopnds to the subtree by remembering the subtree sizes.
 data HLD = HLD
-  { -- The first three is required for LCA and path folding:
+  { -- | The root vertex.
+    rootHLD :: Vertex,
     -- | `Vertex` -> Parent `Vertex`.
     parentHLD :: !(U.Vector Vertex),
     -- | `Vertex` -> `VertexHLD` (re-indexed vertex that is contiguous in each segment).
     indexHLD :: !(U.Vector VertexHLD),
     -- | `Vertex` -> The line's head `Vertex`.
     headHLD :: !(U.Vector Vertex),
-    -- Rest fields are for enhancements:
     -- | `VertexHLD` -> `Vertex`. Used for `ancestorHLD` etc.
     revIndexHLD :: !(U.Vector Vertex),
     -- | Depth information for `jumpHLD` etc.
@@ -142,7 +147,11 @@ data HLD = HLD
 
 -- | \(O(V)\) Constructs HLD.
 hldOf :: forall w. SparseGraph w -> HLD
-hldOf tree = runST $ do
+hldOf tree = hldOf' tree 0
+
+-- | \(O(V)\) Constructs HLD with root vertex specified.
+hldOf' :: forall w. SparseGraph w -> Vertex -> HLD
+hldOf' tree root = runST $ do
   -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
   --
   -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
@@ -213,7 +222,7 @@ hldOf tree = runST $ do
   !indices' <- U.unsafeFreeze indices
   let !revIndex = U.update (U.replicate n (-1)) $ U.imap (flip (,)) indices'
 
-  HLD parent indices'
+  HLD root parent indices'
     <$> U.unsafeFreeze heads
     <*> return revIndex
     <*> return depths
@@ -221,7 +230,6 @@ hldOf tree = runST $ do
   where
     !n = nVertsSG tree
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
-    !root = 0 :: Vertex
 
 -- * LCA
 
@@ -232,7 +240,6 @@ hldOf tree = runST $ do
 lcaHLD :: HLD -> Vertex -> Vertex -> Vertex
 lcaHLD HLD {..} = inner
   where
-    -- inner x (-1) = 0 -- root
     inner !x !y
       -- sort for easier processing
       -- TODO: @case compare ix iy@ would be easier for me to understand
@@ -344,28 +351,43 @@ foldVertsCommuteHLD hld f = foldHLD False hld f f
 foldVertsHLD :: (Monoid mono, Monad m) => HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldVertsHLD = foldHLD False
 
+-- * Subtree
+
+-- | \(O(1)\) Returns @(start, end)@ `VertexHLD` that corresponds to the subtree segments rooted at
+-- the @subtreeRoot@.
+subtreeSegmentsHLD :: HLD -> Vertex -> (VertexHLD, VertexHLD)
+subtreeSegmentsHLD HLD {..} subtreeRoot = (ir, ir + sr - 1)
+  where
+    ir = indexHLD G.! subtreeRoot
+    sr = subtreeSizeHLD G.! subtreeRoot
+
+-- | \(O(1)\) Returns @True@ if @u@ is in a subtree of @r@.
+isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
+isInSubtreeHLD hld@HLD {..} r u = inRange (l, r) iu
+  where
+    (!l, !r) = subtreeSegmentsHLD hld r
+    !iu = indexHLD G.! u
+
 -- * Jump
 
--- | \(O(\log N)\) Go up @i@ times from the parent node to the implicit root node.
+-- | \(O(\log V)\) Go up @i@ times from the parent node to the implicit root node.
 ancestorHLD :: HLD -> Vertex -> Vertex -> Vertex
 ancestorHLD HLD {..} parent k0 = inner parent k0
   where
     !_ = dbgAssert (k0 <= depthHLD G.! parent)
-    -- !_ = traceShow ("la", parent, k0) ()
     inner v k
       -- on this segment
       | k <= iv - ihv = revIndexHLD G.! (iv - k)
       -- next segment
       | otherwise = inner (parentHLD U.! hv) (k - (iv - ihv + 1))
       where
-        -- !_ = traceShow ("inner", v, k) ()
         iv = indexHLD G.! v
         hv = headHLD G.! v
         ihv = indexHLD G.! hv
 
 -- TODO: levelAncestorHLD: https://37zigen.com/level-ancestor-problem/
 
--- | \(O(?)\) Returns i-th vertex of a path between @u@, @v@.
+-- | \(O(\log V)\) Returns i-th vertex of a path between @u@, @v@.
 --
 -- <https://judge.yosupo.jp/problem/jump_on_tree>
 jumpHLD :: HLD -> Vertex -> Vertex -> Int -> Maybe Vertex
@@ -379,14 +401,6 @@ jumpHLD hld@HLD {..} u v i
     dv = depthHLD G.! v
     lenU = du - depthHLD G.! lca
     lenV = dv - depthHLD G.! lca
-    -- !_ = traceShow ("jump", (u, v), lca,  (du, dv), (lenU, lenV)) ()
-
--- -- | \(O(1)\) FIXME: Returns @True@ if @u@ is in a subtree of @p@.
--- isInSubtreeHLD :: HLD -> Vertex -> Vertex -> Bool
--- isInSubtreeHLD HLD {..} p u = ip <= iu && iu < (ip + subtreeSizeHLD G.! p)
---   where
---     ip = indexHLD G.! p
---     iu = indexHLD G.! u
 
 -- * Utilities
 
@@ -452,11 +466,25 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
 
 -- ** Segment tree methods
 
--- | \(O(log^2 V)\) Folds `TreeMonoid` on a path between two vertices
+-- | \(O(log^2 V)\) Folds a path between two vertices.
 foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
 foldTM TreeMonoid {..} v1 v2
   | isCommuteTM = foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
   | otherwise = foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
+
+-- | \(O(log V)\) Folds commute monoids on vertives of a subtree.
+foldSubtreeVertsTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
+foldSubtreeVertsTM TreeMonoid {..} subtreeRoot = foldSTree streeFTM l r
+  where
+    (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
+
+-- | \(O(log V)\) Folds commute monoids on edges of a subtree. TODO: test
+foldSubtreeEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
+foldSubtreeEdgeTM TreeMonoid {..} subtreeRoot
+  | l == r = mempty
+  | otherwise = foldSTree streeFTM (l + 1) r
+  where
+    (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
 
 -- | \(O(log V)\) Reads a `TreeMonoid` value on a `Vertex`.
 readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
