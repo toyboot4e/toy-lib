@@ -173,6 +173,7 @@ library
     Algorithm.Bisect
     Algorithm.Mo
     Algorithm.TwoPointers
+    Data.AllocVec
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
