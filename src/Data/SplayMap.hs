@@ -23,6 +23,7 @@ module Data.SplayMap where
 
 import Control.Exception (assert)
 import Control.Monad (unless, when)
+import Control.Monad.Extra (whenM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Buffer
@@ -49,6 +50,7 @@ data SplayNode k v = SplayNode
     keySpNode :: !k,
     valSpNode :: !v
   }
+  deriving (Show, Eq)
 
 -- | Internal representation of `SplayNode a` for implementing `U.Unbox`.
 type SplayNodeRepr k v = (SplayIndex, SplayIndex, k, v)
@@ -120,7 +122,7 @@ rotateRSMap SplayMap {..} i = do
   let !il = lSpNode nodeI
   nodeIL <- readFront dataSMap il
   writeFront dataSMap i $ nodeI {lSpNode = rSpNode nodeIL}
-  writeFront dataSMap il $ nodeI {rSpNode = i}
+  writeFront dataSMap il $ nodeIL {rSpNode = i}
   return il
 
 -- | \(O(1)\) Right child rotation.
@@ -144,7 +146,7 @@ rotateLSMap SplayMap {..} i = do
   let !ir = rSpNode nodeI
   nodeIR <- readFront dataSMap ir
   writeFront dataSMap i $ nodeI {rSpNode = lSpNode nodeIR}
-  writeFront dataSMap ir $ nodeI {lSpNode = i}
+  writeFront dataSMap ir $ nodeIR {lSpNode = i}
   return ir
 
 -- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
@@ -224,6 +226,7 @@ splaySMap smap@SplayMap {..} i0 key = do
   -- - right tree: a tree with keys bigger than the current node's key.
   let inner iM iL iR = do
         let !_ = traceShow (iM, iL, iR) ()
+        when (iM == iR || iM == iR) $ error "wrong"
         nodeM <- readFront dataSMap iM
         case compare key (keySpNode nodeM) of
           LT | not (nullSplayIndex (lSpNode nodeM)) -> do
@@ -234,7 +237,9 @@ splaySMap smap@SplayMap {..} i0 key = do
                 else return iM
             -- link right:
             if nullSplayIndex iR
-              then GM.write lrs 1 iM'
+              then do
+                let !_ = traceShow ("link right", iM') ()
+                GM.write lrs 1 iM'
               else writeLChild iR iM'
             iM'' <- lSpNode <$> readFront dataSMap iM'
             inner iM'' iL iM'
@@ -246,7 +251,9 @@ splaySMap smap@SplayMap {..} i0 key = do
                 else return iM
             -- link left:
             if nullSplayIndex iL
-              then GM.write lrs 0 iM'
+              then do
+                let !_ = traceShow ("link left", iM') ()
+                GM.write lrs 0 iM'
               else writeRChild iL iM'
             iM'' <- rSpNode <$> readFront dataSMap iM'
             inner iM'' iM' iR
@@ -263,12 +270,15 @@ splaySMap smap@SplayMap {..} i0 key = do
   where
     done iM nodeM iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      unless (nullSplayIndex iR) $ do
-        writeLChild iR (rSpNode nodeM)
+      let !_ = traceShow ("done", iM, (iL, iR)) ()
+      let !iML = lSpNode nodeM
+      let !iMR = rSpNode nodeM
       unless (nullSplayIndex iL) $ do
-        writeRChild iL (rSpNode nodeM)
-      writeLChild iM iL
-      writeRChild iM iR
+        writeRChild iL iML
+        writeLChild iM iL
+      unless (nullSplayIndex iR) $ do
+        writeLChild iR iMR
+        writeRChild iM iR
     writeLChild iParent iChild = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       -- TODO: more efficient update?
@@ -311,7 +321,6 @@ lookupSMap smap k = do
 -- | Amortized \(O(\log N)\). Returns old value with the same key if there is.
 insertSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSMap smap@SplayMap {..} k v = do
-  -- splay
   root <- GM.read rootSMap 0
   let !_ = traceShow ("insert", root) ()
   if nullSplayIndex root
@@ -319,28 +328,30 @@ insertSMap smap@SplayMap {..} k v = do
       pushRootSMap smap $ SplayNode undefSplayIndex undefSplayIndex k v
       return Nothing
     else do
-      -- splay
+      -- splay and lift up the closest node to the root
       (!root', !ordering) <- splaySMap smap root k
-      GM.write rootSMap 0 root'
-      -- insert or overwrite the root
+      -- insert or overwrite the root:
       case ordering of
         EQ -> do
           -- overwrite the existing node
           old <- valSpNode <$> readFront dataSMap root'
           modifyFront dataSMap (\node -> node {valSpNode = v}) root'
+          GM.write rootSMap 0 root'
           return $ Just old
         LT -> do
-          -- insert
-          let !l = root'
-          r <- rSpNode <$> readFront dataSMap root'
-          modifyFront dataSMap (\node -> node {rSpNode = undefSplayIndex}) root'
-          pushRootSMap smap $ SplayNode l r k v
-          return Nothing
-        GT -> do
+          let !_ = traceShow ("end: LT") ()
           -- insert
           l <- lSpNode <$> readFront dataSMap root'
           let !r = root'
           modifyFront dataSMap (\node -> node {lSpNode = undefSplayIndex}) root'
+          pushRootSMap smap $ SplayNode l r k v
+          return Nothing
+        GT -> do
+          let !_ = traceShow ("end: GT") ()
+          -- insert
+          let !l = root'
+          r <- rSpNode <$> readFront dataSMap root'
+          modifyFront dataSMap (\node -> node {rSpNode = undefSplayIndex}) root'
           pushRootSMap smap $ SplayNode l r k v
           return Nothing
 
