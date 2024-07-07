@@ -30,6 +30,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import Debug.Trace
 import GHC.Stack (HasCallStack)
 
 -- | Index of a `SplayNode` stored in a `SplayMap`.
@@ -93,7 +94,7 @@ buildSMap n xs = do
     insertSMap smap k v
   return smap
 
-lengthSMap :: (U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m Int
+lengthSMap :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSMap = lengthBuffer . dataSMap
 
 -- * Splay
@@ -111,16 +112,13 @@ lengthSMap = lengthBuffer . dataSMap
 --   / \              / \
 -- ll   lr           lr  r
 -- @
-_rotateLSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
-_rotateLSMap SplayMap {..} i = do
-  -- TODO: check if @v@ is alive
-  ni <- readFront dataSMap i
-  let !l = lSpNode ni
-  nl <- readFront dataSMap l
-  writeFront dataSMap i $ ni {lSpNode = lSpNode nl}
-  writeFront dataSMap l $ ni {rSpNode = i}
-  -- TODO: update the original parent of @i@.
-  return ()
+_rotateRSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
+_rotateRSMap SplayMap {..} i = do
+  nodeI <- readFront dataSMap i
+  let !il = lSpNode nodeI
+  nodeIL <- readFront dataSMap il
+  writeFront dataSMap i $ nodeI {lSpNode = rSpNode nodeIL}
+  writeFront dataSMap il $ nodeI {rSpNode = i}
 
 -- | \(O(1)\) Right child rotation.
 --
@@ -135,16 +133,13 @@ _rotateLSMap SplayMap {..} i = do
 --    / \        / \
 --   rl  rr     l   rl
 -- @
-_rotateRSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
-_rotateRSMap SplayMap {..} i = do
-  -- TODO: check if @v@ is alive
-  ni <- readFront dataSMap i
-  let !r = lSpNode ni
-  nr <- readFront dataSMap r
-  writeFront dataSMap i $ ni {rSpNode = rSpNode nr}
-  writeFront dataSMap r $ ni {lSpNode = r}
-  -- TODO: update the original parent of @i@.
-  return ()
+_rotateLSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
+_rotateLSMap SplayMap {..} i = do
+  nodeI <- readFront dataSMap i
+  let !ir = rSpNode nodeI
+  nodeIR <- readFront dataSMap ir
+  writeFront dataSMap i $ nodeI {rSpNode = lSpNode nodeIR}
+  writeFront dataSMap ir $ nodeI {lSpNode = i}
 
 -- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
 --
@@ -231,7 +226,7 @@ splaySMap smap@SplayMap {..} i0 key = inner i0 undefSplayIndex undefSplayIndex
           -- link left:
           unless (nullSplayIndex iL) $ do
             writeRChild iL iM
-          inner (rSpNode nodeM) iM iR
+          inner (lSpNode nodeM) iL iM
         GT | not (nullSplayIndex (rSpNode nodeM)) -> do
           nodeMR <- readFront dataSMap (rSpNode nodeM)
           -- (ii) zig-zig: same direction twice, rotate the child.
@@ -240,27 +235,31 @@ splaySMap smap@SplayMap {..} i0 key = inner i0 undefSplayIndex undefSplayIndex
           -- link right:
           unless (nullSplayIndex iR) $ do
             writeLChild iR iM
-          inner (lSpNode nodeM) iL iM
+          inner (rSpNode nodeM) iM iR
         _ -> do
           done iM nodeM iL iR
           return . (iM,) $! compare key (keySpNode nodeM)
 
     done iM nodeM iL iR = do
-      writeLChild iR (rSpNode nodeM)
-      writeRChild iL (rSpNode nodeM)
-      -- FIXME: what??
-      -- writeLChild iU undefSplayIndex
-      -- writeRChild iU undefSplayIndex
+      let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
+      unless (nullSplayIndex iR) $ do
+        writeLChild iR (rSpNode nodeM)
+      unless (nullSplayIndex iL) $ do
+        writeRChild iL (rSpNode nodeM)
       writeLChild iM iL
       writeRChild iM iR
     writeLChild iParent iChild = do
+      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       -- TODO: more efficient update?
-      parent <- readFront dataSMap iParent
-      writeFront dataSMap iParent $ parent {lSpNode = iChild}
+      modifyFront dataSMap (\node -> node {lSpNode = iChild}) iParent
     writeRChild iParent iChild = do
+      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       -- TODO: more efficient update?
-      parent <- readFront dataSMap iParent
-      writeFront dataSMap iParent $ parent {rSpNode = iChild}
+      modifyFront dataSMap (\node -> node {rSpNode = iChild}) iParent
+
+unsafeWriteSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
+unsafeWriteSMap SplayMap {..} i v = do
+  modifyFront dataSMap (\node -> node {valSpNode = v}) i
 
 -- splayFromRootSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m SplayIndex
 -- splayFromRootSMap smap@SplayMap {..} k = do
@@ -275,9 +274,9 @@ splaySMap smap@SplayMap {..} i0 key = inner i0 undefSplayIndex undefSplayIndex
 --   return Nothing
 
 -- | Amortized \(O(\log N)\).
-pushRootSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m ()
-pushRootSMap SplayMap {..} k v = do
-  pushBack dataSMap $ SplayNode undefSplayIndex undefSplayIndex k v
+pushRootSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
+pushRootSMap SplayMap {..} node = do
+  pushBack dataSMap node
   len <- lengthBuffer dataSMap
   GM.write rootSMap 0 (len - 1)
 
@@ -288,23 +287,40 @@ lookupSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayM
 lookupSMap smap k = do
   return Nothing
 
--- | Amortized \(O(\log N)\).
+-- | Amortized \(O(\log N)\). Returns old value with the same key if there is.
 insertSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSMap smap@SplayMap {..} k v = do
+  -- splay
   root <- GM.read rootSMap 0
+  let !_ = traceShow ("insert", root) ()
   if nullSplayIndex root
     then do
-      pushRootSMap smap k v
+      pushRootSMap smap $ SplayNode undefSplayIndex undefSplayIndex k v
       return Nothing
     else do
+      -- splay
       (!root', !ordering) <- splaySMap smap root k
-      UM.write rootSMap 0 root'
+      GM.write rootSMap 0 root'
+      -- insert or overwrite the root
       case ordering of
         EQ -> do
-          return Nothing
+          -- overwrite the existing node
+          old <- valSpNode <$> readFront dataSMap root'
+          modifyFront dataSMap (\node -> node {valSpNode = v}) root'
+          return $ Just old
         LT -> do
+          -- insert
+          let !l = root'
+          r <- rSpNode <$> readFront dataSMap root'
+          modifyFront dataSMap (\node -> node {rSpNode = undefSplayIndex}) root'
+          pushRootSMap smap $ SplayNode l r k v
           return Nothing
         GT -> do
+          -- insert
+          l <- lSpNode <$> readFront dataSMap root'
+          let !r = root'
+          modifyFront dataSMap (\node -> node {lSpNode = undefSplayIndex}) root'
+          pushRootSMap smap $ SplayNode l r k v
           return Nothing
 
 -- -- | \(O(1)\)
@@ -328,4 +344,3 @@ dfsSMap smap@SplayMap {..} = do
       unless (nullSplayIndex (rSpNode node)) $ do
         loop $ rSpNode node
   unsafeFreezeBuffer buf
-
