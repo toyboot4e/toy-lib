@@ -225,11 +225,12 @@ splaySMap smap@SplayMap {..} i0 key = do
   -- - left tree: a tree with keys less than or equal to the current node's key.
   -- - right tree: a tree with keys bigger than the current node's key.
   let inner iM iL iR = do
-        let !_ = traceShow (iM, iL, iR) ()
+        let !_ = traceShow ("inner", iM, iL, iR) ()
         when (iM == iR || iM == iR) $ error "wrong"
         nodeM <- readFront dataSMap iM
         case compare key (keySpNode nodeM) of
           LT | not (nullSplayIndex (lSpNode nodeM)) -> do
+            let !_ = traceShow (">> LT", iM) ()
             iM' <- do
               nodeML <- readFront dataSMap (lSpNode nodeM)
               if not (nullSplayIndex (lSpNode nodeML)) && key < keySpNode nodeML
@@ -244,6 +245,7 @@ splaySMap smap@SplayMap {..} i0 key = do
             iM'' <- lSpNode <$> readFront dataSMap iM'
             inner iM'' iL iM'
           GT | not (nullSplayIndex (rSpNode nodeM)) -> do
+            let !_ = traceShow (">> GT", iM) ()
             iM' <- do
               nodeMR <- readFront dataSMap (rSpNode nodeM)
               if not (nullSplayIndex (rSpNode nodeMR)) && key > keySpNode nodeMR
@@ -254,31 +256,34 @@ splaySMap smap@SplayMap {..} i0 key = do
               then do
                 let !_ = traceShow ("link left", iM') ()
                 GM.write lrs 0 iM'
-              else writeRChild iL iM'
+              else do
+                -- FIXME: right child of iM' should be updated?
+                let !_ = traceShow ("link left right child", (iL, iM')) ()
+                writeRChild iL iM'
             iM'' <- rSpNode <$> readFront dataSMap iM'
             inner iM'' iM' iR
           _ -> do
             -- assemble
-            rootL <- GM.read lrs 0
-            rootR <- GM.read lrs 1
-            done iM nodeM rootL rootR
+            iRootL <- GM.read lrs 0
+            iRootR <- GM.read lrs 1
+            done iM nodeM iRootL iRootR iL iR
             -- return
             let !comparison = compare key (keySpNode nodeM)
             return (iM, comparison)
 
   inner i0 undefSplayIndex undefSplayIndex
   where
-    done iM nodeM iL iR = do
+    done iM nodeM iRootL iRootR iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      let !_ = traceShow ("done", iM, (iL, iR)) ()
+      let !_ = traceShow ("done", iM, (iRootL, iRootR), (iL, iR)) ()
       let !iML = lSpNode nodeM
       let !iMR = rSpNode nodeM
       unless (nullSplayIndex iL) $ do
         writeRChild iL iML
-        writeLChild iM iL
+        writeLChild iM iRootL
       unless (nullSplayIndex iR) $ do
         writeLChild iR iMR
-        writeRChild iM iR
+        writeRChild iM iRootR
     writeLChild iParent iChild = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       -- TODO: more efficient update?
