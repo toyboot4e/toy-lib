@@ -112,13 +112,16 @@ lengthSMap = lengthBuffer . dataSMap
 --   / \              / \
 -- ll   lr           lr  r
 -- @
-_rotateRSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
-_rotateRSMap SplayMap {..} i = do
+--
+-- Returns @l@.
+rotateRSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+rotateRSMap SplayMap {..} i = do
   nodeI <- readFront dataSMap i
   let !il = lSpNode nodeI
   nodeIL <- readFront dataSMap il
   writeFront dataSMap i $ nodeI {lSpNode = rSpNode nodeIL}
   writeFront dataSMap il $ nodeI {rSpNode = i}
+  return il
 
 -- | \(O(1)\) Right child rotation.
 --
@@ -133,13 +136,16 @@ _rotateRSMap SplayMap {..} i = do
 --    / \        / \
 --   rl  rr     l   rl
 -- @
-_rotateLSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m ()
-_rotateLSMap SplayMap {..} i = do
+--
+-- Returns @r@.
+rotateLSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+rotateLSMap SplayMap {..} i = do
   nodeI <- readFront dataSMap i
   let !ir = rSpNode nodeI
   nodeIR <- readFront dataSMap ir
   writeFront dataSMap i $ nodeI {rSpNode = lSpNode nodeIR}
   writeFront dataSMap ir $ nodeI {lSpNode = i}
+  return ir
 
 -- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
 --
@@ -208,38 +214,53 @@ _rotateLSMap SplayMap {..} i = do
 --
 -- If the parent is the root, then what?
 splaySMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> k -> m (SplayIndex, Ordering)
-splaySMap smap@SplayMap {..} i0 key = inner i0 undefSplayIndex undefSplayIndex
-  where
-    -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
-    -- @inner@ manages the folloing three variables:
-    -- - middle tree: a tree rooted by the current node.
-    -- - left tree: a tree with keys less than or equal to the current node's key.
-    -- - right tree: a tree with keys bigger than the current node's key.
-    inner iM iL iR = do
-      nodeM <- readFront dataSMap iM
-      case compare key (keySpNode nodeM) of
-        LT | not (nullSplayIndex (lSpNode nodeM)) -> do
-          nodeML <- readFront dataSMap (lSpNode nodeM)
-          -- (ii) zig-zig: same direction twice, rotate right the child.
-          when (key < keySpNode nodeML && not (nullSplayIndex (lSpNode nodeML))) $ do
-            _rotateRSMap smap (lSpNode nodeM)
-          -- link left:
-          unless (nullSplayIndex iL) $ do
-            writeRChild iL iM
-          inner (lSpNode nodeM) iL iM
-        GT | not (nullSplayIndex (rSpNode nodeM)) -> do
-          nodeMR <- readFront dataSMap (rSpNode nodeM)
-          -- (ii) zig-zig: same direction twice, rotate the child.
-          when (key > keySpNode nodeMR && not (nullSplayIndex (rSpNode nodeMR))) $ do
-            _rotateLSMap smap (rSpNode nodeM)
-          -- link right:
-          unless (nullSplayIndex iR) $ do
-            writeLChild iR iM
-          inner (rSpNode nodeM) iM iR
-        _ -> do
-          done iM nodeM iL iR
-          return . (iM,) $! compare key (keySpNode nodeM)
+splaySMap smap@SplayMap {..} i0 key = do
+  lrs <- UM.replicate 2 undefSplayIndex
 
+  -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
+  -- @inner@ manages the folloing three variables:
+  -- - middle tree: a tree rooted by the current node.
+  -- - left tree: a tree with keys less than or equal to the current node's key.
+  -- - right tree: a tree with keys bigger than the current node's key.
+  let inner iM iL iR = do
+        let !_ = traceShow (iM, iL, iR) ()
+        nodeM <- readFront dataSMap iM
+        case compare key (keySpNode nodeM) of
+          LT | not (nullSplayIndex (lSpNode nodeM)) -> do
+            iM' <- do
+              nodeML <- readFront dataSMap (lSpNode nodeM)
+              if not (nullSplayIndex (lSpNode nodeML)) && key < keySpNode nodeML
+                then rotateRSMap smap iM
+                else return iM
+            -- link right:
+            if nullSplayIndex iR
+              then GM.write lrs 1 iM'
+              else writeLChild iR iM'
+            iM'' <- lSpNode <$> readFront dataSMap iM'
+            inner iM'' iL iM'
+          GT | not (nullSplayIndex (rSpNode nodeM)) -> do
+            iM' <- do
+              nodeMR <- readFront dataSMap (rSpNode nodeM)
+              if not (nullSplayIndex (rSpNode nodeMR)) && key > keySpNode nodeMR
+                then rotateLSMap smap iM
+                else return iM
+            -- link left:
+            if nullSplayIndex iL
+              then GM.write lrs 0 iM'
+              else writeRChild iL iM'
+            iM'' <- rSpNode <$> readFront dataSMap iM'
+            inner iM'' iM' iR
+          _ -> do
+            -- assemble
+            rootL <- GM.read lrs 0
+            rootR <- GM.read lrs 1
+            done iM nodeM rootL rootR
+            -- return
+            let !comparison = compare key (keySpNode nodeM)
+            return (iM, comparison)
+
+  inner i0 undefSplayIndex undefSplayIndex
+  where
     done iM nodeM iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
       unless (nullSplayIndex iR) $ do
