@@ -14,6 +14,8 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
+-- TODO: assertion with `HasCallStack` should make sense, not redundant?
+
 -- | Index of a data stored in a `AllocVec`.
 type IndexAV = Int
 
@@ -48,12 +50,12 @@ newAllocVec n = do
 resetAllocVec :: (PrimMonad m) => AllocVec (PrimState m) a -> m ()
 resetAllocVec AllocVec {..}
   | capacityAV == 0 = do
-    GM.unsafeWrite firstFreeAV 0 endSlotAV
+      GM.unsafeWrite firstFreeAV 0 endSlotAV
   | otherwise = do
-    forM_ [0 .. capacityAV - 2] $ \i -> do
-      GM.unsafeWrite nextFreeAV i (i + 1)
-    GM.unsafeWrite nextFreeAV (capacityAV - 1) endSlotAV
-    GM.unsafeWrite firstFreeAV 0 (0 :: SlotAV)
+      forM_ [0 .. capacityAV - 2] $ \i -> do
+        GM.unsafeWrite nextFreeAV i (i + 1)
+      GM.unsafeWrite nextFreeAV (capacityAV - 1) endSlotAV
+      GM.unsafeWrite firstFreeAV 0 (0 :: SlotAV)
 
 -- * Slots
 
@@ -69,7 +71,7 @@ filledSlotAV :: SlotAV
 filledSlotAV = -3
 
 -- | Asserts the slot is non-empty.
-validateSlotAV :: AllocVec s a -> SlotAV -> ()
+validateSlotAV :: (HasCallStack) => AllocVec s a -> SlotAV -> ()
 validateSlotAV AllocVec {..} i =
   let !_ = assert (i /= endSlotAV) "end of free slots"
       !_ = assert (i /= filledSlotAV) "filled slot"
@@ -77,7 +79,7 @@ validateSlotAV AllocVec {..} i =
    in ()
 
 -- | Asserts the slot is non-empty.
-validateIndexAV :: AllocVec s a -> IndexAV -> ()
+validateIndexAV :: (HasCallStack) => AllocVec s a -> IndexAV -> ()
 validateIndexAV AllocVec {..} i =
   let !_ = assert (i >= 0 && i < capacityAV) $ "index out of range: " ++ show (0 :: Int, capacityAV - 1) ++ " " ++ show i
    in ()
