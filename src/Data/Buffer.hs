@@ -183,16 +183,6 @@ popBackN_ Buffer {bufferVars} len = do
 {-# INLINE popBackN_ #-}
 
 -- | \(O(1)\)
-viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
-viewFront Buffer {bufferVars, internalBuffer} = do
-  f <- UM.unsafeRead bufferVars _bufferFrontPos
-  b <- UM.unsafeRead bufferVars _bufferBackPos
-  if f < b
-    then pure <$> UM.unsafeRead internalBuffer f
-    else return Nothing
-{-# INLINE viewFront #-}
-
--- | \(O(1)\)
 popBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
 popBack Buffer {bufferVars, internalBuffer} = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
@@ -208,16 +198,6 @@ popBack Buffer {bufferVars, internalBuffer} = do
 popBack_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
 popBack_ = void . popBack
 {-# INLINE popBack_ #-}
-
--- | \(O(1)\)
-viewBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
-viewBack Buffer {bufferVars, internalBuffer} = do
-  f <- UM.unsafeRead bufferVars _bufferFrontPos
-  b <- UM.unsafeRead bufferVars _bufferBackPos
-  if f < b
-    then pure <$> UM.unsafeRead internalBuffer (b - 1)
-    else return Nothing
-{-# INLINE viewBack #-}
 
 -- | \(O(1)\)
 pushFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
@@ -286,20 +266,30 @@ viewBackN Buffer {..} i = do
 {-# INLINE viewBackN #-}
 
 -- | \(O(1)\)
+viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+viewFront buf = viewFrontN buf 0
+{-# INLINE viewFront #-}
+
+-- | \(O(1)\)
+viewBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
+viewBack buf = viewBackN buf 0
+{-# INLINE viewBack #-}
+
+-- | \(O(1)\)
 readFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
-readFront buf = fmap (fromMaybe (error "readFront")) . viewFrontN buf
+readFront buf i = fromMaybe (error ("readFront: " ++ show i)) <$> viewFrontN buf i
 {-# INLINE readFront #-}
 
 -- | \(O(1)\)
 readBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
-readBack buf = fmap (fromMaybe (error "readBack")) . viewBackN buf
+readBack buf i = fromMaybe (error ("readBack: " ++ show i)) <$> viewBackN buf i
 {-# INLINE readBack #-}
 
 _checkIndexBuffer :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) a -> Int -> m ()
 _checkIndexBuffer buf i = do
   len <- lengthBuffer buf
   when (i < 0 || i >= len) $ do
-    error $ "writeBack: invalid index " ++ show (0 :: Int, len - 1) ++ " " ++ show i
+    error $ "invalid index: " ++ show (0 :: Int, len - 1) ++ " " ++ show i
 {-# INLINE _checkIndexBuffer #-}
 
 -- | \(O(1)\)
