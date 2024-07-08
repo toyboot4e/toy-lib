@@ -275,6 +275,7 @@ test-suite toy-lib-test
     Tests.Bisect
     Tests.IntervalMap
     Tests.NTT
+    Tests.SplayMap
     Tests.SuffixArray
     Tests.ZFunction
 

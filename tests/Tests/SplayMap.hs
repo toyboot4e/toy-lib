@@ -1,4 +1,4 @@
-module Tests.SplaySMap where
+module Tests.SplayMap where
 
 import Control.Monad.ST
 import Data.IntMap qualified as IM
