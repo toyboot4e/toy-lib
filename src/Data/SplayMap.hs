@@ -215,7 +215,7 @@ rotateLSMap SplayMap {..} i = do
 -- == Zag
 --
 -- If the parent is the root, then what?
-splayBySMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
+splayBySMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
 splayBySMap smap@SplayMap {..} !cmpF !i0 = do
   lrs <- UM.replicate 2 undefSplayIndex
 
@@ -225,12 +225,12 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
   -- - left tree: a tree with keys less than or equal to the current node's key.
   -- - right tree: a tree with keys bigger than the current node's key.
   let inner iM iL iR = do
-        let !_ = traceShow ("inner", iM, iL, iR) ()
-        when (iM == iR || iM == iR) $ error "wrong"
+        -- let !_ = traceShow ("inner", iM, iL, iR) ()
+        when (iM == iL || iM == iR) $ error "wrong"
         nodeM <- readFront dataSMap iM
         case cmpF (keySpNode nodeM) of
           LT | not (nullSplayIndex (lSpNode nodeM)) -> do
-            let !_ = traceShow (">> LT", iM) ()
+            -- let !_ = traceShow (">> LT", iM) ()
             iM' <- do
               nodeML <- readFront dataSMap (lSpNode nodeM)
               if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
@@ -239,13 +239,13 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
             -- link right:
             if nullSplayIndex iR
               then do
-                let !_ = traceShow ("link right", iM') ()
+                -- let !_ = traceShow ("link right", iM') ()
                 GM.write lrs 1 iM'
               else writeLChild iR iM'
             iM'' <- lSpNode <$> readFront dataSMap iM'
             inner iM'' iL iM'
           GT | not (nullSplayIndex (rSpNode nodeM)) -> do
-            let !_ = traceShow (">> GT", iM) ()
+            -- let !_ = traceShow (">> GT", iM) ()
             iM' <- do
               nodeMR <- readFront dataSMap (rSpNode nodeM)
               if not (nullSplayIndex (rSpNode nodeMR)) && cmpF(keySpNode nodeMR) == GT
@@ -254,11 +254,11 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
             -- link left:
             if nullSplayIndex iL
               then do
-                let !_ = traceShow ("link left", iM') ()
+                -- let !_ = traceShow ("link left", iM') ()
                 GM.write lrs 0 iM'
               else do
                 -- FIXME: right child of iM' should be updated?
-                let !_ = traceShow ("link left right child", (iL, iM')) ()
+                -- let !_ = traceShow ("link left right child", (iL, iM')) ()
                 writeRChild iL iM'
             iM'' <- rSpNode <$> readFront dataSMap iM'
             inner iM'' iM' iR
@@ -266,6 +266,7 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
             -- assemble
             iRootL <- GM.read lrs 0
             iRootR <- GM.read lrs 1
+            let !_ = traceShow ("done splay", iM, (iRootL, iRootR)) ()
             done iM nodeM iRootL iRootR iL iR
             -- return
             let !comparison = cmpF (keySpNode nodeM)
@@ -275,7 +276,7 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
   where
     done iM nodeM iRootL iRootR iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      let !_ = traceShow ("done", iM, (iRootL, iRootR), (iL, iR)) ()
+      -- let !_ = traceShow ("done", iM, (iRootL, iRootR), (iL, iR)) ()
       let !iML = lSpNode nodeM
       let !iMR = rSpNode nodeM
       unless (nullSplayIndex iL) $ do
@@ -304,13 +305,14 @@ pushRootSMap SplayMap {..} node = do
   len <- lengthBuffer dataSMap
   GM.write rootSMap 0 (len - 1)
 
--- | Amortized \(O(\log N)\). Removes the root.
+-- | Amortized \(O(\log N)\). Removes the current root.
 --
 -- TODO: Less splaying
 popRootSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
 popRootSMap smap@SplayMap {..} = do
   root <- GM.read rootSMap 0
   node <- readFront dataSMap root
+  let !_ = traceShow ("popRoot", root, (lSpNode node, rSpNode node)) ()
 
   -- merge the children into one.
   root' <- case (lSpNode node, rSpNode node) of
@@ -323,11 +325,11 @@ popRootSMap smap@SplayMap {..} = do
         then do
           -- Move @l@ to @rl@, which is null.
           --
-          --   root         r
-          --   / \         / \
-          --  l   r  -->  l   ..
-          --     /
-          --    XX
+          --   root        root
+          --   / \           \
+          --  l   r  -->      r
+          --     /           / \
+          --    XX          l   ..
           modifyFront dataSMap (\nodeR -> nodeR {lSpNode = l}) r
           -- @r@ is the new root:
           return r
@@ -336,20 +338,24 @@ popRootSMap smap@SplayMap {..} = do
           if nullSplayIndex lr
             then do
               -- @rl@ is null, so move @r@ to @lr@:
-              --      root            l
-              --     /    \          / \
-              --    l      r  -->  ..   r
-              --   / \    / \          / \
-              -- ..  XX  rl  ..      rl   ..
+              --      root              root
+              --     /    \            /
+              --    l      r  -->     l
+              --   / \    / \        / \
+              -- ..  XX  rl  ..    ..   r
+              --                       / \
+              --                     rl   ..
               modifyFront dataSMap (\nodeL -> nodeL {rSpNode = r}) l
             else do
               -- Make @rl@ null if it's non-null:
               --      (i) splay rightmost       (ii) modify children
-              --      root           root                l
-              --     /    \         /    \              / \
-              --    l      r  -->  l     rLMost  -->  ..  rLMost
-              --   / \    / \     / \   / \              /  \
-              -- ..  lr  rl  .. ..  lr XX  ..          lr    ..
+              --      root           root                 root
+              --     /    \         /    \                /
+              --    l      r  -->  l     rLMost  -->     l
+              --   / \    / \     / \   / \             / \
+              -- ..  lr  rl  .. ..  lr XX  ..         ..  rLMost
+              --                                         /  \
+             --                                        lr    ..
               -- (i)
               (!rLMost, !_) <- splayBySMap smap (const LT) r
               -- (ii)
@@ -358,11 +364,19 @@ popRootSMap smap@SplayMap {..} = do
           -- @root' = l@
           return l
 
-  -- remove the old root
+  -- now the tree looks like this:
+  --
+  --     root
+  --      |
+  --     root'
+  --     /  \
+  --
+  -- let's remove the old @root@.
   len <- lengthSMap smap
-  if root' == len - 1
+  let !_ = traceShow ("popRoot", len, (root, root')) ()
+  if root == len - 1
     then do
-      -- FIXME: this case seems to be too rare. not efficient.
+      -- FIXME: this case seems to be too rare. not efficient as the other case does splaying.
       -- the old root is at the end of the array; just remove it:
       GM.write rootSMap 0 root'
       fromJust <$> popBack dataSMap
@@ -371,9 +385,15 @@ popRootSMap smap@SplayMap {..} = do
       lastNode <- fromJust <$> viewBack dataSMap
       let !key = keySpNode lastNode
       _ <- splayBySMap smap (compare key) root'
-      -- swap @len - 1@ and the old @root@.
+      -- now the tree looks like this:
+      --
+      --        root
+      --         |
+      --    (len - 1)
+      --     ..   ..
+      --     root'
+      -- swap @len - 1@ and the old @root@. remove @len - 1@.
       swapFront dataSMap root (len - 1)
-      -- now @len - 1@ is the old root:
       fromJust <$> popBack dataSMap
 
 -- | Amortized \(O(\log N)\).
@@ -434,7 +454,8 @@ deleteSMap smap@SplayMap {..} k = do
     then return Nothing
     else do
       -- splay and lift up the closest node to the root
-      (!_, !ordering) <- splayBySMap smap (compare k) root
+      (!newRoot, !ordering) <- splayBySMap smap (compare k) root
+      GM.write rootSMap 0 newRoot
       if ordering == EQ
         then Just <$> popRootSMap smap
         else return Nothing
