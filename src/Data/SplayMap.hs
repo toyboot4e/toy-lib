@@ -22,7 +22,7 @@
 module Data.SplayMap where
 
 import Control.Exception (assert)
-import Control.Monad (unless, when)
+import Control.Monad (unless, void, when)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Buffer
@@ -157,64 +157,6 @@ rotateLSMap SplayMap {..} i = do
 -- easier to understand but less efficient. The latter is faster and uses less memory.
 --
 -- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
---
--- = Visualization
---
--- == Rotate twice
---
--- Example: rotate @lr@ twice:
---
--- @
---      i               *i                lr
---     / \              / \           /        \
---    l*  r   -->     lr*  r  -->    l          i
---   / \             /  \           / \        / \
--- ll  *lr          l    lrr      ll   lrl   lrr  r
---     /  \        / \
---  lrl    lrr   ll   lrl
--- @
---
--- Example: rotate @rl@ twice:
---
--- @
---      i                i                lr
---     / \              / \           /        \
---    l   r   -->     lr   r  -->    l          i
---       / \         /  \           / \        / \
---     rl   rr      l    lrr      ll   lrl   lrr  r
---    /  \         / \
--- rll    rl     ll   lrl
--- @
---
--- == Zig
---
--- For the node @ll@, if it an and the parent @l@ are left children, we rotate @l@ first, and the @ll@:
---
--- @
---         *i              *l                  ll
---         / \          /      \              /  \
---        l*  r  -->  ll*       i    -->   lll    l
---       / \          / \      / \               / \
---     ll   lr     lll   llr lr   r           llr   i
---     / \                                         / \
---  lll   llr                                    lr   r
--- @
---
--- For the node @rr@, if it and the parent @r@ are right children, we rotate @l@ first, and the @ll@:
---
--- @
---   i*                     r*                       rr
---  / \                 /       \                  /    \
--- l  *r        -->    i        *rr      -->      r      llr
---    / \             / \       /  \             / \
---  rl   rr          l   rl  lll    llr         i   lll
---      / \                                    / \
---   rrl   rrr                                l   rl
--- @
---
--- == Zag
---
--- If the parent is the root, then what?
 splayBySMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
 splayBySMap smap@SplayMap {..} !cmpF !i0 = do
   lrs <- UM.replicate 2 undefSplayIndex
@@ -248,7 +190,7 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
             -- let !_ = traceShow (">> GT", iM) ()
             iM' <- do
               nodeMR <- readFront dataSMap (rSpNode nodeM)
-              if not (nullSplayIndex (rSpNode nodeMR)) && cmpF(keySpNode nodeMR) == GT
+              if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
                 then rotateLSMap smap iM
                 else return iM
             -- link left:
@@ -266,7 +208,7 @@ splayBySMap smap@SplayMap {..} !cmpF !i0 = do
             -- assemble
             iRootL <- GM.read lrs 0
             iRootR <- GM.read lrs 1
-            let !_ = traceShow ("done splay", iM, (iRootL, iRootR)) ()
+            -- let !_ = traceShow ("done splay", iM, (iRootL, iRootR)) ()
             done iM nodeM iRootL iRootR iL iR
             -- return
             let !comparison = cmpF (keySpNode nodeM)
@@ -312,7 +254,7 @@ popRootSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => Splay
 popRootSMap smap@SplayMap {..} = do
   root <- GM.read rootSMap 0
   node <- readFront dataSMap root
-  let !_ = traceShow ("popRoot", root, (lSpNode node, rSpNode node)) ()
+  -- let !_ = traceShow ("popRoot", root, (lSpNode node, rSpNode node)) ()
 
   -- merge the children into one.
   root' <- case (lSpNode node, rSpNode node) of
@@ -355,7 +297,7 @@ popRootSMap smap@SplayMap {..} = do
               --   / \    / \     / \   / \             / \
               -- ..  lr  rl  .. ..  lr XX  ..         ..  rLMost
               --                                         /  \
-             --                                        lr    ..
+              --                                        lr    ..
               -- (i)
               (!rLMost, !_) <- splayBySMap smap (const LT) r
               -- (ii)
@@ -373,7 +315,7 @@ popRootSMap smap@SplayMap {..} = do
   --
   -- let's remove the old @root@.
   len <- lengthSMap smap
-  let !_ = traceShow ("popRoot", len, (root, root')) ()
+  -- let !_ = traceShow ("popRoot", len, (root, root')) ()
   if root == len - 1
     then do
       -- FIXME: this case seems to be too rare. not efficient as the other case does splaying.
@@ -397,7 +339,7 @@ popRootSMap smap@SplayMap {..} = do
       fromJust <$> popBack dataSMap
 
 -- | Amortized \(O(\log N)\).
-lookupSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
+lookupSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupSMap smap@SplayMap {..} k = do
   root <- GM.read rootSMap 0
   if nullSplayIndex root
@@ -405,15 +347,23 @@ lookupSMap smap@SplayMap {..} k = do
     else do
       -- splay and lift up the closest node to the root
       (!root', !ordering) <- splayBySMap smap (compare k) root
+      GM.write rootSMap 0 root'
       if ordering == EQ
-        then Just <$> readFront dataSMap root'
+        then do
+          node <- readFront dataSMap root'
+          -- strict evaluation makes sense?
+          let !k = keySpNode node
+          let !v = valSpNode node
+          return $ Just (k, v)
         else return Nothing
 
 -- | Amortized \(O(\log N)\). Returns old value with the same key if there is.
+--
+-- TODO: consider making a multiset with splay tree?
 insertSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSMap smap@SplayMap {..} k v = do
   root <- GM.read rootSMap 0
-  let !_ = traceShow ("insert", root) ()
+  -- let !_ = traceShow ("insert", root) ()
   if nullSplayIndex root
     then do
       pushRootSMap smap $ SplayNode undefSplayIndex undefSplayIndex k v
@@ -430,7 +380,7 @@ insertSMap smap@SplayMap {..} k v = do
           GM.write rootSMap 0 root'
           return $ Just old
         LT -> do
-          let !_ = traceShow ("end: LT") ()
+          -- let !_ = traceShow ("end: LT") ()
           -- insert
           l <- lSpNode <$> readFront dataSMap root'
           let !r = root'
@@ -438,13 +388,16 @@ insertSMap smap@SplayMap {..} k v = do
           pushRootSMap smap $ SplayNode l r k v
           return Nothing
         GT -> do
-          let !_ = traceShow ("end: GT") ()
+          -- let !_ = traceShow ("end: GT") ()
           -- insert
           let !l = root'
           r <- rSpNode <$> readFront dataSMap root'
           modifyFront dataSMap (\node -> node {rSpNode = undefSplayIndex}) root'
           pushRootSMap smap $ SplayNode l r k v
           return Nothing
+
+insertSMap_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m ()
+insertSMap_ sm k v = void $ insertSMap sm k v
 
 -- | Amortized \(O(\log N)\).
 deleteSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
@@ -460,12 +413,78 @@ deleteSMap smap@SplayMap {..} k = do
         then Just <$> popRootSMap smap
         else return Nothing
 
--- -- | \(O(1)\)
--- _swapRemoveSMap :: (U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> Int -> m (Maybe v)
--- _swapRemoveSMap SplayMap {..} i = do
---   let !_ = assert (i >= 0 && i < n) $ "invalid index for removal: " ++ show (0, n - 1) ++ " " ++ show i
---   GM.swap dataSMap i (n - 1)
---   return Nothing
+memberSMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
+memberSMap smap@SplayMap {..} k = do
+  root <- GM.read rootSMap 0
+  if nullSplayIndex root
+    then return False
+    else do
+      (!newRoot, !ordering) <- splayBySMap smap (compare k) root
+      GM.write rootSMap 0 newRoot
+      return $ ordering == EQ
+
+-- | Amortized \(O(\log N)\).
+lookupLESMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupLESMap smap@SplayMap {..} k = do
+  -- TODO: consider using MaybeT?
+  root <- GM.read rootSMap 0
+  if nullSplayIndex root
+    then return Nothing
+    else do
+      -- splay finds the nearest node?
+      (!root', !order) <- splayBySMap smap (compare k) root
+      GM.write rootSMap 0 root'
+      if order == EQ || order == GT
+        then do
+          rootData <- readFront dataSMap root'
+          -- strict evaluation makes sense?
+          let !k = keySpNode rootData
+          let !v = valSpNode rootData
+          return $ Just (k, v)
+        else do
+          l <- lSpNode <$> readFront dataSMap root'
+          if nullSplayIndex l
+            then return Nothing
+            else do
+              -- FIXME:
+              (!i, !_) <- splayBySMap smap (const GT) l
+              modifyFront dataSMap (\node -> node {lSpNode = i}) root'
+              node <- readFront dataSMap i
+              let !k' = keySpNode node
+              let !v' = valSpNode node
+              -- when (k' > k) $ error "unreachable"
+              return $ Just (k', v')
+
+-- | Amortized \(O(\log N)\).
+lookupGESMap :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupGESMap smap@SplayMap {..} k = do
+  -- TODO: consider using MaybeT?
+  root <- GM.read rootSMap 0
+  if nullSplayIndex root
+    then return Nothing
+    else do
+      (!root', !order) <- splayBySMap smap (compare k) root
+      GM.write rootSMap 0 root'
+      if order == EQ || order == LT
+        then do
+          rootData <- readFront dataSMap root'
+          -- strict evaluation makes sense?
+          let !k = keySpNode rootData
+          let !v = valSpNode rootData
+          return $ Just (k, v)
+        else do
+          r <- rSpNode <$> readFront dataSMap root'
+          if nullSplayIndex r
+            then return Nothing
+            else do
+              -- FIXME:
+              (!i, !_) <- splayBySMap smap (const LT) r
+              modifyFront dataSMap (\node -> node {rSpNode = i}) root'
+              node <- readFront dataSMap i
+              let !k' = keySpNode node
+              let !v' = valSpNode node
+              -- when (k' < k) error "unreachable"
+              return $ Just (k', v')
 
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
 dfsSMap :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
