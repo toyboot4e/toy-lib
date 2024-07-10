@@ -173,6 +173,7 @@ library
     Algorithm.Bisect
     Algorithm.Mo
     Algorithm.TwoPointers
+    Data.AllocVec
     Data.BinaryHeap
     Data.BinaryLifting
     Data.Buffer
@@ -207,6 +208,7 @@ library
     Data.SegmentTree.Lazy
     Data.SegmentTree.Strict
     Data.SizedList
+    Data.SplayMap
     Data.Sqrd
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
@@ -273,6 +275,7 @@ test-suite toy-lib-test
     Tests.Bisect
     Tests.IntervalMap
     Tests.NTT
+    Tests.SplayMap
     Tests.SuffixArray
     Tests.ZFunction
 

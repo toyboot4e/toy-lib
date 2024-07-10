@@ -182,6 +182,10 @@ executable yosupo-data-predecessor-problem-exe
   import:  verify
   main-is: yosupo-data-predecessor-problem.hs
 
+executable yosupo-data-predecessor-problem_splay-set-exe
+  import:  verify
+  main-is: yosupo-data-predecessor-problem_splay-set.hs
+
 executable yosupo-data-union-find-exe
   import:  verify
   main-is: yosupo-data-union-find.hs

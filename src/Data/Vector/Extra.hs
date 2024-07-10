@@ -58,18 +58,18 @@ slideMinIndicesOn wrap len xs = runST $ do
   G.generateM (G.length xs) $ \i -> do
     -- remove indices that are no longer in the span
     fix $ \loop -> do
-      whenM (maybe False (<= i - len) <$> viewFront buf) $ do
+      whenM (maybe False (<= i - len) <$> readMaybeFront buf 0) $ do
         void $ popFront buf
         loop
 
     -- remove indices that are less attractive to the new combing value
     fix $ \loop -> do
-      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> viewBack buf) $ do
+      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> readMaybeBack buf 0) $ do
         void $ popBack buf
         loop
 
     pushBack buf i
-    fromJust <$> viewFront buf
+    fromJust <$> readMaybeFront buf 0
 
 -- | \(O(N)\)
 --
