@@ -246,43 +246,33 @@ pushBacks Buffer {bufferVars, internalBuffer, internalBufferSize} vec = do
 {-# INLINE pushBacks #-}
 
 -- | \(O(1)\)
-viewFrontN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
-viewFrontN Buffer {..} i = do
+readMaybeFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
+readMaybeFront Buffer {..} i = do
   !f <- UM.unsafeRead bufferVars _bufferFrontPos
   !b <- UM.unsafeRead bufferVars _bufferBackPos
   if inRange (f, b - 1) (f + i)
     then Just <$> UM.read internalBuffer (f + i)
     else return Nothing
-{-# INLINE viewFrontN #-}
+{-# INLINE readMaybeFront #-}
 
 -- | \(O(1)\)
-viewBackN :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
-viewBackN Buffer {..} i = do
+readMaybeBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m (Maybe a)
+readMaybeBack Buffer {..} i = do
   !f <- UM.unsafeRead bufferVars _bufferFrontPos
   !b <- UM.unsafeRead bufferVars _bufferBackPos
   if inRange (f, b - 1) (b - 1 - i)
     then Just <$> UM.read internalBuffer (b - 1 - i)
     else return Nothing
-{-# INLINE viewBackN #-}
-
--- | \(O(1)\)
-viewFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
-viewFront buf = viewFrontN buf 0
-{-# INLINE viewFront #-}
-
--- | \(O(1)\)
-viewBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Maybe a)
-viewBack buf = viewBackN buf 0
-{-# INLINE viewBack #-}
+{-# INLINE readMaybeBack #-}
 
 -- | \(O(1)\)
 readFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
-readFront buf i = fromMaybe (error ("readFront: " ++ show i)) <$> viewFrontN buf i
+readFront buf i = fromMaybe (error ("readFront: " ++ show i)) <$> readMaybeFront buf i
 {-# INLINE readFront #-}
 
 -- | \(O(1)\)
 readBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> m a
-readBack buf i = fromMaybe (error ("readBack: " ++ show i)) <$> viewBackN buf i
+readBack buf i = fromMaybe (error ("readBack: " ++ show i)) <$> readMaybeBack buf i
 {-# INLINE readBack #-}
 
 _checkIndexBuffer :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) a -> Int -> m ()
@@ -294,85 +284,145 @@ _checkIndexBuffer buf i = do
 
 -- | \(O(1)\)
 writeFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m ()
-writeFront buf@Buffer {..} i x = do
+writeFront buf i x = do
   _checkIndexBuffer buf i
-  f <- UM.unsafeRead bufferVars _bufferFrontPos
-  UM.unsafeWrite internalBuffer (f + i) x
+  unsafeWriteFront buf i x
 {-# INLINE writeFront #-}
 
 -- | \(O(1)\)
 writeBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m ()
-writeBack buf@Buffer {..} i x = do
+writeBack buf i x = do
   _checkIndexBuffer buf i
-  b <- UM.unsafeRead bufferVars _bufferBackPos
-  UM.unsafeWrite internalBuffer (b - i) x
+  unsafeWriteBack buf i x
 {-# INLINE writeBack #-}
 
 -- | \(O(1)\)
+unsafeWriteFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m ()
+unsafeWriteFront Buffer {..} i x = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  UM.unsafeWrite internalBuffer (f + i) x
+{-# INLINE unsafeWriteFront #-}
+
+-- | \(O(1)\)
+unsafeWriteBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m ()
+unsafeWriteBack Buffer {..} i x = do
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  UM.unsafeWrite internalBuffer (b - i) x
+{-# INLINE unsafeWriteBack #-}
+
+-- | \(O(1)\)
 swapFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> Int -> m ()
-swapFront buf@Buffer {..} i1 i2 = do
+swapFront buf i1 i2 = do
   _checkIndexBuffer buf i1
   _checkIndexBuffer buf i2
-  f <- UM.unsafeRead bufferVars _bufferFrontPos
-  UM.unsafeSwap internalBuffer (f + i1) (f + i2)
+  unsafeSwapFront buf i1 i2
 {-# INLINE swapFront #-}
 
 -- | \(O(1)\)
 swapBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> Int -> m ()
-swapBack buf@Buffer {..} i1 i2 = do
+swapBack buf i1 i2 = do
   _checkIndexBuffer buf i1
   _checkIndexBuffer buf i2
-  b <- UM.unsafeRead bufferVars _bufferBackPos
-  UM.unsafeSwap internalBuffer (b - i1) (b - i2)
+  unsafeSwapBack buf i1 i2
 {-# INLINE swapBack #-}
 
 -- | \(O(1)\)
-modifyFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> a) -> Int -> m ()
-modifyFront buf@Buffer {..} m i = do
-  _checkIndexBuffer buf i
+unsafeSwapFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> Int -> m ()
+unsafeSwapFront Buffer {..} i1 i2 = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
-  UM.unsafeModify internalBuffer m (f + i)
+  UM.unsafeSwap internalBuffer (f + i1) (f + i2)
+{-# INLINE unsafeSwapFront #-}
+
+-- | \(O(1)\)
+unsafeSwapBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> Int -> m ()
+unsafeSwapBack Buffer {..} i1 i2 = do
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  UM.unsafeSwap internalBuffer (b - i1) (b - i2)
+{-# INLINE unsafeSwapBack #-}
+
+-- | \(O(1)\)
+modifyFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> a) -> Int -> m ()
+modifyFront buf m i = do
+  _checkIndexBuffer buf i
+  unsafeModifyFront buf m i
 {-# INLINE modifyFront #-}
 
 -- | \(O(1)\)
 modifyBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> a) -> Int -> m ()
-modifyBack buf@Buffer {..} m i = do
+modifyBack buf m i = do
   _checkIndexBuffer buf i
+  unsafeModifyBack buf m i
+{-# INLINE modifyBack #-}
+
+-- | \(O(1)\)
+unsafeModifyFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> a) -> Int -> m ()
+unsafeModifyFront Buffer {..} m i = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  UM.unsafeModify internalBuffer m (f + i)
+{-# INLINE unsafeModifyFront #-}
+
+-- | \(O(1)\)
+unsafeModifyBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> a) -> Int -> m ()
+unsafeModifyBack Buffer {..} m i = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   UM.unsafeModify internalBuffer m (b - i)
-{-# INLINE modifyBack #-}
+{-# INLINE unsafeModifyBack #-}
 
 -- | \(O(1)\)
 modifyMFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
 modifyMFront buf@Buffer {..} m i = do
   _checkIndexBuffer buf i
-  f <- UM.unsafeRead bufferVars _bufferFrontPos
-  UM.unsafeModifyM internalBuffer m (f + i)
+  unsafeModifyMFront buf m i
 {-# INLINE modifyMFront #-}
 
 -- | \(O(1)\)
 modifyMBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
 modifyMBack buf@Buffer {..} m i = do
   _checkIndexBuffer buf i
-  b <- UM.unsafeRead bufferVars _bufferBackPos
-  UM.unsafeModifyM internalBuffer m (b - i)
+  unsafeModifyMBack buf m i
 {-# INLINE modifyMBack #-}
 
 -- | \(O(1)\)
-exchangeFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m a
-exchangeFront buf@Buffer {..} i x = do
-  _checkIndexBuffer buf i
+unsafeModifyMFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
+unsafeModifyMFront Buffer {..} m i = do
   f <- UM.unsafeRead bufferVars _bufferFrontPos
-  UM.unsafeExchange internalBuffer (f + i) x
+  UM.unsafeModifyM internalBuffer m (f + i)
+{-# INLINE unsafeModifyMFront #-}
+
+-- | \(O(1)\)
+unsafeModifyMBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
+unsafeModifyMBack Buffer {..} m i = do
+  b <- UM.unsafeRead bufferVars _bufferBackPos
+  UM.unsafeModifyM internalBuffer m (b - i)
+{-# INLINE unsafeModifyMBack #-}
+
+-- | \(O(1)\)
+exchangeFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m a
+exchangeFront buf i x = do
+  _checkIndexBuffer buf i
+  unsafeExchangeFront buf i x
 {-# INLINE exchangeFront #-}
 
 -- | \(O(1)\)
 exchangeBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m a
-exchangeBack buf@Buffer {..} i x = do
+exchangeBack buf i x = do
   _checkIndexBuffer buf i
+  unsafeExchangeBack buf i x
+{-# INLINE exchangeBack #-}
+
+-- | \(O(1)\)
+unsafeExchangeFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m a
+unsafeExchangeFront Buffer {..} i x = do
+  f <- UM.unsafeRead bufferVars _bufferFrontPos
+  UM.unsafeExchange internalBuffer (f + i) x
+{-# INLINE unsafeExchangeFront #-}
+
+-- | \(O(1)\)
+unsafeExchangeBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> Int -> a -> m a
+unsafeExchangeBack Buffer {..} i x = do
   b <- UM.unsafeRead bufferVars _bufferBackPos
   UM.unsafeExchange internalBuffer (b - i) x
-{-# INLINE exchangeBack #-}
+{-# INLINE unsafeExchangeBack #-}
 
 -- | \(O(N)\)
 cloneBuffer :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Buffer (PrimState m) a)

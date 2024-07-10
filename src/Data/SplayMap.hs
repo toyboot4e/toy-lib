@@ -324,7 +324,7 @@ popRootSM sm@SplayMap {..} = do
       fromJust <$> popBack dataSM
     else do
       -- splay @len - 1@
-      lastNode <- fromJust <$> viewBack dataSM
+      lastNode <- readBack dataSM 0
       let !key = keySpNode lastNode
       _ <- splayBySM sm (compare key) root'
       -- now the tree looks like this:
