@@ -3,7 +3,6 @@
 
 -- {{{ toy-lib import
 
-import Data.DenseIntSet
 import Data.SplayMap
 import ToyLib.Parser
 import ToyLib.Prelude
@@ -21,23 +20,23 @@ solve = do
   t <- U.findIndices (== '1') . U.fromList . BS.unpack <$> line'
   qs <- U.replicateM q ints2'
 
-  sm <- newSMap n
+  sm <- newSM n
   U.forM_ t $ \i -> do
-    insertSMap_ sm i ()
+    insertSM_ sm i ()
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !k) -> do
-      insertSMap sm k ()
+      insertSM sm k ()
       return Nothing
     (1, !k) -> do
-      deleteSMap sm k
+      deleteSM sm k
       return Nothing
     (2, !k) -> do
-      Just . bool (0 :: Int) 1 <$> memberSMap sm k
+      Just . bool (0 :: Int) 1 <$> memberSM sm k
     (3, !k) -> do
-      Just . maybe (-1) fst <$> lookupGESMap sm k
+      Just . maybe (-1) fst <$> lookupGESM sm k
     (4, !k) -> do
-      Just . maybe (-1) fst <$> lookupLESMap sm k
+      Just . maybe (-1) fst <$> lookupLESM sm k
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
