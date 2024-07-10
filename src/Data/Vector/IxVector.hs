@@ -194,9 +194,9 @@ readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (Pr
 readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
 
 -- | \(O(1)\) Reads a value from `IxVector`.
-{-# INLINE readMayIV #-}
-readMayIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
-readMayIV IxVector {..} i
+{-# INLINE readMaybeIV #-}
+readMaybeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
+readMaybeIV IxVector {..} i
   | not (inRange boundsIV i) = return Nothing
   | otherwise = Just <$> GM.read vecIV (index boundsIV i)
 

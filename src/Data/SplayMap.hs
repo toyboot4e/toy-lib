@@ -31,7 +31,6 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Debug.Trace
 import GHC.Stack (HasCallStack)
 
 -- | Index of a `SplayNode` stored in a `SplayMap`.
@@ -167,12 +166,10 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
   -- - left tree: a tree with keys less than or equal to the current node's key.
   -- - right tree: a tree with keys bigger than the current node's key.
   let inner iM iL iR = do
-        -- let !_ = traceShow ("inner", iM, iL, iR) ()
         when (iM == iL || iM == iR) $ error "wrong"
         nodeM <- readFront dataSM iM
         case cmpF (keySpNode nodeM) of
           LT | not (nullSplayIndex (lSpNode nodeM)) -> do
-            -- let !_ = traceShow (">> LT", iM) ()
             iM' <- do
               nodeML <- readFront dataSM (lSpNode nodeM)
               if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
@@ -181,13 +178,11 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             -- link right:
             if nullSplayIndex iR
               then do
-                -- let !_ = traceShow ("link right", iM') ()
                 GM.write lrs 1 iM'
               else writeLChild iR iM'
             iM'' <- lSpNode <$> readFront dataSM iM'
             inner iM'' iL iM'
           GT | not (nullSplayIndex (rSpNode nodeM)) -> do
-            -- let !_ = traceShow (">> GT", iM) ()
             iM' <- do
               nodeMR <- readFront dataSM (rSpNode nodeM)
               if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
@@ -196,11 +191,9 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             -- link left:
             if nullSplayIndex iL
               then do
-                -- let !_ = traceShow ("link left", iM') ()
                 GM.write lrs 0 iM'
               else do
                 -- FIXME: right child of iM' should be updated?
-                -- let !_ = traceShow ("link left right child", (iL, iM')) ()
                 writeRChild iL iM'
             iM'' <- rSpNode <$> readFront dataSM iM'
             inner iM'' iM' iR
@@ -208,7 +201,6 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             -- assemble
             iRootL <- GM.read lrs 0
             iRootR <- GM.read lrs 1
-            -- let !_ = traceShow ("done splay", iM, (iRootL, iRootR)) ()
             done iM nodeM iRootL iRootR iL iR
             -- return
             let !comparison = cmpF (keySpNode nodeM)
@@ -218,7 +210,6 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
   where
     done iM nodeM iRootL iRootR iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      -- let !_ = traceShow ("done", iM, (iRootL, iRootR), (iL, iR)) ()
       let !iML = lSpNode nodeM
       let !iMR = rSpNode nodeM
       unless (nullSplayIndex iL) $ do
@@ -254,7 +245,6 @@ popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMa
 popRootSM sm@SplayMap {..} = do
   root <- GM.read rootSM 0
   node <- readFront dataSM root
-  -- let !_ = traceShow ("popRoot", root, (lSpNode node, rSpNode node)) ()
 
   -- merge the children into one.
   root' <- case (lSpNode node, rSpNode node) of
@@ -315,7 +305,6 @@ popRootSM sm@SplayMap {..} = do
   --
   -- let's remove the old @root@.
   len <- lengthSM sm
-  -- let !_ = traceShow ("popRoot", len, (root, root')) ()
   if root == len - 1
     then do
       -- FIXME: this case seems to be too rare. not efficient as the other case does splaying.
@@ -363,7 +352,6 @@ lookupSM sm@SplayMap {..} k = do
 insertSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSM sm@SplayMap {..} k v = do
   root <- GM.read rootSM 0
-  -- let !_ = traceShow ("insert", root) ()
   if nullSplayIndex root
     then do
       pushRootSM sm $ SplayNode undefSplayIndex undefSplayIndex k v
@@ -380,7 +368,6 @@ insertSM sm@SplayMap {..} k v = do
           GM.write rootSM 0 root'
           return $ Just old
         LT -> do
-          -- let !_ = traceShow ("end: LT") ()
           -- insert
           l <- lSpNode <$> readFront dataSM root'
           let !r = root'
@@ -388,7 +375,6 @@ insertSM sm@SplayMap {..} k v = do
           pushRootSM sm $ SplayNode l r k v
           return Nothing
         GT -> do
-          -- let !_ = traceShow ("end: GT") ()
           -- insert
           let !l = root'
           r <- rSpNode <$> readFront dataSM root'

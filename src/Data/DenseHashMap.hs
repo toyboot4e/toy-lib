@@ -15,6 +15,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 -- TODO: no way to invalidate entry?
+-- TODO: track the number of entries
 
 -- | Dense int map that holds up up @n@ values.
 data DenseHashMap s a = DenseHashMap
