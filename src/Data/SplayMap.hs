@@ -91,10 +91,10 @@ newSM n = do
 -- TODO: faster implementation?
 buildSM :: (Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => Int -> U.Vector (k, v) -> m (SplayMap k v (PrimState m))
 buildSM n xs = do
-  smap <- newSM n
+  sm <- newSM n
   U.forM_ xs $ \(!k, !v) -> do
-    insertSM smap k v
-  return smap
+    insertSM sm k v
+  return sm
 
 lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSM = lengthBuffer . dataSM
@@ -158,7 +158,7 @@ rotateLSM SplayMap {..} i = do
 --
 -- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
 splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
-splayBySM smap@SplayMap {..} !cmpF !i0 = do
+splayBySM sm@SplayMap {..} !cmpF !i0 = do
   lrs <- UM.replicate 2 undefSplayIndex
 
   -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
@@ -176,7 +176,7 @@ splayBySM smap@SplayMap {..} !cmpF !i0 = do
             iM' <- do
               nodeML <- readFront dataSM (lSpNode nodeM)
               if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
-                then rotateRSM smap iM
+                then rotateRSM sm iM
                 else return iM
             -- link right:
             if nullSplayIndex iR
@@ -191,7 +191,7 @@ splayBySM smap@SplayMap {..} !cmpF !i0 = do
             iM' <- do
               nodeMR <- readFront dataSM (rSpNode nodeM)
               if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
-                then rotateLSM smap iM
+                then rotateLSM sm iM
                 else return iM
             -- link left:
             if nullSplayIndex iL
@@ -251,7 +251,7 @@ pushRootSM SplayMap {..} node = do
 --
 -- TODO: Less splaying
 popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
-popRootSM smap@SplayMap {..} = do
+popRootSM sm@SplayMap {..} = do
   root <- GM.read rootSM 0
   node <- readFront dataSM root
   -- let !_ = traceShow ("popRoot", root, (lSpNode node, rSpNode node)) ()
@@ -299,7 +299,7 @@ popRootSM smap@SplayMap {..} = do
               --                                         /  \
               --                                        lr    ..
               -- (i)
-              (!rLMost, !_) <- splayBySM smap (const LT) r
+              (!rLMost, !_) <- splayBySM sm (const LT) r
               -- (ii)
               modifyFront dataSM (\nodeR -> nodeR {lSpNode = lr}) rLMost
               modifyFront dataSM (\nodeL -> nodeL {rSpNode = rLMost}) l
@@ -314,7 +314,7 @@ popRootSM smap@SplayMap {..} = do
   --     /  \
   --
   -- let's remove the old @root@.
-  len <- lengthSM smap
+  len <- lengthSM sm
   -- let !_ = traceShow ("popRoot", len, (root, root')) ()
   if root == len - 1
     then do
@@ -326,7 +326,7 @@ popRootSM smap@SplayMap {..} = do
       -- splay @len - 1@
       lastNode <- fromJust <$> viewBack dataSM
       let !key = keySpNode lastNode
-      _ <- splayBySM smap (compare key) root'
+      _ <- splayBySM sm (compare key) root'
       -- now the tree looks like this:
       --
       --        root
@@ -340,13 +340,13 @@ popRootSM smap@SplayMap {..} = do
 
 -- | Amortized \(O(\log N)\).
 lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupSM smap@SplayMap {..} k = do
+lookupSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
     else do
       -- splay and lift up the closest node to the root
-      (!root', !ordering) <- splayBySM smap (compare k) root
+      (!root', !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 root'
       if ordering == EQ
         then do
@@ -361,16 +361,16 @@ lookupSM smap@SplayMap {..} k = do
 --
 -- TODO: consider making a multiset with splay tree?
 insertSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
-insertSM smap@SplayMap {..} k v = do
+insertSM sm@SplayMap {..} k v = do
   root <- GM.read rootSM 0
   -- let !_ = traceShow ("insert", root) ()
   if nullSplayIndex root
     then do
-      pushRootSM smap $ SplayNode undefSplayIndex undefSplayIndex k v
+      pushRootSM sm $ SplayNode undefSplayIndex undefSplayIndex k v
       return Nothing
     else do
       -- splay and lift up the closest node to the root
-      (!root', !ordering) <- splayBySM smap (compare k) root
+      (!root', !ordering) <- splayBySM sm (compare k) root
       -- insert or overwrite the root:
       case ordering of
         EQ -> do
@@ -385,7 +385,7 @@ insertSM smap@SplayMap {..} k v = do
           l <- lSpNode <$> readFront dataSM root'
           let !r = root'
           modifyFront dataSM (\node -> node {lSpNode = undefSplayIndex}) root'
-          pushRootSM smap $ SplayNode l r k v
+          pushRootSM sm $ SplayNode l r k v
           return Nothing
         GT -> do
           -- let !_ = traceShow ("end: GT") ()
@@ -393,7 +393,7 @@ insertSM smap@SplayMap {..} k v = do
           let !l = root'
           r <- rSpNode <$> readFront dataSM root'
           modifyFront dataSM (\node -> node {rSpNode = undefSplayIndex}) root'
-          pushRootSM smap $ SplayNode l r k v
+          pushRootSM sm $ SplayNode l r k v
           return Nothing
 
 insertSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m ()
@@ -401,38 +401,38 @@ insertSM_ sm k v = void $ insertSM sm k v
 
 -- | Amortized \(O(\log N)\).
 deleteSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
-deleteSM smap@SplayMap {..} k = do
+deleteSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
     else do
       -- splay and lift up the closest node to the root
-      (!newRoot, !ordering) <- splayBySM smap (compare k) root
+      (!newRoot, !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 newRoot
       if ordering == EQ
-        then Just <$> popRootSM smap
+        then Just <$> popRootSM sm
         else return Nothing
 
 memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
-memberSM smap@SplayMap {..} k = do
+memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return False
     else do
-      (!newRoot, !ordering) <- splayBySM smap (compare k) root
+      (!newRoot, !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 newRoot
       return $ ordering == EQ
 
--- | Amortized \(O(\log N)\).
-lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLESM smap@SplayMap {..} k = do
+-- | Amortized \(O(\log N)\). Internal use only.
+_lookupWithLESM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> m (Maybe (k, v))
+_lookupWithLESM sm@SplayMap {..} cmpF = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
     else do
       -- splay finds the nearest node?
-      (!root', !order) <- splayBySM smap (compare k) root
+      (!root', !order) <- splayBySM sm cmpF root
       GM.write rootSM 0 root'
       if order == EQ || order == GT
         then do
@@ -447,7 +447,7 @@ lookupLESM smap@SplayMap {..} k = do
             then return Nothing
             else do
               -- FIXME:
-              (!i, !_) <- splayBySM smap (const GT) l
+              (!i, !_) <- splayBySM sm (const GT) l
               modifyFront dataSM (\node -> node {lSpNode = i}) root'
               node <- readFront dataSM i
               let !k' = keySpNode node
@@ -456,14 +456,22 @@ lookupLESM smap@SplayMap {..} k = do
               return $ Just (k', v')
 
 -- | Amortized \(O(\log N)\).
-lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGESM smap@SplayMap {..} k = do
+lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupLESM sm k = _lookupWithLESM sm (compare k)
+
+-- | Amortized \(O(\log N)\).
+lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupLTSM sm k = _lookupWithLESM sm (\k' -> if k < k' then LT else GT)
+
+-- | Amortized \(O(\log N)\).
+_lookupWithGESM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> m (Maybe (k, v))
+_lookupWithGESM sm@SplayMap {..} cmpF = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
     else do
-      (!root', !order) <- splayBySM smap (compare k) root
+      (!root', !order) <- splayBySM sm cmpF root
       GM.write rootSM 0 root'
       if order == EQ || order == LT
         then do
@@ -478,7 +486,7 @@ lookupGESM smap@SplayMap {..} k = do
             then return Nothing
             else do
               -- FIXME:
-              (!i, !_) <- splayBySM smap (const LT) r
+              (!i, !_) <- splayBySM sm (const LT) r
               modifyFront dataSM (\node -> node {rSpNode = i}) root'
               node <- readFront dataSM i
               let !k' = keySpNode node
@@ -486,10 +494,18 @@ lookupGESM smap@SplayMap {..} k = do
               -- when (k' < k) error "unreachable"
               return $ Just (k', v')
 
+-- | Amortized \(O(\log N)\).
+lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupGESM sm k = _lookupWithGESM sm (compare k)
+
+-- | Amortized \(O(\log N)\).
+lookupGTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupGTSM sm k = _lookupWithGESM sm (\k' -> if k > k' then GT else LT)
+
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
 dfsSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
-dfsSM smap@SplayMap {..} = do
-  buf <- newBuffer =<< lengthSM smap
+dfsSM sm@SplayMap {..} = do
+  buf <- newBuffer =<< lengthSM sm
   root <- GM.read rootSM 0
   flip fix root $ \loop i -> do
     unless (nullSplayIndex i) $ do
