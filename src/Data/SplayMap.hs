@@ -68,6 +68,26 @@ deriving via (SplayNode k v `U.As` SplayNodeRepr k v) instance (U.Unbox k, U.Unb
 instance (U.Unbox k, U.Unbox v) => U.Unbox (SplayNode k v)
 {- ORMOLU_ENABLE -}
 
+-- | Efficiently modify `SplayNode`.
+_writeLSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
+_writeLSM (MV_SplayNode (U.MV_4 _ l _ _ _)) i l' = do
+  GM.write l i l'
+
+-- | Efficiently modify `SplayNode`.
+_writeRSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
+_writeRSM (MV_SplayNode (U.MV_4 _ _ r _ _)) i r' = do
+  GM.write r i r'
+
+-- | Efficiently modify `SplayNode`.
+_writeKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> k -> m ()
+_writeKSM (MV_SplayNode (U.MV_4 _ _ _ k _)) i k' = do
+  GM.write k i k'
+
+-- | Efficiently modify `SplayNode`.
+_writeVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> v -> m ()
+_writeVSM (MV_SplayNode (U.MV_4 _ _ _ _ v)) i v' = do
+  GM.write v i v'
+
 -- | Mutable, splay tree-based map.
 data SplayMap k v s = SplayMap
   { -- | The maximum number of elements.
@@ -117,11 +137,10 @@ lengthSM = lengthBuffer . dataSM
 -- Returns @l@.
 rotateRSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 rotateRSM SplayMap {..} i = do
-  nodeI <- readFront dataSM i
-  let !il = lSpNode nodeI
-  nodeIL <- readFront dataSM il
-  writeFront dataSM i $ nodeI {lSpNode = rSpNode nodeIL}
-  writeFront dataSM il $ nodeIL {rSpNode = i}
+  il <- lSpNode <$> readFront dataSM i
+  ilr <- rSpNode <$> readFront dataSM il
+  _writeLSM (internalBuffer dataSM) i ilr
+  _writeRSM (internalBuffer dataSM) il i
   return il
 
 -- | \(O(1)\) Right child rotation.
@@ -141,11 +160,10 @@ rotateRSM SplayMap {..} i = do
 -- Returns @r@.
 rotateLSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 rotateLSM SplayMap {..} i = do
-  nodeI <- readFront dataSM i
-  let !ir = rSpNode nodeI
-  nodeIR <- readFront dataSM ir
-  writeFront dataSM i $ nodeI {rSpNode = lSpNode nodeIR}
-  writeFront dataSM ir $ nodeIR {lSpNode = i}
+  ir <- rSpNode <$> readFront dataSM i
+  irl <- lSpNode <$> readFront dataSM ir
+  _writeRSM (internalBuffer dataSM) i irl
+  _writeLSM (internalBuffer dataSM) ir i
   return ir
 
 -- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
@@ -220,16 +238,14 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
         writeRChild iM iRootR
     writeLChild iParent iChild = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
-      -- TODO: more efficient update?
-      modifyFront dataSM (\node -> node {lSpNode = iChild}) iParent
+      _writeLSM (internalBuffer dataSM) iParent iChild
     writeRChild iParent iChild = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
-      -- TODO: more efficient update?
-      modifyFront dataSM (\node -> node {rSpNode = iChild}) iParent
+      _writeRSM (internalBuffer dataSM) iParent iChild
 
-unsafeWriteSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
+unsafeWriteSM :: (HasCallStack, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
 unsafeWriteSM SplayMap {..} i v = do
-  modifyFront dataSM (\node -> node {valSpNode = v}) i
+  _writeVSM (internalBuffer dataSM) i v
 
 -- | Amortized \(O(\log N)\).
 pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
@@ -262,7 +278,7 @@ popRootSM sm@SplayMap {..} = do
           --  l   r  -->      r
           --     /           / \
           --    XX          l   ..
-          modifyFront dataSM (\nodeR -> nodeR {lSpNode = l}) r
+          _writeLSM (internalBuffer dataSM) r l
           -- @r@ is the new root:
           return r
         else do
@@ -277,7 +293,7 @@ popRootSM sm@SplayMap {..} = do
               -- ..  XX  rl  ..    ..   r
               --                       / \
               --                     rl   ..
-              modifyFront dataSM (\nodeL -> nodeL {rSpNode = r}) l
+              _writeRSM (internalBuffer dataSM) l r
             else do
               -- Make @rl@ null if it's non-null:
               --      (i) splay rightmost       (ii) modify children
@@ -291,8 +307,8 @@ popRootSM sm@SplayMap {..} = do
               -- (i)
               (!rLMost, !_) <- splayBySM sm (const LT) r
               -- (ii)
-              modifyFront dataSM (\nodeR -> nodeR {lSpNode = lr}) rLMost
-              modifyFront dataSM (\nodeL -> nodeL {rSpNode = rLMost}) l
+              _writeLSM (internalBuffer dataSM) rLMost lr
+              _writeRSM (internalBuffer dataSM) l rLMost
           -- @root' = l@
           return l
 
@@ -364,14 +380,14 @@ insertSM sm@SplayMap {..} k v = do
         EQ -> do
           -- overwrite the existing node
           old <- valSpNode <$> readFront dataSM root'
-          modifyFront dataSM (\node -> node {valSpNode = v}) root'
+          _writeVSM (internalBuffer dataSM) root' v
           GM.write rootSM 0 root'
           return $ Just old
         LT -> do
           -- insert
           l <- lSpNode <$> readFront dataSM root'
           let !r = root'
-          modifyFront dataSM (\node -> node {lSpNode = undefSplayIndex}) root'
+          _writeLSM (internalBuffer dataSM) root' undefSplayIndex
           pushRootSM sm $ SplayNode l r k v
           return Nothing
         GT -> do
@@ -379,6 +395,7 @@ insertSM sm@SplayMap {..} k v = do
           let !l = root'
           r <- rSpNode <$> readFront dataSM root'
           modifyFront dataSM (\node -> node {rSpNode = undefSplayIndex}) root'
+          _writeRSM (internalBuffer dataSM) root' undefSplayIndex
           pushRootSM sm $ SplayNode l r k v
           return Nothing
 
@@ -434,7 +451,7 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
             else do
               -- FIXME:
               (!i, !_) <- splayBySM sm (const GT) l
-              modifyFront dataSM (\node -> node {lSpNode = i}) root'
+              _writeLSM (internalBuffer dataSM) root' i
               node <- readFront dataSM i
               let !k' = keySpNode node
               let !v' = valSpNode node
@@ -473,7 +490,7 @@ _lookupWithGESM sm@SplayMap {..} cmpF = do
             else do
               -- FIXME:
               (!i, !_) <- splayBySM sm (const LT) r
-              modifyFront dataSM (\node -> node {rSpNode = i}) root'
+              _writeRSM (internalBuffer dataSM) root' i
               node <- readFront dataSM i
               let !k' = keySpNode node
               let !v' = valSpNode node
