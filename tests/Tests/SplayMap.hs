@@ -21,8 +21,8 @@ foldQueryIM !im (1, !k, !_) = IM.delete k im
 foldQueryIM _ _ = error "unreachable"
 
 processQuerySM :: (PrimMonad m) => SplayMap Int Int (PrimState m) -> (Int, Int, Int) -> m ()
-processQuerySM sm (0, !k, !v) = do _ <- insertSMap sm k v; return ()
-processQuerySM sm (1, !k, !_) = do _ <- deleteSMap sm k; return ()
+processQuerySM sm (0, !k, !v) = do _ <- insertSM sm k v; return ()
+processQuerySM sm (1, !k, !_) = do _ <- deleteSM sm k; return ()
 processQuerySM _ _ = error "unreachable"
 
 splayMapProps :: TestTree
@@ -35,17 +35,17 @@ splayMapProps =
         vs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         let expected = U.fromList . IM.assocs . IM.fromList . U.toList $ U.zip ks vs
         let xs' = runST $ do
-              smap <- buildSMap n $ U.zip ks vs
-              dfsSMap smap
+              smap <- buildSM n $ U.zip ks vs
+              dfsSM smap
         return . QC.counterexample (show (U.zip ks vs)) $ xs' QC.=== expected,
       QC.testProperty "splay map: insert/delete" $ do
         n <- QC.chooseInt (1, maxN)
         qs <- U.fromList <$> QC.vectorOf n queryGen
         let expected = U.fromList . IM.assocs $ U.foldl' foldQueryIM IM.empty qs
         let xs' = runST $ do
-              sm <- newSMap n
+              sm <- newSM n
               U.forM_ qs $ processQuerySM sm
-              dfsSMap sm
+              dfsSM sm
         return . QC.counterexample (show qs) $ xs' QC.=== expected
     ]
   where
