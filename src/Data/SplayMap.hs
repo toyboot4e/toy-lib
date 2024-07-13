@@ -148,7 +148,6 @@ insertSM sm@SplayMap {..} k v = do
           -- insert
           let !l = root'
           r <- readRSM dataSM root'
-          modifyFront dataSM (\node -> node {rSpNode = undefSplayIndex}) root'
           writeRSM dataSM root' undefSplayIndex
           pushRootSM sm $ SplayNode l r k v
           return Nothing
@@ -345,10 +344,9 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
                 else return iM
             -- link right:
             if nullSplayIndex iR
-              then do
-                GM.write lrs 1 iM'
+              then GM.write lrs 1 iM'
               else writeLChild iR iM'
-            iM'' <- lSpNode <$> readFront dataSM iM'
+            iM'' <- readLSM dataSM iM'
             inner iM'' iL iM'
           GT | not (nullSplayIndex (rSpNode nodeM)) -> do
             iM' <- do
@@ -358,11 +356,8 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
                 else return iM
             -- link left:
             if nullSplayIndex iL
-              then do
-                GM.write lrs 0 iM'
-              else do
-                -- FIXME: right child of iM' should be updated?
-                writeRChild iL iM'
+              then GM.write lrs 0 iM'
+              else writeRChild iL iM'
             iM'' <- readRSM dataSM iM'
             inner iM'' iM' iR
           _ -> do
