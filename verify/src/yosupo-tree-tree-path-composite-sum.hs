@@ -4,9 +4,8 @@
 -- {{{ toy-lib import
 
 import Data.Core.SemigroupAction
-import Data.Graph.Alias
 import Data.Graph.Sparse
--- import Data.Graph.Tree.TreeSG
+import Data.Graph.Tree.TreeSG
 import Data.Instances.Affine2d
 import Data.ModInt
 import ToyLib.Parser

@@ -13,8 +13,8 @@
 --
 -- = Invariants
 --
--- Left children have keys that are less than or equal to their parent's one. Right children have
--- bigger keys than their parent.
+-- Left children have keys smaller keys than the parent. Right children have bigger keys than the
+-- parent.
 --
 -- = Thanks
 -- - [Splay Tree: One Tree to Rule Them All](https://zhtluo.com/cp/splay-tree-one-tree-to-rule-them-all.html)
