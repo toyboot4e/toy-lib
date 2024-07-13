@@ -68,46 +68,6 @@ deriving via (SplayNode k v `U.As` SplayNodeRepr k v) instance (U.Unbox k, U.Unb
 instance (U.Unbox k, U.Unbox v) => U.Unbox (SplayNode k v)
 {- ORMOLU_ENABLE -}
 
--- | Efficiently modify `SplayNode`.
-_writeLSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
-_writeLSM (MV_SplayNode (U.MV_4 _ l _ _ _)) i l' = do
-  GM.write l i l'
-
--- | Efficiently modify `SplayNode`.
-_writeRSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
-_writeRSM (MV_SplayNode (U.MV_4 _ _ r _ _)) i r' = do
-  GM.write r i r'
-
--- | Efficiently modify `SplayNode`.
-_writeKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> k -> m ()
-_writeKSM (MV_SplayNode (U.MV_4 _ _ _ k _)) i k' = do
-  GM.write k i k'
-
--- | Efficiently modify `SplayNode`.
-_writeVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> v -> m ()
-_writeVSM (MV_SplayNode (U.MV_4 _ _ _ _ v)) i v' = do
-  GM.write v i v'
-
--- | Efficiently read `SplayNode`.
-_readLSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
-_readLSM (MV_SplayNode (U.MV_4 _ l _ _ _)) i = do
-  GM.read l i
-
--- | Efficiently read `SplayNode`.
-_readRSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
-_readRSM (MV_SplayNode (U.MV_4 _ _ r _ _)) i = do
-  GM.read r i
-
--- | Efficiently read `SplayNode`.
-_readKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m k
-_readKSM (MV_SplayNode (U.MV_4 _ _ _ k _)) i = do
-  GM.read k i
-
--- | Efficiently read `SplayNode`.
-_readVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m v
-_readVSM (MV_SplayNode (U.MV_4 _ _ _ _ v)) i = do
-  GM.read v i
-
 -- | Mutable, splay tree-based map.
 data SplayMap k v s = SplayMap
   { -- | The maximum number of elements.
@@ -137,231 +97,6 @@ buildSM n xs = do
 
 lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSM = lengthBuffer . dataSM
-
--- * Splay
-
--- | \(O(1)\) Left child rotation.
---
--- = Visualization
---
--- Move up @l@, move @i@ to the right node of @l@, set @lr@ as the left node of @i@.
---
--- @
---      i*           l        * .. the side of the child is updated
---     / \          / \
---    l*  r  -->  ll   i
---   / \              / \
--- ll   lr           lr  r
--- @
---
--- Returns @l@.
-rotateRSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
-rotateRSM SplayMap {..} i = do
-  il <- _readLSM (internalBuffer dataSM) i
-  ilr <- _readRSM (internalBuffer dataSM) il
-  _writeLSM (internalBuffer dataSM) i ilr
-  _writeRSM (internalBuffer dataSM) il i
-  return il
-
--- | \(O(1)\) Right child rotation.
---
--- = Visualization
---
--- Move up @r@, move @i@ to the left node of @r@, set @rl@ as the right node of @i@.
---
--- @
---   i*             r           * .. the side of the child is updated
---  / \            / \
--- l   r*   -->   i   rr
---    / \        / \
---   rl  rr     l   rl
--- @
---
--- Returns @r@.
-rotateLSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
-rotateLSM SplayMap {..} i = do
-  ir <- _readRSM (internalBuffer dataSM) i
-  irl <- _readLSM (internalBuffer dataSM) ir
-  _writeRSM (internalBuffer dataSM) i irl
-  _writeLSM (internalBuffer dataSM) ir i
-  return ir
-
--- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
---
--- = Top-down splaying
---
--- The are two known approaches for the splaying operation: bottom-up and top-down. The former is
--- easier to understand but less efficient. The latter is faster and uses less memory.
---
--- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
-splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
-splayBySM sm@SplayMap {..} !cmpF !i0 = do
-  lrs <- UM.replicate 2 undefSplayIndex
-
-  -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
-  -- @inner@ manages the folloing three variables:
-  -- - middle tree: a tree rooted by the current node.
-  -- - left tree: a tree with keys less than or equal to the current node's key.
-  -- - right tree: a tree with keys bigger than the current node's key.
-  let inner iM iL iR = do
-        when (iM == iL || iM == iR) $ error "wrong"
-        nodeM <- readFront dataSM iM
-        case cmpF (keySpNode nodeM) of
-          LT | not (nullSplayIndex (lSpNode nodeM)) -> do
-            iM' <- do
-              nodeML <- readFront dataSM (lSpNode nodeM)
-              if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
-                then rotateRSM sm iM
-                else return iM
-            -- link right:
-            if nullSplayIndex iR
-              then do
-                GM.write lrs 1 iM'
-              else writeLChild iR iM'
-            iM'' <- lSpNode <$> readFront dataSM iM'
-            inner iM'' iL iM'
-          GT | not (nullSplayIndex (rSpNode nodeM)) -> do
-            iM' <- do
-              nodeMR <- readFront dataSM (rSpNode nodeM)
-              if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
-                then rotateLSM sm iM
-                else return iM
-            -- link left:
-            if nullSplayIndex iL
-              then do
-                GM.write lrs 0 iM'
-              else do
-                -- FIXME: right child of iM' should be updated?
-                writeRChild iL iM'
-            iM'' <- _readRSM (internalBuffer dataSM) iM'
-            inner iM'' iM' iR
-          _ -> do
-            -- assemble
-            iRootL <- GM.read lrs 0
-            iRootR <- GM.read lrs 1
-            done iM nodeM iRootL iRootR iL iR
-            -- return
-            let !comparison = cmpF (keySpNode nodeM)
-            return (iM, comparison)
-
-  inner i0 undefSplayIndex undefSplayIndex
-  where
-    done iM nodeM iRootL iRootR iL iR = do
-      let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      let !iML = lSpNode nodeM
-      let !iMR = rSpNode nodeM
-      unless (nullSplayIndex iL) $ do
-        writeRChild iL iML
-        writeLChild iM iRootL
-      unless (nullSplayIndex iR) $ do
-        writeLChild iR iMR
-        writeRChild iM iRootR
-    writeLChild iParent iChild = do
-      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
-      _writeLSM (internalBuffer dataSM) iParent iChild
-    writeRChild iParent iChild = do
-      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
-      _writeRSM (internalBuffer dataSM) iParent iChild
-
-unsafeWriteSM :: (HasCallStack, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
-unsafeWriteSM SplayMap {..} i v = do
-  _writeVSM (internalBuffer dataSM) i v
-
--- | Amortized \(O(\log N)\).
-pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
-pushRootSM SplayMap {..} node = do
-  pushBack dataSM node
-  len <- lengthBuffer dataSM
-  GM.write rootSM 0 (len - 1)
-
--- | Amortized \(O(\log N)\). Removes the current root.
---
--- TODO: Less splaying
-popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
-popRootSM sm@SplayMap {..} = do
-  root <- GM.read rootSM 0
-  node <- readFront dataSM root
-
-  -- merge the children into one.
-  root' <- case (lSpNode node, rSpNode node) of
-    (-1, -1) -> return undefSplayIndex
-    (!l, -1) -> return l
-    (-1, !r) -> return r
-    (!l, !r) -> do
-      rl <- _readLSM (internalBuffer dataSM) r
-      if nullSplayIndex rl
-        then do
-          -- Move @l@ to @rl@, which is null.
-          --
-          --   root        root
-          --   / \           \
-          --  l   r  -->      r
-          --     /           / \
-          --    XX          l   ..
-          _writeLSM (internalBuffer dataSM) r l
-          -- @r@ is the new root:
-          return r
-        else do
-          lr <- _readRSM (internalBuffer dataSM) l
-          if nullSplayIndex lr
-            then do
-              -- @rl@ is null, so move @r@ to @lr@:
-              --      root              root
-              --     /    \            /
-              --    l      r  -->     l
-              --   / \    / \        / \
-              -- ..  XX  rl  ..    ..   r
-              --                       / \
-              --                     rl   ..
-              _writeRSM (internalBuffer dataSM) l r
-            else do
-              -- Make @rl@ null if it's non-null:
-              --      (i) splay rightmost       (ii) modify children
-              --      root           root                 root
-              --     /    \         /    \                /
-              --    l      r  -->  l     rLMost  -->     l
-              --   / \    / \     / \   / \             / \
-              -- ..  lr  rl  .. ..  lr XX  ..         ..  rLMost
-              --                                         /  \
-              --                                        lr    ..
-              -- (i)
-              (!rLMost, !_) <- splayBySM sm (const LT) r
-              -- (ii)
-              _writeLSM (internalBuffer dataSM) rLMost lr
-              _writeRSM (internalBuffer dataSM) l rLMost
-          -- @root' = l@
-          return l
-
-  -- now the tree looks like this:
-  --
-  --     root
-  --      |
-  --     root'
-  --     /  \
-  --
-  -- let's remove the old @root@.
-  len <- lengthSM sm
-  if root == len - 1
-    then do
-      -- FIXME: this case seems to be too rare. not efficient as the other case does splaying.
-      -- the old root is at the end of the array; just remove it:
-      GM.write rootSM 0 root'
-      fromJust <$> popBack dataSM
-    else do
-      -- splay @len - 1@
-      lastNode <- readBack dataSM 0
-      let !key = keySpNode lastNode
-      _ <- splayBySM sm (compare key) root'
-      -- now the tree looks like this:
-      --
-      --        root
-      --         |
-      --    (len - 1)
-      --     ..   ..
-      --     root'
-      -- swap @len - 1@ and the old @root@. remove @len - 1@.
-      swapFront dataSM root (len - 1)
-      fromJust <$> popBack dataSM
 
 -- | Amortized \(O(\log N)\).
 lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
@@ -399,23 +134,23 @@ insertSM sm@SplayMap {..} k v = do
       case ordering of
         EQ -> do
           -- overwrite the existing node
-          old <- _readVSM (internalBuffer dataSM) root'
-          _writeVSM (internalBuffer dataSM) root' v
+          old <- readVSM (internalBuffer dataSM) root'
+          writeVSM (internalBuffer dataSM) root' v
           GM.write rootSM 0 root'
           return $ Just old
         LT -> do
           -- insert
-          l <- _readLSM (internalBuffer dataSM) root'
+          l <- readLSM (internalBuffer dataSM) root'
           let !r = root'
-          _writeLSM (internalBuffer dataSM) root' undefSplayIndex
+          writeLSM (internalBuffer dataSM) root' undefSplayIndex
           pushRootSM sm $ SplayNode l r k v
           return Nothing
         GT -> do
           -- insert
           let !l = root'
-          r <- _readRSM (internalBuffer dataSM) root'
+          r <- readRSM (internalBuffer dataSM) root'
           modifyFront dataSM (\node -> node {rSpNode = undefSplayIndex}) root'
-          _writeRSM (internalBuffer dataSM) root' undefSplayIndex
+          writeRSM (internalBuffer dataSM) root' undefSplayIndex
           pushRootSM sm $ SplayNode l r k v
           return Nothing
 
@@ -465,13 +200,13 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
           let !v = valSpNode rootData
           return $ Just (k, v)
         else do
-          l <- _readLSM (internalBuffer dataSM) root'
+          l <- readLSM (internalBuffer dataSM) root'
           if nullSplayIndex l
             then return Nothing
             else do
               -- FIXME:
               (!i, !_) <- splayBySM sm (const GT) l
-              _writeLSM (internalBuffer dataSM) root' i
+              writeLSM (internalBuffer dataSM) root' i
               node <- readFront dataSM i
               let !k' = keySpNode node
               let !v' = valSpNode node
@@ -504,15 +239,15 @@ _lookupWithGESM sm@SplayMap {..} cmpF = do
           let !v = valSpNode rootData
           return $ Just (k, v)
         else do
-          r <- _readRSM (internalBuffer dataSM) root'
+          r <- readRSM (internalBuffer dataSM) root'
           if nullSplayIndex r
             then return Nothing
             else do
               -- FIXME:
               (!i, !_) <- splayBySM sm (const LT) r
-              _writeRSM (internalBuffer dataSM) root' i
-              !k' <- _readKSM (internalBuffer dataSM) i
-              !v' <- _readVSM (internalBuffer dataSM) i
+              writeRSM (internalBuffer dataSM) root' i
+              !k' <- readKSM (internalBuffer dataSM) i
+              !v' <- readVSM (internalBuffer dataSM) i
               -- when (k' < k) error "unreachable"
               return $ Just (k', v')
 
@@ -538,3 +273,271 @@ dfsSM sm@SplayMap {..} = do
       unless (nullSplayIndex (rSpNode node)) $ do
         loop $ rSpNode node
   unsafeFreezeBuffer buf
+
+-- * Splay
+
+-- | \(O(1)\) Left child rotation.
+--
+-- = Visualization
+--
+-- Move up @l@, move @i@ to the right node of @l@, set @lr@ as the left node of @i@.
+--
+-- @
+--      i*           l        * .. the side of the child is updated
+--     / \          / \
+--    l*  r  -->  ll   i
+--   / \              / \
+-- ll   lr           lr  r
+-- @
+--
+-- Returns @l@.
+rotateRSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+rotateRSM SplayMap {..} i = do
+  il <- readLSM (internalBuffer dataSM) i
+  ilr <- readRSM (internalBuffer dataSM) il
+  writeLSM (internalBuffer dataSM) i ilr
+  writeRSM (internalBuffer dataSM) il i
+  return il
+
+-- | \(O(1)\) Right child rotation.
+--
+-- = Visualization
+--
+-- Move up @r@, move @i@ to the left node of @r@, set @rl@ as the right node of @i@.
+--
+-- @
+--   i*             r           * .. the side of the child is updated
+--  / \            / \
+-- l   r*   -->   i   rr
+--    / \        / \
+--   rl  rr     l   rl
+-- @
+--
+-- Returns @r@.
+rotateLSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+rotateLSM SplayMap {..} i = do
+  ir <- readRSM (internalBuffer dataSM) i
+  irl <- readLSM (internalBuffer dataSM) ir
+  writeRSM (internalBuffer dataSM) i irl
+  writeLSM (internalBuffer dataSM) ir i
+  return ir
+
+-- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
+--
+-- = Top-down splaying
+--
+-- The are two known approaches for the splaying operation: bottom-up and top-down. The former is
+-- easier to understand but less efficient. The latter is faster and uses less memory.
+--
+-- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
+splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
+splayBySM sm@SplayMap {..} !cmpF !i0 = do
+  lrs <- UM.replicate 2 undefSplayIndex
+
+  -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
+  -- @inner@ manages the folloing three variables:
+  -- - middle tree: a tree rooted by the current node.
+  -- - left tree: a tree with keys less than or equal to the current node's key.
+  -- - right tree: a tree with keys bigger than the current node's key.
+  let inner iM iL iR = do
+        when (iM == iL || iM == iR) $ error "wrong"
+        nodeM <- readFront dataSM iM
+        case cmpF (keySpNode nodeM) of
+          LT | not (nullSplayIndex (lSpNode nodeM)) -> do
+            iM' <- do
+              nodeML <- readFront dataSM (lSpNode nodeM)
+              if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
+                then rotateRSM sm iM
+                else return iM
+            -- link right:
+            if nullSplayIndex iR
+              then do
+                GM.write lrs 1 iM'
+              else writeLChild iR iM'
+            iM'' <- lSpNode <$> readFront dataSM iM'
+            inner iM'' iL iM'
+          GT | not (nullSplayIndex (rSpNode nodeM)) -> do
+            iM' <- do
+              nodeMR <- readFront dataSM (rSpNode nodeM)
+              if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
+                then rotateLSM sm iM
+                else return iM
+            -- link left:
+            if nullSplayIndex iL
+              then do
+                GM.write lrs 0 iM'
+              else do
+                -- FIXME: right child of iM' should be updated?
+                writeRChild iL iM'
+            iM'' <- readRSM (internalBuffer dataSM) iM'
+            inner iM'' iM' iR
+          _ -> do
+            -- assemble
+            iRootL <- GM.read lrs 0
+            iRootR <- GM.read lrs 1
+            done iM nodeM iRootL iRootR iL iR
+            -- return
+            let !comparison = cmpF (keySpNode nodeM)
+            return (iM, comparison)
+
+  inner i0 undefSplayIndex undefSplayIndex
+  where
+    done iM nodeM iRootL iRootR iL iR = do
+      let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
+      let !iML = lSpNode nodeM
+      let !iMR = rSpNode nodeM
+      unless (nullSplayIndex iL) $ do
+        writeRChild iL iML
+        writeLChild iM iRootL
+      unless (nullSplayIndex iR) $ do
+        writeLChild iR iMR
+        writeRChild iM iRootR
+    writeLChild iParent iChild = do
+      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
+      writeLSM (internalBuffer dataSM) iParent iChild
+    writeRChild iParent iChild = do
+      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
+      writeRSM (internalBuffer dataSM) iParent iChild
+
+unsafeWriteSM :: (HasCallStack, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
+unsafeWriteSM SplayMap {..} i v = do
+  writeVSM (internalBuffer dataSM) i v
+
+-- | Amortized \(O(\log N)\).
+pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
+pushRootSM SplayMap {..} node = do
+  pushBack dataSM node
+  len <- lengthBuffer dataSM
+  GM.write rootSM 0 (len - 1)
+
+-- | Amortized \(O(\log N)\). Removes the current root.
+--
+-- TODO: Less splaying
+popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
+popRootSM sm@SplayMap {..} = do
+  root <- GM.read rootSM 0
+  node <- readFront dataSM root
+
+  -- merge the children into one.
+  root' <- case (lSpNode node, rSpNode node) of
+    (-1, -1) -> return undefSplayIndex
+    (!l, -1) -> return l
+    (-1, !r) -> return r
+    (!l, !r) -> do
+      rl <- readLSM (internalBuffer dataSM) r
+      if nullSplayIndex rl
+        then do
+          -- Move @l@ to @rl@, which is null.
+          --
+          --   root        root
+          --   / \           \
+          --  l   r  -->      r
+          --     /           / \
+          --    XX          l   ..
+          writeLSM (internalBuffer dataSM) r l
+          -- @r@ is the new root:
+          return r
+        else do
+          lr <- readRSM (internalBuffer dataSM) l
+          if nullSplayIndex lr
+            then do
+              -- @rl@ is null, so move @r@ to @lr@:
+              --      root              root
+              --     /    \            /
+              --    l      r  -->     l
+              --   / \    / \        / \
+              -- ..  XX  rl  ..    ..   r
+              --                       / \
+              --                     rl   ..
+              writeRSM (internalBuffer dataSM) l r
+            else do
+              -- Make @rl@ null if it's non-null:
+              --      (i) splay rightmost       (ii) modify children
+              --      root           root                 root
+              --     /    \         /    \                /
+              --    l      r  -->  l     rLMost  -->     l
+              --   / \    / \     / \   / \             / \
+              -- ..  lr  rl  .. ..  lr XX  ..         ..  rLMost
+              --                                         /  \
+              --                                        lr    ..
+              -- (i)
+              (!rLMost, !_) <- splayBySM sm (const LT) r
+              -- (ii)
+              writeLSM (internalBuffer dataSM) rLMost lr
+              writeRSM (internalBuffer dataSM) l rLMost
+          -- @root' = l@
+          return l
+
+  -- now the tree looks like this:
+  --
+  --     root
+  --      |
+  --     root'
+  --     /  \
+  --
+  -- let's remove the old @root@.
+  len <- lengthSM sm
+  if root == len - 1
+    then do
+      -- FIXME: this case seems to be too rare. not efficient as the other case does splaying.
+      -- the old root is at the end of the array; just remove it:
+      GM.write rootSM 0 root'
+      fromJust <$> popBack dataSM
+    else do
+      -- splay @len - 1@
+      lastNode <- readBack dataSM 0
+      let !key = keySpNode lastNode
+      _ <- splayBySM sm (compare key) root'
+      -- now the tree looks like this:
+      --
+      --        root
+      --         |
+      --    (len - 1)
+      --     ..   ..
+      --     root'
+      -- swap @len - 1@ and the old @root@. remove @len - 1@.
+      swapFront dataSM root (len - 1)
+      fromJust <$> popBack dataSM
+
+-- * Internal update
+
+-- | Efficiently modify `SplayNode`.
+writeLSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
+writeLSM (MV_SplayNode (U.MV_4 _ l _ _ _)) i l' = do
+  GM.write l i l'
+
+-- | Efficiently modify `SplayNode`.
+writeRSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
+writeRSM (MV_SplayNode (U.MV_4 _ _ r _ _)) i r' = do
+  GM.write r i r'
+
+-- | Efficiently modify `SplayNode`.
+writeKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> k -> m ()
+writeKSM (MV_SplayNode (U.MV_4 _ _ _ k _)) i k' = do
+  GM.write k i k'
+
+-- | Efficiently modify `SplayNode`.
+writeVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> v -> m ()
+writeVSM (MV_SplayNode (U.MV_4 _ _ _ _ v)) i v' = do
+  GM.write v i v'
+
+-- | Efficiently read `SplayNode`.
+readLSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
+readLSM (MV_SplayNode (U.MV_4 _ l _ _ _)) i = do
+  GM.read l i
+
+-- | Efficiently read `SplayNode`.
+readRSM :: (HasCallStack, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
+readRSM (MV_SplayNode (U.MV_4 _ _ r _ _)) i = do
+  GM.read r i
+
+-- | Efficiently read `SplayNode`.
+readKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m k
+readKSM (MV_SplayNode (U.MV_4 _ _ _ k _)) i = do
+  GM.read k i
+
+-- | Efficiently read `SplayNode`.
+readVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => UM.MVector (PrimState m) (SplayNode k v) -> SplayIndex -> m v
+readVSM (MV_SplayNode (U.MV_4 _ _ _ _ v)) i = do
+  GM.read v i
+
