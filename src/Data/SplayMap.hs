@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -387,10 +386,6 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
     writeRChild iParent iChild = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       writeRSM dataSM iParent iChild
-
-unsafeWriteSM :: (HasCallStack, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> v -> m ()
-unsafeWriteSM SplayMap {..} i v = do
-  writeVSM dataSM i v
 
 -- | Amortized \(O(\log N)\).
 pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
