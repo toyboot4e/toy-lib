@@ -283,6 +283,7 @@ test-suite toy-lib-test
     , base              ^>=4.17.2.0
     , bytestring        ^>=0.11.4.0
     , containers        ^>=0.6.7
+    , primitive         ^>=0.8.0.0
     , tasty             ^>=1.4.3
     , tasty-hspec       ^>=1.2.0.3
     , tasty-hunit       ^>=0.10.0.3
