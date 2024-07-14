@@ -1,23 +1,13 @@
-{-# LANGUAGE LambdaCase #-}
-
 module ToyLib.Prelude where
 
 import Control.Monad.Fix
-import Data.Array.IArray
-import Data.Array.MArray
 import Data.Bifunctor
+import Data.Ix
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector as V
 import Data.Utils.Unindex
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-
-{-# INLINE flipOrder #-}
-flipOrder :: Ordering -> Ordering
-flipOrder = \case
-  GT -> LT
-  LT -> GT
-  EQ -> EQ
 
 {-# INLINE square #-}
 square :: (Num a) => a -> a
@@ -29,11 +19,11 @@ square !x = x * x
 isqrt :: Int -> Int
 isqrt = round @Double . sqrt . fromIntegral
 
-{-# INLINE modifyArray #-}
-modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
-modifyArray !ary !f !i = do
-  !v <- f <$> readArray ary i
-  writeArray ary i v
+-- {-# INLINE modifyArray #-}
+-- modifyArray :: (MArray a e m, Ix i) => a i e -> (e -> e) -> i -> m ()
+-- modifyArray !ary !f !i = do
+--   !v <- f <$> readArray ary i
+--   writeArray ary i v
 
 -- | Two-variable function compositon.
 {-# INLINE (.:) #-}
@@ -115,22 +105,6 @@ rangeVR = rangeGR
 {-# INLINE rangeUR #-}
 rangeUR :: Int -> Int -> U.Vector Int
 rangeUR = rangeGR
-
-{-# INLINE repM_ #-}
-repM_ :: (Monad m) => Int -> Int -> (Int -> m ()) -> m ()
-repM_ !l !r !act = inner l
-  where
-    inner !i
-      | i > r = return ()
-      | otherwise = act i >> inner (succ i)
-
-{-# INLINE repRM_ #-}
-repRM_ :: (Monad m) => Int -> Int -> (Int -> m ()) -> m ()
-repRM_ !l !r !act = inner r
-  where
-    inner !i
-      | i < l = return ()
-      | otherwise = act i >> inner (pred i)
 
 -- | Applies the given function `n` times.
 -- >>> -- 2 ^ 3
