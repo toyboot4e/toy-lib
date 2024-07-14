@@ -22,7 +22,11 @@ main = do
     [a] | a `elem` ["-h", "--help"] -> do
       putStrLn =<< Lib.readRootFile "/app/help"
     [] -> do
+      -- Import style template
       mainGenTemplate
+    ["--stand-alone"] -> do
+      -- Embedded template
+      mainGenTemplateStandAlone
     ["-m"] -> do
       putStrLn "Not given module names to minify."
     ("-m" : modules) -> do
@@ -36,12 +40,17 @@ main = do
     args -> do
       putStrLn $ "Given unknown arguments: " ++ show args
 
--- | Sub command for generating a Haskell template.
+-- | Sub command for generating a Haskell template with imports style: `-- {{{ toy-lib imports`.
 mainGenTemplate :: IO ()
 mainGenTemplate = do
+  writeOutTemplate Nothing
+
+-- | Sub command for generating a Haskell template with the whole @toy-lib@ embedded.
+mainGenTemplateStandAlone :: IO ()
+mainGenTemplateStandAlone = do
   (!parsedFiles, !gr) <- getSourceFileGraph
   let sortedParsedFiles = map (parsedFiles !!) $ topSortSG gr
-  generateTemplateFromInput sortedParsedFiles
+  writeOutTemplate $ Just sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
 mainMinifyLibrary :: [String] -> IO String
@@ -153,9 +162,9 @@ mainUpdateLibraryLine file = do
   let s' = L.intercalate "\n" $ take (i - 1) lns ++ [toylib] ++ drop i lns
   return s'
 
--- | Geneartes toy-lib template and Writes it out to the stdout.
-generateTemplateFromInput :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()
-generateTemplateFromInput sortedParsedFiles = do
+-- | Geneartes toy-lib template and writes it out to the stdout.
+writeOutTemplate :: Maybe [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> IO ()
+writeOutTemplate embeddedModules = do
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
 
   -- parse template
@@ -164,11 +173,23 @@ generateTemplateFromInput sortedParsedFiles = do
 
   case parsedTemplate of
     H.ParseOk templateAst -> do
-      let toylib = Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
-      header <- Lib.readRootFile "/template/Header.hs"
+      toylib <- case embeddedModules of
+        Nothing -> do
+          -- Import style ({{{ toy-lib imports):
+          Lib.readRootFile "/template/Imports.hs"
+        Just sortedParsedFiles -> do
+          -- Embedded style:
+          return $ Lib.Write.minifyLibrary ghc2021Extensions sortedParsedFiles
+
       macros <- Lib.readRootFile "/template/Macros.hs"
       body <- Lib.readRootFile "/template/Body.hs"
-      putStr $ Lib.Write.generateTemplate templateExtensions templateAst toylib header macros body
+      putStr $
+        Lib.Write.generateTemplate
+          templateExtensions
+          templateAst
+          toylib
+          macros
+          body
     failure -> do
       putStrLn "Failed to parse template:"
       print failure

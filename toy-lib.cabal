@@ -230,6 +230,8 @@ library
     Math.PowMod
     Math.Primes
     ToyLib.Compat
+    ToyLib.Contest.Graph
+    ToyLib.Contest.Prelude
     ToyLib.Debug
     ToyLib.DebugGrid
     ToyLib.DebugSTree
