@@ -1,5 +1,5 @@
 -- | Debug utilities
-module ToyLib.DebugSTree where
+module ToyLib.Debug.STree where
 
 import Control.Monad
 import Control.Monad.Fix

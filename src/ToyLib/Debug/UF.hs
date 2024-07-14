@@ -1,5 +1,5 @@
 -- | Debug utilities
-module ToyLib.DebugUF where
+module ToyLib.Debug.UF where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.UnionFind.Mutable

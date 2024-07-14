@@ -1,5 +1,5 @@
 -- | Debug utilities
-module ToyLib.DebugGrid where
+module ToyLib.Debug.Grid where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)

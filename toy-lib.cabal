@@ -232,19 +232,23 @@ library
     Math.PowMod
     Math.Primes
     ToyLib.Compat
+    ToyLib.Contest.Bisect
     ToyLib.Contest.Graph
+    ToyLib.Contest.Grid
     ToyLib.Contest.Prelude
     ToyLib.Contest.Tree
     ToyLib.Debug
-    ToyLib.DebugGrid
-    ToyLib.DebugSTree
-    ToyLib.DebugUF
+    ToyLib.Debug.Grid
+    ToyLib.Debug.STree
+    ToyLib.Debug.UF
     ToyLib.DP
     ToyLib.Macro
     ToyLib.Parser
+    ToyLib.Parser.Grid
     ToyLib.Prelude
     ToyLib.Procedural
     ToyLib.ShowBSB
+    ToyLib.ShowBSB.Grid
 
   hs-source-dirs:   src
   ghc-options:
