@@ -1,6 +1,8 @@
 -- | Bulk imports and re-exports for contest.
 module ToyLib.Contest.Prelude
-  ( module Data.Vector.Extra,
+  ( module Algorithm.Bisect,
+    module Data.Vector.CSum,
+    module Data.Vector.Extra,
     module Data.Vector.IxVector,
     module ToyLib.Debug,
     module ToyLib.Parser,
@@ -9,6 +11,8 @@ module ToyLib.Contest.Prelude
   )
 where
 
+import Algorithm.Bisect
+import Data.Vector.CSum
 import Data.Vector.Extra
 import Data.Vector.IxVector
 import ToyLib.Debug

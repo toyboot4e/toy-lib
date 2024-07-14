@@ -216,7 +216,9 @@ library
     Data.Utils.Unindex
     Data.Vector.CSum
     Data.Vector.Extra
+    Data.Vector.InvNum
     Data.Vector.IxVector
+    Data.Vector.SlideMin
     Heuristic.Randoms
     Math.BitSet
     Math.Digits
