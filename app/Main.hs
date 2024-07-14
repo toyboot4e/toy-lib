@@ -4,6 +4,7 @@ module Main (main) where
 
 import Control.Monad
 import Data.Graph.Sparse
+import Data.Tuple.Extra (fst3)
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.Maybe
@@ -15,6 +16,7 @@ import Lib.Write qualified
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
+import System.IO (hPutStr, hPutStrLn, stderr)
 
 main :: IO ()
 main = do
@@ -30,11 +32,16 @@ main = do
     ["-m"] -> do
       putStrLn "Not given module names to minify."
     ("-m" : modules) -> do
-      putStrLn =<< mainMinifyLibrary modules
+      (!output, !_embedded) <- mainMinifyLibrary modules
+      putStrLn output
     ["-e"] -> do
       putStrLn "Not given file name to embed toy-lib modules."
     ["-e", file] -> do
-      putStrLn =<< mainEmbedLibrary file
+      (!output, !modules) <- mainEmbedLibrary file
+      let moduleNames = map ("- " ++) modules
+      hPutStrLn stderr "embedding the following toy-lib source files:"
+      hPutStr stderr $ unlines moduleNames
+      putStrLn output
     ["-u", file] -> do
       putStrLn =<< mainUpdateLibraryLine file
     args -> do
@@ -53,7 +60,7 @@ mainGenTemplateStandAlone = do
   writeOutTemplate $ Just sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
-mainMinifyLibrary :: [String] -> IO String
+mainMinifyLibrary :: [String] -> IO (String, [String])
 mainMinifyLibrary moduleNames = do
   (!parsedFiles, !gr) <- getSourceFileGraph
   let moduleNameToVertex =
@@ -82,7 +89,7 @@ mainMinifyLibrary moduleNames = do
          in map (parsedFiles !!) sortedReachables
 
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
-  return $ Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles
+  return (Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles, map fst3 targetSourceFiles)
 
 getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int)
 getSourceFileGraph = do
@@ -128,7 +135,7 @@ getSourceFileGraph = do
 -- import Data.Graph.Sparse;import Data.Graph.Tree
 -- -- }}} toy-lib imports
 -- @
-mainEmbedLibrary :: FilePath -> IO String
+mainEmbedLibrary :: FilePath -> IO (String, [String])
 mainEmbedLibrary file = do
   -- TODO: handle failures
   s <- readFile file
@@ -148,10 +155,11 @@ mainEmbedLibrary file = do
   let importLines = unlines . filter ((&&) <$> not . ("-" `L.isPrefixOf`) <*> not . null) . take (back - front - 1) $ drop (front + 1) lns
   -- FIXME: ToyLib.Debug resolution
   let moduleNames = filter (/= "import") $ words $ map (\case ';' -> ' '; c -> c) importLines
-  toylib <- mainMinifyLibrary moduleNames
+  (!toylib, !deps) <- mainMinifyLibrary moduleNames
 
   let lns' = take front lns ++ [toylib] ++ drop (back + 1) lns
-  return $ L.intercalate "\n" lns'
+  let deps' = map (fromJust . L.stripPrefix (Lib.installPath ++ "/src/")) deps
+  return (L.intercalate "\n" lns', deps')
 
 -- | Replace line 15 with new library. That should be the line of minified library.
 mainUpdateLibraryLine :: FilePath -> IO String
