@@ -1,5 +1,5 @@
 -- | Bulk imports and re-exports for contest.
-module ToyLib.Contest.Graph
+module ToyLib.Contest.Tree
   ( module Data.Graph.Sparse,
     module Data.Graph.Generic,
     module Data.Graph.Alias,

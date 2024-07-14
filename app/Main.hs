@@ -66,7 +66,7 @@ mainMinifyLibrary moduleNames = do
             [0 :: Int ..]
 
   -- TODO: warn instead of die on mismatch
-  let sourceVerts = map (moduleNameToVertex M.!) moduleNames
+  let sourceVerts = map (\name -> fromMaybe (error (": " ++ name)) (moduleNameToVertex M.!? name)) moduleNames
 
   -- TODO: faster
   let targetSourceFiles =

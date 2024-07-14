@@ -232,6 +232,7 @@ library
     ToyLib.Compat
     ToyLib.Contest.Graph
     ToyLib.Contest.Prelude
+    ToyLib.Contest.Tree
     ToyLib.Debug
     ToyLib.DebugGrid
     ToyLib.DebugSTree

@@ -40,7 +40,7 @@ generateTemplate extensions (H.Module _ _ _ imports _) toylib macros body =
       imports',
       "{-# RULES \"Force inline VAI.sort\" VAI.sort = VAI.sortBy compare #-}",
       init macros, -- `init` removes newline character
-      toylib, -- embedded library or imports of toy-lib
+      init toylib, -- embedded library or imports of toy-lib
       "{- ORMOLU_ENABLE -}",
       "",
       body
