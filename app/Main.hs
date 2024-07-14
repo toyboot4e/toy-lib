@@ -145,7 +145,7 @@ mainEmbedLibrary file = do
   let front = fromMaybe (error "cannot find front header") $ L.findIndex ("-- {{{ toy-lib import" `L.isPrefixOf`) lns
   let back = fromMaybe (error "cannot find back header") $ L.findIndex ("-- }}} toy-lib import" `L.isPrefixOf`) lns
 
-  let importLines = unlines . filter (not . ("-" `L.isPrefixOf`)) . take (back - front - 1) $ drop (front + 1) lns
+  let importLines = unlines . filter ((&&) <$> not . ("-" `L.isPrefixOf`) <*> not . null) . take (back - front - 1) $ drop (front + 1) lns
   -- FIXME: ToyLib.Debug resolution
   let moduleNames = filter (/= "import") $ words $ map (\case ';' -> ' '; c -> c) importLines
   toylib <- mainMinifyLibrary moduleNames
