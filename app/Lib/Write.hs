@@ -35,7 +35,8 @@ pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> String -> String -> String -> String
 generateTemplate extensions (H.Module _ _ _ imports _) toylib macros body =
   init $ unlines
-    [ "{- ORMOLU_DISABLE -} -- toy-lib: https://github.com/toyboot4e/toy-lib",
+    [ "-- toy-lib: https://github.com/toyboot4e/toy-lib",
+      "{- ORMOLU_DISABLE -}",
       "{-# OPTIONS_GHC -Wno-unused-imports -Wno-unused-top-binds -Wno-orphans #-}",
       exts,
       imports',
