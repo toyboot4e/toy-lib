@@ -36,6 +36,7 @@ generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> String -> String 
 generateTemplate extensions (H.Module _ _ _ imports _) toylib macros body =
   init $ unlines
     [ "{- ORMOLU_DISABLE -}",
+      "{-# OPTIONS_GHC -Wno-unused-imports -Wno-unused-top-binds -Wno-orphans #-}",
       exts,
       imports',
       init toylib, -- embedded library or imports of toy-lib
