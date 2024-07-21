@@ -39,6 +39,8 @@ swapDupeU = U.concatMap (\(!u, !v) -> U.fromListN 2 [(u, v), (v, u)])
 swapDupeW :: (U.Unbox w) => U.Vector (Int, Int, w) -> U.Vector (Int, Int, w)
 swapDupeW = U.concatMap (\(!u, !v, !d) -> U.fromListN 2 [(u, v, d), (v, u, d)])
 
+-- TODO: NOINLINE + force makes more sense?
+
 {-# INLINE ortho4 #-}
 ortho4 :: U.Vector (Int, Int)
 ortho4 = U.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]

@@ -280,7 +280,7 @@ foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length 
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m ()

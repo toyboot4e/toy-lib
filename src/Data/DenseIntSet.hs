@@ -218,6 +218,16 @@ findMinDIS is = fromMaybe err <$> lookupMinDIS is
     err = error "findMinDIS: not such a value"
 
 -- | \(O(\log N)\) Not tested.
+deleteFindMinMayDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
+deleteFindMinMayDIS is = do
+  lookupMinDIS is
+    >>= mapM
+      ( \key -> do
+          deleteDIS is key
+          return key
+      )
+
+-- | \(O(\log N)\) Not tested.
 deleteFindMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 deleteFindMinDIS is = do
   key <- findMinDIS is
@@ -233,6 +243,16 @@ findMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 findMaxDIS is = fromMaybe err <$> lookupMaxDIS is
   where
     err = error "findMaxDIS: not such a value"
+
+-- | \(O(\log N)\) Not tested.
+deleteFindMaxMayDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
+deleteFindMaxMayDIS is = do
+  lookupMinDIS is
+    >>= mapM
+      ( \key -> do
+          deleteDIS is key
+          return key
+      )
 
 -- | \(O(\log N)\) Not tested.
 deleteFindMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
