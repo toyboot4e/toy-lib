@@ -18,6 +18,7 @@ import Data.Semigroup
 import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
+import Data.Vector.Extra (nextPermutation)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -220,23 +221,18 @@ lastCharOccurrences s = runST $ do
 
   V.mapM U.unsafeFreeze vec
 
--- | \(O(N \log N!)\) But unique. It's much faster when there are duplicate entries.
---
--- >>> lexPerms $ U.fromList ([1, 1, 2] :: [Int])
--- [[1,1,2],[1,2,1],[2,1,1]]
-lexPerms :: (G.Vector v a, Ord a) => v a -> [v a]
-lexPerms xs = runST $ do
-  vec <- G.unsafeThaw $ G.modify VAI.sort xs
-  fix $ \loop -> do
-    -- TODO: lazy evaluation and unsafeFreeze
-    vec' <- G.freeze vec
-    fmap (vec' :) $
-      GM.nextPermutation vec >>= \case
-        True -> loop
-        False -> return []
-
-lexPerms' :: (G.Vector v a, Ord a) => v a -> [[a]]
-lexPerms' = map G.toList . lexPerms
+lexPerms :: (G.Vector v a, Ord a) => v a -> V.Vector (v a)
+lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
+  where
+    f vec
+      | G.null vec = Nothing
+      | otherwise = runST $ do
+          vec' <- G.thaw vec
+          nextPermutation vec' >>= \case
+            True -> do
+              vec'' <- G.unsafeFreeze vec'
+              return $ Just (vec'', vec'')
+            False -> return $ Just (vec, G.empty)
 
 -- -- | \(O(NM)\) Counts unique common subsequences. Duplicates are counted multple times.
 -- --
