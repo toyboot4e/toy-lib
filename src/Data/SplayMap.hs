@@ -224,10 +224,10 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
           if nullSplayIndex l
             then return Nothing
             else do
-              -- TODO: which is faster?
-              -- i <- splayRMostSM sm l -- splay rightmost
-              -- writeLSM dataSM root' i
-              i <- _readRMostSM sm l
+              i <- splayRMostSM sm l
+              writeLSM dataSM root' i
+              -- or:
+              -- i <- _readRMostSM sm l
 
               k <- readKSM dataSM i
               v <- readVSM dataSM i
@@ -262,10 +262,10 @@ _lookupWithGESM sm@SplayMap {..} cmpF = do
           if nullSplayIndex r
             then return Nothing
             else do
-              -- TODO: which is faster?
-              -- i <- splayLMostSM sm r -- splay leftmost
-              -- writeRSM dataSM root' i
-              i <- _readLMostSM sm r
+              i <- splayLMostSM sm r
+              writeRSM dataSM root' i
+              -- or:
+              -- i <- _readLMostSM sm r
 
               k <- readKSM dataSM i
               v <- readVSM dataSM i
