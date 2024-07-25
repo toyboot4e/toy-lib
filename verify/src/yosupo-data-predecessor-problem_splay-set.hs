@@ -2,16 +2,14 @@
 #include "./__import"
 
 -- {{{ toy-lib import
-
 import Data.SplayMap
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
-
+debug :: Bool
 debug = False
 
 solve :: StateT BS.ByteString IO ()
@@ -26,10 +24,10 @@ solve = do
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !k) -> do
-      insertSM sm k ()
+      insertSM_ sm k ()
       return Nothing
     (1, !k) -> do
-      deleteSM sm k
+      deleteSM_ sm k
       return Nothing
     (2, !k) -> do
       Just . bool (0 :: Int) 1 <$> memberSM sm k

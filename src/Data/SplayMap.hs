@@ -168,6 +168,9 @@ deleteSM sm@SplayMap {..} k = do
         then Just <$> popRootSM sm
         else return Nothing
 
+deleteSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m ()
+deleteSM_ sm k = void $ deleteSM sm k
+
 memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
 memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
@@ -177,6 +180,28 @@ memberSM sm@SplayMap {..} k = do
       (!newRoot, !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 newRoot
       return $ ordering == EQ
+
+-- | Reads the left most child without splaying.
+_readLMostSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+_readLMostSM SplayMap {dataSM} = inner
+  where
+    -- TODO: untilM and speed
+    inner i = do
+      l <- readLSM dataSM i
+      if nullSplayIndex l
+        then return i
+        else inner l
+
+-- | Reads the right most child without splaying.
+_readRMostSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+_readRMostSM SplayMap {dataSM} = inner
+  where
+    -- TODO: untilM and speed
+    inner i = do
+      r <- readRSM dataSM i
+      if nullSplayIndex r
+        then return i
+        else inner r
 
 -- | Amortized \(O(\log N)\). Internal use only.
 _lookupWithLESM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> m (Maybe (k, v))
@@ -199,9 +224,11 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
           if nullSplayIndex l
             then return Nothing
             else do
-              -- FIXME:
-              (!i, !_) <- splayBySM sm (const GT) l
-              writeLSM dataSM root' i
+              -- TODO: which is faster?
+              -- i <- splayRMostSM sm l -- splay rightmost
+              -- writeLSM dataSM root' i
+              i <- _readRMostSM sm l
+
               k <- readKSM dataSM i
               v <- readVSM dataSM i
               -- when (k' > k) $ error "unreachable"
@@ -235,9 +262,11 @@ _lookupWithGESM sm@SplayMap {..} cmpF = do
           if nullSplayIndex r
             then return Nothing
             else do
-              -- FIXME:
-              (!i, !_) <- splayBySM sm (const LT) r
-              writeRSM dataSM root' i
+              -- TODO: which is faster?
+              -- i <- splayLMostSM sm r -- splay leftmost
+              -- writeRSM dataSM root' i
+              i <- _readLMostSM sm r
+
               k <- readKSM dataSM i
               v <- readVSM dataSM i
               -- when (k' < k) error "unreachable"
@@ -283,7 +312,7 @@ dfsSM sm@SplayMap {..} = do
 -- @
 --
 -- Returns @l@.
-rotateRSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+rotateRSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 rotateRSM SplayMap {..} i = do
   il <- readLSM dataSM i
   ilr <- readRSM dataSM il
@@ -387,6 +416,12 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       writeRSM dataSM iParent iChild
 
+splayLMostSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+splayLMostSM sm root = fst <$> splayBySM sm (const LT) root
+
+splayRMostSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
+splayRMostSM sm root = fst <$> splayBySM sm (const GT) root
+
 -- | Amortized \(O(\log N)\).
 pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
 pushRootSM SplayMap {..} node = do
@@ -437,7 +472,7 @@ popRootSM sm@SplayMap {..} = do
               writeRSM dataSM l r
             else do
               -- Make @rl@ null if it's non-null:
-              --      (i) splay rightmost       (ii) modify children
+              --      (i) splay leftmost        (ii) modify children
               --      root           root                 root
               --     /    \         /    \                /
               --    l      r  -->  l     rLMost  -->     l
@@ -446,7 +481,7 @@ popRootSM sm@SplayMap {..} = do
               --                                         /  \
               --                                        lr    ..
               -- (i)
-              (!rLMost, !_) <- splayBySM sm (const LT) r
+              !rLMost <- splayLMostSM sm r
               -- (ii)
               writeLSM dataSM rLMost lr
               writeRSM dataSM l rLMost
@@ -525,4 +560,3 @@ readKSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ k _)) i = do
 readVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m v
 readVSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ _ v)) i = do
   GM.read v i
-
