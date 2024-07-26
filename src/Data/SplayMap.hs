@@ -81,6 +81,7 @@ data SplayMap k v s = SplayMap
   }
 
 -- | \(O(N)\) Creates a new `SplayMap` of capacity @n@.
+{-# INLINE newSM #-}
 newSM :: (U.Unbox k, U.Unbox v, PrimMonad m) => Int -> m (SplayMap k v (PrimState m))
 newSM n = do
   rootSM <- UM.replicate 1 undefSplayIndex
@@ -90,6 +91,7 @@ newSM n = do
 -- | \(O(N)\) Creates a new `SplayMap` of capacity @n@ with initial values @xs@.
 --
 -- TODO: faster implementation?
+{-# INLINE buildSM #-}
 buildSM :: (Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => Int -> U.Vector (k, v) -> m (SplayMap k v (PrimState m))
 buildSM n xs = do
   sm <- newSM n
@@ -108,6 +110,7 @@ lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSM = lengthBuffer . dataSM
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE lookupSM #-}
 lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
@@ -127,6 +130,7 @@ lookupSM sm@SplayMap {..} k = do
 -- | Amortized \(O(\log N)\). Returns old value with the same key if there is.
 --
 -- TODO: consider making a multiset with splay tree?
+{-# INLINE insertSM #-}
 insertSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSM sm@SplayMap {..} k v = do
   root <- GM.read rootSM 0
@@ -160,10 +164,12 @@ insertSM sm@SplayMap {..} k v = do
           pushRootSM sm $ SplayNode l r k v
           return Nothing
 
+{-# INLINE insertSM_ #-}
 insertSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m ()
 insertSM_ sm k v = void $ insertSM sm k v
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE deleteSM #-}
 deleteSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
 deleteSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
@@ -177,9 +183,11 @@ deleteSM sm@SplayMap {..} k = do
         then Just <$> popRootSM sm
         else return Nothing
 
+{-# INLINE deleteSM_ #-}
 deleteSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m ()
 deleteSM_ sm k = void $ deleteSM sm k
 
+{-# INLINE memberSM #-}
 memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
 memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
@@ -191,6 +199,7 @@ memberSM sm@SplayMap {..} k = do
       return $ ordering == EQ
 
 -- | Reads the left most child without splaying.
+{-# INLINE _readLMostSM #-}
 _readLMostSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 _readLMostSM SplayMap {dataSM} = inner
   where
@@ -202,6 +211,7 @@ _readLMostSM SplayMap {dataSM} = inner
         else inner l
 
 -- | Reads the right most child without splaying.
+{-# INLINE _readRMostSM #-}
 _readRMostSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 _readRMostSM SplayMap {dataSM} = inner
   where
@@ -213,6 +223,7 @@ _readRMostSM SplayMap {dataSM} = inner
         else inner r
 
 -- | Amortized \(O(\log N)\). Internal use only.
+{-# INLINE _lookupWithSM #-}
 _lookupWithSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> Bool -> m (Maybe (k, v))
 _lookupWithSM sm@SplayMap {..} cmpF isGE = do
   -- TODO: consider using MaybeT?
@@ -275,22 +286,27 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
               return $ Just (k, v)
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE lookupLESM #-}
 lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupLESM sm k = _lookupWithSM sm (compare k) True
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE lookupLTSM #-}
 lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupLTSM sm k = _lookupWithSM sm (\k' -> if k <= k' then LT else GT) True
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE lookupGESM #-}
 lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupGESM sm k = _lookupWithSM sm (compare k) False
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE lookupGTSM #-}
 lookupGTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupGTSM sm k = _lookupWithSM sm (\k' -> if k >= k' then GT else LT) False
 
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
+{-# INLINE dfsSM #-}
 dfsSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
 dfsSM sm@SplayMap {..} = do
   buf <- newBuffer =<< lengthSM sm
@@ -322,6 +338,7 @@ dfsSM sm@SplayMap {..} = do
 -- @
 --
 -- Returns @l@.
+{-# INLINE rotateRSM #-}
 rotateRSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 rotateRSM SplayMap {..} i = do
   il <- readLSM dataSM i
@@ -345,6 +362,7 @@ rotateRSM SplayMap {..} i = do
 -- @
 --
 -- Returns @r@.
+{-# INLINE rotateLSM #-}
 rotateLSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 rotateLSM SplayMap {..} i = do
   ir <- readRSM dataSM i
@@ -361,6 +379,7 @@ rotateLSM SplayMap {..} i = do
 -- easier to understand but less efficient. The latter is faster and uses less memory.
 --
 -- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
+{-# INLINE splayBySM #-}
 splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
 splayBySM sm@SplayMap {..} !cmpF !i0 = do
   lrs <- UM.replicate 2 undefSplayIndex
@@ -436,6 +455,7 @@ splayRMostSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k 
 splayRMostSM sm root = fst <$> splayBySM sm (const GT) root
 
 -- | Amortized \(O(\log N)\).
+{-# INLINE pushRootSM #-}
 pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
 pushRootSM SplayMap {..} node = do
   pushBack dataSM node
@@ -445,6 +465,7 @@ pushRootSM SplayMap {..} node = do
 -- | Amortized \(O(\log N)\). Removes the current root.
 --
 -- TODO: Less splaying
+{-# INLINE popRootSM #-}
 popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
 popRootSM sm@SplayMap {..} = do
   root <- GM.read rootSM 0
