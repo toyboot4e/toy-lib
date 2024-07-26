@@ -95,6 +95,11 @@ buildSM n xs = do
     insertSM sm k v
   return sm
 
+-- | \(O(1)\) Resets the splay tree to the initial state.
+clearSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m ()
+clearSM SplayMap {..} = do
+  clearBuffer dataSM
+
 lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSM = lengthBuffer . dataSM
 
