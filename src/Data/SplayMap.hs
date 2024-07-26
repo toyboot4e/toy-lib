@@ -36,9 +36,11 @@ import GHC.Stack (HasCallStack)
 -- | Index of a `SplayNode` stored in a `SplayMap`.
 type SplayIndex = Int
 
+{-# INLINE undefSplayIndex #-}
 undefSplayIndex :: SplayIndex
 undefSplayIndex = -1
 
+{-# INLINE nullSplayIndex #-}
 nullSplayIndex :: SplayIndex -> Bool
 nullSplayIndex = (== undefSplayIndex)
 
@@ -96,10 +98,12 @@ buildSM n xs = do
   return sm
 
 -- | \(O(1)\) Resets the splay tree to the initial state.
+{-# INLINE clearSM #-}
 clearSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m ()
 clearSM SplayMap {..} = do
   clearBuffer dataSM
 
+{-# INLINE lengthSM #-}
 lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
 lengthSM = lengthBuffer . dataSM
 
@@ -406,6 +410,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
   inner i0 undefSplayIndex undefSplayIndex
   where
     done iM nodeM iRootL iRootR iL iR = do
+    -- asselbles the L/M/R trees into one.
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
       let !iML = lSpNode nodeM
       let !iMR = rSpNode nodeM
@@ -422,9 +427,11 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
       let !_ = assert (not (nullSplayIndex iParent)) "null parent"
       writeRSM dataSM iParent iChild
 
+{-# INLINE splayLMostSM #-}
 splayLMostSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 splayLMostSM sm root = fst <$> splayBySM sm (const LT) root
 
+{-# INLINE splayRMostSM #-}
 splayRMostSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
 splayRMostSM sm root = fst <$> splayBySM sm (const GT) root
 
@@ -528,41 +535,49 @@ popRootSM sm@SplayMap {..} = do
 -- * Internal update
 
 -- | Efficiently modify `SplayNode`.
+{-# INLINE writeLSM #-}
 writeLSM :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
 writeLSM (internalBuffer -> MV_SplayNode (U.MV_4 _ l _ _ _)) i l' = do
   GM.write l i l'
 
 -- | Efficiently modify `SplayNode`.
+{-# INLINE writeRSM #-}
 writeRSM :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
 writeRSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ r _ _)) i r' = do
   GM.write r i r'
 
 -- | Efficiently modify `SplayNode`.
+{-# INLINE writeKSM #-}
 writeKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> k -> m ()
 writeKSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ k _)) i k' = do
   GM.write k i k'
 
 -- | Efficiently modify `SplayNode`.
+{-# INLINE writeVSM #-}
 writeVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> v -> m ()
 writeVSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ _ v)) i v' = do
   GM.write v i v'
 
 -- | Efficiently read `SplayNode`.
+{-# INLINE readLSM #-}
 readLSM :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
 readLSM (internalBuffer -> MV_SplayNode (U.MV_4 _ l _ _ _)) i = do
   GM.read l i
 
 -- | Efficiently read `SplayNode`.
+{-# INLINE readRSM #-}
 readRSM :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
 readRSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ r _ _)) i = do
   GM.read r i
 
 -- | Efficiently read `SplayNode`.
+{-# INLINE readKSM #-}
 readKSM :: (HasCallStack, U.Unbox k, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m k
 readKSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ k _)) i = do
   GM.read k i
 
 -- | Efficiently read `SplayNode`.
+{-# INLINE readVSM #-}
 readVSM :: (HasCallStack, U.Unbox v, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m v
 readVSM (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ _ v)) i = do
   GM.read v i
