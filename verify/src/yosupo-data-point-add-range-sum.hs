@@ -2,16 +2,15 @@
 #include "./__import"
 
 -- {{{ toy-lib import
-
 import Data.SegmentTree.Strict
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
+debug :: Bool
 debug = False
 
 solve :: StateT BS.ByteString IO ()

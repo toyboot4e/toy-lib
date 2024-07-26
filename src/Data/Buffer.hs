@@ -371,14 +371,14 @@ unsafeModifyBack Buffer {..} m i = do
 
 -- | \(O(1)\)
 modifyMFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
-modifyMFront buf@Buffer {..} m i = do
+modifyMFront buf  m i = do
   _checkIndexBuffer buf i
   unsafeModifyMFront buf m i
 {-# INLINE modifyMFront #-}
 
 -- | \(O(1)\)
 modifyMBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
-modifyMBack buf@Buffer {..} m i = do
+modifyMBack buf m i = do
   _checkIndexBuffer buf i
   unsafeModifyMBack buf m i
 {-# INLINE modifyMBack #-}
