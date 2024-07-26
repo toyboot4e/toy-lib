@@ -276,7 +276,7 @@ lookupLESM sm k = _lookupWithSM sm (compare k) True
 
 -- | Amortized \(O(\log N)\).
 lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLTSM sm k = _lookupWithSM sm (\k' -> if k < k' then LT else GT) True
+lookupLTSM sm k = _lookupWithSM sm (\k' -> if k <= k' then LT else GT) True
 
 -- | Amortized \(O(\log N)\).
 lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
@@ -284,7 +284,7 @@ lookupGESM sm k = _lookupWithSM sm (compare k) False
 
 -- | Amortized \(O(\log N)\).
 lookupGTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGTSM sm k = _lookupWithSM sm (\k' -> if k > k' then GT else LT) False
+lookupGTSM sm k = _lookupWithSM sm (\k' -> if k >= k' then GT else LT) False
 
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
 dfsSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
