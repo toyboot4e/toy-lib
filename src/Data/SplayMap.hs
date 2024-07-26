@@ -209,8 +209,8 @@ _readRMostSM SplayMap {dataSM} = inner
         else inner r
 
 -- | Amortized \(O(\log N)\). Internal use only.
-_lookupWithLESM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> m (Maybe (k, v))
-_lookupWithLESM sm@SplayMap {..} cmpF = do
+_lookupWithSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> Bool -> m (Maybe (k, v))
+_lookupWithSM sm@SplayMap {..} cmpF isGE = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
   if nullSplayIndex root
@@ -219,16 +219,25 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
       -- splay finds the nearest node?
       (!root', !order) <- splayBySM sm cmpF root
       GM.write rootSM 0 root'
-      if order == EQ || order == GT
-        then do
+      case order == EQ || isGE && order == GT || not isGE && order == LT of
+        -- found the target node
+        True -> do
           k <- readKSM dataSM root'
           v <- readVSM dataSM root'
           return $ Just (k, v)
-        else do
+
+        -- it was next to the target node (GE/GT)
+        False | isGE -> do
           l <- readLSM dataSM root'
           if nullSplayIndex l
             then return Nothing
             else do
+              --    root'
+              --    /  \
+              --   l    r
+              --       /
+              --     ...
+              --    target
               i <- splayRMostSM sm l
               writeLSM dataSM root' i
               -- or:
@@ -239,34 +248,18 @@ _lookupWithLESM sm@SplayMap {..} cmpF = do
               -- when (k' > k) $ error "unreachable"
               return $ Just (k, v)
 
--- | Amortized \(O(\log N)\).
-lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLESM sm k = _lookupWithLESM sm (compare k)
-
--- | Amortized \(O(\log N)\).
-lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLTSM sm k = _lookupWithLESM sm (\k' -> if k < k' then LT else GT)
-
--- | Amortized \(O(\log N)\).
-_lookupWithGESM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> m (Maybe (k, v))
-_lookupWithGESM sm@SplayMap {..} cmpF = do
-  -- TODO: consider using MaybeT?
-  root <- GM.read rootSM 0
-  if nullSplayIndex root
-    then return Nothing
-    else do
-      (!root', !order) <- splayBySM sm cmpF root
-      GM.write rootSM 0 root'
-      if order == EQ || order == LT
-        then do
-          k <- readKSM dataSM root'
-          v <- readVSM dataSM root'
-          return $ Just (k, v)
-        else do
+        -- it was next to the target node (LE/LT)
+        False -> do
           r <- readRSM dataSM root'
           if nullSplayIndex r
             then return Nothing
             else do
+              --    root'
+              --    /  \
+              --   l    r
+              --    \
+              --     ...
+              --      target
               i <- splayLMostSM sm r
               writeRSM dataSM root' i
               -- or:
@@ -278,12 +271,20 @@ _lookupWithGESM sm@SplayMap {..} cmpF = do
               return $ Just (k, v)
 
 -- | Amortized \(O(\log N)\).
+lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupLESM sm k = _lookupWithSM sm (compare k) True
+
+-- | Amortized \(O(\log N)\).
+lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
+lookupLTSM sm k = _lookupWithSM sm (\k' -> if k < k' then LT else GT) True
+
+-- | Amortized \(O(\log N)\).
 lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGESM sm k = _lookupWithGESM sm (compare k)
+lookupGESM sm k = _lookupWithSM sm (compare k) False
 
 -- | Amortized \(O(\log N)\).
 lookupGTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGTSM sm k = _lookupWithGESM sm (\k' -> if k > k' then GT else LT)
+lookupGTSM sm k = _lookupWithSM sm (\k' -> if k > k' then GT else LT) False
 
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
 dfsSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
