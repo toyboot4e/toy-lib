@@ -21,12 +21,10 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 --
 -- The acted target type is `V2`, which holds the length at the second element.
 --
--- = Composition
+-- = Composition and dual
 --
--- (f_1 <> f_2) v := (f_1 . f_2) v. Be sure to wrap it in `Dual` when you need reverse order
--- composition, like with a segment tree.
---
--- TODO: write latex here
+-- (f_1 <> f_2) v := (f_1 . f_2) v. If yo need foldr [f_l, .., f_r] on segment tree, be sure to
+-- wrap `Affine2d` with `Dual`.
 newtype Affine2d a = Affine2d (Affine2dRepr a)
   deriving newtype (Eq, Ord, Show)
 
@@ -42,7 +40,7 @@ instance (Num a) => Semigroup (Affine2d a) where
 
 instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
-  mempty = Affine2d (1, 0)
+  mempty = identAffine2d
 
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}

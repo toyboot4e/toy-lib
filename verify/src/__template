@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
-
 -- {{{ toy-lib import
 import ToyLib.Parser
 import ToyLib.Prelude
