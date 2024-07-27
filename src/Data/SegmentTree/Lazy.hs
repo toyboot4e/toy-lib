@@ -226,18 +226,12 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
       | otherwise = do
           !lAcc' <-
             if isRightChild l
-              then do
-                -- Evaluate the target segmnent and append the result:
-                !la' <- (lAcc <>) <$> (sact <$> UM.read ops l <*> GM.read as l)
-                return la'
+              then (lAcc <>) <$> (sact <$> UM.read ops l <*> GM.read as l)
               else return lAcc
 
           !rAcc' <-
             if isLeftChild r
-              then do
-                -- Evaluate the target segmnent and append the result:
-                !ra' <- (<> rAcc) <$> (sact <$> UM.read ops r <*> GM.read as r)
-                return ra'
+              then (<> rAcc) <$> (sact <$> UM.read ops r <*> GM.read as r)
               else return rAcc
 
           -- go up to the parent segment
