@@ -36,13 +36,13 @@ import GHC.Stack (HasCallStack)
 -- | Index of a `SplayNode` stored in a `SplayMap`.
 type SplayIndex = Int
 
-{-# INLINE undefSplayIndex #-}
-undefSplayIndex :: SplayIndex
-undefSplayIndex = -1
+{-# INLINE undefSI #-}
+undefSI :: SplayIndex
+undefSI = -1
 
-{-# INLINE nullSplayIndex #-}
-nullSplayIndex :: SplayIndex -> Bool
-nullSplayIndex = (== undefSplayIndex)
+{-# INLINE nullSI #-}
+nullSI :: SplayIndex -> Bool
+nullSI = (== undefSI)
 
 -- | Splay tree node.
 data SplayNode k v = SplayNode
@@ -84,7 +84,7 @@ data SplayMap k v s = SplayMap
 {-# INLINE newSM #-}
 newSM :: (U.Unbox k, U.Unbox v, PrimMonad m) => Int -> m (SplayMap k v (PrimState m))
 newSM n = do
-  rootSM <- UM.replicate 1 undefSplayIndex
+  rootSM <- UM.replicate 1 undefSI
   dataSM <- newBuffer n
   return $ SplayMap {capacitySM = n, ..}
 
@@ -114,7 +114,7 @@ lengthSM = lengthBuffer . dataSM
 lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
 lookupSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
-  if nullSplayIndex root
+  if nullSI root
     then return Nothing
     else do
       -- splay and lift up the closest node to the root
@@ -134,9 +134,9 @@ lookupSM sm@SplayMap {..} k = do
 insertSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
 insertSM sm@SplayMap {..} k v = do
   root <- GM.read rootSM 0
-  if nullSplayIndex root
+  if nullSI root
     then do
-      pushRootSM sm $ SplayNode undefSplayIndex undefSplayIndex k v
+      pushRootSM sm $ SplayNode undefSI undefSI k v
       return Nothing
     else do
       -- splay and lift up the closest node to the root
@@ -153,14 +153,14 @@ insertSM sm@SplayMap {..} k v = do
           -- insert
           l <- readLSM dataSM root'
           let !r = root'
-          writeLSM dataSM root' undefSplayIndex
+          writeLSM dataSM root' undefSI
           pushRootSM sm $ SplayNode l r k v
           return Nothing
         GT -> do
           -- insert
           let !l = root'
           r <- readRSM dataSM root'
-          writeRSM dataSM root' undefSplayIndex
+          writeRSM dataSM root' undefSI
           pushRootSM sm $ SplayNode l r k v
           return Nothing
 
@@ -173,7 +173,7 @@ insertSM_ sm k v = void $ insertSM sm k v
 deleteSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
 deleteSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
-  if nullSplayIndex root
+  if nullSI root
     then return Nothing
     else do
       -- splay and lift up the closest node to the root
@@ -191,7 +191,7 @@ deleteSM_ sm k = void $ deleteSM sm k
 memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
 memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
-  if nullSplayIndex root
+  if nullSI root
     then return False
     else do
       (!newRoot, !ordering) <- splayBySM sm (compare k) root
@@ -206,7 +206,7 @@ _readLMostSM SplayMap {dataSM} = inner
     -- TODO: untilM and speed
     inner i = do
       l <- readLSM dataSM i
-      if nullSplayIndex l
+      if nullSI l
         then return i
         else inner l
 
@@ -218,7 +218,7 @@ _readRMostSM SplayMap {dataSM} = inner
     -- TODO: untilM and speed
     inner i = do
       r <- readRSM dataSM i
-      if nullSplayIndex r
+      if nullSI r
         then return i
         else inner r
 
@@ -228,7 +228,7 @@ _lookupWithSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k
 _lookupWithSM sm@SplayMap {..} cmpF isGE = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
-  if nullSplayIndex root
+  if nullSI root
     then return Nothing
     else do
       -- splay finds the nearest node?
@@ -244,7 +244,7 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
         -- it was next to the target node (GE/GT)
         False | isGE -> do
           l <- readLSM dataSM root'
-          if nullSplayIndex l
+          if nullSI l
             then return Nothing
             else do
               --    root'
@@ -266,7 +266,7 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
         -- it was next to the target node (LE/LT)
         False -> do
           r <- readRSM dataSM root'
-          if nullSplayIndex r
+          if nullSI r
             then return Nothing
             else do
               --    root'
@@ -312,12 +312,12 @@ dfsSM sm@SplayMap {..} = do
   buf <- newBuffer =<< lengthSM sm
   root <- GM.read rootSM 0
   flip fix root $ \loop i -> do
-    unless (nullSplayIndex i) $ do
+    unless (nullSI i) $ do
       node <- readFront dataSM i
-      unless (nullSplayIndex (lSN node)) $ do
+      unless (nullSI (lSN node)) $ do
         loop $ lSN node
       pushBack buf (keySN node, valSN node)
-      unless (nullSplayIndex (rSN node)) $ do
+      unless (nullSI (rSN node)) $ do
         loop $ rSN node
   unsafeFreezeBuffer buf
 
@@ -382,7 +382,7 @@ rotateLSM SplayMap {..} i = do
 {-# INLINE splayBySM #-}
 splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
 splayBySM sm@SplayMap {..} !cmpF !i0 = do
-  lrs <- UM.replicate 2 undefSplayIndex
+  lrs <- UM.replicate 2 undefSI
 
   -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
   -- @inner@ manages the folloing three variables:
@@ -393,26 +393,26 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
         when (iM == iL || iM == iR) $ error "wrong"
         nodeM <- readFront dataSM iM
         case cmpF (keySN nodeM) of
-          LT | not (nullSplayIndex (lSN nodeM)) -> do
+          LT | not (nullSI (lSN nodeM)) -> do
             iM' <- do
               nodeML <- readFront dataSM (lSN nodeM)
-              if not (nullSplayIndex (lSN nodeML)) && cmpF (keySN nodeML) == LT
+              if not (nullSI (lSN nodeML)) && cmpF (keySN nodeML) == LT
                 then rotateRSM sm iM
                 else return iM
             -- link right:
-            if nullSplayIndex iR
+            if nullSI iR
               then GM.write lrs 1 iM'
               else writeLChild iR iM'
             iM'' <- readLSM dataSM iM'
             inner iM'' iL iM'
-          GT | not (nullSplayIndex (rSN nodeM)) -> do
+          GT | not (nullSI (rSN nodeM)) -> do
             iM' <- do
               nodeMR <- readFront dataSM (rSN nodeM)
-              if not (nullSplayIndex (rSN nodeMR)) && cmpF (keySN nodeMR) == GT
+              if not (nullSI (rSN nodeMR)) && cmpF (keySN nodeMR) == GT
                 then rotateLSM sm iM
                 else return iM
             -- link left:
-            if nullSplayIndex iL
+            if nullSI iL
               then GM.write lrs 0 iM'
               else writeRChild iL iM'
             iM'' <- readRSM dataSM iM'
@@ -426,24 +426,24 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             let !comparison = cmpF (keySN nodeM)
             return (iM, comparison)
 
-  inner i0 undefSplayIndex undefSplayIndex
+  inner i0 undefSI undefSI
   where
     -- asselbles the L/M/R trees into one.
     done iM nodeM iRootL iRootR iL iR = do
-      let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
+      let !_ = assert (not (nullSI iM)) "null node after spalying?"
       let !iML = lSN nodeM
       let !iMR = rSN nodeM
-      unless (nullSplayIndex iL) $ do
+      unless (nullSI iL) $ do
         writeRChild iL iML
         writeLChild iM iRootL
-      unless (nullSplayIndex iR) $ do
+      unless (nullSI iR) $ do
         writeLChild iR iMR
         writeRChild iM iRootR
     writeLChild iParent iChild = do
-      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
+      let !_ = assert (not (nullSI iParent)) "null parent"
       writeLSM dataSM iParent iChild
     writeRChild iParent iChild = do
-      let !_ = assert (not (nullSplayIndex iParent)) "null parent"
+      let !_ = assert (not (nullSI iParent)) "null parent"
       writeRSM dataSM iParent iChild
 
 {-# INLINE splayLMostSM #-}
@@ -474,12 +474,12 @@ popRootSM sm@SplayMap {..} = do
 
   -- merge the children into one.
   root' <- case (nodeL, nodeR) of
-    (-1, -1) -> return undefSplayIndex
+    (-1, -1) -> return undefSI
     (!l, -1) -> return l
     (-1, !r) -> return r
     (!l, !r) -> do
       rl <- readLSM dataSM r
-      if nullSplayIndex rl
+      if nullSI rl
         then do
           -- Move @l@ to @rl@, which is null.
           --
@@ -493,7 +493,7 @@ popRootSM sm@SplayMap {..} = do
           return r
         else do
           lr <- readRSM dataSM l
-          if nullSplayIndex lr
+          if nullSI lr
             then do
               -- @rl@ is null, so move @r@ to @lr@:
               --      root              root
