@@ -30,7 +30,7 @@ powModProps =
           QC.forAll (QC.chooseInt (1, modulo - 1)) $ \d -> do
             let expected = mulMod modulo x (times (modulo - 2) (mulMod modulo d) 1)
             let res = divModConst modulo x d
-            res QC.=== expected
+            expected QC.=== res
     ]
 
 tests :: [TestTree]
