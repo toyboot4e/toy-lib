@@ -28,7 +28,7 @@ mulMatToCol !mat !col = U.convert $ G.map (G.sum . flip (G.zipWith (*)) col) row
     rows = chunksOfG n (vecIV mat)
 
 -- | \(O(HW)\) Multiplies HxW matrix to a Hx1 column vector, taking the modulus.
-mulMatToColMod :: (Num e, U.Unbox e, Integral e) => e -> Mat e -> Col e -> Col e
+mulMatToColMod :: (U.Unbox e, Integral e) => e -> Mat e -> Col e -> Col e
 mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip (G.zipWith mulMod_) col) rows
   where
     !n = G.length col
@@ -53,7 +53,7 @@ mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
-mulMatMod :: (Num e, U.Unbox e, Integral e) => e -> Mat e -> Mat e -> Mat e
+mulMatMod :: (Integral e, U.Unbox e) => e -> Mat e -> Mat e -> Mat e
 mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
   U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 V.! row) (cols2 V.! col)
   where

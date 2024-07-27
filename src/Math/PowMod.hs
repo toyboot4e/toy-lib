@@ -16,27 +16,23 @@ subMod !modulo !x !s = (x - s) `mod` modulo
 {-# INLINE mulMod #-}
 mulMod !modulo !b !p = (b * p) `mod` modulo
 
--- | \(n! \bmod m\) stupid calculation.
+-- | \(O(N)\) Naive calculation.
 factMod :: Int -> Int -> Int
 factMod 0 _ = 1
 factMod 1 _ = 1
 factMod !n !m = n * factMod (n - 1) m `rem` m
 
--- F: Fermet, FC: Fermet by cache
-
--- | \(O(W)\) One-shot calculation of $\mathit{base} ^ \mathit{power} \bmod \mathit{modulo}$ in a
--- constant time.
+-- | \(O(W)\) \(\mathit{base} ^ \mathit{power} \bmod \mathit{modulo}\) using binary lifting.
 {-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
 powModConst !modulo !base !power = mulTimes power (mulMod modulo) base
 
--- | \(O(W)\) One-shot calcaulation of \(x / d \bmod p\), using Fermat's little theorem and binary
--- lifting.
+-- | \(O(W)\) \(x / d \bmod p\) using Fermat's little theorem and binary lifting.
 {-# INLINE invModConst #-}
 invModConst :: Int -> Int -> Int
 invModConst !primeModulo !d = powModConst primeModulo d (primeModulo - 2)
 
--- | \(O(W)\) Calculates \(x / d \bmod p\), using Fermat's little theorem.
+-- | \(O(W)\) \(x / d \bmod p\) using Fermat's little theorem and binary lifting.
 {-# INLINE divModConst #-}
 divModConst :: Int -> Int -> Int -> Int
 divModConst !primeModulo !x !d = mulMod primeModulo x (invModConst primeModulo d)
