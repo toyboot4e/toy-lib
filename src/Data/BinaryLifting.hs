@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | Type class-based binary lifting.
+-- | Type class-based binary lifting with caches. Prefer @Stimes@ module if it's one-shot.
 --
 -- Binary lifting is a technique for calculating nth power of a semigroup element in a (big)
 -- constant time, or applying them to their semigroup action target.

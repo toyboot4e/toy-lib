@@ -19,7 +19,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
 import GHC.TypeLits
-import Math.PowMod (invModF)
+import Math.PowMod (invModConst)
 import ToyLib.ShowBSB
 
 -- | `Int` with automatic moudlo arithmetic performed.
@@ -43,7 +43,7 @@ instance (KnownNat p) => Num (ModInt p) where
 instance (KnownNat p) => Fractional (ModInt p) where
   -- Reciprocal of x (inverse of x).
   -- FIXME: use exgcd instead.
-  recip (ModInt !x) = ModInt $! invModF (fromInteger (natVal' (proxy# @p))) x
+  recip (ModInt !x) = ModInt $! invModConst (fromInteger (natVal' (proxy# @p))) x
   fromRational !r = ModInt n / ModInt d
     where
       -- Data.Ratio

@@ -6,7 +6,7 @@ module Math.PowMod where
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
-import Math.BitSet (bitsOf)
+import Math.Stimes (mulTimes)
 
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
 {-# INLINE addMod #-}
@@ -28,43 +28,18 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 -- constant time.
 {-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
-powModConst !modulo !base !power = powModByCache (powModCache modulo (base `mod` modulo)) power
+powModConst !modulo !base !power = mulTimes power (mulMod modulo) base
 
 -- | \(O(W)\) One-shot calcaulation of \(x / d \bmod p\), using Fermat's little theorem and binary
 -- lifting.
-{-# INLINE invModF #-}
-invModF :: Int -> Int -> Int
--- FIXME: prefer to use invModExgcd
-invModF !modulo !d = invModFC (powModCache modulo d) modulo
+{-# INLINE invModConst #-}
+invModConst :: Int -> Int -> Int
+invModConst !primeModulo !d = powModConst primeModulo d (primeModulo - 2)
 
 -- | \(O(W)\) Calculates \(x / d \bmod p\), using Fermat's little theorem.
-{-# INLINE divModF #-}
-divModF :: Int -> Int -> Int -> Int
-divModF !modulo !x !d = divModFC (powModCache modulo d) x `rem` modulo
-
--- | \(O(W)\) Cache of \(\mathit{base}^n\) for iterative square method.
-powModCache :: Int -> Int -> (Int, U.Vector Int)
-powModCache !modulo !base = (modulo, U.iterateN 63 (\x -> x * x `rem` modulo) base)
-
--- | \(O(W)\) Calculates \(\mathit{base}^n \bmod p\) using a cache.
-{-# INLINE powModByCache #-}
-powModByCache :: (Int, U.Vector Int) -> Int -> Int
-powModByCache (!modulo, !cache) power = U.foldl' step 1 (bitsOf power)
-  where
-    step !acc nBit = acc * (cache G.! nBit) `rem` modulo
-
--- | \(O(W)\) \(1/d = d^{p-2} \bmod p\)
---
--- \(\because d^p = d \bmod p\) where the modulo is a prime number and @d@ is not a mulitple of
--- @p@.
-{-# INLINE invModFC #-}
-invModFC :: (Int, U.Vector Int) -> Int -> Int
-invModFC context primeModulo = powModByCache context (primeModulo - 2)
-
--- | \(O(W)\) \(1/d = d^{p-2} \bmod p\)
-{-# INLINE divModFC #-}
-divModFC :: (Int, U.Vector Int) -> Int -> Int
-divModFC context@(!modulo, !_) x = x * invModFC context modulo `rem` modulo
+{-# INLINE divModConst #-}
+divModConst :: Int -> Int -> Int -> Int
+divModConst !primeModulo !x !d = mulMod primeModulo x (invModConst primeModulo d)
 
 -- | \(O(N)\) Cache of \(n! \bmod m\) up to `n`.
 {-# INLINE factModsN #-}
@@ -74,6 +49,6 @@ factModsN !modulo !n = U.scanl' (mulMod modulo) (1 :: Int) $ U.generate n (+ 1)
 -- | \(O(N)\) nCr `mod` m (binominal cofficient).
 {-# INLINE bcMod #-}
 bcMod :: Int -> Int -> Int -> Int
-bcMod !n !r !modulo = foldl' (divModF modulo) (facts G.! n) [facts G.! r, facts G.! (n - r)]
+bcMod !n !r !modulo = foldl' (divModConst modulo) (facts G.! n) [facts G.! r, facts G.! (n - r)]
   where
     facts = factModsN modulo n

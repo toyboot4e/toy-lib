@@ -231,6 +231,7 @@ library
     Math.NTT
     Math.PowMod
     Math.Primes
+    Math.Stimes
     ToyLib.Compat
     ToyLib.Contest.Bisect
     ToyLib.Contest.Graph
