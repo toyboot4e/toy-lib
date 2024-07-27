@@ -24,7 +24,7 @@ module Data.SplayMap where
 import Control.Exception (assert)
 import Control.Monad (unless, void, when)
 import Control.Monad.Fix (fix)
-import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Buffer
 import Data.Maybe
 import qualified Data.Vector.Generic as G
@@ -83,7 +83,7 @@ data SplayMap k v s = SplayMap
 -- | \(O(N)\) Creates a new `SplayMap` of capacity @n@.
 {-# INLINE newSM #-}
 newSM :: (U.Unbox k, U.Unbox v, PrimMonad m) => Int -> m (SplayMap k v (PrimState m))
-newSM n = stToPrim $ do
+newSM n = do
   rootSM <- UM.replicate 1 undefSplayIndex
   dataSM <- newBuffer n
   return $ SplayMap {capacitySM = n, ..}
@@ -93,7 +93,7 @@ newSM n = stToPrim $ do
 -- TODO: faster implementation?
 {-# INLINE buildSM #-}
 buildSM :: (Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => Int -> U.Vector (k, v) -> m (SplayMap k v (PrimState m))
-buildSM n xs = stToPrim $ do
+buildSM n xs = do
   sm <- newSM n
   U.forM_ xs $ \(!k, !v) -> do
     insertSM sm k v
@@ -102,17 +102,17 @@ buildSM n xs = stToPrim $ do
 -- | \(O(1)\) Resets the splay tree to the initial state.
 {-# INLINE clearSM #-}
 clearSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m ()
-clearSM SplayMap {..} = stToPrim $ do
+clearSM SplayMap {..} = do
   clearBuffer dataSM
 
 {-# INLINE lengthSM #-}
 lengthSM :: (PrimMonad m) => SplayMap k v (PrimState m) -> m Int
-lengthSM = stToPrim . lengthBuffer . dataSM
+lengthSM = lengthBuffer . dataSM
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupSM #-}
 lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupSM sm@SplayMap {..} k = stToPrim $ do
+lookupSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
@@ -132,7 +132,7 @@ lookupSM sm@SplayMap {..} k = stToPrim $ do
 -- TODO: consider making a multiset with splay tree?
 {-# INLINE insertSM #-}
 insertSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m (Maybe v)
-insertSM sm@SplayMap {..} k v = stToPrim $ do
+insertSM sm@SplayMap {..} k v = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then do
@@ -171,7 +171,7 @@ insertSM_ sm k v = void $ insertSM sm k v
 -- | Amortized \(O(\log N)\).
 {-# INLINE deleteSM #-}
 deleteSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (SplayNode k v))
-deleteSM sm@SplayMap {..} k = stToPrim $ do
+deleteSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return Nothing
@@ -189,7 +189,7 @@ deleteSM_ sm k = void $ deleteSM sm k
 
 {-# INLINE memberSM #-}
 memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m Bool
-memberSM sm@SplayMap {..} k = stToPrim $ do
+memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSplayIndex root
     then return False
@@ -225,7 +225,7 @@ _readRMostSM SplayMap {dataSM} = inner
 -- | Amortized \(O(\log N)\). Internal use only.
 {-# INLINE _lookupWithSM #-}
 _lookupWithSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> Bool -> m (Maybe (k, v))
-_lookupWithSM sm@SplayMap {..} cmpF isGE = stToPrim $ do
+_lookupWithSM sm@SplayMap {..} cmpF isGE = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
   if nullSplayIndex root
@@ -288,27 +288,27 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = stToPrim $ do
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupLESM #-}
 lookupLESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLESM sm k = stToPrim $ _lookupWithSM sm (compare k) True
+lookupLESM sm k = _lookupWithSM sm (compare k) True
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupLTSM #-}
 lookupLTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupLTSM sm k = stToPrim $ _lookupWithSM sm (\k' -> if k <= k' then LT else GT) True
+lookupLTSM sm k = _lookupWithSM sm (\k' -> if k <= k' then LT else GT) True
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupGESM #-}
 lookupGESM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGESM sm k = stToPrim $ _lookupWithSM sm (compare k) False
+lookupGESM sm k = _lookupWithSM sm (compare k) False
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupGTSM #-}
 lookupGTSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m (Maybe (k, v))
-lookupGTSM sm k = stToPrim $ _lookupWithSM sm (\k' -> if k >= k' then GT else LT) False
+lookupGTSM sm k = _lookupWithSM sm (\k' -> if k >= k' then GT else LT) False
 
 -- | Returns @(key, value)@ pairs sorted by the keys in ascending order.
 {-# INLINE dfsSM #-}
 dfsSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (U.Vector (k, v))
-dfsSM sm@SplayMap {..} = stToPrim $ do
+dfsSM sm@SplayMap {..} = do
   buf <- newBuffer =<< lengthSM sm
   root <- GM.read rootSM 0
   flip fix root $ \loop i -> do
@@ -340,7 +340,7 @@ dfsSM sm@SplayMap {..} = stToPrim $ do
 -- Returns @l@.
 {-# INLINE rotateRSM #-}
 rotateRSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
-rotateRSM SplayMap {..} i = stToPrim $ do
+rotateRSM SplayMap {..} i = do
   il <- readLSM dataSM i
   ilr <- readRSM dataSM il
   writeLSM dataSM i ilr
@@ -364,7 +364,7 @@ rotateRSM SplayMap {..} i = stToPrim $ do
 -- Returns @r@.
 {-# INLINE rotateLSM #-}
 rotateLSM :: (HasCallStack, PrimMonad m) => SplayMap k v (PrimState m) -> SplayIndex -> m SplayIndex
-rotateLSM SplayMap {..} i = stToPrim $ do
+rotateLSM SplayMap {..} i = do
   ir <- readRSM dataSM i
   irl <- readLSM dataSM ir
   writeRSM dataSM i irl
@@ -381,7 +381,7 @@ rotateLSM SplayMap {..} i = stToPrim $ do
 -- See also: <http://www.cs.cmu.edu/~sleator/papers/self-adjusting.pdf#16>
 {-# INLINE splayBySM #-}
 splayBySM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> (k -> Ordering) -> SplayIndex -> m (SplayIndex, Ordering)
-splayBySM sm@SplayMap {..} !cmpF !i0 = stToPrim $ do
+splayBySM sm@SplayMap {..} !cmpF !i0 = do
   lrs <- UM.replicate 2 undefSplayIndex
 
   -- @inner@ goes down the tree to find the target @key@ while performing the splaying operation.
@@ -389,7 +389,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = stToPrim $ do
   -- - middle tree: a tree rooted by the current node.
   -- - left tree: a tree with keys less than or equal to the current node's key.
   -- - right tree: a tree with keys bigger than the current node's key.
-  let inner iM iL iR = stToPrim $ do
+  let inner iM iL iR = do
         when (iM == iL || iM == iR) $ error "wrong"
         nodeM <- readFront dataSM iM
         case cmpF (keySpNode nodeM) of
@@ -429,7 +429,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = stToPrim $ do
   inner i0 undefSplayIndex undefSplayIndex
   where
     -- asselbles the L/M/R trees into one.
-    done iM nodeM iRootL iRootR iL iR = stToPrim $ do
+    done iM nodeM iRootL iRootR iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
       let !iML = lSpNode nodeM
       let !iMR = rSpNode nodeM
@@ -457,7 +457,7 @@ splayRMostSM sm root = fst <$> splayBySM sm (const GT) root
 -- | Amortized \(O(\log N)\).
 {-# INLINE pushRootSM #-}
 pushRootSM :: (HasCallStack, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> SplayNode k v -> m ()
-pushRootSM SplayMap {..} node = stToPrim $ do
+pushRootSM SplayMap {..} node = do
   pushBack dataSM node
   len <- lengthBuffer dataSM
   GM.write rootSM 0 (len - 1)
@@ -467,7 +467,7 @@ pushRootSM SplayMap {..} node = stToPrim $ do
 -- TODO: Less splaying
 {-# INLINE popRootSM #-}
 popRootSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> m (SplayNode k v)
-popRootSM sm@SplayMap {..} = stToPrim $ do
+popRootSM sm@SplayMap {..} = do
   root <- GM.read rootSM 0
   nodeL <- readLSM dataSM root
   nodeR <- readRSM dataSM root
