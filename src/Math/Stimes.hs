@@ -18,7 +18,7 @@ mtimes' n0 x0 = case compare n0 0 of
   EQ -> mempty
   GT -> mulTimes n0 (<>) x0
 
--- | Multiplies N (N > 0) times using the binary lifting technique.
+-- | Multiplies @x@ by @n@ (N > 0) times using the binary lifting technique.
 {-# INLINE mulTimes #-}
 mulTimes :: Int -> (a -> a -> a) -> a -> a
 mulTimes n0 op x0
@@ -34,7 +34,7 @@ mulTimes n0 op x0
       | n == 1 = x `op` z
       | otherwise = g (x `op` x) (n .>>. 1) (x `op` z)
 
--- | Multiplies N times using the binary lifting technique.
+-- | Multiplies @x by @n@ times using the binary lifting technique.
 {-# INLINE mulTimesMay #-}
 mulTimesMay :: Int -> (a -> a -> a) -> a -> Maybe a
 mulTimesMay n0 op x0
