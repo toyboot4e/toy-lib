@@ -67,6 +67,14 @@ newLSTreeImpl !n = do
 newLSTree :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree a op (PrimState m))
 newLSTree = newLSTreeImpl
 
+{-# INLINE _childL #-}
+_childL :: Int -> Int
+_childL !vertex = vertex .<<. 1
+
+{-# INLINE _childR #-}
+_childR :: Int -> Int
+_childR !vertex = vertex .<<. 1 .|. 1
+
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
 generateLSTreeImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
@@ -84,8 +92,9 @@ generateLSTreeImpl !n !f = do
 
   -- Fill parents from bottom to top:
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
-    !l <- GM.read as (childL i)
-    !r <- GM.read as (childR i)
+    -- we dont't need to apply operators as they're mempty.
+    !l <- GM.read as (_childL i)
+    !r <- GM.read as (_childR i)
     GM.write as i $! l <> r
 
   !ops <- UM.replicate n2 mempty
@@ -93,9 +102,7 @@ generateLSTreeImpl !n !f = do
   where
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
-    !nLeaves = n2 `div` 2
-    childL !vertex = vertex .<<. 1
-    childR !vertex = vertex .<<. 1 .|. 1
+    !nLeaves = n2 .>>. 1
 
 -- | \(O(N)\)
 generateLSTree :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree a op (PrimState m))
@@ -114,8 +121,8 @@ buildLSTree xs = do
 
   -- Fill parents from bottom to top:
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
-    !l <- GM.read as (childL i)
-    !r <- GM.read as (childR i)
+    !l <- GM.read as (_childL i)
+    !r <- GM.read as (_childR i)
     GM.write as i $! l <> r
 
   !ops <- UM.replicate n2 mempty
@@ -123,9 +130,7 @@ buildLSTree xs = do
   where
     !n = U.length xs
     (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
-    !nLeaves = n2 `div` 2
-    childL !vertex = vertex .<<. 1
-    childR !vertex = vertex .<<. 1 .|. 1
+    !nLeaves = n2 .>>. 1
 
 -- | \(O(\log N)\) Appends the lazy operator monoid monoids over a span. They are just stored and
 -- propagated when queried.
@@ -157,7 +162,7 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
 
   return ()
   where
-    !nLeaves = UM.length ops `div` 2
+    !nLeaves = UM.length ops .>>. 1
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
@@ -179,7 +184,7 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           -- go up to the parent segment
           glitchLoopUpdate ((l + 1) .>>. 1) ((r - 1) .>>. 1)
 
--- | \(O(\log N)\) Acts on one leaf. TODO: Faster implementation.
+-- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 sactAtLSTree ::
   (Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -187,6 +192,8 @@ sactAtLSTree ::
   op ->
   m ()
 sactAtLSTree stree i = sactLSTree stree i i
+
+-- TODO: writeLSTree
 
 -- | \(O(\log N)\)
 foldLSTree ::
@@ -210,7 +217,7 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
       !rVertex = iRLeaf + nLeaves
   glitchFold lVertex rVertex mempty mempty
   where
-    !nLeaves = GM.length as `div` 2
+    !nLeaves = GM.length as .>>. 1
 
     isLeftChild = not . (`testBit` 0)
     isRightChild = (`testBit` 0)
@@ -254,7 +261,7 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
   | iLLeaf > iRLeaf || not (inRange (0, nLeaves - 1) iLLeaf) || not (inRange (0, nLeaves - 1) iRLeaf) = return Nothing
   | otherwise = Just <$> foldLSTree stree iLLeaf iRLeaf
   where
-    !nLeaves = GM.length as `div` 2
+    !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\)
 foldAllLSTree ::
@@ -273,8 +280,8 @@ _propOpMonoidsToLeaf ::
   Int ->
   m ()
 _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
-  let !leafVertex = iLeaf + nVerts `div` 2
 
+  let !leafVertex = iLeaf + (nVerts .>>. 1)
   -- From parent vertex to the parent of the leaf vertex:
   forM_ [height - 1, height - 2 .. 1] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
@@ -284,8 +291,8 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
     when (op /= mempty) $ do
       -- Propagate the operator monoid to the children:
       -- REMARK: The new coming operator operator always comes from the left.
-      UM.modify ops (op <>) $! childL vertex
-      UM.modify ops (op <>) $! childR vertex
+      UM.modify ops (op <>) $! _childL vertex
+      UM.modify ops (op <>) $! _childR vertex
 
       -- Evaluate the vertex and consume the operator monoid:
       GM.modify as (sact op) vertex
@@ -293,8 +300,6 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
   where
     !nVerts = GM.length as
     nthParent !leafVertex !nth = leafVertex .>>. nth
-    childL !vertex = vertex .<<. 1
-    childR !vertex = vertex .<<. 1 .|. 1
 
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
@@ -304,8 +309,8 @@ _evalToRoot ::
   Int ->
   m ()
 _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
-  let !leafVertex = iLeaf + nVerts `div` 2
 
+  let !leafVertex = iLeaf + nVerts .>>. 1
   forM_ [1 .. pred height] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
@@ -317,8 +322,6 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
   where
     !nVerts = GM.length as
     nthParent !leafVertex !nth = leafVertex .>>. nth
-    childL !vertex = vertex .<<. 1
-    childR !vertex = vertex .<<. 1 .|. 1
 
 ----------------------------------------------------------------------------------------------------
 -- TODO: test them
@@ -340,7 +343,7 @@ bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
   where
     !_ = dbgAssert (inRange (0, nLeaves - 1) l && inRange (0, nLeaves - 1) r) $ "bisectLSTree: giveninvalid range " ++ show (l, r)
       where
-        nLeaves = GM.length as `div` 2
+        nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log^2 N)\)
 {-# INLINE bisectLSTreeL #-}
