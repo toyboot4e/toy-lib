@@ -2,14 +2,12 @@
 #include "./__import"
 
 -- {{{ toy-lib import
-
 import Data.Instances.Affine2d
 import Data.ModInt
 import Data.SegmentTree.Lazy
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
@@ -39,7 +37,7 @@ solve = do
       sactLSTree stree l (r - 1) $ Affine2d (modInt a, modInt b)
       return Nothing
     (1, !l, !r, -1, -1) -> do
-      x <- unV2 <$> foldLSTree stree l r
+      x <- unV2 <$> foldLSTree stree l (r - 1)
       return $ Just x
     _ -> error "unreachable"
 
