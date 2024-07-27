@@ -316,8 +316,8 @@ _evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
     let !_ = dbgAssert (vertex > 0) "_evalToRoot"
 
     -- Evaluate this parent node by appending the child nodes:
-    !aL' <- sact <$!> UM.read ops (childL vertex) <*> GM.read as (childL vertex)
-    !aR' <- sact <$!> UM.read ops (childR vertex) <*> GM.read as (childR vertex)
+    !aL' <- sact <$!> UM.read ops (_childL vertex) <*> GM.read as (_childL vertex)
+    !aR' <- sact <$!> UM.read ops (_childR vertex) <*> GM.read as (_childR vertex)
     GM.write as vertex $! aL' <> aR'
   where
     !nVerts = GM.length as
