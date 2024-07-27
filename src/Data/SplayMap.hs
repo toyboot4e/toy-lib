@@ -46,10 +46,10 @@ nullSplayIndex = (== undefSplayIndex)
 
 -- | Splay tree node.
 data SplayNode k v = SplayNode
-  { lSpNode :: !SplayIndex,
-    rSpNode :: !SplayIndex,
-    keySpNode :: !k,
-    valSpNode :: !v
+  { lSN :: !SplayIndex,
+    rSN :: !SplayIndex,
+    keySN :: !k,
+    valSN :: !v
   }
   deriving (Show, Eq)
 
@@ -58,9 +58,9 @@ type SplayNodeRepr k v = (SplayIndex, SplayIndex, k, v)
 
 instance U.IsoUnbox (SplayNode k v) (SplayNodeRepr k v) where
   {-# INLINE toURepr #-}
-  toURepr SplayNode {..} = (lSpNode, rSpNode, keySpNode, valSpNode)
+  toURepr SplayNode {..} = (lSN, rSN, keySN, valSN)
   {-# INLINE fromURepr #-}
-  fromURepr (!lSpNode, !rSpNode, !keySpNode, !valSpNode) = SplayNode {..}
+  fromURepr (!lSN, !rSN, !keySN, !valSN) = SplayNode {..}
 
 {- ORMOLU_DISABLE -}
 newtype instance U.MVector s (SplayNode k v) = MV_SplayNode (UM.MVector s (SplayNodeRepr k v))
@@ -314,11 +314,11 @@ dfsSM sm@SplayMap {..} = do
   flip fix root $ \loop i -> do
     unless (nullSplayIndex i) $ do
       node <- readFront dataSM i
-      unless (nullSplayIndex (lSpNode node)) $ do
-        loop $ lSpNode node
-      pushBack buf (keySpNode node, valSpNode node)
-      unless (nullSplayIndex (rSpNode node)) $ do
-        loop $ rSpNode node
+      unless (nullSplayIndex (lSN node)) $ do
+        loop $ lSN node
+      pushBack buf (keySN node, valSN node)
+      unless (nullSplayIndex (rSN node)) $ do
+        loop $ rSN node
   unsafeFreezeBuffer buf
 
 -- * Splay
@@ -392,11 +392,11 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
   let inner iM iL iR = do
         when (iM == iL || iM == iR) $ error "wrong"
         nodeM <- readFront dataSM iM
-        case cmpF (keySpNode nodeM) of
-          LT | not (nullSplayIndex (lSpNode nodeM)) -> do
+        case cmpF (keySN nodeM) of
+          LT | not (nullSplayIndex (lSN nodeM)) -> do
             iM' <- do
-              nodeML <- readFront dataSM (lSpNode nodeM)
-              if not (nullSplayIndex (lSpNode nodeML)) && cmpF (keySpNode nodeML) == LT
+              nodeML <- readFront dataSM (lSN nodeM)
+              if not (nullSplayIndex (lSN nodeML)) && cmpF (keySN nodeML) == LT
                 then rotateRSM sm iM
                 else return iM
             -- link right:
@@ -405,10 +405,10 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
               else writeLChild iR iM'
             iM'' <- readLSM dataSM iM'
             inner iM'' iL iM'
-          GT | not (nullSplayIndex (rSpNode nodeM)) -> do
+          GT | not (nullSplayIndex (rSN nodeM)) -> do
             iM' <- do
-              nodeMR <- readFront dataSM (rSpNode nodeM)
-              if not (nullSplayIndex (rSpNode nodeMR)) && cmpF (keySpNode nodeMR) == GT
+              nodeMR <- readFront dataSM (rSN nodeM)
+              if not (nullSplayIndex (rSN nodeMR)) && cmpF (keySN nodeMR) == GT
                 then rotateLSM sm iM
                 else return iM
             -- link left:
@@ -423,7 +423,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             iRootR <- GM.read lrs 1
             done iM nodeM iRootL iRootR iL iR
             -- return
-            let !comparison = cmpF (keySpNode nodeM)
+            let !comparison = cmpF (keySN nodeM)
             return (iM, comparison)
 
   inner i0 undefSplayIndex undefSplayIndex
@@ -431,8 +431,8 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
     -- asselbles the L/M/R trees into one.
     done iM nodeM iRootL iRootR iL iR = do
       let !_ = assert (not (nullSplayIndex iM)) "null node after spalying?"
-      let !iML = lSpNode nodeM
-      let !iMR = rSpNode nodeM
+      let !iML = lSN nodeM
+      let !iMR = rSN nodeM
       unless (nullSplayIndex iL) $ do
         writeRChild iL iML
         writeLChild iM iRootL
@@ -540,7 +540,7 @@ popRootSM sm@SplayMap {..} = do
     else do
       -- splay @len - 1@
       lastNode <- readBack dataSM 0
-      let !key = keySpNode lastNode
+      let !key = keySN lastNode
       _ <- splayBySM sm (compare key) root'
       -- now the tree looks like this:
       --
