@@ -1,12 +1,9 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Data.Vector.Extra where
 
 import Algorithm.Bisect
-import Control.Monad
-import Control.Monad.Primitive
+import Control.Monad.Primitive (PrimMonad)
 import Data.Maybe
-import Data.Ord (comparing, Down(..))
+import Data.Ord (comparing)
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
@@ -74,34 +71,3 @@ constructrMN !n f = do
         v'' <- G.unsafeFreeze v'
         fill v'' (i + 1)
     fill v _ = return v
-
--- | Faster @nextPermutaions@ (as of today).
-nextPermutation :: (PrimMonad m, Ord e, GM.MVector v e) => v (PrimState m) e -> m Bool
-nextPermutation v
-  | dim < 2 = return False
-  | otherwise = stToPrim $ do
-      val <- GM.unsafeRead v 0
-      (k, l) <- loop val (-1) 0 val 1
-      if k < 0
-        then return False
-        else
-          GM.unsafeSwap v k l
-            >> GM.reverse (GM.unsafeSlice (k + 1) (dim - k - 1) v)
-            >> return True
-  where
-    loop !kval !k !l !prev !i
-      | i == dim = return (k, l)
-      | otherwise = do
-          cur <- GM.unsafeRead v i
-          -- the line modified from
-          let (!kval', !k') = if prev < cur then (prev, i - 1) else (kval, k)
-              l' = if kval' < cur then i else l
-          loop kval' k' l' cur (i + 1)
-    dim = GM.length v
-
--- | TODO: coerce?
-prevPermutation :: (Ord e, G.Vector v e, G.Vector v (Down e)) => v e -> v e
-prevPermutation =
-  G.map (\case Down !x -> x)
-    . G.modify (void . nextPermutation)
-    . G.map Down

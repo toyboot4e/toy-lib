@@ -17,7 +17,6 @@ import Data.Semigroup
 import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
-import Data.Vector.Extra (nextPermutation)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
@@ -25,6 +24,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (powersetU)
+import ToyLib.Compat (nextPermutation)
 import ToyLib.Debug
 import ToyLib.Prelude (rangeU)
 
