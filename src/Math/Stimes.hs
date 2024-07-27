@@ -39,13 +39,4 @@ mulTimes n0 op x0
 mulTimesMay :: Int -> (a -> a -> a) -> a -> Maybe a
 mulTimesMay n0 op x0
   | n0 <= 0 = Nothing
-  | otherwise = Just $! f x0 n0
-  where
-    f !x !n
-      | even n = f (x `op` x) (n .>>. 1)
-      | n == 1 = x
-      | otherwise = g (x `op` x) (n .>>. 1) x
-    g !x !n !z
-      | even n = g (x `op` x) (n .>>. 1) z
-      | n == 1 = x `op` z
-      | otherwise = g (x `op` x) (n .>>. 1) (x `op` z)
+  | otherwise = Just $! mulTimes n0 op x0
