@@ -77,6 +77,16 @@ _childL !vertex = vertex .<<. 1
 _childR :: Int -> Int
 _childR !vertex = vertex .<<. 1 .|. 1
 
+-- | \(O(1)\)
+{-# INLINE _isLChild #-}
+_isLChild :: Int -> Bool
+_isLChild = not . (`testBit` 0)
+
+-- | \(O(1)\)
+{-# INLINE _isRChild #-}
+_isRChild :: Int -> Bool
+_isRChild = (`testBit` 0)
+
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
 generateLSTreeImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
@@ -94,7 +104,6 @@ generateLSTreeImpl !n !f = do
 
   -- Fill parents from bottom to top:
   forM_ [nLeaves - 1, nLeaves - 2 .. 1] $ \i -> do
-    -- we dont't need to apply operators as they're mempty.
     !l <- GM.read as (_childL i)
     !r <- GM.read as (_childR i)
     GM.write as i $! l <> r
@@ -110,7 +119,7 @@ generateLSTreeImpl !n !f = do
 generateLSTree :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
--- | \(O(N)\). TODO: Test it. Share the internal implementation with `genearteLSTree` takeing filling function.
+-- | \(O(N)\). TODO: Share the internal implementation with `genearteLSTree` takeing filling function.
 {-# INLINE buildLSTree #-}
 buildLSTree :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => U.Vector a -> m (LazySegmentTree a op (PrimState m))
 buildLSTree xs = do
@@ -134,8 +143,8 @@ buildLSTree xs = do
     (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
     !nLeaves = n2 .>>. 1
 
--- | \(O(\log N)\) Appends the lazy operator monoid monoids over a span. They are just stored and
--- propagated when queried.
+-- | \(O(\log N)\) Applies a lazy operator monoid over a span. They are just stored and propagated
+-- when queried.
 sactLSTree ::
   forall a op m.
   (Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -150,41 +159,38 @@ sactLSTree stree@(LazySegmentTree !_ !ops !_) !iLLeaf !iRLeaf !op = do
           "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
-  _propOpMonoidsToLeaf stree iLLeaf
-  _propOpMonoidsToLeaf stree iRLeaf
+  _propDownFromRootToLeaf stree iLLeaf
+  _propDownFromRootToLeaf stree iRLeaf
 
   -- 2. Propagate the given lazy operator monoids to the corresponding largest segments:
   let !lVertex = iLLeaf + nLeaves
       !rVertex = iRLeaf + nLeaves
-  glitchLoopUpdate lVertex rVertex
+  glitchSAct lVertex rVertex
 
   -- 3. Evaluate the parent vertices:
-  _evalToRoot stree iLLeaf
-  _evalToRoot stree iRLeaf
+  _evalFromLeafToRoot stree iLLeaf
+  _evalFromLeafToRoot stree iRLeaf
 
   return ()
   where
     !nLeaves = UM.length ops .>>. 1
 
-    isLeftChild = not . (`testBit` 0)
-    isRightChild = (`testBit` 0)
-
     -- Find the maximum segments for the given range and append the operator monoid.
     -- It's much like using some glitch in a platformer game:
-    glitchLoopUpdate :: Int -> Int -> m ()
-    glitchLoopUpdate !l !r
+    glitchSAct :: Int -> Int -> m ()
+    glitchSAct !l !r
       | l > r = return ()
       | otherwise = do
-          when (isRightChild l) $ do
             -- REMARK: The new coming operator operator always comes from the left.
             UM.modify ops (op <>) l
+          when (_isRChild l) $ do
 
-          when (isLeftChild r) $ do
             -- REMARK: The new coming operator operator always comes from the left.
             UM.modify ops (op <>) r
+          when (_isLChild r) $ do
 
           -- go up to the parent segment
-          glitchLoopUpdate ((l + 1) .>>. 1) ((r - 1) .>>. 1)
+          glitchSAct ((l + 1) .>>. 1) ((r - 1) .>>. 1)
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 sactAtLSTree ::
@@ -211,8 +217,8 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
           "foldLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids into the leaves:
-  _propOpMonoidsToLeaf stree iLLeaf
-  _propOpMonoidsToLeaf stree iRLeaf
+  _propDownFromRootToLeaf stree iLLeaf
+  _propDownFromRootToLeaf stree iRLeaf
 
   -- 2. Return concatanated result:
   let !lVertex = iLLeaf + nLeaves
@@ -221,9 +227,6 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
   where
     !nLeaves = GM.length as .>>. 1
 
-    isLeftChild = not . (`testBit` 0)
-    isRightChild = (`testBit` 0)
-
     -- Find the maximum segments for the given range and append the value.
     -- It's much like using some glitch in a platformer game:
     glitchFold :: Int -> Int -> a -> a -> m a
@@ -231,12 +234,12 @@ foldLSTree stree@(LazySegmentTree !as !ops !_) !iLLeaf !iRLeaf = do
       | l > r = return $! lAcc <> rAcc
       | otherwise = do
           !lAcc' <-
-            if isRightChild l
+            if _isRChild l
               then (lAcc <>) <$> (sact <$> UM.read ops l <*> GM.read as l)
               else return lAcc
 
           !rAcc' <-
-            if isLeftChild r
+            if _isLChild r
               then (<> rAcc) <$> (sact <$> UM.read ops r <*> GM.read as r)
               else return rAcc
 
@@ -276,13 +279,12 @@ foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length 
 -- | \(O(\log N)\) Propagates the lazy operator monoids from the root to a leaf.
 --
 -- - `iLeaf`: Given with zero-based index.
-_propOpMonoidsToLeaf ::
+_propDownFromRootToLeaf ::
   (HasCallStack, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m ()
-_propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
-
+_propDownFromRootToLeaf stree@(LazySegmentTree !as !ops !height) !iLeaf = do
   let !leafVertex = iLeaf + (nVerts .>>. 1)
   -- From parent vertex to the parent of the leaf vertex:
   forM_ [height - 1, height - 2 .. 1] $ \iParent -> do
@@ -305,13 +307,12 @@ _propOpMonoidsToLeaf (LazySegmentTree !as !ops !height) !iLeaf = do
 
 -- | Evaluates parent values on `updateSegmentTree`.
 -- TODO: move to where clause of the update function?
-_evalToRoot ::
+_evalFromLeafToRoot ::
   (HasCallStack, Monoid a, U.Unbox a, SemigroupAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m ()
-_evalToRoot (LazySegmentTree !as !ops !height) !iLeaf = do
-
+_evalFromLeafToRoot stree@(LazySegmentTree !as !ops !height) !iLeaf = do
   let !leafVertex = iLeaf + nVerts .>>. 1
   forM_ [1 .. pred height] $ \iParent -> do
     let !vertex = nthParent leafVertex iParent
