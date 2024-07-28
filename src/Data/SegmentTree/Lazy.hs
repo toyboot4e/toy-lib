@@ -27,17 +27,17 @@ import ToyLib.Debug
 --
 -- = (Internal) 1-based indices
 --
--- Use 1-based indices for super handy vertex indices:
+-- Use 1-based indices for handy vertex indices:
 --
 -- @
---            1             |
---      2           3       | height = 4 = log_2 16
---   4     5     6     7    |
--- 08 09 10 11 12 13 14 15  v
+-- [                  1                  ]  |
+-- [        2        ] [        3        ]  | height = 4 = log_2 16
+-- [   4   ] [   5   ] [   6   ] [   7   ]  |
+-- [08] [09] [10] [11] [12] [13] [14] [15]  v
 -- ^
 -- +-- nVerts / 2
 --
--- 0  1  2  3  4  5  6  7   -- iLeaf is given by user and uses zero-based indices.
+-- 0    1    2    3    4    5    6    7   -- iLeaf
 --
 -- - parent = v .>>. 1
 -- - childL = v .<<. 1
@@ -50,7 +50,7 @@ import ToyLib.Debug
 -- @newOp `sact` (oldOp `sact` ac)@.
 data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s op) !Int
 
--- | \(O(N)\) Creates `LazySegmentTree` with `mempty` as the initial accumulated values.
+-- | \(O(N)\) Creates a `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::
   (Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
@@ -67,10 +67,12 @@ newLSTreeImpl !n = do
 newLSTree :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree a op (PrimState m))
 newLSTree = newLSTreeImpl
 
+-- | \(O(1)\)
 {-# INLINE _childL #-}
 _childL :: Int -> Int
 _childL !vertex = vertex .<<. 1
 
+-- | \(O(1)\)
 {-# INLINE _childR #-}
 _childR :: Int -> Int
 _childR !vertex = vertex .<<. 1 .|. 1
@@ -271,7 +273,7 @@ foldAllLSTree ::
 -- TODO: faster implementation
 foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as - 1)
 
--- | \(O(\log N)\) Propagates the lazy operator monoids from top to bottom where the leaf vertex is contained.
+-- | \(O(\log N)\) Propagates the lazy operator monoids from the root to a leaf.
 --
 -- - `iLeaf`: Given with zero-based index.
 _propOpMonoidsToLeaf ::
