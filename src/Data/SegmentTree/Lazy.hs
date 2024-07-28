@@ -91,6 +91,7 @@ import ToyLib.Debug
 data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s op) !Int
 
 -- | \(O(N)\) Creates a `LazySegmentTree` with `mempty` as the initial accumulated values.
+{-# INLINE newLSTreeImpl #-}
 newLSTreeImpl ::
   (Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
@@ -104,6 +105,7 @@ newLSTreeImpl !n = do
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
 -- | \(O(N)\)
+{-# INLINE newLSTree #-}
 newLSTree :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree a op (PrimState m))
 newLSTree = newLSTreeImpl
 
@@ -128,10 +130,12 @@ _isRChild :: Int -> Bool
 _isRChild = (`testBit` 0)
 
 -- | \(O(1)\) Pruning trick for excluding vertices under the glitch segments.
+{-# INLINE _pruneTrick #-}
 _pruneTrick :: Int -> Int -> Int -> Bool
 _pruneTrick vLeaf iParent lrAdjuster = (vLeaf + lrAdjuster) .>>. iParent .<<. iParent /= (vLeaf + lrAdjuster)
 
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
+{-# INLINE generateLSTreeImpl #-}
 generateLSTreeImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
@@ -160,6 +164,7 @@ generateLSTreeImpl !n !f = do
     !nLeaves = n2 .>>. 1
 
 -- | \(O(N)\)
+{-# INLINE generateLSTree #-}
 generateLSTree :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
@@ -188,6 +193,7 @@ buildLSTree xs = do
     !nLeaves = n2 .>>. 1
 
 -- | \(O(\log N)\)
+{-# INLINE foldLSTree #-}
 foldLSTree ::
   forall a op m.
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -229,6 +235,7 @@ foldLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
+{-# INLINE readLSTree #-}
 readLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -237,6 +244,7 @@ readLSTree ::
 readLSTree stree i = foldLSTree stree i i
 
 -- | \(O(\log N)\)
+{-# INLINE foldMayLSTree #-}
 foldMayLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -250,6 +258,7 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
     !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\)
+{-# INLINE foldAllLSTree #-}
 foldAllLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -258,6 +267,7 @@ foldAllLSTree ::
 foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as - 1)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
+{-# INLINE sactLSTree #-}
 sactLSTree ::
   forall a op m.
   (Semigroup a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -305,6 +315,7 @@ sactLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = do
           GM.write as v $! l <> r
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
+{-# INLINE sactAtLSTree #-}
 sactAtLSTree ::
   (Semigroup a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -325,6 +336,7 @@ sactAtLSTree stree i = sactLSTree stree i i
 -- The propagation is performed from the root to just before the folded vertices. In other words,
 -- propagation is performed just before performing the first glitch. That's enough for both folding
 -- and acting.
+{-# INLINE _propDownFromRoot #-}
 _propDownFromRoot ::
   (HasCallStack, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
