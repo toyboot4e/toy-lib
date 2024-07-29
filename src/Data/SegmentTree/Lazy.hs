@@ -15,7 +15,7 @@ module Data.SegmentTree.Lazy where
 
 import Algorithm.Bisect (bisectM)
 import Control.Monad
-import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bifunctor
 import Data.Bits
 -- TODO: write manually
@@ -399,7 +399,7 @@ _foldLSTree ::
   Int ->
   Int ->
   m a
-_foldLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
+_foldLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "_foldLSTree: invalid range " ++ show (iLLeaf, iRLeaf)
@@ -414,7 +414,7 @@ _foldLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
     !nLeaves = GM.length as .>>. 1
 
     -- \(O(\log N)\)
-    glitchFold :: Int -> Int -> a -> a -> m a
+    -- glitchFold :: Int -> Int -> a -> a -> m a
     glitchFold !l !r !lAcc !rAcc
       | l > r = return $! lAcc <> rAcc
       | otherwise = do
@@ -433,6 +433,7 @@ _foldLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\)
+{-# INLINE _foldMayLSTree #-}
 _foldMayLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -448,6 +449,7 @@ _foldMayLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
     !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
+{-# INLINE _readLSTree #-}
 _readLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -457,6 +459,7 @@ _readLSTree ::
 _readLSTree _sact stree i = _foldLSTree _sact stree i i
 
 -- | \(O(\log N)\)
+{-# INLINE _foldAllLSTree #-}
 _foldAllLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -475,7 +478,7 @@ _sactLSTree ::
   Int ->
   op ->
   m ()
-_sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = do
+_sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
@@ -494,7 +497,7 @@ _sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op =
     !nLeaves = GM.length ops .>>. 1
 
     -- \(O(\log N)\)
-    glitchSAct :: Int -> Int -> m ()
+    -- glitchSAct :: Int -> Int -> m ()
     glitchSAct !l !r
       | l > r = return ()
       | otherwise = do
@@ -504,7 +507,7 @@ _sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op =
           glitchSAct ((l + 1) .>>. 1) ((r - 1) .>>. 1)
 
     -- \(O(N)\) Evaluates parent values of glitch intervals.
-    evalParents :: Int -> Int -> m ()
+    -- evalParents :: Int -> Int -> m ()
     evalParents !leafVertex !lrAdjuster = do
       forM_ [1 .. pred height] $ \iParent -> do
         let !v = leafVertex .>>. iParent
@@ -514,6 +517,7 @@ _sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op =
           GM.write as v $! l <> r
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
+{-# INLINE _sactAtLSTree #-}
 _sactAtLSTree ::
   (Semigroup a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -535,6 +539,7 @@ _sactAtLSTree sact_ stree i op = _sactLSTree sact_ stree i i op
 -- The propagation is performed from the root to just before the folded vertices. In other words,
 -- propagation is performed just before performing the first glitch. That's enough for both folding
 -- and acting.
+{-# INLINE _propDownFromRoot #-}
 _propDownFromRoot ::
   (HasCallStack, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -559,6 +564,7 @@ _propDownFromRoot _sact stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdjuste
 --
 -- = Invariants
 -- - The new coming operator operator always comes from the left.
+{-# INLINE _sactAt #-}
 _sactAt ::
   (HasCallStack, U.Unbox a, Semigroup op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
@@ -578,6 +584,7 @@ _sactAt sact_ (LazySegmentTree !as !ops !height) !vertex !op = do
     !nLeaves = GM.length as .>>. 1
 
 -- | Propagates the operator onto the children. Push.
+{-# INLINE _propAt #-}
 _propAt ::
   (HasCallStack, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
   (op -> a -> Int -> a) ->
