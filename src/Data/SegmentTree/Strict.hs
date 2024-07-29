@@ -4,7 +4,7 @@ module Data.SegmentTree.Strict where
 import Algorithm.Bisect
 import Control.Monad (forM_, when)
 import Control.Monad.Fix
-import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bits
 import Data.Ix
 import qualified Data.Vector.Generic as G
@@ -82,6 +82,7 @@ buildSTree leaves = do
     !nLeaves = nVerts .>>. 1
 
 -- | \(O(\log N)\) Reads a leaf value.
+{-# INLINE readSTree #-}
 readSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> m a
 readSTree (SegmentTree vec nValidLeaves) i = GM.unsafeRead vec (nLeaves + i)
   where
@@ -90,13 +91,14 @@ readSTree (SegmentTree vec nValidLeaves) i = GM.unsafeRead vec (nLeaves + i)
 
 -- | \(O(\log N)\) (Internal) Updates parent nodes after modifying a leaf.
 _unsafeUpdateParentNodes :: (Monoid a, GM.MVector v a, PrimMonad m) => v (PrimState m) a -> Int -> m ()
-_unsafeUpdateParentNodes vec v0 = do
+_unsafeUpdateParentNodes vec v0 = stToPrim $ do
   flip fix (v0 .>>. 1) $ \loop v -> do
     !x' <- (<>) <$> GM.unsafeRead vec (v .<<. 1) <*> GM.unsafeRead vec ((v .<<. 1) .|. 1)
     GM.unsafeWrite vec v x'
     when (v > 1) $ loop (v .>>. 1)
 
 -- | \(\Theta(\log N)\) Writes a leaf value.
+{-# INLINE writeSTree #-}
 writeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
 writeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
@@ -107,6 +109,7 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
     nLeaves = GM.length vec .>>. 1
 
 -- | \(\Theta(\log N)\) Writes a leaf value and returns the old value.
+{-# INLINE exchangeSTree #-}
 exchangeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m a
 exchangeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
@@ -118,6 +121,7 @@ exchangeSTree (SegmentTree vec nValidLeaves) i x = do
     nLeaves = GM.length vec .>>. 1
 
 -- | \(\Theta(\log N)\) Modifies a leaf value.
+{-# INLINE modifySTree #-}
 modifySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree (SegmentTree vec nValidLeaves) f i = do
   let v0 = nLeaves + i
@@ -130,7 +134,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
 -- (so this is actually @unsafeFoldSTree@).
 foldSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m a
-foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
+foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where
     !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
     !nLeaves = GM.length vec .>>. 1
@@ -148,6 +152,7 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = glitchFold (l0 + nLeaves) (r0 +
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lx' rx'
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns `Nothing` when given invalid range.
+{-# INLINE foldMaySTree #-}
 foldMaySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m (Maybe a)
 foldMaySTree stree@(SegmentTree vec _) l0 r0
   | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = return Nothing
@@ -156,6 +161,7 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(1)\) Reads the whole span segment.
+{-# INLINE foldAllSTree #-}
 foldAllSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
 foldAllSTree (SegmentTree vec _) = GM.read vec 1
 
@@ -166,6 +172,7 @@ foldAllSTree (SegmentTree vec _) = GM.read vec 1
 -- = Typical problems
 -- - [PAST 07 - L](https://atcoder.jp/contests/past202107-open/tasks/past202107_l)
 --   Find minimum value indices.
+{-# INLINE bsearchSTree #-}
 bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
   let !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) l0) $ "bsearhSTree: wrong range " ++ show (l0, r0) ++ " for " ++ show nValidLeaves
@@ -174,19 +181,23 @@ bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
     return $ f x
 
 -- | \(O(\log^2 N)\)
+{-# INLINE bsearchSTreeL #-}
 bsearchSTreeL :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeL stree l0 r0 f = fst <$> bsearchSTree stree l0 r0 f
 
 -- | \(O(\log^2 N)\)
+{-# INLINE bsearchSTreeR #-}
 bsearchSTreeR :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeR stree l0 r0 f = snd <$> bsearchSTree stree l0 r0 f
 
 -- | \(\Theta(N)\) Freezes the leaf values making a copy.
+{-# INLINE freezeLeavesSTree #-}
 freezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
 freezeLeavesSTree (SegmentTree vec nLeaves) = do
   G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.freeze vec
 
 -- | \(\Theta(1)\) Freezes the leaf values without making a copy.
+{-# INLINE unsafeFreezeLeavesSTree #-}
 unsafeFreezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
 unsafeFreezeLeavesSTree (SegmentTree vec nLeaves) = do
   G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.unsafeFreeze vec
