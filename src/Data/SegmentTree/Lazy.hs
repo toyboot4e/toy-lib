@@ -1,5 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Lazily propageted segment tree, where we can perform operation over range.
 --
@@ -15,18 +17,20 @@ module Data.SegmentTree.Lazy where
 
 import Algorithm.Bisect (bisectM)
 import Control.Monad
-import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
 import Data.Bits
 -- TODO: write manually
 import Data.Core.SemigroupAction
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (msbOf)
 import ToyLib.Debug
 import Data.Coerce
+import Unsafe.Coerce
 
 -- | Lazy segment tree.
 --
@@ -193,8 +197,6 @@ buildLSTree xs = do
     (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
     !nLeaves = n2 .>>. 1
 
--- * Semigroup action without length
-
 -- | \(O(\log N)\)
 {-# INLINE foldLSTree #-}
 foldLSTree ::
@@ -204,7 +206,7 @@ foldLSTree ::
   Int ->
   Int ->
   m a
-foldLSTree = _foldLSTree sactWithoutLength
+foldLSTree stree = foldWithLengthLSTree (unsafeCoerceWithLength stree)
 
 -- | \(O(\log N)\)
 {-# INLINE foldMayLSTree #-}
@@ -214,16 +216,16 @@ foldMayLSTree ::
   Int ->
   Int ->
   m (Maybe a)
-foldMayLSTree = _foldMayLSTree sactWithoutLength
+foldMayLSTree stree = foldMayWithLengthLSTree (unsafeCoerceWithLength stree)
 
--- | \(O(\log N)\) Reads one leaf.
+-- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 {-# INLINE readLSTree #-}
 readLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m a
-readLSTree = _readLSTree sactWithoutLength
+readLSTree stree = readWithLengthLSTree (unsafeCoerceWithLength stree)
 
 -- | \(O(\log N)\)
 {-# INLINE foldAllLSTree #-}
@@ -231,7 +233,8 @@ foldAllLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   m a
-foldAllLSTree = _foldAllLSTree sactWithoutLength
+-- TODO: faster implementation
+foldAllLSTree stree = foldAllWithLengthLSTree (unsafeCoerceWithLength stree)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
 {-# INLINE sactLSTree #-}
@@ -243,7 +246,7 @@ sactLSTree ::
   Int ->
   op ->
   m ()
-sactLSTree = _sactLSTree sactWithoutLength
+sactLSTree stree l r op = sactWithLengthLSTree (unsafeCoerceWithLength stree) l r (coerce op)
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 {-# INLINE sactAtLSTree #-}
@@ -253,22 +256,18 @@ sactAtLSTree ::
   Int ->
   op ->
   m ()
-sactAtLSTree = _sactAtLSTree sactWithoutLength
+sactAtLSTree stree i op = sactAtWithLengthLSTree (unsafeCoerceWithLength stree) i (coerce op)
 
 -- TODO: writeLSTree
 -- TODO: modifyLSTree
 
--- * Semigroup action with length
+-- * Action with length given by the segment tree
 
 -- | Right semigroup aciton with length given by the segment tree. Any `Semigroup` can be coerced
 -- into `SemigroupActionWithLength` using the `WithLength` newtype.
 class SemigroupActionWithLength s a where
   -- | Right semigroup aciton with length given by the segment tree.
   sactWithLength :: s -> a -> Int -> a
-
-{-# INLINE sactWithoutLength #-}
-sactWithoutLength :: (SemigroupAction s a) => s -> a -> Int -> a
-sactWithoutLength s a _ = sact s a
 
 -- | (Internal) Wraps a `SemigroupAction` instance into a `SemigroupActionWithLength`.
 newtype WithLength a = WithLength a
@@ -286,8 +285,19 @@ instance (SemigroupAction s a) => SemigroupActionWithLength (WithLength s) a whe
   {-# INLINE sactWithLength #-}
   sactWithLength s a _ = coerce (sact @s @a) s a
 
+{- ORMOLU_DISABLE -}
+newtype instance U.MVector s (WithLength a) = MV_WithLength (U.MVector s a)
+newtype instance U.Vector (WithLength a) = V_WithLength (U.Vector a)
+deriving instance (U.Unbox a) => GM.MVector UM.MVector (WithLength a)
+deriving instance (U.Unbox a) => G.Vector U.Vector (WithLength a)
+instance (U.Unbox a) => U.Unbox (WithLength a)
+{- ORMOLU_ENABLE -}
+
+-- | TODO: Remove @unsafe@. Maybe.
+unsafeCoerceWithLength :: (SemigroupAction op a) => LazySegmentTree a op s -> LazySegmentTree a (WithLength op) s
+unsafeCoerceWithLength = unsafeCoerce
+
 -- | \(O(\log N)\)
-{-# INLINE foldWithLengthLSTree #-}
 foldWithLengthLSTree ::
   forall a op m.
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -295,37 +305,70 @@ foldWithLengthLSTree ::
   Int ->
   Int ->
   m a
-foldWithLengthLSTree = _foldLSTree sactWithLength
+foldWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
+  let !_ =
+        dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
+          "foldWithLengthLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
+
+  -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
+  _propDownFromRootWithLength stree iLLeaf 0
+  _propDownFromRootWithLength stree iRLeaf 1
+
+  -- 2. Fold:
+  glitchFold (iLLeaf + nLeaves) (iRLeaf + nLeaves) mempty mempty
+  where
+    !nLeaves = GM.length as .>>. 1
+
+    -- \(O(\log N)\)
+    glitchFold :: Int -> Int -> a -> a -> m a
+    glitchFold !l !r !lAcc !rAcc
+      | l > r = return $! lAcc <> rAcc
+      | otherwise = do
+          -- Note that the operator at @i@ is already performed for @i@ (it' for their children).
+          !lAcc' <-
+            if _isRChild l
+              then (lAcc <>) <$> GM.read as l
+              else return lAcc
+
+          !rAcc' <-
+            if _isLChild r
+              then (<> rAcc) <$> GM.read as r
+              else return rAcc
+
+          -- go up to the parent segment, but optionally out of the bounds (like a glitch):
+          glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\)
-{-# INLINE foldMayWithLengthLSTree #-}
 foldMayWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
   m (Maybe a)
-foldMayWithLengthLSTree = _foldMayLSTree sactWithLength
+foldMayWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
+  | 0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1) =
+    Just <$> foldWithLengthLSTree stree iLLeaf iRLeaf
+  | otherwise = return Nothing
+  where
+    !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
-{-# INLINE readWithLengthLSTree #-}
 readWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m a
-readWithLengthLSTree = _readLSTree sactWithLength
+readWithLengthLSTree stree i = foldWithLengthLSTree stree i i
 
 -- | \(O(\log N)\)
-{-# INLINE foldAllWithLengthLSTree #-}
 foldAllWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   m a
-foldAllWithLengthLSTree = _foldAllLSTree sactWithLength
+-- TODO: faster implementation
+foldAllWithLengthLSTree stree@(LazySegmentTree !as !_ !_) = foldWithLengthLSTree stree 0 (GM.length as .>>. 1 - 1)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
-{-# INLINE sactWithLengthLSTree #-}
 sactWithLengthLSTree ::
   forall a op m.
   (Semigroup a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -334,20 +377,119 @@ sactWithLengthLSTree ::
   Int ->
   op ->
   m ()
-sactWithLengthLSTree = _sactLSTree sactWithLength
+sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = do
+  let !_ =
+        dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
+          "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
+
+-- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
+  _propDownFromRootWithLength stree iLLeaf 0
+  _propDownFromRootWithLength stree iRLeaf 1
+
+  -- 2. Propagate the given lazy operator monoids to the corresponding segments:
+  glitchSAct (iLLeaf + nLeaves) (iRLeaf + nLeaves)
+
+  -- 3. Evaluate the parent vertices:
+  evalParents (iLLeaf + nLeaves) 0
+  evalParents (iRLeaf + nLeaves) 1
+  where
+    !nLeaves = GM.length ops .>>. 1
+
+    -- \(O(\log N)\)
+    glitchSAct :: Int -> Int -> m ()
+    glitchSAct !l !r
+      | l > r = return ()
+      | otherwise = do
+          when (_isRChild l) $ _sactAtWithLength stree l op
+          when (_isLChild r) $ _sactAtWithLength stree r op
+          -- go up to the parent segment, but optionally out of the bounds (like a glitch):
+          glitchSAct ((l + 1) .>>. 1) ((r - 1) .>>. 1)
+
+    -- \(O(N)\) Evaluates parent values of glitch intervals.
+    evalParents :: Int -> Int -> m ()
+    evalParents !leafVertex !lrAdjuster = do
+      forM_ [1 .. pred height] $ \iParent -> do
+        let !v = leafVertex .>>. iParent
+        when (_pruneTrick leafVertex iParent lrAdjuster) $ do
+          l <- GM.read as (_childL v)
+          r <- GM.read as (_childR v)
+          GM.write as v $! l <> r
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
-{-# INLINE sactAtWithLengthLSTree #-}
 sactAtWithLengthLSTree ::
-  (U.Unbox a, Monoid op, SemigroupActionWithLength op a, U.Unbox op, PrimMonad m) =>
+  (Semigroup a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   op ->
   m ()
-sactAtWithLengthLSTree = _sactAt sactWithLength
+sactAtWithLengthLSTree stree i = sactWithLengthLSTree stree i i
 
 -- TODO: writeLSTree
 -- TODO: modifyLSTree
+
+-- | \(O(\log N)\) Propagates the lazy operator monoids from the root to just before the glitch
+-- segments.
+--
+-- - `iLeaf`: Given with zero-based index.
+--
+-- = Pruning
+-- The propagation is performed from the root to just before the folded vertices. In other words,
+-- propagation is performed just before performing the first glitch. That's enough for both folding
+-- and acting.
+_propDownFromRootWithLength ::
+  (HasCallStack, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree a op (PrimState m) ->
+  Int ->
+  Int ->
+  m ()
+_propDownFromRootWithLength stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdjuster = do
+  let !leafVertex = iLeaf + nLeaves
+  -- From parent vertex to the parent of the leaf vertex:
+  forM_ [height - 1, height - 2 .. 1] $ \iParent -> do
+    when (_pruneTrick leafVertex iParent lrAdjuster) $ do
+      _propAtWithLength stree $ leafVertex .>>. iParent
+  where
+    !nLeaves = GM.length as .>>. 1
+
+-- | \(O(1)\) Acts on a node.
+--
+-- = Evaluation strategy
+-- - The propagated value for the children are stored and propagated lazily.
+-- - The propagated value to the vertex is evaluated instantly.
+--
+-- = Invariants
+-- - The new coming operator operator always comes from the left.
+_sactAtWithLength ::
+  (HasCallStack, U.Unbox a, Semigroup op, SemigroupActionWithLength op a, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree a op (PrimState m) ->
+  Int ->
+  op ->
+  m ()
+_sactAtWithLength (LazySegmentTree !as !ops !height) !vertex !op = do
+  -- The propagated value to the vertex is evaluated instantly:
+  let !len = 1 .<<. (height - 1 - msbOf vertex)
+  GM.modify as (\a -> sactWithLength op a len) vertex
+  when (vertex < nLeaves) $ do
+    -- The propagated value for the children are stored and propagated lazily:
+    -- TODO: beats
+    GM.modify ops (op <>) vertex
+  where
+    !nLeaves = GM.length as .>>. 1
+
+-- | Propagates the operator onto the children. Push.
+_propAtWithLength ::
+  (HasCallStack, U.Unbox a, Monoid op, Eq op, SemigroupActionWithLength op a, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree a op (PrimState m) ->
+  Int ->
+  m ()
+_propAtWithLength stree@(LazySegmentTree !_ !ops !_) !vertex = do
+  -- Read and consume the operator:
+  !op <- GM.exchange ops vertex mempty
+  when (op /= mempty) $ do
+    -- Propagate the operator onto the children:
+    -- REMARK: The new coming operator operator always comes from the left.
+    _sactAtWithLength stree (_childL vertex) op
+    _sactAtWithLength stree (_childR vertex) op
 
 -- * Bisection methods
 
@@ -387,216 +529,3 @@ bisectLSTreeR ::
   (a -> Bool) ->
   m (Maybe Int)
 bisectLSTreeR stree l r f = snd <$> bisectLSTree stree l r f
-
--- * Internals
-
--- | \(O(\log N)\)
-_foldLSTree ::
-  forall a op m.
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  Int ->
-  m a
-_foldLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
-  let !_ =
-        dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
-          "_foldLSTree: invalid range " ++ show (iLLeaf, iRLeaf)
-
-  -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
-  _propDownFromRoot sact_ stree iLLeaf 0
-  _propDownFromRoot sact_ stree iRLeaf 1
-
-  -- 2. Fold:
-  glitchFold (iLLeaf + nLeaves) (iRLeaf + nLeaves) mempty mempty
-  where
-    !nLeaves = GM.length as .>>. 1
-
-    -- \(O(\log N)\)
-    -- glitchFold :: Int -> Int -> a -> a -> m a
-    glitchFold !l !r !lAcc !rAcc
-      | l > r = return $! lAcc <> rAcc
-      | otherwise = do
-          -- Note that the operator at @i@ is already performed for @i@ (it' for their children).
-          !lAcc' <-
-            if _isRChild l
-              then (lAcc <>) <$> GM.read as l
-              else return lAcc
-
-          !rAcc' <-
-            if _isLChild r
-              then (<> rAcc) <$> GM.read as r
-              else return rAcc
-
-          -- go up to the parent segment, but optionally out of the bounds (like a glitch):
-          glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
-
--- | \(O(\log N)\)
-{-# INLINE _foldMayLSTree #-}
-_foldMayLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  Int ->
-  m (Maybe a)
-_foldMayLSTree sact_ stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
-  | 0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1) =
-    Just <$> _foldLSTree sact_ stree iLLeaf iRLeaf
-  | otherwise = return Nothing
-  where
-    !nLeaves = GM.length as .>>. 1
-
--- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
-{-# INLINE _readLSTree #-}
-_readLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  m a
-_readLSTree _sact stree i = _foldLSTree _sact stree i i
-
--- | \(O(\log N)\)
-{-# INLINE _foldAllLSTree #-}
-_foldAllLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  m a
--- TODO: faster implementation
-_foldAllLSTree sact_ stree@(LazySegmentTree !as !_ !_) = _foldLSTree sact_ stree 0 (GM.length as .>>. 1 - 1)
-
--- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
-_sactLSTree ::
-  forall a op m.
-  (Semigroup a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  Int ->
-  op ->
-  m ()
-_sactLSTree sact_ stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
-  let !_ =
-        dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
-          "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
-
-  -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
-  _propDownFromRoot sact_ stree iLLeaf 0
-  _propDownFromRoot sact_ stree iRLeaf 1
-
-  -- 2. Propagate the given lazy operator monoids to the corresponding segments:
-  glitchSAct (iLLeaf + nLeaves) (iRLeaf + nLeaves)
-
-  -- 3. Evaluate the parent vertices:
-  evalParents (iLLeaf + nLeaves) 0
-  evalParents (iRLeaf + nLeaves) 1
-  where
-    !nLeaves = GM.length ops .>>. 1
-
-    -- \(O(\log N)\)
-    -- glitchSAct :: Int -> Int -> m ()
-    glitchSAct !l !r
-      | l > r = return ()
-      | otherwise = do
-          when (_isRChild l) $ _sactAt sact_ stree l op
-          when (_isLChild r) $ _sactAt sact_ stree r op
-          -- go up to the parent segment, but optionally out of the bounds (like a glitch):
-          glitchSAct ((l + 1) .>>. 1) ((r - 1) .>>. 1)
-
-    -- \(O(N)\) Evaluates parent values of glitch intervals.
-    -- evalParents :: Int -> Int -> m ()
-    evalParents !leafVertex !lrAdjuster = do
-      forM_ [1 .. pred height] $ \iParent -> do
-        let !v = leafVertex .>>. iParent
-        when (_pruneTrick leafVertex iParent lrAdjuster) $ do
-          l <- GM.read as (_childL v)
-          r <- GM.read as (_childR v)
-          GM.write as v $! l <> r
-
--- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
-{-# INLINE _sactAtLSTree #-}
-_sactAtLSTree ::
-  (Semigroup a, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  op ->
-  m ()
-_sactAtLSTree sact_ stree i op = _sactLSTree sact_ stree i i op
-
--- TODO: writeLSTree
--- TODO: modifyLSTree
-
--- | \(O(\log N)\) Propagates the lazy operator monoids from the root to just before the glitch
--- segments.
---
--- - `iLeaf`: Given with zero-based index.
---
--- = Pruning
--- The propagation is performed from the root to just before the folded vertices. In other words,
--- propagation is performed just before performing the first glitch. That's enough for both folding
--- and acting.
-{-# INLINE _propDownFromRoot #-}
-_propDownFromRoot ::
-  (HasCallStack, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  Int ->
-  m ()
-_propDownFromRoot _sact stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdjuster = do
-  let !leafVertex = iLeaf + nLeaves
-  -- From parent vertex to the parent of the leaf vertex:
-  forM_ [height - 1, height - 2 .. 1] $ \iParent -> do
-    when (_pruneTrick leafVertex iParent lrAdjuster) $ do
-      _propAt _sact stree $ leafVertex .>>. iParent
-  where
-    !nLeaves = GM.length as .>>. 1
-
--- | \(O(1)\) Acts on a node.
---
--- = Evaluation strategy
--- - The propagated value for the children are stored and propagated lazily.
--- - The propagated value to the vertex is evaluated instantly.
---
--- = Invariants
--- - The new coming operator operator always comes from the left.
-{-# INLINE _sactAt #-}
-_sactAt ::
-  (HasCallStack, U.Unbox a, Semigroup op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  op ->
-  m ()
-_sactAt sact_ (LazySegmentTree !as !ops !height) !vertex !op = do
-  -- The propagated value to the vertex is evaluated instantly:
-  let !len = 1 .<<. (height - 1 - msbOf vertex)
-  GM.modify as (\a -> sact_ op a len) vertex
-  when (vertex < nLeaves) $ do
-    -- The propagated value for the children are stored and propagated lazily:
-    -- TODO: beats
-    GM.modify ops (op <>) vertex
-  where
-    !nLeaves = GM.length as .>>. 1
-
--- | Propagates the operator onto the children. Push.
-{-# INLINE _propAt #-}
-_propAt ::
-  (HasCallStack, U.Unbox a, Monoid op, Eq op, U.Unbox op, PrimMonad m) =>
-  (op -> a -> Int -> a) ->
-  LazySegmentTree a op (PrimState m) ->
-  Int ->
-  m ()
-_propAt sact_ stree@(LazySegmentTree !_ !ops !_) !vertex = do
-  -- Read and consume the operator:
-  !op <- GM.exchange ops vertex mempty
-  when (op /= mempty) $ do
-    -- Propagate the operator onto the children:
-    -- REMARK: The new coming operator operator always comes from the left.
-    _sactAt sact_ stree (_childL vertex) op
-    _sactAt sact_ stree (_childR vertex) op
-
