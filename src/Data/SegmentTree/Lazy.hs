@@ -17,7 +17,7 @@ module Data.SegmentTree.Lazy where
 
 import Algorithm.Bisect (bisectM)
 import Control.Monad
-import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bifunctor
 import Data.Bits
 -- TODO: write manually
@@ -294,6 +294,7 @@ instance (U.Unbox a) => U.Unbox (WithLength a)
 {- ORMOLU_ENABLE -}
 
 -- | TODO: Remove @unsafe@. Maybe.
+{-# INLINE unsafeCoerceWithLength #-}
 unsafeCoerceWithLength :: (SemigroupAction op a) => LazySegmentTree a op s -> LazySegmentTree a (WithLength op) s
 unsafeCoerceWithLength = unsafeCoerce
 
@@ -305,7 +306,7 @@ foldWithLengthLSTree ::
   Int ->
   Int ->
   m a
-foldWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
+foldWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "foldWithLengthLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
@@ -320,7 +321,7 @@ foldWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
     !nLeaves = GM.length as .>>. 1
 
     -- \(O(\log N)\)
-    glitchFold :: Int -> Int -> a -> a -> m a
+    -- glitchFold :: Int -> Int -> a -> a -> m a
     glitchFold !l !r !lAcc !rAcc
       | l > r = return $! lAcc <> rAcc
       | otherwise = do
@@ -339,6 +340,7 @@ foldWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\)
+{-# INLINE foldMayWithLengthLSTree #-}
 foldMayWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -353,6 +355,7 @@ foldMayWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
     !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
+{-# INLINE readWithLengthLSTree #-}
 readWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -361,6 +364,7 @@ readWithLengthLSTree ::
 readWithLengthLSTree stree i = foldWithLengthLSTree stree i i
 
 -- | \(O(\log N)\)
+{-# INLINE foldAllWithLengthLSTree #-}
 foldAllWithLengthLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -377,7 +381,7 @@ sactWithLengthLSTree ::
   Int ->
   op ->
   m ()
-sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = do
+sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
@@ -396,7 +400,7 @@ sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !o
     !nLeaves = GM.length ops .>>. 1
 
     -- \(O(\log N)\)
-    glitchSAct :: Int -> Int -> m ()
+    -- glitchSAct :: Int -> Int -> m ()
     glitchSAct !l !r
       | l > r = return ()
       | otherwise = do
@@ -406,7 +410,7 @@ sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !o
           glitchSAct ((l + 1) .>>. 1) ((r - 1) .>>. 1)
 
     -- \(O(N)\) Evaluates parent values of glitch intervals.
-    evalParents :: Int -> Int -> m ()
+    -- evalParents :: Int -> Int -> m ()
     evalParents !leafVertex !lrAdjuster = do
       forM_ [1 .. pred height] $ \iParent -> do
         let !v = leafVertex .>>. iParent
@@ -416,6 +420,7 @@ sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !o
           GM.write as v $! l <> r
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
+{-# INLINE sactAtWithLengthLSTree #-}
 sactAtWithLengthLSTree ::
   (Semigroup a, U.Unbox a, Monoid op, SemigroupActionWithLength op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -442,6 +447,8 @@ _propDownFromRootWithLength ::
   Int ->
   Int ->
   m ()
+-- REMARK: Never INLINE this function or else it's much slower.
+-- `stToPrim` also makes it slower (maybe because it's already set on the caller side?)
 _propDownFromRootWithLength stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdjuster = do
   let !leafVertex = iLeaf + nLeaves
   -- From parent vertex to the parent of the leaf vertex:
@@ -459,6 +466,7 @@ _propDownFromRootWithLength stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdj
 --
 -- = Invariants
 -- - The new coming operator operator always comes from the left.
+{-# INLINE _sactAtWithLength #-}
 _sactAtWithLength ::
   (HasCallStack, U.Unbox a, Semigroup op, SemigroupActionWithLength op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -477,6 +485,7 @@ _sactAtWithLength (LazySegmentTree !as !ops !height) !vertex !op = do
     !nLeaves = GM.length as .>>. 1
 
 -- | Propagates the operator onto the children. Push.
+{-# INLINE _propAtWithLength #-}
 _propAtWithLength ::
   (HasCallStack, U.Unbox a, Monoid op, Eq op, SemigroupActionWithLength op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
