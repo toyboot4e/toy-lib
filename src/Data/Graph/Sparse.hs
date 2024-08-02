@@ -22,6 +22,7 @@ import Data.Tuple.Extra (first3, second3, thd3, third3)
 import Data.UnionFind.Mutable
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
+import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -153,14 +154,14 @@ djSG gr@SparseGraph {..} = genericDj (gr `adjW`) nVertsSG nEdgesSG
 dfsTreeSG :: (U.Unbox w, Num w) => SparseGraph w -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
 dfsTreeSG !gr !source !undefW = genericDfsTree (gr `adjW`) (nVertsSG gr) source undefW
 
--- | \(O(V+E)\) breadth-first search. Returns a vector of parents. The source vertex or unrechable
--- vertices are given `-1` as their parent.
+-- | \(O(V+E)\) breadth-first search. Returns a vector of distances and parents. The source vertex
+-- or unrechable vertices are given `-1` as their parent.
 --
--- >>> bfsTreeSG (buildSG 4 (G.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
--- [-1,0,1,1]
+-- >>> bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 (-1)
+-- ([0,1,2,2],[-1,0,1,1])
 --
 -- Retrieve a shortest path:
--- >>> let ps = bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0
+-- >>> let (_, ps) = bfsTreeSG (buildSG 4 (U.fromList [(0, 1), (1, 2), (1, 3), (2, 3)])) 0 (-1)
 -- >>> restorePath ps 3
 -- [0,1,3]
 bfsTreeSG :: (U.Unbox w, Num w, Eq w) => SparseGraph w -> Vertex -> w -> (U.Vector w, U.Vector Vertex)
@@ -358,8 +359,8 @@ findCycleComplexSG gr = selfLoop <|> multiEdge
     g v1
       | U.length (gr `adj` v1) <= 1 = Nothing
       | Just delta <- U.findIndex id matches =
-          let (!v2, !w12) = (gr `adjW` v1) U.! delta
-              (!_, !w21) = (gr `adjW` v1) U.! (delta + 1)
+          let (!v2, !w12) = (gr `adjW` v1) G.! delta
+              (!_, !w21) = (gr `adjW` v1) G.! (delta + 1)
            in Just $ U.fromListN 2 [(v1, v2, w12), (v2, v1, w21)]
       | otherwise = Nothing
       where
