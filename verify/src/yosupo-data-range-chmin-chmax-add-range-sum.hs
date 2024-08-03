@@ -36,7 +36,7 @@ solve = do
       sactWithLengthSTB stree l r $ newAddACC x
       return Nothing
     3 -> do
-      Just . sumB <$> foldWithLengthSTB stree l r
+      Just . sumSMM <$> foldWithLengthSTB stree l r
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
