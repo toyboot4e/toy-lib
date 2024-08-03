@@ -1,6 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Lazily propageted segment tree, where we can perform operation over range.
@@ -20,16 +18,15 @@ import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bifunctor
 import Data.Bits
--- TODO: write manually
+import Data.Coerce
 import Data.Core.SemigroupAction
+import Data.SegmentTree.Util
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (msbOf)
 import ToyLib.Debug
-import Data.Coerce
 import Unsafe.Coerce
 
 -- | Lazy segment tree.
@@ -116,31 +113,6 @@ newLSTreeImpl !n = do
 newLSTree :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree a op (PrimState m))
 newLSTree = newLSTreeImpl
 
--- | \(O(1)\)
-{-# INLINE _childL #-}
-_childL :: Int -> Int
-_childL !vertex = vertex .<<. 1
-
--- | \(O(1)\)
-{-# INLINE _childR #-}
-_childR :: Int -> Int
-_childR !vertex = (vertex .<<. 1) .|. 1
-
--- | \(O(1)\)
-{-# INLINE _isLChild #-}
-_isLChild :: Int -> Bool
-_isLChild = not . (`testBit` 0)
-
--- | \(O(1)\)
-{-# INLINE _isRChild #-}
-_isRChild :: Int -> Bool
-_isRChild = (`testBit` 0)
-
--- | \(O(1)\) Pruning trick for excluding vertices under the glitch segments.
-{-# INLINE _pruneTrick #-}
-_pruneTrick :: Int -> Int -> Int -> Bool
-_pruneTrick vLeaf iParent lrAdjuster = (vLeaf + lrAdjuster) .>>. iParent .<<. iParent /= (vLeaf + lrAdjuster)
-
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
 generateLSTreeImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
@@ -206,7 +178,7 @@ foldLSTree ::
   Int ->
   Int ->
   m a
-foldLSTree stree = foldWithLengthLSTree (unsafeCoerceWithLength stree)
+foldLSTree stree = foldWithLengthLSTree (unsafeCoerceWithLengthLSTree stree)
 
 -- | \(O(\log N)\)
 {-# INLINE foldMayLSTree #-}
@@ -216,7 +188,7 @@ foldMayLSTree ::
   Int ->
   Int ->
   m (Maybe a)
-foldMayLSTree stree = foldMayWithLengthLSTree (unsafeCoerceWithLength stree)
+foldMayLSTree stree = foldMayWithLengthLSTree (unsafeCoerceWithLengthLSTree stree)
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 {-# INLINE readLSTree #-}
@@ -225,7 +197,7 @@ readLSTree ::
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m a
-readLSTree stree = readWithLengthLSTree (unsafeCoerceWithLength stree)
+readLSTree stree = readWithLengthLSTree (unsafeCoerceWithLengthLSTree stree)
 
 -- | \(O(\log N)\)
 {-# INLINE foldAllLSTree #-}
@@ -233,8 +205,7 @@ foldAllLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   m a
--- TODO: faster implementation
-foldAllLSTree stree = foldAllWithLengthLSTree (unsafeCoerceWithLength stree)
+foldAllLSTree stree = foldAllWithLengthLSTree (unsafeCoerceWithLengthLSTree stree)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
 {-# INLINE sactLSTree #-}
@@ -246,7 +217,7 @@ sactLSTree ::
   Int ->
   op ->
   m ()
-sactLSTree stree l r op = sactWithLengthLSTree (unsafeCoerceWithLength stree) l r (coerce op)
+sactLSTree stree l r op = sactWithLengthLSTree (unsafeCoerceWithLengthLSTree stree) l r (coerce op)
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 {-# INLINE sactAtLSTree #-}
@@ -256,47 +227,12 @@ sactAtLSTree ::
   Int ->
   op ->
   m ()
-sactAtLSTree stree i op = sactAtWithLengthLSTree (unsafeCoerceWithLength stree) i (coerce op)
+sactAtLSTree stree i op = sactAtWithLengthLSTree (unsafeCoerceWithLengthLSTree stree) i (coerce op)
 
 -- TODO: writeLSTree
 -- TODO: modifyLSTree
 
 -- * Action with length given by the segment tree
-
--- | Right semigroup aciton with length given by the segment tree. Any `Semigroup` can be coerced
--- into `SemigroupActionWithLength` using the `WithLength` newtype.
-class SemigroupActionWithLength s a where
-  -- | Right semigroup aciton with length given by the segment tree.
-  sactWithLength :: s -> a -> Int -> a
-
--- | (Internal) Wraps a `SemigroupAction` instance into a `SemigroupActionWithLength`.
-newtype WithLength a = WithLength a
-  deriving newtype (Eq, Ord)
-
-instance (Semigroup a) => Semigroup (WithLength a) where
-  {-# INLINE (<>) #-}
-  (<>) = coerce ((<>) @a)
-
-instance (Monoid a) => Monoid (WithLength a) where
-  {-# INLINE mempty #-}
-  mempty = coerce (mempty @a)
-
-instance (SemigroupAction s a) => SemigroupActionWithLength (WithLength s) a where
-  {-# INLINE sactWithLength #-}
-  sactWithLength s a _ = coerce (sact @s @a) s a
-
-{- ORMOLU_DISABLE -}
-newtype instance U.MVector s (WithLength a) = MV_WithLength (U.MVector s a)
-newtype instance U.Vector (WithLength a) = V_WithLength (U.Vector a)
-deriving instance (U.Unbox a) => GM.MVector UM.MVector (WithLength a)
-deriving instance (U.Unbox a) => G.Vector U.Vector (WithLength a)
-instance (U.Unbox a) => U.Unbox (WithLength a)
-{- ORMOLU_ENABLE -}
-
--- | TODO: Remove @unsafe@. Maybe.
-{-# INLINE unsafeCoerceWithLength #-}
-unsafeCoerceWithLength :: (SemigroupAction op a) => LazySegmentTree a op s -> LazySegmentTree a (WithLength op) s
-unsafeCoerceWithLength = unsafeCoerce
 
 -- | \(O(\log N)\)
 foldWithLengthLSTree ::
@@ -349,7 +285,7 @@ foldMayWithLengthLSTree ::
   m (Maybe a)
 foldMayWithLengthLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
   | 0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1) =
-    Just <$> foldWithLengthLSTree stree iLLeaf iRLeaf
+      Just <$> foldWithLengthLSTree stree iLLeaf iRLeaf
   | otherwise = return Nothing
   where
     !nLeaves = GM.length as .>>. 1
@@ -370,6 +306,7 @@ foldAllWithLengthLSTree ::
   LazySegmentTree a op (PrimState m) ->
   m a
 -- TODO: faster implementation
+-- FIXME: the length must not include non-existing leaves. Remember the original length?
 foldAllWithLengthLSTree stree@(LazySegmentTree !as !_ !_) = foldWithLengthLSTree stree 0 (GM.length as .>>. 1 - 1)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
@@ -386,7 +323,7 @@ sactWithLengthLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !o
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
 
--- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
+  -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
   _propDownFromRootWithLength stree iLLeaf 0
   _propDownFromRootWithLength stree iRLeaf 1
 
@@ -479,9 +416,14 @@ _sactAtWithLength (LazySegmentTree !as !ops !height) !vertex !op = do
   GM.modify as (\a -> sactWithLength op a len) vertex
   when (vertex < nLeaves) $ do
     -- The propagated value for the children are stored and propagated lazily:
-    -- TODO: beats
     GM.modify ops (op <>) vertex
   where
+    -- whenM (failedB <$> GM.read as vertex) $ do
+    --   _propAtWithLength stree vertex
+    --   l <- GM.read ops (_childL vertex)
+    --   r <- GM.read ops (_childR vertex)
+    --   GM.write as vertex $! l <> r
+
     !nLeaves = GM.length as .>>. 1
 
 -- | Propagates the operator onto the children. Push.
@@ -501,6 +443,13 @@ _propAtWithLength stree@(LazySegmentTree !_ !ops !_) !vertex = do
     _sactAtWithLength stree (_childR vertex) op
 
 -- * Bisection methods
+
+-- | TODO: Remove @unsafe@. Maybe.
+{-# INLINE unsafeCoerceWithLengthLSTree #-}
+unsafeCoerceWithLengthLSTree :: (SemigroupAction op a) => LazySegmentTree a op s -> LazySegmentTree a (WithLength op) s
+unsafeCoerceWithLengthLSTree = unsafeCoerce
+
+-- TODO: faster implelemtaion
 
 -- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
 bisectLSTree ::

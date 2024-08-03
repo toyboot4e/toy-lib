@@ -5,7 +5,7 @@
 module Data.SegmentTree.Beats.SumMinMax where
 
 import Control.Monad.Trans.State.Strict (execState, modify')
-import Data.SegmentTree.Lazy (SemigroupActionWithLength (..))
+import Data.SegmentTree.Util (FailableSemigroupActionTarget(..), SemigroupActionWithLength (..))
 import ToyLib.Debug
 
 -- | Sum + Min + Max information on segment tree beats.
@@ -26,6 +26,10 @@ data SumMinMax a = SumMinMax
     failsB :: !Bool
   }
   deriving (Show, Eq)
+
+instance FailableSemigroupActionTarget (SumMinMax a) where
+  {-# INLINE isFailureFSAT #-}
+  isFailureFSAT = failsB
 
 {-# INLINE singletonSMM #-}
 singletonSMM :: a -> SumMinMax a
