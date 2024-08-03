@@ -1,3 +1,9 @@
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+
 -- | `SumMinMax` and `AddChminChmax` on the segment tree beats.
 --
 -- = Typical problems
@@ -5,7 +11,11 @@
 module Data.SegmentTree.Beats.SumMinMax where
 
 import Control.Monad.Trans.State.Strict (execState, modify')
-import Data.SegmentTree.Util (FailableSemigroupActionTarget(..), SemigroupActionWithLength (..))
+import Data.SegmentTree.Util (FailableSemigroupActionTarget (..), SemigroupActionWithLength (..))
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug
 
 -- | Sum + Min + Max information on segment tree beats.
@@ -98,6 +108,18 @@ data AddChminChmax a = AddChminChmax
   }
   deriving (Show, Eq)
 
+{-# INLINE newAddACC #-}
+newAddACC :: (Num a, Ord a, Bounded a) => a -> AddChminChmax a
+newAddACC x = mempty {addACC = x}
+
+{-# INLINE newChminACC #-}
+newChminACC :: (Num a, Ord a, Bounded a) => a -> AddChminChmax a
+newChminACC x = mempty {chminACC = x}
+
+{-# INLINE newChmaxACC #-}
+newChmaxACC :: (Num a, Ord a, Bounded a) => a -> AddChminChmax a
+newChmaxACC x = mempty {chmaxACC = x}
+
 instance (Num a, Ord a) => Semigroup (AddChminChmax a) where
   -- TODO: not inline?
   {-# INLINE (<>) #-}
@@ -171,13 +193,38 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
             failsB = False
           }
 
--- type SegmentTreeBeats k a op s = LazySegmentTree (SumMinMax k a) op s
+-- * `Unbox` instances
 
--- type SegmentTreeBeats k a op s = LazySegmentTree (SumMinMax k a) op s
+-- vector provides unbox implementation up to 6-tuples
+type SumMinMaxRepr a = (a, a, a, a, a, (Int, Int, Bool))
 
--- _updateMinLSTree :: (PrimMonad m) => SegmentTreeBeats k a op (PrimState m) -> Int -> k -> m ()
--- _updateMinLSTree stree i x = do
---   return ()
+instance U.IsoUnbox (SumMinMax a) (SumMinMaxRepr a) where
+  {-# INLINE toURepr #-}
+  toURepr SumMinMax {..} = (sumB, minB, maxB, min2B, max2B, (nMinB, nMaxB, failsB))
+  {-# INLINE fromURepr #-}
+  fromURepr (!sumB, !minB, !maxB, !min2B, !max2B, (!nMinB, !nMaxB, !failsB)) = SumMinMax {..}
 
--- -- | Updates chmax/chmin
--- chLSTree ::
+{- ORMOLU_DISABLE -}
+newtype instance U.MVector s (SumMinMax a) = MV_SumMinMax (UM.MVector s (SumMinMaxRepr a))
+newtype instance U.Vector (SumMinMax a) = V_SumMinMax (U.Vector (SumMinMaxRepr a))
+deriving via (SumMinMax a `U.As` SumMinMaxRepr a) instance (U.Unbox a) => GM.MVector UM.MVector (SumMinMax a)
+deriving via (SumMinMax a `U.As` SumMinMaxRepr a) instance (U.Unbox a) => G.Vector U.Vector (SumMinMax a)
+instance (U.Unbox a) => U.Unbox (SumMinMax a)
+{- ORMOLU_ENABLE -}
+
+-- vector provides unbox implementation up to 6-tuples
+type AddChminChmaxRepr a = (a, a, a)
+
+instance U.IsoUnbox (AddChminChmax a) (AddChminChmaxRepr a) where
+  {-# INLINE toURepr #-}
+  toURepr AddChminChmax {..} = (addACC, chminACC, chmaxACC)
+  {-# INLINE fromURepr #-}
+  fromURepr (!addACC, !chminACC, !chmaxACC) = AddChminChmax {..}
+
+{- ORMOLU_DISABLE -}
+newtype instance U.MVector s (AddChminChmax a) = MV_AddChminChmax (UM.MVector s (AddChminChmaxRepr a))
+newtype instance U.Vector (AddChminChmax a) = V_AddChminChmax (U.Vector (AddChminChmaxRepr a))
+deriving via (AddChminChmax a `U.As` AddChminChmaxRepr a) instance (U.Unbox a) => GM.MVector UM.MVector (AddChminChmax a)
+deriving via (AddChminChmax a `U.As` AddChminChmaxRepr a) instance (U.Unbox a) => G.Vector U.Vector (AddChminChmax a)
+instance (U.Unbox a) => U.Unbox (AddChminChmax a)
+{- ORMOLU_ENABLE -}

@@ -418,12 +418,6 @@ _sactAtWithLength (LazySegmentTree !as !ops !height) !vertex !op = do
     -- The propagated value for the children are stored and propagated lazily:
     GM.modify ops (op <>) vertex
   where
-    -- whenM (failedB <$> GM.read as vertex) $ do
-    --   _propAtWithLength stree vertex
-    --   l <- GM.read ops (_childL vertex)
-    --   r <- GM.read ops (_childR vertex)
-    --   GM.write as vertex $! l <> r
-
     !nLeaves = GM.length as .>>. 1
 
 -- | Propagates the operator onto the children. Push.
