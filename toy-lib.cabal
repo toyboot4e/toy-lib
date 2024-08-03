@@ -205,6 +205,8 @@ library
     Data.MultiSetVec
     Data.RollingHash
     Data.SafeList
+    Data.SegmentTree.Beats
+    Data.SegmentTree.Beats.SumMinMax
     Data.SegmentTree.Lazy
     Data.SegmentTree.Strict
     Data.SizedList
