@@ -94,7 +94,7 @@ import Unsafe.Coerce
 -- @
 --
 -- Note that the propagted vertices are pruned to be above the glitch segments only.
-data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s op) !Int
+data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s op) {-# UNPACK #-} !Int
 
 -- | \(O(N)\) Creates a `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::

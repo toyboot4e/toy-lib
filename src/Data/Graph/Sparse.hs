@@ -31,9 +31,9 @@ import ToyLib.Debug (dbgAssert)
 -- | CSR (compressed sparse row) representation of a graph, weightened or unweightened.
 data SparseGraph w = SparseGraph
   { -- | Number of vertices.
-    nVertsSG :: !Int,
+    nVertsSG :: {-# UNPACK #-} !Int,
     -- | Number of edges.
-    nEdgesSG :: !Int,
+    nEdgesSG :: {-# UNPACK #-} !Int,
     -- | Maps `Vector` to the starting edge index.
     offsetsSG :: !(U.Vector Int),
     -- | Adjacent vertices sorted with starting vertex.

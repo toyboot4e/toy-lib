@@ -50,8 +50,8 @@ type CostMCF c = c
 -- = Internals
 -- Internally the graph is stored in a CSR (compressed sparse row).
 data MinCostFlow s c = MinCostFlow
-  { nVertsMCF :: !Int,
-    nEdgesMCF :: !Int,
+  { nVertsMCF :: {-# UNPACK #-} !Int,
+    nEdgesMCF :: {-# UNPACK #-} !Int,
     -- | Source vertex -> initial edge index. Note that edges are sorted by the starting vertex.
     offsetsMCF :: !(U.Vector Int),
     -- | Edge index -> destination vertex.

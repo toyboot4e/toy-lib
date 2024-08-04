@@ -21,11 +21,11 @@ data Buffer s a = Buffer
     -- internal buffer when initialized as a deque.
     bufferVars :: !(UM.MVector s Int),
     -- | `bufferVars` initial values. Used in `clearBuffer`.
-    initialBufferPos :: !Int,
+    initialBufferPos :: {-# UNPACK #-} !Int,
     -- | The storage.
     internalBuffer :: !(UM.MVector s a),
     -- | The capacity of the buffer. It's doubled when initialized as a dequeue.
-    internalBufferSize :: !Int
+    internalBufferSize :: {-# UNPACK #-} !Int
   }
 
 _bufferFrontPos :: Int
@@ -371,7 +371,7 @@ unsafeModifyBack Buffer {..} m i = do
 
 -- | \(O(1)\)
 modifyMFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> (a -> m a) -> Int -> m ()
-modifyMFront buf  m i = do
+modifyMFront buf m i = do
   _checkIndexBuffer buf i
   unsafeModifyMFront buf m i
 {-# INLINE modifyMFront #-}

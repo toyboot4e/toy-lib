@@ -29,9 +29,9 @@ data SumMinMax a = SumMinMax
     minSMM :: !a,
     maxSMM :: !a,
     -- | The number of elements that equals to `minSMM` in the interval.
-    nMinSMM :: !Int,
+    nMinSMM :: {-# UNPACK #-} !Int,
     -- | The number of elements that equals to `maxSMM` in the interval.
-    nMaxSMM :: !Int,
+    nMaxSMM :: {-# UNPACK #-} !Int,
     -- | Secondary minimum value.
     min2SMM :: !a,
     -- | Secondary maximum value.

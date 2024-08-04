@@ -3,8 +3,6 @@ module Math.Primes where
 
 import Data.List (group)
 
--- {{{ Prime factors
-
 -- | \(O(N \log (\log N))\)? @0xYusuke <https://zenn.dev/link/comments/1022553732563c>
 primes :: [Int]
 primes = 2 : 3 : minus [5, 7 ..] (unionAll [[p * p, p * p + 2 * p ..] | p <- tail primes])
@@ -43,5 +41,3 @@ primeFactors !n_ = map (\ !xs -> (head xs, length xs)) . group $ inner n_ input
       where
         (q, r) = divMod n p
     inner _ _ = error "unreachable"
-
--- }}}

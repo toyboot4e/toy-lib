@@ -50,7 +50,7 @@ import ToyLib.Debug
 --
 -- Most of the time, the top-down approach has to retrieve the values of the bottom leaves.
 -- So bottom-up implementation is almost always faster.
-data SegmentTree v s a = SegmentTree {unSegmentTree :: !(v s a), nValidLeavesSegmentTree :: !Int}
+data SegmentTree v s a = SegmentTree {unSegmentTree :: !(v s a), nValidLeavesSegmentTree :: {-# UNPACK #-} !Int}
 
 -- | \(O(\log N)\) Creates a segment tree for `n` leaves.
 newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree UM.MVector (PrimState m) a)

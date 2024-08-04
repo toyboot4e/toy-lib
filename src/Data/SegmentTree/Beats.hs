@@ -25,7 +25,7 @@ import ToyLib.Debug
 import Unsafe.Coerce
 
 -- | Segment tree beats
-data SegmentTreeBeats a op s = SegmentTreeBeats !(UM.MVector s a) !(UM.MVector s op) !Int
+data SegmentTreeBeats a op s = SegmentTreeBeats !(UM.MVector s a) !(UM.MVector s op) {-# UNPACK #-} !Int
 
 -- | \(O(N)\) Creates a `SegmentTreeBeats` with `mempty` as the initial accumulated values.
 newSTBImpl ::

@@ -127,7 +127,7 @@ type VertexHLD = Vertex
 -- `VertexHLD` that corresopnds to the subtree by remembering the subtree sizes.
 data HLD = HLD
   { -- | The root vertex.
-    rootHLD :: Vertex,
+    rootHLD :: {-# UNPACK #-} !Vertex,
     -- | `Vertex` -> Parent `Vertex`.
     parentHLD :: !(U.Vector Vertex),
     -- | `Vertex` -> `VertexHLD` (re-indexed vertex that is contiguous in each segment).

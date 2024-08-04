@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | Fixed-sized vector for bulk allocation and \(O(1)\) free slot search.
+-- | [WIP] Fixed-sized vector for bulk allocation and \(O(1)\) free slot search.
 module Data.AllocVec where
 
 import Control.Exception (assert)
@@ -22,9 +22,9 @@ type IndexAV = Int
 -- | Fixed-sized vector for bulk allocation and \(O(1)\) finding free slots.
 data AllocVec s a = AllocVec
   { -- | The maximum number of elements `AllocVec` can store.
-    capacityAV :: !Int,
+    capacityAV :: {-# UNPACK #-} !Int,
     -- | The number of elements stored in `AllocVec`.
-    sizeAV :: !Int,
+    sizeAV :: {-# UNPACK #-} !Int,
     -- | The internal vector.
     dataAV :: !(UM.MVector s a),
     -- | First empty slot.

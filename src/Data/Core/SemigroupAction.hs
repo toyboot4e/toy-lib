@@ -8,5 +8,6 @@ class SemigroupAction s a where
 
 -- | Target self
 instance (Semigroup a) => SemigroupAction a a where
+  {-# INLINE sact #-}
   sact x y = x <> y
 

@@ -38,7 +38,7 @@ wordDIS = 64
 -- @
 data DenseIntSet s = DenseIntSet
   { -- | Maximum number of elements.
-    capacityDIS :: !Int,
+    capacityDIS :: {-# UNPACK #-} !Int,
     -- | The number of elements.
     sizeDIS_ :: !(UM.MVector s Int),
     -- | Segments.

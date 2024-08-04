@@ -30,7 +30,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- = Invariants
 -- - Sum of the capacities of one edge and the reverse edge is zero.
 data MaxFlow s c = MaxFlow
-  { nVertsMF :: !Int,
+  { nVertsMF :: {-# UNPACK #-} !Int,
     nEdgesMF :: !Int,
     -- | Source vertex -> initial edge index. Note that edges are sourted by the starting vertex.
     offsetsMF :: !(U.Vector Int),

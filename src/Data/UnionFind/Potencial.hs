@@ -20,9 +20,9 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- Implementation based on: <https://qiita.com/drken/items/cce6fc5c579051e64fab>
 data PUnionFind s = PUnionFind
   { -- | Node data (@MUFParent size | MUFNode parent@).
-    nodesPUF :: UM.MVector s MUFNode,
+    nodesPUF :: !(UM.MVector s MUFNode),
     -- | Diffierencial potencial of each vertex.
-    potencialPUF :: UM.MVector s Int
+    potencialPUF :: !(UM.MVector s Int)
   }
 
 -- TODO: consider using `unsafe` when the performance is important

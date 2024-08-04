@@ -16,7 +16,7 @@ type BlockIndex = Int
 --
 -- TODO: Add read parameter?
 data Sqrd b ret act m = Sqrd
-  { blockLenSqrd :: !Int,
+  { blockLenSqrd :: {-# UNPACK #-} !Int,
     -- Fold
     readFullSqrd :: !(BlockIndex -> m ret),
     readPartSqrd :: !(BlockIndex -> Int -> Int -> m ret),

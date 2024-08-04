@@ -20,11 +20,11 @@ import GHC.Stack (HasCallStack)
 -- | Dense int map that holds up up @n@ values.
 data DenseHashMap s a = DenseHashMap
   { -- | Maximum number of elements.
-    maxCapHM :: !Int,
+    maxCapHM :: {-# UNPACK #-} !Int,
     -- | The number of elements that can be added.
     restCapHM :: !(UM.MVector s Int),
     -- | Bit mask for powerset iteration on indexing.
-    maskHM :: !Int,
+    maskHM :: {-# UNPACK #-} !Int,
     -- | Original key to the hash index.
     keyHM :: !(UM.MVector s Int),
     -- | Values to the hash index.

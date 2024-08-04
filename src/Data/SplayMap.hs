@@ -46,8 +46,8 @@ nullSI = (== undefSI)
 
 -- | Splay tree node.
 data SplayNode k v = SplayNode
-  { lSN :: !SplayIndex,
-    rSN :: !SplayIndex,
+  { lSN :: {-# UNPACK #-} !SplayIndex,
+    rSN :: {-# UNPACK #-} !SplayIndex,
     keySN :: !k,
     valSN :: !v
   }
