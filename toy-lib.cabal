@@ -291,6 +291,7 @@ test-suite toy-lib-test
     Tests.NTT
     Tests.SplayMap
     Tests.SuffixArray
+    Tests.SumMinMax
     Tests.ZFunction
 
   build-depends:

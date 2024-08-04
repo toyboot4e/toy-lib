@@ -20,6 +20,9 @@ import ToyLib.Debug
 
 -- | Sum + Min + Max information on segment tree beats.
 --
+-- REMARK: Be sure to NOT use `mempty` as initial values in segment tree beats, use
+-- @singletonSMM 0@ instead.
+--
 -- TODO: Specialize and `UNPACK`.
 data SumMinMax a = SumMinMax
   { sumSMM :: !a,
@@ -127,13 +130,14 @@ instance (Num a, Ord a, Bounded a) => Semigroup (AddChminChmax a) where
   (AddChminChmax a1 min1 max1) <> (AddChminChmax a2 min2 max2) = AddChminChmax a' min' max'
     where
       !a' = a1 + a2
-      -- TODO: handle identity elements with no branch (without making overflow)
       !min'
         | min2 == maxBound = min1
         | otherwise = min min1 (min2 + a1)
       !max'
         | max2 == minBound = max1
-        | otherwise = max max1 (max2 + a1)
+        -- REMARK: Be sure to run @min min1@, or else the segment tree algebra
+        -- @(op <> op) `sact` x = op `sact` op `sact x@ does not hold.
+        | otherwise = max max1 $ min min1 (max2 + a1)
 
 instance (Num a, Ord a, Bounded a) => Monoid (AddChminChmax a) where
   {-# INLINE mempty #-}
