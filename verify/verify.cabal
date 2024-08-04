@@ -242,6 +242,10 @@ executable yosupo-graph-cycle-detection-undirected-exe
   import:  verify
   main-is: yosupo-graph-cycle-detection-undirected.hs
 
+executable yosupo-data-new-union-find-with-potencial-exe
+  import:  verify
+  main-is: yosupo-data-new-union-find-with-potencial.hs
+
 executable yosupo-tree-tree-diameter-exe
   import:  verify
   main-is: yosupo-tree-tree-diameter.hs
