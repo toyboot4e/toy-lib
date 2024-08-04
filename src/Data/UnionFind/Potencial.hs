@@ -12,17 +12,18 @@ import qualified Data.IntMap as IM
 import Data.UnionFind.Mutable (MUFNode (..), _unwrapMUFRoot)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Union-Find tree under a differencial constraint systems. Each vertex @v@ is given potencial
 -- value @p(v)@ which is a relative value tested on `unifyPUF`.
 --
 -- Implementation based on: <https://qiita.com/drken/items/cce6fc5c579051e64fab>
-data PUnionFind s = PUnionFind
+data PUnionFind s a = PUnionFind
   { -- | Node data (@MUFParent size | MUFNode parent@).
     nodesPUF :: !(UM.MVector s MUFNode),
     -- | Diffierencial potencial of each vertex.
-    potencialPUF :: !(UM.MVector s Int)
+    potencialPUF :: !(UM.MVector s a)
   }
 
 -- TODO: consider using `unsafe` when the performance is important
@@ -30,11 +31,11 @@ data PUnionFind s = PUnionFind
 -- Fundamentals
 
 -- | \(O(N)\) Creates a new union-find tree under a differencial-potencal system.
-newPUF :: (PrimMonad m) => Int -> m (PUnionFind (PrimState m))
-newPUF n = PUnionFind <$> UM.replicate n (MUFRoot 1) <*> UM.replicate n (0 :: Int)
+newPUF :: forall m a. (PrimMonad m, Num a, U.Unbox a) => Int -> m (PUnionFind (PrimState m) a)
+newPUF n = PUnionFind <$> UM.replicate n (MUFRoot 1) <*> UM.replicate n (0 :: a)
 
 -- | \(O(\alpha(N))\) Returns root to the given vertex, after updating the internal differencial potencials.
-rootPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> m Int
+rootPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> m Int
 rootPUF uf = inner
   where
     inner v =
@@ -54,7 +55,7 @@ rootPUF uf = inner
 -- | \(O(\alpha(N))\) Unifies two nodes, managing their differencial potencial so that
 -- @p(v1) - p(v2) = d@ holds. Returns `True` when thry're newly unified. Returns `False` if they're
 -- already unified or when the unification didn't match the existing potencials.
-unifyPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> Int -> Int -> m Bool
+unifyPUF :: (PrimMonad m, Num a, Ord a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> a -> m Bool
 unifyPUF !uf !v1 !v2 !dp = do
   !r1 <- rootPUF uf v1
   !r2 <- rootPUF uf v2
@@ -94,15 +95,15 @@ unifyPUF !uf !v1 !v2 !dp = do
 -- More API
 
 -- | \(O(1)\) Returns the number of vertices belonging to the same group.
-sizePUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> m Int
+sizePUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> m Int
 sizePUF !uf !v = fmap _unwrapMUFRoot . UM.read (nodesPUF uf) =<< rootPUF uf v
 
 -- | \(O(\alpha(N))\) Has the same root / belongs to the same group.
-samePUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> Int -> m Bool
+samePUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> m Bool
 samePUF !uf !v1 !v2 = (==) <$> rootPUF uf v1 <*> rootPUF uf v2
 
 -- | \(O(\alpha(N))\) Can be unified, keeping the equiation @p(v1) - p(v2) = d@.
-canUnifyPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> Int -> Int -> m Bool
+canUnifyPUF :: (PrimMonad m, Num a, Eq a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> a -> m Bool
 canUnifyPUF !uf !v1 !v2 !d = do
   !r1 <- rootPUF uf v1
   !r2 <- rootPUF uf v2
@@ -111,24 +112,24 @@ canUnifyPUF !uf !v1 !v2 !d = do
   return $ r1 /= r2 || p1 - p2 == d
 
 -- | Returns @p(v)@: the potencial of the vertex in their group.
-potPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> m Int
+potPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> m a
 potPUF !uf !v1 = do
   -- Perform path compression
   void $ rootPUF uf v1
   UM.read (potencialPUF uf) v1
 
 -- | \(O(\alpha(N))\) Returns @p(v1) - p(v2)@.
-diffPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> Int -> Int -> m Int
+diffPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> m a
 diffPUF !uf !v1 !v2 = (-) <$> potPUF uf v1 <*> potPUF uf v2
 
 -- | \(O(1)\)
-clearPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> m ()
+clearPUF :: forall m a. (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> m ()
 clearPUF !uf = do
-  UM.set (potencialPUF uf) (0 :: Int)
+  UM.set (potencialPUF uf) (0 :: a)
   UM.set (nodesPUF uf) (MUFRoot 1)
 
 -- | \(O(N W)\) Returns vertices by root.
-groupsPUF :: (PrimMonad m) => PUnionFind (PrimState m) -> m (IM.IntMap [Int])
+groupsPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> m (IM.IntMap [Int])
 groupsPUF uf@(PUnionFind !vec !_) = do
   rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootPUF uf v)
   return $ IM.fromListWith (flip (++)) $ V.toList rvs
