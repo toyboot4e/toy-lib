@@ -122,11 +122,18 @@ newChminACC x = mempty {chminACC = x}
 newChmaxACC :: (Num a, Ord a, Bounded a) => a -> AddChminChmax a
 newChmaxACC x = mempty {chmaxACC = x}
 
-instance (Num a, Ord a) => Semigroup (AddChminChmax a) where
-  -- TODO: not inline?
+instance (Num a, Ord a, Bounded a) => Semigroup (AddChminChmax a) where
   {-# INLINE (<>) #-}
-  (AddChminChmax a1 min1 max1) <> (AddChminChmax a2 min2 max2) =
-    AddChminChmax (a1 + a2) (min min1 (min2 + a1)) (max max1 (max2 + a1))
+  (AddChminChmax a1 min1 max1) <> (AddChminChmax a2 min2 max2) = AddChminChmax a' min' max'
+    where
+      -- TODO: handle identity elements implicitly (without making overflow)
+      !a' = a1 + a2
+      !min'
+        | min2 == maxBound = min1
+        | otherwise = min min1 (min2 + a1)
+      !max'
+        | max2 == minBound = max1
+        | otherwise = max max1 (max2 + a1)
 
 instance (Num a, Ord a, Bounded a) => Monoid (AddChminChmax a) where
   {-# INLINE mempty #-}
@@ -135,7 +142,7 @@ instance (Num a, Ord a, Bounded a) => Monoid (AddChminChmax a) where
 instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a) (SumMinMax a) where
   -- TODO: not inline?
   {-# INLINE sactWithLength #-}
-  sactWithLength (AddChminChmax aAdd aMin aMax) x len
+  sactWithLength (AddChminChmax !aAdd !aMin !aMax) !x len
     -- when @x@ is identity element
     | minSMM x > maxSMM x = x
     -- No chmin or chmax
@@ -147,7 +154,7 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
     | max2' <= min'' = twoValues min'' (len - nMaxSMM x) max'' (nMaxSMM x)
     -- There are only two different values: max'' < min''
     | min2' >= max'' = twoValues min'' (nMinSMM x) max'' (len - nMinSMM x)
-    -- There are more than or equal to three different values
+    -- There are four different values:
     | min'' < min2' && max2' < max'' =
         x
           { sumSMM = sum' + (min'' - min') * fromIntegral (nMinSMM x) + (max'' - max') * fromIntegral (nMaxSMM x),
@@ -156,7 +163,7 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
             min2SMM = min2',
             max2SMM = max2'
           }
-    -- TODO: contradiction, when does it happen?
+    -- TODO: Contradiction on max2' <= chmin or chmax <= min2'?
     | otherwise = mempty {failsSMM = True}
     where
       !_ = dbgAssert (not (failsSMM x)) "AddChminChmax applied while it's failed"
