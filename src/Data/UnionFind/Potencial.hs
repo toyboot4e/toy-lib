@@ -92,6 +92,10 @@ unifyPUF !uf !v1 !v2 !dp = do
 
           return True
 
+-- | `unifyPUF` with the return value discarded.
+unifyPUF_ :: (PrimMonad m, Num a, Ord a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> a -> m ()
+unifyPUF_ !uf !v1 !v2 !dp = void $ unifyPUF uf v1 v2 dp
+
 -- More API
 
 -- | \(O(1)\) Returns the number of vertices belonging to the same group.
@@ -102,7 +106,7 @@ sizePUF !uf !v = fmap _unwrapMUFRoot . UM.read (nodesPUF uf) =<< rootPUF uf v
 samePUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> m Bool
 samePUF !uf !v1 !v2 = (==) <$> rootPUF uf v1 <*> rootPUF uf v2
 
--- | \(O(\alpha(N))\) Can be unified, keeping the equiation @p(v1) - p(v2) = d@.
+-- | \(O(\alpha(N))\) Can be unified (or already unified) keeping the equiation @p(v1) - p(v2) = d@.
 canUnifyPUF :: (PrimMonad m, Num a, Eq a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> a -> m Bool
 canUnifyPUF !uf !v1 !v2 !d = do
   !r1 <- rootPUF uf v1
@@ -118,9 +122,19 @@ potPUF !uf !v1 = do
   void $ rootPUF uf v1
   UM.read (potencialPUF uf) v1
 
--- | \(O(\alpha(N))\) Returns @p(v1) - p(v2)@.
+-- | \(O(\alpha(N))\) Returns @p(v1) - p(v2)@. Returns non-meaning value when the two vertices are
+-- not cnnected.
 diffPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> m a
 diffPUF !uf !v1 !v2 = (-) <$> potPUF uf v1 <*> potPUF uf v2
+
+-- | \(O(\alpha(N))\) Returns @p(v1) - p(v2)@. Returns @Nothing@ when the two vertices are not
+-- connected.
+diffMayPUF :: (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> m (Maybe a)
+diffMayPUF !uf !v1 !v2 = do
+  b <- samePUF uf v1 v2
+  if b
+    then Just <$> diffPUF uf v1 v2
+    else return Nothing
 
 -- | \(O(1)\)
 clearPUF :: forall m a. (PrimMonad m, Num a, U.Unbox a) => PUnionFind (PrimState m) a -> m ()
