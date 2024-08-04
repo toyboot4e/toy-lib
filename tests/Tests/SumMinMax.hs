@@ -9,7 +9,11 @@ testSMM :: TestTree
 testSMM =
   testGroup
     "SumMinMax tests"
-    [ testCase "SumMinMax length 1" $ do
+    [ testCase "SumMinMax identity" $ do
+        let smm = singletonSMM (10 :: Int)
+        smm <> mempty @?= smm
+        mempty <> smm @?= smm,
+      testCase "SumMinMax length 1" $ do
         let smm = singletonSMM (10 :: Int)
         let s1 = sactWithLength (newAddACC (15 :: Int)) smm 1
         let s2 = sactWithLength (newChminACC (5 :: Int)) smm 1

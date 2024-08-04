@@ -126,8 +126,8 @@ instance (Num a, Ord a, Bounded a) => Semigroup (AddChminChmax a) where
   {-# INLINE (<>) #-}
   (AddChminChmax a1 min1 max1) <> (AddChminChmax a2 min2 max2) = AddChminChmax a' min' max'
     where
-      -- TODO: handle identity elements implicitly (without making overflow)
       !a' = a1 + a2
+      -- TODO: handle identity elements with no branch (without making overflow)
       !min'
         | min2 == maxBound = min1
         | otherwise = min min1 (min2 + a1)
@@ -147,14 +147,14 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
     | minSMM x > maxSMM x = x
     -- No chmin or chmax
     | aMin == maxBound && aMax == minBound =
-        x {sumSMM = sum', minSMM = min', min2SMM = min2', maxSMM = max', max2SMM = max2'}
+        x {sumSMM = sum', minSMM = min', maxSMM = max', min2SMM = min2', max2SMM = max2'}
     -- There's only one different value
-    | min'' == max'' = singleton min'' len
+    | min'' == max'' = singletonWithLength min'' len
     -- There are only two different values: min'' < max''
     | max2' <= min'' = twoValues min'' (len - nMaxSMM x) max'' (nMaxSMM x)
     -- There are only two different values: max'' < min''
     | min2' >= max'' = twoValues min'' (nMinSMM x) max'' (len - nMinSMM x)
-    -- There are four different values:
+    -- The sum can be recalculated at once:
     | min'' < min2' && max2' < max'' =
         x
           { sumSMM = sum' + (min'' - min') * fromIntegral (nMinSMM x) + (max'' - max') * fromIntegral (nMaxSMM x),
@@ -163,7 +163,7 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
             min2SMM = min2',
             max2SMM = max2'
           }
-    -- TODO: Contradiction on max2' <= chmin or chmax <= min2'?
+    -- Otherwise we have to look into the values in (min2', max2'):
     | otherwise = mempty {failsSMM = True}
     where
       !_ = dbgAssert (not (failsSMM x)) "AddChminChmax applied while it's failed"
@@ -177,7 +177,7 @@ instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a
       min'' = max aMax . min aMin $ min'
       max'' = max aMax . min aMin $ max'
       -- constructors:
-      singleton v len_ =
+      singletonWithLength v len_ =
         SumMinMax
           { sumSMM = v * fromIntegral len_,
             minSMM = v,
