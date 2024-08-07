@@ -4,13 +4,13 @@ import Test.Tasty
 import Tests.Bisect qualified
 import Tests.IntervalMap qualified
 import Tests.NTT qualified
+import Tests.PUnionFind qualified
 import Tests.PowMod qualified
 import Tests.SplayMap qualified
 import Tests.SuffixArray qualified
 import Tests.SumMinMax qualified
-import Tests.ZFunction qualified
 import Tests.WaveletMatrix qualified
-import qualified Data.WaveletMatrix as Tests
+import Tests.ZFunction qualified
 
 tests :: [TestTree]
 tests =
@@ -19,6 +19,7 @@ tests =
       Tests.NTT.tests,
       Tests.IntervalMap.tests,
       Tests.PowMod.tests,
+      Tests.PUnionFind.tests,
       Tests.SplayMap.tests,
       Tests.SuffixArray.tests,
       Tests.SumMinMax.tests,

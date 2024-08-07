@@ -64,7 +64,10 @@ instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   showBSB (!a, !b) = showBSB a <> BSB.string7 " " <> showBSB b
 
 instance (ShowBSB a, ShowBSB b, ShowBSB c) => ShowBSB (a, b, c) where
-  showBSB (!a, !b, c) = showBSB a <> BSB.string7 " " <> showBSB b <> BSB.string7 " " <> showBSB c
+  showBSB (!a, !b, !c) = showBSB a <> BSB.string7 " " <> showBSB b <> BSB.string7 " " <> showBSB c
+
+instance (ShowBSB a, ShowBSB b, ShowBSB c, ShowBSB d) => ShowBSB (a, b, c, d) where
+  showBSB (!a, !b, !c, !d) = showBSB a <> BSB.string7 " " <> showBSB b <> BSB.string7 " " <> showBSB c <> BSB.string7 " " <> showBSB d
 
 showLnBSB :: (ShowBSB a) => a -> BSB.Builder
 showLnBSB = (<> endlBSB) . showBSB

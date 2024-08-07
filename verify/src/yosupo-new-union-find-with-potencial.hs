@@ -4,8 +4,10 @@
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+import Data.Instances.Affine2d
 import Data.ModInt
 import Data.UnionFind.Potencial
+import Data.Vector.IxVector
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
@@ -27,12 +29,12 @@ solve = do
     _ -> error "unreachable"
   uf <- newPUF n
   res <- (`U.mapM` qs) $ \case
-    (0, !u, !v, modInt -> !dx) -> do
+    (0, !u, !v, Sum . modInt -> !dx) -> do
       b <- canUnifyPUF uf u v dx
       unifyPUF_ uf u v dx
       return $ bool 0 1 b
     (1, !u, !v, !_) -> do
-      maybe (-1 :: Int) unModInt <$> diffMayPUF uf u v
+      maybe (-1 :: Int) (unModInt . getSum) <$> diffMayPUF uf u v
     _ -> error "unreachable"
   printBSB $ unlinesBSB res
 

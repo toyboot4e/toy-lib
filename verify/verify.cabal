@@ -242,9 +242,13 @@ executable yosupo-graph-cycle-detection-undirected-exe
   import:  verify
   main-is: yosupo-graph-cycle-detection-undirected.hs
 
-executable yosupo-data-new-union-find-with-potencial-exe
+executable yosupo-new-union-find-with-potencial-exe
   import:  verify
-  main-is: yosupo-data-new-union-find-with-potencial.hs
+  main-is: yosupo-new-union-find-with-potencial.hs
+
+executable yosupo-new-unionfind-with-potential-non-commutative-group-exe
+  import:  verify
+  main-is: yosupo-new-unionfind-with-potential-non-commutative-group.hs
 
 executable yosupo-tree-tree-diameter-exe
   import:  verify

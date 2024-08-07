@@ -291,6 +291,8 @@ test-suite toy-lib-test
     Tests.Bisect
     Tests.IntervalMap
     Tests.NTT
+    Tests.PowMod
+    Tests.PUnionFind
     Tests.SplayMap
     Tests.SuffixArray
     Tests.SumMinMax
