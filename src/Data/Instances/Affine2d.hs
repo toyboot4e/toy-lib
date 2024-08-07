@@ -11,11 +11,14 @@
 -- calculate comopsitional affine transformation.
 module Data.Instances.Affine2d where
 
+import Data.Core.Group
 import Data.Core.SemigroupAction
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+
+-- TODO: implement functor?
 
 -- | 2D affine transformation f: x -> ax + b.
 --
@@ -36,7 +39,10 @@ type Affine2dRepr a = (a, a)
 
 instance (Num a) => Semigroup (Affine2d a) where
   {-# INLINE (<>) #-}
-  (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a2 * a1, a1 * b2 + b1)
+  (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a', b')
+    where
+      !a' = a2 * a1
+      !b' = a1 * b2 + b1
 
 instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
@@ -44,7 +50,9 @@ instance (Num a) => Monoid (Affine2d a) where
 
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}
-  sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a * x + b * len, len)
+  sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a', len)
+    where
+      !a' = a * x + b * len
 
 -- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine2d` for
 -- efficiency.
@@ -59,12 +67,21 @@ toMat2x2 :: (Num a) => a -> a -> Mat2x2 a
 toMat2x2 a b = Mat2x2 (a, b, 0, 1)
 
 {-# INLINE unMat2x2 #-}
-unMat2x2 :: Mat2x2 a -> (a, a)
-unMat2x2 (Mat2x2 (!a, !b, !_, !_)) = (a, b)
+unMat2x2 :: Mat2x2 a -> (a, a, a, a)
+unMat2x2 (Mat2x2 (!a, !b, !c, !d)) = (a, b, c, d)
 
 instance (Num a) => Semigroup (Mat2x2 a) where
   {-# INLINE (<>) #-}
   (<>) = mulM22M22
+
+{-# INLINE mapM22 #-}
+mapM22 :: (a -> b) -> Mat2x2 a -> Mat2x2 b
+mapM22 f (Mat2x2 (!a11, !a12, !a21, !a22)) = Mat2x2 (a11', a12', a21', a22')
+  where
+    !a11' = f a11
+    !a12' = f a12
+    !a21' = f a21
+    !a22' = f a22
 
 -- | Multiplies 2x2 matrix to a 2x2 matrix.
 {-# INLINE mulM22M22 #-}
@@ -76,19 +93,34 @@ mulM22M22 (Mat2x2 (!a11, !a12, !a21, !a22)) (Mat2x2 (!b11, !b12, !b21, !b22)) = 
     !c21 = a21 * b11 + a22 * b21
     !c22 = a21 * b12 + a22 * b22
 
-instance (Num a) => Monoid (Mat2x2 a) where
-  -- \| Identity matrix or affine transformation as @x1@.
-  {-# INLINE mempty #-}
-  mempty = Mat2x2 (1, 0, 0, 1)
+-- | \(O(N^2)\) Returns NxN unit matrix, based on `Group` and `Fractional`.
+{-# INLINE invMat2x2 #-}
+invMat2x2 :: (Fractional e) => Mat2x2 e -> Mat2x2 e
+invMat2x2 (Mat2x2 (!a, !b, !c, !d)) = Mat2x2 (r * d, r * (-b), r * (-c), r * a)
+  where
+    -- {-# NOINLINE #-} -- works?
+    !r = recip $ a * d - b * c
 
 instance (Num a) => SemigroupAction (Mat2x2 a) (V2 a) where
   {-# INLINE sact #-}
   sact = mulM22V2
 
+instance (Num a) => Monoid (Mat2x2 a) where
+  -- \| Identity matrix or affine transformation as @x1@.
+  {-# INLINE mempty #-}
+  mempty = Mat2x2 (1, 0, 0, 1)
+
+instance (Fractional e) => Group (Mat2x2 e) where
+  {-# INLINE invert #-}
+  invert = invMat2x2
+
 -- | Multiplies 2x2 matrix to a 2 vector.
 {-# INLINE mulM22V2 #-}
 mulM22V2 :: (Num a) => Mat2x2 a -> V2 a -> V2 a
-mulM22V2 (Mat2x2 (!a11, !a12, !a21, !a22)) (V2 (!x1, !x2)) = V2 (a11 * x1 + a12 * x2, a21 * x1 + a22 * x2)
+mulM22V2 (Mat2x2 (!a11, !a12, !a21, !a22)) (V2 (!x1, !x2)) = V2 (a', b')
+  where
+    !a' = a11 * x1 + a12 * x2
+    !b' = a21 * x1 + a22 * x2
 
 -- | Two-dimensional unboxed vector. Implements `Semigroup V2` as sum.
 newtype V2 a = V2 (V2Repr a) deriving newtype (Eq, Ord, Show)
@@ -105,9 +137,19 @@ toV2 a = V2 (a, 1)
 unV2 :: V2 a -> a
 unV2 (V2 (!x, !_)) = x
 
+{-# INLINE mapV2 #-}
+mapV2 :: (a -> b) -> V2 a -> V2 b
+mapV2 f (V2 (!a, !b)) = V2 (a', b')
+  where
+    !a' = f a
+    !b' = f b
+
 instance (Num a) => Semigroup (V2 a) where
   {-# INLINE (<>) #-}
-  (V2 (!a1, !a2)) <> (V2 (!b1, !b2)) = V2 (a1 + b1, a2 + b2)
+  (V2 (!a1, !a2)) <> (V2 (!b1, !b2)) = V2 (a', b')
+    where
+      !a' = a1 + b1
+      !b' = a2 + b2
 
 instance (Num a) => Monoid (V2 a) where
   -- \| Identity element as @Summ@.

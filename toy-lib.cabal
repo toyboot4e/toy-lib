@@ -179,6 +179,7 @@ library
     Data.Buffer
     Data.ByteString.SuffixArray
     Data.ByteString.ZFunction
+    Data.Core.Group
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.DenseHashMap
