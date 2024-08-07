@@ -243,6 +243,7 @@ library
     ToyLib.Contest.Bisect
     ToyLib.Contest.Graph
     ToyLib.Contest.Grid
+    ToyLib.Contest.LazySegmentTree
     ToyLib.Contest.Prelude
     ToyLib.Contest.Tree
     ToyLib.Debug
