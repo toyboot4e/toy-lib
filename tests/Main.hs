@@ -9,6 +9,8 @@ import Tests.SplayMap qualified
 import Tests.SuffixArray qualified
 import Tests.SumMinMax qualified
 import Tests.ZFunction qualified
+import Tests.WaveletMatrix qualified
+import qualified Data.WaveletMatrix as Tests
 
 tests :: [TestTree]
 tests =
@@ -20,6 +22,7 @@ tests =
       Tests.SplayMap.tests,
       Tests.SuffixArray.tests,
       Tests.SumMinMax.tests,
+      Tests.WaveletMatrix.tests,
       Tests.ZFunction.tests
     ]
 

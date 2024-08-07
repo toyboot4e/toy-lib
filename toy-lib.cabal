@@ -223,6 +223,7 @@ library
     Data.Vector.InvNum
     Data.Vector.IxVector
     Data.Vector.SlideMin
+    Data.WaveletMatrix
     Heuristic.Randoms
     Math.BitSet
     Math.Digits
@@ -292,6 +293,7 @@ test-suite toy-lib-test
     Tests.SplayMap
     Tests.SuffixArray
     Tests.SumMinMax
+    Tests.WaveletMatrix
     Tests.ZFunction
 
   build-depends:
