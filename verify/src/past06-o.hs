@@ -2,6 +2,7 @@
 #include "./__import"
 
 -- {{{ toy-lib import
+
 import Data.Buffer
 import Data.Graph.Sparse
 import Data.Graph.Tree.Lca
@@ -18,6 +19,7 @@ import ToyLib.ShowBSB
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()
@@ -42,7 +44,7 @@ solve = do
         let tree = buildSG_ n $ swapDupeU es'
         (tree,) <$> unsafeFreezeBuffer rest
 
-  let !bfs = V.map (bfsSG gr (-1 :: Int)) $ U.convert restVerts
+  let !bfs = V.map (\v -> bfsSG gr v (-1 :: Int)) $ U.convert restVerts
   let !lcaCache = lcaCacheSG tree 0
 
   let fixed x

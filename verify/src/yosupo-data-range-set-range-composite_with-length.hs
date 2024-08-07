@@ -70,10 +70,10 @@ solve = do
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, !r, !c, !d) -> do
-      sactWithLengthLSTree stree l r $ Op (Affine2d (modInt c, modInt d))
+      sactLSTree stree l r $ Op (Affine2d (modInt c, modInt d))
       return Nothing
     (1, !l, !r, !x, -1) -> do
-      Dual f <- foldWithLengthLSTree stree l r
+      Dual f <- foldLSTree stree l r
       return . Just . unV2 $ f `sact` toV2 (modInt x)
     _ -> error "unreachable"
 
