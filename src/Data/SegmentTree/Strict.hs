@@ -155,6 +155,7 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLe
 {-# INLINE foldMaySTree #-}
 foldMaySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m (Maybe a)
 foldMaySTree stree@(SegmentTree vec _) l0 r0
+  -- FIXME: check with the number of valid leaves
   | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = return Nothing
   | otherwise = Just <$> foldSTree stree l0 r0
   where

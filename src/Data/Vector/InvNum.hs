@@ -15,8 +15,6 @@ import Math.PowMod (factModsN)
 --
 -- = Typical problems
 --
--- TODO
---
 -- - ABC 261 - F
 invNum :: (HasCallStack) => Int -> (G.Vector v Int) => v Int -> Int
 invNum xMax xs = runST $ do

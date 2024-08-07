@@ -69,7 +69,7 @@ mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
     addMod_ x y = (x + y) `mod` m
     mulMod_ x y = (x * y) `mod` m
 
--- | \(O(N^2)\) Retruns NxN unit matrix.
+-- | \(O(N^2)\) Returns NxN unit matrix.
 {-# INLINE unitMat #-}
 unitMat :: (U.Unbox e, Num e) => Int -> Mat e
 unitMat !n = constructIV (zero2 n n) $ \_ (!row, !col) -> if col == row then 1 else 0
