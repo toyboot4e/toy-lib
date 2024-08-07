@@ -255,7 +255,14 @@ lcaHLD HLD {..} = inner
         hx = headHLD G.! x
         hy = headHLD G.! y
 
--- * Segments and folding methods
+-- | \(O(\log V)\) Path length between two vertices.
+lengthHLD :: HLD -> Vertex -> Vertex -> Int
+lengthHLD hld@HLD {..} u v = du - dLca + dv - dLca
+  where
+    !lca = lcaHLD hld u v
+    !dLca = depthHLD G.! lca
+    !du = depthHLD G.! u
+    !dv = depthHLD G.! v
 
 -- | \(O(\log V)\) Shared implementation of `edgeSegmentsHLD` and `vertSegmentsHLD`, which returns `[l, r]`
 -- pairs for each segment.
