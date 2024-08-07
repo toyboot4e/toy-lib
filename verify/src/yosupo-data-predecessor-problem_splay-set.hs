@@ -1,14 +1,16 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
-
 -- {{{ toy-lib import
+
 import Data.SplayMap
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
+
 debug :: Bool
 debug = False
 

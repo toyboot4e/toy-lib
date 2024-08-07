@@ -6,6 +6,7 @@ import Data.Graph.MinCostFlow
 import Data.Vector.IxVector
 import ToyLib.Debug
 import ToyLib.Parser
+import ToyLib.Parser.Grid
 import ToyLib.Prelude
 import ToyLib.ShowBSB
 

@@ -10,8 +10,8 @@ import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
-import ToyLib.Macro
 import ToyLib.Debug
+import ToyLib.Macro
 
 -- TODO: consider showing `mempty` values as `-`
 
