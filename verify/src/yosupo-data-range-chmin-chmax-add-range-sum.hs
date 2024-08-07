@@ -27,16 +27,16 @@ solve = do
   stree <- buildSTB $ U.map singletonSMM xs
   res <- (`U.mapMaybeM` qs) $ \(c, !l, !r, !x) -> case c of
     0 -> do
-      sactWithLengthSTB stree l r $ newChminACC x
+      sactSTB stree l r $ newChminACC x
       return Nothing
     1 -> do
-      sactWithLengthSTB stree l r $ newChmaxACC x
+      sactSTB stree l r $ newChmaxACC x
       return Nothing
     2 -> do
-      sactWithLengthSTB stree l r $ newAddACC x
+      sactSTB stree l r $ newAddACC x
       return Nothing
     3 -> do
-      Just . sumSMM <$> foldWithLengthSTB stree l r
+      Just . sumSMM <$> foldSTB stree l r
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res

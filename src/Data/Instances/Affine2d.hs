@@ -13,6 +13,7 @@ module Data.Instances.Affine2d where
 
 import Data.Core.Group
 import Data.Core.SemigroupAction
+import Data.Core.SegmentTreeAction
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -53,6 +54,10 @@ instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a', len)
     where
       !a' = a * x + b * len
+
+instance (Num a) => SegmentTreeAction (Affine2d a) (V2 a) where
+  {-# INLINE segActWithLength #-}
+  segActWithLength op a _ = sact op a
 
 -- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine2d` for
 -- efficiency.

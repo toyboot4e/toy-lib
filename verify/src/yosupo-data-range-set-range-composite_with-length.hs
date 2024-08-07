@@ -3,6 +3,7 @@
 -- {{{ toy-lib import
 
 import Data.Core.SemigroupAction
+import Data.Core.SegmentTreeAction
 import Data.Instances.Affine2d
 import Data.ModInt
 import Data.SegmentTree.Lazy
@@ -37,9 +38,13 @@ instance Monoid Op where
   {-# INLINE mempty #-}
   mempty = Op (Affine2d (ModInt (-1), ModInt (-1)))
 
-instance SemigroupActionWithLength Op Acc where
-  {-# INLINE sactWithLength #-}
-  sactWithLength op@(Op f) x len
+instance SemigroupAction Op Acc where
+  {-# INLINE sact #-}
+  sact = segAct
+
+instance SegmentTreeAction Op Acc where
+  {-# INLINE segActWithLength #-}
+  segActWithLength op@(Op f) x len
     | op == mempty = x
     | len == 1 = Dual f
     | otherwise = Dual $ stimes' len f

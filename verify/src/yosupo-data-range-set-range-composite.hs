@@ -2,6 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
+import Data.Core.SegmentTreeAction
 import Data.Core.SemigroupAction
 import Data.Instances.Affine2d
 import Data.ModInt
@@ -42,6 +43,10 @@ instance SemigroupAction Op Acc where
   sact op x | op == mempty = x
   sact (Op !f) (Sum 1, !_) = (Sum 1, Dual f)
   sact (Op !f) (s, !_) = (s, Dual $ stimes' (getSum s) f)
+
+instance SegmentTreeAction Op Acc where
+  {-# INLINE segActWithLength #-}
+  segActWithLength op x _ = sact op x
 
 type Acc = (Sum Int, Dual (Affine2d MyModInt))
 

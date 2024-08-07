@@ -11,7 +11,8 @@
 module Data.SegmentTree.Beats.SumMinMax where
 
 import Control.Monad.Trans.State.Strict (execState, modify')
-import Data.SegmentTree.Util (FailableSemigroupActionTarget (..), SemigroupActionWithLength (..))
+import Data.Core.SegmentTreeAction (SegmentTreeAction (..))
+import Data.SegmentTree.Util (FailableSemigroupActionTarget (..))
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -143,10 +144,10 @@ instance (Num a, Ord a, Bounded a) => Monoid (AddChminChmax a) where
   {-# INLINE mempty #-}
   mempty = AddChminChmax 0 maxBound minBound
 
-instance (Num a, Ord a, Bounded a) => SemigroupActionWithLength (AddChminChmax a) (SumMinMax a) where
+instance (Num a, Ord a, Bounded a) => SegmentTreeAction (AddChminChmax a) (SumMinMax a) where
   -- TODO: not inline?
-  {-# INLINE sactWithLength #-}
-  sactWithLength (AddChminChmax !aAdd !aMin !aMax) !x len
+  {-# INLINE segActWithLength #-}
+  segActWithLength (AddChminChmax !aAdd !aMin !aMax) !x len
     -- when @x@ is identity element
     | minSMM x > maxSMM x = x
     -- No chmin or chmax

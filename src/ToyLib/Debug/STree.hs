@@ -4,7 +4,7 @@ module ToyLib.Debug.STree where
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.Core.SemigroupAction
+import Data.Core.SegmentTreeAction
 import Data.SegmentTree.Lazy
 import Data.SegmentTree.Strict
 import qualified Data.Vector.Generic as G
@@ -45,7 +45,7 @@ dbgSTreeAll (SegmentTree mVec _)
   | otherwise = return ()
 
 -- | Shows the leaves of a lazily propagated segment tree.
-dbgLSTree :: (Show a, Monoid a, U.Unbox a, Monoid op, SemigroupAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree a op (PrimState m) -> m ()
+dbgLSTree :: (Show a, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree a op (PrimState m) -> m ()
 dbgLSTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
   let !nLeaves = GM.length vec `div` 2
   ss <- forM [0 .. nLeaves - 1] $ \i -> do
