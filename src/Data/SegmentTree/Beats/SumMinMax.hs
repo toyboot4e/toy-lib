@@ -154,7 +154,7 @@ instance (Num a, Ord a, Bounded a) => SegmentTreeAction (AddChminChmax a) (SumMi
     | aMin == maxBound && aMax == minBound =
         x {sumSMM = sum', minSMM = min', maxSMM = max', min2SMM = min2', max2SMM = max2'}
     -- There's only one different value
-    | min'' == max'' = singletonWithLength min'' len
+    | min'' == max'' = singleton min'' len
     -- There are only two different values: min'' < max''
     | max2' <= min'' = twoValues min'' (len - nMaxSMM x) max'' (nMaxSMM x)
     -- There are only two different values: max'' < min''
@@ -182,7 +182,7 @@ instance (Num a, Ord a, Bounded a) => SegmentTreeAction (AddChminChmax a) (SumMi
       min'' = max aMax . min aMin $ min'
       max'' = max aMax . min aMin $ max'
       -- constructors:
-      singletonWithLength v len_ =
+      singleton v len_ =
         SumMinMax
           { sumSMM = v * fromIntegral len_,
             minSMM = v,

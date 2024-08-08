@@ -4,10 +4,10 @@ module Tests.SumMinMax where
 
 import Control.Monad
 import Control.Monad.ST
+import Data.Core.SegmentTreeAction
 import Data.List (foldl')
 import Data.SegmentTree.Beats
 import Data.SegmentTree.Beats.SumMinMax
-import Data.SegmentTree.Util
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import Test.Tasty
@@ -24,11 +24,11 @@ testSMM =
         mempty <> smm @?= smm,
       testCase "SumMinMax length 1" $ do
         let smm = singletonSMM (10 :: Int)
-        let s1 = sactWithLength (newAddACC (15 :: Int)) smm 1
-        let s2 = sactWithLength (newChminACC (5 :: Int)) smm 1
-        let s3 = sactWithLength (newChminACC (15 :: Int)) smm 1
-        let s4 = sactWithLength (newChmaxACC (15 :: Int)) smm 1
-        let s5 = sactWithLength (newChmaxACC (5 :: Int)) smm 1
+        let s1 = segActWithLength (newAddACC (15 :: Int)) smm 1
+        let s2 = segActWithLength (newChminACC (5 :: Int)) smm 1
+        let s3 = segActWithLength (newChminACC (15 :: Int)) smm 1
+        let s4 = segActWithLength (newChmaxACC (15 :: Int)) smm 1
+        let s5 = segActWithLength (newChmaxACC (5 :: Int)) smm 1
         sumSMM s1 @?= 25
         sumSMM s2 @?= 5
         sumSMM s3 @?= 10
@@ -49,7 +49,7 @@ testACC =
         newChmaxACC x <> mempty @?= newChmaxACC x
         mempty <> newChmaxACC x @?= newChmaxACC x,
       testCase "AddChminChmax simple sact" $ do
-        let y = sactWithLength (newAddACC (-1 :: Int)) (singletonSMM (0 :: Int)) 1
+        let y = segActWithLength (newAddACC (-1 :: Int)) (singletonSMM (0 :: Int)) 1
         failsSMM y @?= False
         sumSMM y @?= -1
     ]
@@ -70,7 +70,7 @@ testCompositeACC =
         x <- singletonSMM <$> QC.chooseInt (-10, 10)
         let len = 1 -- len <- QC.chooseInt (1, 5)
         return . QC.counterexample (show (a1, a2)) $
-          sactWithLength (a1 <> a2) x len QC.=== sactWithLength a1 (sactWithLength a2 x len) len,
+          segActWithLength (a1 <> a2) x len QC.=== segActWithLength a1 (segActWithLength a2 x len) len,
       QC.testProperty "AddChminChmax multi composite" $ do
         n <- QC.chooseInt (2, 10)
         as <- QC.vectorOf n $ do
@@ -82,8 +82,8 @@ testCompositeACC =
             2 -> newAddACC x
             _ -> error "unreachable"
         x <- singletonSMM <$> QC.chooseInt (-10, 10)
-        let x1 = sactWithLength (foldl' (<>) mempty (reverse as)) x 1
-        let x2 = foldl' (\acc op -> sactWithLength op acc 1) x as
+        let x1 = segActWithLength (foldl' (<>) mempty (reverse as)) x 1
+        let x2 = foldl' (\acc op -> segActWithLength op acc 1) x as
         return . QC.counterexample (show as) $ x1 QC.=== x2
     ]
 
@@ -111,21 +111,22 @@ testBeats =
               vec <- UM.replicate n (0 :: Int)
               (`U.mapMaybeM` qs) $ \case
                 (0, !l, !r, !x) -> do
-                  sactWithLengthSTB stree l r $ newChminACC x
+                  sactSTB stree l r $ newChminACC x
                   forM_ [l .. r] $ UM.modify vec (min x)
                   return Nothing
                 (1, !l, !r, !x) -> do
-                  sactWithLengthSTB stree l r $ newChmaxACC x
+                  sactSTB stree l r $ newChmaxACC x
                   forM_ [l .. r] $ UM.modify vec (max x)
                   return Nothing
                 (2, !l, !r, !x) -> do
-                  sactWithLengthSTB stree l r $ newAddACC x
+                  sactSTB stree l r $ newAddACC x
                   forM_ [l .. r] $ UM.modify vec (+ x)
                   return Nothing
                 (3, !l, !r, !_) -> do
-                  s1 <- sumSMM <$> foldWithLengthSTB stree l r
+                  s1 <- sumSMM <$> foldSTB stree l r
                   s2 <- U.sum <$> U.unsafeFreeze (UM.slice l (r - l + 1) vec)
                   return $ Just (s1, s2)
+                _ -> error "unreachable"
 
         -- (beats, naive)
         let (!a1, !a2) = U.unzip res
