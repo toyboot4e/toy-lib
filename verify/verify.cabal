@@ -210,6 +210,10 @@ executable yosupo-data-range-set-range-composite-exe
   import:  verify
   main-is: yosupo-data-range-set-range-composite.hs
 
+executable yosupo-data-range-kth-smallest-exe
+  import:  verify
+  main-is: yosupo-data-range-kth-smallest.hs
+
 executable yosupo-data-persistent-unionfind-exe
   import:  verify
   main-is: yosupo-data-persistent-unionfind.hs
