@@ -32,6 +32,9 @@ wmProps =
         let nZeros = U.convert $ V.map ((U.length xs -) . U.sum) ints
         nZeros @?= nZerosWM wm
 
+        let csums = V.map (U.cons 0 . U.singleton . U.sum) ints
+        csums @?= csumsWM wm
+
         let xs' = U.generate (U.length xs) (accessWM wm)
         xs @?= xs'
     ]
