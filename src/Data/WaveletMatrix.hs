@@ -58,12 +58,11 @@ newWM nx xs = runST $ do
     U.iforM_ vec' $ \i x -> do
       GM.unsafeWrite bitVec i . Bit $ testBit x iBit
 
-    -- csum. TODO: move inside the loop if it's easier.
+    -- csum.
     GM.unsafeWrite csum 0 (0 :: Int)
     bitVec' <- U.unsafeFreeze bitVec
 
-    -- get popCount by word
-    -- TODO: use `castToWords` for most  elements
+    -- get popCount by word. TODO: use `castToWords` for most elements
     nOnes <-
       U.ifoldM'
         ( \ !acc i wordSum -> do
@@ -82,7 +81,6 @@ newWM nx xs = runST $ do
     -- preform a stable sort by the bit:
     VAR.sortBy 2 2 (\_ x -> fromEnum (testBit x iBit)) vec
 
-  -- FIXME: Is it SAFE to use unsafeFreeze over dropped vector?
   bitsWM <- V.unfoldrExactN heightWM (U.splitAt n) <$> U.unsafeFreeze orgBits
   nZerosWM <- U.unsafeFreeze nZeros
   csumsWM <- V.unfoldrExactN heightWM (U.splitAt lenCSum) <$> U.unsafeFreeze orgCsum
@@ -140,24 +138,20 @@ accessWM WaveletMatrix {..} i0 = res
 kthSmallestWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
 kthSmallestWM WaveletMatrix {..} l_ r_ k_ = res
   where
-    (!res, !_, !_, !_) =
-      V.ifoldl'
-        ( \(!acc, !l, !r, !k) iRow (!bits, !csum) ->
-            let !l0 = _rank0BV bits csum l
-                !r0 = _rank0BV bits csum r
-             in -- go left or right
-                if k < r0 - l0 -- TODO: what?
-                  then (acc, l0, r0, k)
-                  else
-                    let !acc' = acc .|. bit (heightWM - 1 - iRow)
-                        -- every zero bits come to the left after the move:
-                        !nZeros = nZerosWM G.! iRow
-                        !l' = l + nZeros - l0
-                        !r' = r + nZeros - r0
-                        -- TODO: what?
-                        !k' = k - (r0 - l0)
-                     in (acc', l', r', k')
-        )
-        -- TODO: stick with inclusive range?
-        (0 :: Int, l_, r_ + 1, k_)
-        (V.zip bitsWM csumsWM)
+    (!res, !_, !_, !_) = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsWM csumsWM)
+    -- Here it's half-open section [l, r).
+    step (!acc, !l, !r, !k) iRow (!bits, !csum)
+      -- `r0 - l0`: the number of zeros in [l, r) is bigger than or equal to k: go left.
+      | k < r0 - l0 = (acc, l0, r0, k)
+      -- go right.
+      | otherwise =
+          let !acc' = acc .|. bit (heightWM - 1 - iRow)
+              !nZeros = nZerosWM G.! iRow
+              -- every zero bits come to the left after the move.
+              !l' = l + nZeros - l0 -- add the number of zeros in [0, l)
+              !r' = r + nZeros - r0 -- add the number of zeros in [0, r)
+              !k' = k - (r0 - l0) -- `r0 - l0` zeros go left
+           in (acc', l', r', k')
+      where
+        !l0 = _rank0BV bits csum l
+        !r0 = _rank0BV bits csum r
