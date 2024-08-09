@@ -43,11 +43,11 @@ newWM :: Int -> U.Vector Int -> WaveletMatrix
 newWM nx xs = runST $ do
   -- TODO: less mutable variables
   orgBits <- UM.replicate (n * heightWM) $ Bit False
-  orgCsum <- UM.replicate (lenCSum * heightWM) 0
+  orgCsum <- UM.replicate (lenCSum * heightWM) (0 :: Int)
   nZeros <- UM.unsafeNew heightWM
 
-  let !bits = toMatUM n orgBits
-  let !csums = toMatUM lenCSum orgCsum
+  let !bits = V.unfoldrExactN heightWM (UM.splitAt n) orgBits
+  let !csums = V.unfoldrExactN heightWM (UM.splitAt lenCSum) orgCsum
 
   -- the vector will be sorted by bits.
   vec <- U.thaw xs
@@ -83,17 +83,15 @@ newWM nx xs = runST $ do
     VAR.sortBy 2 2 (\_ x -> fromEnum (testBit x iBit)) vec
 
   -- FIXME: Is it SAFE to use unsafeFreeze over dropped vector?
-  bitsWM <- toMatU n <$> U.unsafeFreeze orgBits
+  bitsWM <- V.unfoldrExactN heightWM (U.splitAt n) <$> U.unsafeFreeze orgBits
   nZerosWM <- U.unsafeFreeze nZeros
-  csumsWM <- toMatU lenCSum <$> U.unsafeFreeze orgCsum
+  csumsWM <- V.unfoldrExactN heightWM (U.splitAt lenCSum) <$> U.unsafeFreeze orgCsum
   return $ WaveletMatrix {..}
   where
     !n = G.length xs
     !lenCSum = (n + wordWM - 1) `div` wordWM + 1 -- +1 for the zero
     -- TODO: use bit operations
     (!heightWM, !_) = until ((>= nx) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
-    toMatUM m = V.unfoldrExactN heightWM (UM.splitAt m)
-    toMatU m = V.unfoldrExactN heightWM (U.splitAt m)
 
 -- | \(O(1)\) Counts the number of 0 bits in interval [0, i].
 {-# INLINE rank0WM #-}

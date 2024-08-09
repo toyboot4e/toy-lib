@@ -114,6 +114,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic as MS
 -- vector-algorithms
 import qualified Data.Vector.Algorithms.Merge as VAM
 import qualified Data.Vector.Algorithms.Intro as VAI
+import qualified Data.Vector.Algorithms.Radix as VAR
 import qualified Data.Vector.Algorithms.Search as VAS
 
 -- containers

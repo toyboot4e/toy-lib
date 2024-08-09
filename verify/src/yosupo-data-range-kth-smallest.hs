@@ -2,8 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
-import Data.Vector.Algorithms.Intro qualified as VAI
-import Data.Vector.Extra (bindex)
+import Data.Vector.Extra
 import Data.WaveletMatrix
 import ToyLib.Parser
 import ToyLib.Prelude
