@@ -122,9 +122,13 @@ accessWM WaveletMatrix {..} i0 = res
     (!_, !res) =
       V.ifoldl'
         ( \(!i, !acc) !iRow (!bits, !csum) ->
-            let Bit !b = G.unsafeIndex bits i
-                !i' = if b then _rank1BV bits csum i + (nZerosWM G.! iRow) else _rank0BV bits csum i
-                !acc' = if b then setBit acc (heightWM - 1 - iRow) else acc
+            let Bit !goRight = G.unsafeIndex bits i
+                !i'
+                  | goRight = _rank1BV bits csum i + (nZerosWM G.! iRow)
+                  | otherwise = _rank0BV bits csum i
+                !acc'
+                  | goRight = setBit acc (heightWM - 1 - iRow)
+                  | otherwise = acc
              in (i', acc')
         )
         (i0, 0)
