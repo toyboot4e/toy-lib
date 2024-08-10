@@ -13,7 +13,6 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import GHC.Stack
 
 -- | Wavelet matrix.
 data WaveletMatrix = WaveletMatrix
@@ -93,30 +92,30 @@ newWM nx xs = runST $ do
 
 -- | \(O(1)\) Counts the number of 0 bits in interval [0, i].
 {-# INLINE rank0WM #-}
-rank0WM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int
+rank0WM :: WaveletMatrix -> Int -> Int -> Int
 rank0WM wm iRow = _rank0BV (bitsWM wm G.! iRow) (csumsWM wm G.! iRow)
 
 -- | \(O(1)\) Counts the number of 1 bits in interval [0, i].
 {-# INLINE rank1WM #-}
-rank1WM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int
+rank1WM :: WaveletMatrix -> Int -> Int -> Int
 rank1WM wm iRow = _rank1BV (bitsWM wm G.! iRow) (csumsWM wm G.! iRow)
 
 -- \(O(1)\) | Counts the number of 0 bits in interval [0, i). The input is a cumulative sum of bit vector by word.
 {-# INLINE _rank0BV #-}
-_rank0BV :: (HasCallStack) => U.Vector Bit -> U.Vector Int -> Int -> Int
+_rank0BV :: U.Vector Bit -> U.Vector Int -> Int -> Int
 _rank0BV bits bitsCSum i = i - _rank1BV bits bitsCSum i
 
 -- | \(O(1)\) Counts the number of 1 bits in interval [0, i). The input is a cumulative sum of bit vector by word.
 {-# INLINE _rank1BV #-}
-_rank1BV :: (HasCallStack) => U.Vector Bit -> U.Vector Int -> Int -> Int
+_rank1BV :: U.Vector Bit -> U.Vector Int -> Int -> Int
 _rank1BV bits bitsCSum i = fromCSum + fromRest
   where
     (!nWords, !nRest) = i `divMod` wordWM
-    fromCSum = bitsCSum G.! nWords
+    fromCSum = G.unsafeIndex bitsCSum nWords
     fromRest = popCount . U.take nRest . U.drop (nWords * wordWM) $ bits
 
 -- | \(O(\log a)\) Returns @a[k]@.
-accessWM :: (HasCallStack) => WaveletMatrix -> Int -> Int
+accessWM :: WaveletMatrix -> Int -> Int
 accessWM WaveletMatrix {..} i0 = res
   where
     (!_, !res) =
@@ -124,7 +123,7 @@ accessWM WaveletMatrix {..} i0 = res
         ( \(!i, !acc) !iRow (!bits, !csum) ->
             let Bit !goRight = G.unsafeIndex bits i
                 !i'
-                  | goRight = _rank1BV bits csum i + nZerosWM G.! iRow
+                  | goRight = _rank1BV bits csum i + G.unsafeIndex nZerosWM iRow
                   | otherwise = _rank0BV bits csum i
                 !acc'
                   | goRight = setBit acc (heightWM - 1 - iRow)
@@ -136,7 +135,7 @@ accessWM WaveletMatrix {..} i0 = res
 
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
 -- treated as separate values. Quantile.
-kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+kthMinWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 kthMinWM WaveletMatrix {..} l_ r_ k_ = res
   where
     (!res, !_, !_, !_) = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsWM csumsWM)
@@ -148,7 +147,7 @@ kthMinWM WaveletMatrix {..} l_ r_ k_ = res
       -- go right.
       | otherwise =
           let !acc' = acc .|. bit (heightWM - 1 - iRow)
-              !nZeros = nZerosWM G.! iRow
+              !nZeros = G.unsafeIndex nZerosWM iRow
               -- every zero bits come to the left after the move.
               !l' = l + nZeros - l0 -- add the number of zeros in [0, l)
               !r' = r + nZeros - r0 -- add the number of zeros in [0, r)
@@ -161,11 +160,11 @@ kthMinWM WaveletMatrix {..} l_ r_ k_ = res
 -- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
 -- treated as separate values.
 {-# INLINE kthMaxWM #-}
-kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+kthMaxWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 kthMaxWM wm l_ r_ k_ = kthMinWM wm l_ r_ (r_ - l_ - k_)
 
 -- | \(O(\log a)\) Returns the number of x s.t. x < upper in [l .. r].
-freqLTWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+freqLTWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 freqLTWM WaveletMatrix {..} l_ r_ upper
   | upper >= bit heightWM = r_ + 1 - l_
   | otherwise =
@@ -178,15 +177,16 @@ freqLTWM WaveletMatrix {..} l_ r_ upper
           !l0 = _rank0BV bits csum l
           !r0 = _rank0BV bits csum r
        in if b
-            then (acc + r0 - l0, l + nZerosWM G.! iRow - l0, r + nZerosWM G.! iRow - r0)
+            then (acc + r0 - l0, l + G.unsafeIndex nZerosWM iRow - l0, r + G.unsafeIndex nZerosWM iRow - r0)
             else (acc, l0, r0)
 
 -- | \(O(\log a)\) Returns the number of x in [l .. r] in [xl, xr].
 {-# INLINE freqInWM #-}
-freqInWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int -> Int
+freqInWM :: WaveletMatrix -> Int -> Int -> Int -> Int -> Int
 freqInWM wm l_ r_ lx rx = freqLTWM wm l_ r_ (rx + 1) - freqLTWM wm l_ r_ lx
 
 -- | \(O(\log a)\) Returns the number of x in [l .. r].
 {-# INLINE freqWM #-}
-freqWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+freqWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 freqWM wm l_ r_ x = freqInWM wm l_ r_ x x
+
