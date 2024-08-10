@@ -28,7 +28,7 @@ solve = do
   let res =
         U.map
           ( \(!l, pred -> !r, !k) ->
-              let !i = kthSmallestWM wm l r k
+              let !i = kthMinWM wm l r k
                in dict G.! i
           )
           lrks

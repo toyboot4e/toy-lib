@@ -34,7 +34,7 @@ data WaveletMatrix = WaveletMatrix
 wordWM :: Int
 wordWM = 64
 
--- | \(O(N)\) Creates a `WaveletMatrix`.
+-- | \(O(N \log N)\) Creates a `WaveletMatrix`.
 --
 -- - @nx@: The number of different @x@, starting from zero. In other words, every @x@ is in
 -- \([0, nx)\).
@@ -134,16 +134,15 @@ accessWM WaveletMatrix {..} i0 = res
         (i0, 0)
         -- TODO: indexing can be faster
         (V.zip bitsWM csumsWM)
-
+  
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
--- treated as separate values.
---
--- TODO: Return with index?
-kthSmallestWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
-kthSmallestWM WaveletMatrix {..} l_ r_ k_ = res
+-- treated as separate values. Quantile.
+kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+kthMinWM WaveletMatrix {..} l_ r_ k_ = res
   where
     (!res, !_, !_, !_) = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsWM csumsWM)
-    -- Here it's half-open section [l, r).
+    -- It's binary search over the value range. In each row, we'll focus on either 0 bit values or
+    -- 1 bit values in [l, r) and update the range to [l', r').
     step (!acc, !l, !r, !k) iRow (!bits, !csum)
       -- `r0 - l0`: the number of zeros in [l, r) is bigger than or equal to k: go left.
       | k < r0 - l0 = (acc, l0, r0, k)
@@ -159,3 +158,8 @@ kthSmallestWM WaveletMatrix {..} l_ r_ k_ = res
       where
         !l0 = _rank0BV bits csum l
         !r0 = _rank0BV bits csum r
+
+-- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
+-- treated as separate values.
+kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+kthMaxWM wm l_ r_ k_ = kthMinWM wm l_ r_ (r_ - l_ - k_)

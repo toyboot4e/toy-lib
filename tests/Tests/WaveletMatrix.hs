@@ -69,7 +69,7 @@ randomTests =
         -- TODO: automatic index compression
         let xs' = U.map (bindex dict) xs
         let wm = newWM nx xs'
-        let res = dict G.! kthSmallestWM wm l r k
+        let res = dict G.! kthMinWM wm l r k
 
         return . QC.counterexample (show (xs, (l, r, k))) $ expected QC.=== res
     ]

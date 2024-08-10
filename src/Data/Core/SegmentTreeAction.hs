@@ -12,7 +12,9 @@ class SegmentTreeAction op a where
   segAct op a = segActWithLength op a 1
 
   -- | Right semigroup aciton with the segment length.
+  {-# INLINE segActWithLength #-}
   segActWithLength :: op -> a -> Int -> a
+  segActWithLength op a _  = segAct op a
 
 -- TODO: consider making it failsible for beats.
 
