@@ -214,6 +214,10 @@ executable yosupo-data-range-kth-smallest-exe
   import:  verify
   main-is: yosupo-data-range-kth-smallest.hs
 
+executable yosupo-data-static-range-frequency-exe
+  import:  verify
+  main-is: yosupo-data-static-range-frequency.hs
+
 executable yosupo-data-persistent-unionfind-exe
   import:  verify
   main-is: yosupo-data-persistent-unionfind.hs

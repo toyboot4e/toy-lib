@@ -124,7 +124,7 @@ accessWM WaveletMatrix {..} i0 = res
         ( \(!i, !acc) !iRow (!bits, !csum) ->
             let Bit !goRight = G.unsafeIndex bits i
                 !i'
-                  | goRight = _rank1BV bits csum i + (nZerosWM G.! iRow)
+                  | goRight = _rank1BV bits csum i + nZerosWM G.! iRow
                   | otherwise = _rank0BV bits csum i
                 !acc'
                   | goRight = setBit acc (heightWM - 1 - iRow)
@@ -132,9 +132,8 @@ accessWM WaveletMatrix {..} i0 = res
              in (i', acc')
         )
         (i0, 0)
-        -- TODO: indexing can be faster
         (V.zip bitsWM csumsWM)
-  
+
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
 -- treated as separate values. Quantile.
 kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
@@ -161,5 +160,33 @@ kthMinWM WaveletMatrix {..} l_ r_ k_ = res
 
 -- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
 -- treated as separate values.
+{-# INLINE kthMaxWM #-}
 kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
 kthMaxWM wm l_ r_ k_ = kthMinWM wm l_ r_ (r_ - l_ - k_)
+
+-- | \(O(\log a)\) Returns the number of x s.t. x < upper in [l .. r].
+freqLTWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+freqLTWM WaveletMatrix {..} l_ r_ upper
+  | upper >= bit heightWM = r_ + 1 - l_
+  | otherwise =
+      let (!res, !_, !_) = V.ifoldl' step (0, l_, r_ + 1) $ V.zip bitsWM csumsWM
+       in res
+  where
+    -- [l, r)
+    step (!acc, !l, !r) iRow (!bits, !csum) =
+      let !b = testBit upper (heightWM - 1 - iRow)
+          !l0 = _rank0BV bits csum l
+          !r0 = _rank0BV bits csum r
+       in if b
+            then (acc + r0 - l0, l + nZerosWM G.! iRow - l0, r + nZerosWM G.! iRow - r0)
+            else (acc, l0, r0)
+
+-- | \(O(\log a)\) Returns the number of x in [l .. r] in [xl, xr].
+{-# INLINE freqInWM #-}
+freqInWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int -> Int
+freqInWM wm l_ r_ lx rx = freqLTWM wm l_ r_ (rx + 1) - freqLTWM wm l_ r_ lx
+
+-- | \(O(\log a)\) Returns the number of x in [l .. r].
+{-# INLINE freqWM #-}
+freqWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+freqWM wm l_ r_ x = freqInWM wm l_ r_ x x

@@ -2,6 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
+import Algorithm.Bisect
 import Data.Vector.Extra
 import Data.WaveletMatrix
 import ToyLib.Parser
@@ -18,23 +19,30 @@ debug = False
 solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
+
+  when (n == 0) $ do
+    printBSB $ unlinesBSB $ U.replicate q '0'
+    liftIO exitSuccess
+
   xs <- intsU'
-  lrks <- U.replicateM q ints3'
+  lrxs <- U.replicateM q ints3'
 
   let !dict = U.uniq $ U.modify VAI.sort xs
-  let !xs' = U.map (bindex dict) xs
-  let !wm = newWM n xs'
+  let !wm = newWM (G.length dict) $ U.map (bindex dict) xs
 
   let res =
         U.map
-          ( \(!l, pred -> !r, !k) ->
-              let !i = kthMinWM wm l r k
-               in dict G.! i
+          ( \(!l, !r, !x) ->
+              let !i = bsearchL dict (<= x)
+                  !x' = maybe (-1) (dict G.!) i
+               in if x' == x
+                    then freqWM wm l (r - 1) $ fromJust i
+                    else 0
           )
-          lrks
+          lrxs
   printBSB $ unlinesBSB res
 
--- verification-helper: PROBLEM https://judge.yosupo.jp/problem/range_kth_smallest
+-- verification-helper: PROBLEM https://judge.yosupo.jp/problem/static_range_frequency
 -- #wavelet-matrix
 main :: IO ()
 main = runIO solve
