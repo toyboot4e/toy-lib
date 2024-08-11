@@ -1,6 +1,9 @@
 module Tests.WaveletMatrix where
 
+import Algorithm.Bisect
 import Data.Bit
+import Data.Maybe
+import Data.Ix
 import Data.Ord
 import Data.Tuple.Extra
 import Data.Vector qualified as V
@@ -129,7 +132,26 @@ randomTests =
         let !wm = newWM nx xs'
         let !res = findKthIndexWM wm k (bindex dict x)
 
-        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected
+        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
+      QC.testProperty "freq" $ do
+        !n <- QC.chooseInt (1, maxN)
+        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+
+        let !dict = U.uniq $ U.modify VAI.sort xs
+        let !nx = U.length dict
+
+        l <- QC.chooseInt (0, n - 1)
+        r <- QC.chooseInt (l, n - 1)
+        xl <- QC.chooseInt rng
+        xr <- QC.chooseInt (xl, snd rng)
+
+        let slice = U.take (r - l + 1) $ U.drop l xs
+        let expected = U.length $ U.filter (inRange (xl, xr)) slice
+
+        let !wm = newWM nx $ U.map (bindex dict) xs
+        -- It handle the case @xl@ or  @xr@ is not in the dict
+        let !res = freqInWM wm l r (fromMaybe n (bsearchR dict (< xl))) (fromMaybe (-1) (bsearchL dict (<= xr)))
+        return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected
     ]
   where
     rng = (-20, 20) :: (Int, Int)

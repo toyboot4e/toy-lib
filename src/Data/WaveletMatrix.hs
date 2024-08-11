@@ -165,7 +165,7 @@ freqLTWM WaveletMatrix {..} l_ r_ upper
        in res
   where
     -- [l, r)
-    step (!acc, !l, !r) iRow (!bits, !csum) =
+    step (!acc, !l, !r) !iRow (!bits, !csum) =
       let !b = testBit upper (heightWM - 1 - iRow)
           !l0 = freq0BV bits csum l
           !r0 = freq0BV bits csum r
