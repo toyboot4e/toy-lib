@@ -21,16 +21,16 @@ powModProps =
     [ QC.testProperty "powModConst" $ do
         QC.forAll (QC.chooseInt (1, modulo - 1)) $ \base -> do
           QC.forAll (QC.chooseInt (1, 100)) $ \p -> do
-           times p (mulMod modulo base) 1 QC.=== powModConst modulo base p,
+            powModConst modulo base p QC.=== times p (mulMod modulo base) 1,
       QC.testProperty "invModConst" $ do
         QC.forAll (QC.chooseInt (1, modulo - 1)) $ \base -> do
-           times (modulo - 2) (mulMod modulo base) 1 QC.=== invModConst modulo base,
+          invModConst modulo base QC.=== times (modulo - 2) (mulMod modulo base) 1,
       QC.testProperty "divModConst" $ do
         QC.forAll (QC.chooseInt (1, modulo - 1)) $ \x -> do
           QC.forAll (QC.chooseInt (1, modulo - 1)) $ \d -> do
             let expected = mulMod modulo x (times (modulo - 2) (mulMod modulo d) 1)
             let res = divModConst modulo x d
-            expected QC.=== res
+            res QC.=== expected
     ]
 
 tests :: [TestTree]

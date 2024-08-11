@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Tests.NTT where
 
@@ -23,7 +22,7 @@ bitReverseProps =
     "Bit reverse properties"
     [ QC.testProperty "implementation" $ do
         x <- QC.chooseInt (0, bit 32 - 1)
-        return $ naiveBitReverse x QC.=== bitReverse x
+        return $ bitReverse x QC.=== naiveBitReverse x
     ]
 
 inttNtt :: (KnownNat p) => U.Vector (ModInt p) -> QC.Property

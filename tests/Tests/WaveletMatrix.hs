@@ -1,11 +1,13 @@
 module Tests.WaveletMatrix where
 
+import Data.Bit
 import Data.Vector qualified as V
 import Data.Vector.Algorithms.Intro qualified as VAI
 import Data.Vector.Extra
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import Data.WaveletMatrix
+import Data.WaveletMatrix.SuccinctDictionary
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
@@ -36,24 +38,57 @@ fixedTest =
                   ]
 
         let wm = newWM 6 xs
-        bits @?= bitsWM wm
+        bitsWM wm @?= bits
 
         let nZeros = U.convert $ V.map ((U.length xs -) . U.sum) ints
-        nZeros @?= nZerosWM wm
+        nZerosWM wm @?= nZeros
 
         let csums = V.map (U.cons 0 . U.singleton . U.sum) ints
-        csums @?= csumsWM wm
+        csumsWM wm @?= csums
 
         let xs' = U.generate (U.length xs) (accessWM wm)
-        xs @?= xs'
+        xs' @?= xs
     ]
+
+findKthIndex :: (Eq a, U.Unbox a) => Int -> a -> U.Vector a -> Maybe Int
+findKthIndex k x xs = fmap fst . (G.!? k) . U.filter ((== x) . snd) $ U.indexed xs
+
+dictTests :: TestTree
+dictTests =
+  testGroup
+    "Succinct dictinary funciton tests"
+    [ QC.testProperty "freq" $ do
+        n <- QC.chooseInt (1, maxN)
+        xs <- U.fromList . map Bit <$> QC.vectorOf n (QC.chooseEnum (False, True))
+        let csum = csumBV xs
+        let expected = (U.length (U.filter (== 0) xs), U.length (U.filter (== 1) xs))
+        let res = (freq0BV xs csum n, freq1BV xs csum n)
+        return $ res QC.=== expected,
+      QC.testProperty "findKthIndex" $ do
+        n <- QC.chooseInt (1, maxN)
+        xs <- U.fromList . map Bit <$> QC.vectorOf n (QC.chooseEnum (False, True))
+        k <- QC.chooseInt (0, n - 1)
+        x <- Bit <$> QC.chooseEnum (False, True)
+
+        let expected = findKthIndex k x xs
+
+        let csum = csumBV xs
+        let res
+              | x == 0 = findKthIndex0BV xs csum k
+              | otherwise = findKthIndex1BV xs csum k
+
+        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected
+    ]
+  where
+    rng = (-20, 20) :: (Int, Int)
+    maxN = 256
 
 randomTests :: TestTree
 randomTests =
   testGroup
     "Wavelet Matrix random tests"
     [ QC.testProperty "kth smallest" $ do
-        n <- QC.chooseInt (1, 100)
+        n <- QC.chooseInt (1, maxN)
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
 
         let dict = U.uniq $ U.modify VAI.sort xs
@@ -71,10 +106,29 @@ randomTests =
         let wm = newWM nx xs'
         let res = dict G.! kthMinWM wm l r k
 
-        return . QC.counterexample (show (xs, (l, r, k))) $ expected QC.=== res
+        return . QC.counterexample (show (xs, (l, r, k))) $ res QC.=== expected,
+      QC.testProperty "kth index" $ do
+        !n <- QC.chooseInt (1, maxN)
+        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+
+        let !dict = U.uniq $ U.modify VAI.sort xs
+        let !nx = U.length dict
+
+        !k <- QC.chooseInt (0, min (n - 1) 10)
+        !x <- (xs G.!) <$> QC.chooseInt (0, n - 1)
+
+        let !ixs = U.indexed xs
+        let !expected = fmap fst . (G.!? k) $ U.filter ((== x) . snd) ixs
+
+        let !xs' = U.map (bindex dict) xs
+        let !wm = newWM nx xs'
+        let !res = findKthIndexWM wm k (bindex dict x)
+
+        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected
     ]
   where
-    rng = (-20, 20)
+    rng = (-20, 20) :: (Int, Int)
+    maxN = 256
 
 tests :: [TestTree]
-tests = [testGroup "Data.WaveletMatrix" [fixedTest, randomTests]]
+tests = [testGroup "Data.WaveletMatrix" [fixedTest, dictTests, randomTests]]
