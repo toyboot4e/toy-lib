@@ -1,6 +1,8 @@
 module Tests.WaveletMatrix where
 
 import Data.Bit
+import Data.Ord
+import Data.Tuple.Extra
 import Data.Vector qualified as V
 import Data.Vector.Algorithms.Intro qualified as VAI
 import Data.Vector.Extra
@@ -87,7 +89,7 @@ randomTests :: TestTree
 randomTests =
   testGroup
     "Wavelet Matrix random tests"
-    [ QC.testProperty "kth smallest" $ do
+    [ QC.testProperty "kthMin" $ do
         n <- QC.chooseInt (1, maxN)
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
 
@@ -99,14 +101,17 @@ randomTests =
 
         k <- QC.chooseInt (0, r - l)
         let slice = U.take (r - l + 1) $ U.drop l xs
-        let expected = U.modify VAI.sort slice G.! k
+        let expected =
+              let (!i, !x) = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice) G.! k
+               in (i + l, x)
 
         -- TODO: automatic index compression
         let xs' = U.map (bindex dict) xs
         let wm = newWM nx xs'
-        let res = dict G.! kthMinWM wm l r k
+        let (!i, !x_) = ikthMinWM wm l r k
+        let x = dict G.! x_
 
-        return . QC.counterexample (show (xs, (l, r, k))) $ res QC.=== expected,
+        return . QC.counterexample (show ((l, r, k), xs)) $ (i, x) QC.=== expected,
       QC.testProperty "kth index" $ do
         !n <- QC.chooseInt (1, maxN)
         !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)

@@ -7,6 +7,7 @@ import Control.Monad.ST (runST)
 import Data.Bifunctor (bimap)
 import Data.Bit
 import Data.Bits
+import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Radix as VAR
 import qualified Data.Vector.Generic as G
@@ -17,15 +18,16 @@ import Data.WaveletMatrix.SuccinctDictionary
 
 -- | Wavelet matrix.
 data WaveletMatrix = WaveletMatrix
-  { -- \(\lceil \log_2 N \rceil\).
+  { -- | \(\lceil \log_2 N \rceil\).
     heightWM :: {-# UNPACK #-} !Int,
-    -- The length of the original array.
+    -- | The length of the original array.
     lengthWM :: {-# UNPACK #-} !Int,
-    -- The bit matrix. Each row represents (heightWM - 1 - iRow) bit's on/off.
+    -- | The bit matrix. Each row represents (heightWM - 1 - iRow) bit's on/off.
     bitsWM :: !(V.Vector (U.Vector Bit)),
-    -- The number of zeros in each row in the bit matrix.
+    -- | The number of zeros in each row in the bit matrix.
+    -- TODO: consider removing it ('cause we have @csumsWM@). It could be even faster.
     nZerosWM :: !(U.Vector Int),
-    -- The cummulative sum of bits in each row in words. Each row has length of
+    -- | The cummulative sum of bits in each row in words. Each row has length of
     -- \(\lceil N / 64 \rceil + 1\).
     csumsWM :: !(V.Vector (U.Vector Int))
   }
@@ -99,12 +101,10 @@ accessWM WaveletMatrix {..} i0 = res
         (i0, 0)
         (V.zip bitsWM csumsWM)
 
--- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
--- treated as separate values. Quantile.
-kthMinWM :: WaveletMatrix -> Int -> Int -> Int -> Int
-kthMinWM WaveletMatrix {..} l_ r_ k_ = res
+-- | \(O(\log a)\)
+_goDownWM :: WaveletMatrix -> Int -> Int -> Int -> (Int, Int, Int, Int)
+_goDownWM WaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsWM csumsWM)
   where
-    (!res, !_, !_, !_) = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsWM csumsWM)
     -- It's binary search over the value range. In each row, we'll focus on either 0 bit values or
     -- 1 bit values in [l, r) and update the range to [l', r').
     step (!acc, !l, !r, !k) !iRow (!bits, !csum)
@@ -123,6 +123,32 @@ kthMinWM WaveletMatrix {..} l_ r_ k_ = res
       where
         !l0 = freq0BV bits csum l
         !r0 = freq0BV bits csum r
+
+-- | \(O(\log a)\)
+_goUpWM :: WaveletMatrix -> Int -> Int -> Maybe Int
+_goUpWM WaveletMatrix {..} i0 x =
+  V.ifoldM'
+    ( \ !i !iBit (!bits, !csum) ->
+        if testBit x iBit
+          then findKthIndex1BV bits csum $ i - nZerosWM G.! (heightWM - 1 - iBit)
+          else findKthIndex0BV bits csum i
+    )
+    i0
+    (V.zip (V.reverse bitsWM) (V.reverse csumsWM))
+
+-- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
+-- treated as separate values. Quantile.
+kthMinWM :: WaveletMatrix -> Int -> Int -> Int -> Int
+kthMinWM wm l_ r_ k_ =
+  let (!x, !_, !_, !_) = _goDownWM wm l_ r_ k_
+   in x
+
+-- | \(O(\log a)\)
+ikthMinWM :: WaveletMatrix -> Int -> Int -> Int -> (Int, Int)
+ikthMinWM wm l_ r_ k_ =
+  let (!x, !l, !_, !k) = _goDownWM wm l_ r_ k_
+      !i' = fromJust $ _goUpWM wm (l + k) x
+   in (i', x)
 
 -- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
 -- treated as separate values.
@@ -163,7 +189,7 @@ findIndexWM wm = findKthIndexWM wm 0
 
 -- | \(O(\log a)\) Finds kth index of @x@. Select.
 findKthIndexWM :: WaveletMatrix -> Int -> Int -> Maybe Int
-findKthIndexWM WaveletMatrix {..} k x
+findKthIndexWM wm@WaveletMatrix {..} k x
   | not (0 <= x && x <= n - 1 && 0 <= k && k <= n - 1) = Nothing
   | otherwise = inner
   where
@@ -172,8 +198,9 @@ findKthIndexWM WaveletMatrix {..} k x
     inner
       | rEnd <= lEnd + k = Nothing
       -- go up
-      | otherwise = res
+      | otherwise = _goUpWM wm (lEnd + k) x
       where
+        -- TODO: replace with _goDownWM
         -- Go down. Gets the [l, r) range of @x@ in the last array.
         (!lEnd, !rEnd) =
           V.ifoldl'
@@ -186,16 +213,5 @@ findKthIndexWM WaveletMatrix {..} k x
             )
             (0 :: Int, n)
             (V.zip bitsWM csumsWM)
-        -- Go up.
-        -- FIXME: why maybe?
-        !res =
-          V.ifoldM'
-            ( \ !i !iBit (!bits, !csum) ->
-                if testBit x iBit
-                  then findKthIndex1BV bits csum $ i - nZerosWM G.! (heightWM - 1 - iBit)
-                  else findKthIndex0BV bits csum i
-            )
-            (lEnd + k)
-            (V.zip (V.reverse bitsWM) (V.reverse csumsWM))
 
 -- TODO: prev, next

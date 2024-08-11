@@ -307,6 +307,7 @@ test-suite toy-lib-test
     , bitvec             ^>=1.1.4.0
     , bytestring         ^>=0.11.4.0
     , containers         ^>=0.6.7
+    , extra              ^>=1.7.13
     , primitive          ^>=0.8.0.0
     , tasty              ^>=1.4.3
     , tasty-hspec        ^>=1.2.0.3
