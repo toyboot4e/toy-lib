@@ -104,11 +104,27 @@ randomTests =
         let slice = sliceLR l r xs
         let expected =
               let (!i, !x) = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice) G.! k
-               in (i + l, x)
+               in Just (i + l, x)
 
         let wm = newWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
-          ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== snd expected,
+          ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== (snd <$> expected),
+      QC.testProperty "kthMax" $ do
+        n <- QC.chooseInt (1, maxN)
+        xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+
+        l <- QC.chooseInt (0, n - 1)
+        r <- QC.chooseInt (l, n - 1)
+
+        k <- QC.chooseInt (0, r - l)
+        let slice = sliceLR l r xs
+        let expected =
+              let (!i, !x) = U.modify (VAI.sortBy (comparing (Down . swap))) (U.indexed slice) G.! k
+               in Just (i + l, x)
+
+        let wm = newWM xs
+        return . QC.counterexample (show ((l, r, k), xs)) $
+          ikthMaxWM wm l r k QC.=== expected .&&. kthMaxWM wm l r k QC.=== (snd <$> expected),
       QC.testProperty "kth index" $ do
         !n <- QC.chooseInt (1, maxN)
         !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)

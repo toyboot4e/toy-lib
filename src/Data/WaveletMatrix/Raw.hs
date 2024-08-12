@@ -80,8 +80,6 @@ newRWM nx xs = runST $ do
       let (!h, !_) = until ((>= nx) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
        in max 1 h
 
--- * API
-
 -- | \(O(\log a)\) Returns @a[k]@.
 accessRWM :: RawWaveletMatrix -> Int -> Int
 accessRWM RawWaveletMatrix {..} i0 = res
@@ -100,6 +98,8 @@ accessRWM RawWaveletMatrix {..} i0 = res
         )
         (i0, 0)
         (V.zip bitsRWM csumsRWM)
+
+-- * kth min (safe)
 
 -- | \(O(\log a)\)
 _goDownRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int, Int, Int)
@@ -138,23 +138,64 @@ _goUpRWM RawWaveletMatrix {..} i0 x =
 
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
 -- treated as separate values. Quantile with index.
-kthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
-kthMinRWM wm l_ r_ k_ =
+{-# INLINE kthMinRWM #-}
+kthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+kthMinRWM wm l_ r_ k_
+  | k_ < 0 || k_ > r_ - l_ = Nothing
+  | otherwise = Just $ unsafeKthMinRWM wm l_ r_ k_
+
+-- | \(O(\log a)\)
+{-# INLINE ikthMinRWM #-}
+ikthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
+ikthMinRWM wm l_ r_ k_
+  | k_ < 0 || k_ > r_ - l_ = Nothing
+  | otherwise = Just $ unsafeIKthMinRWM wm l_ r_ k_
+
+-- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
+-- treated as separate values.
+{-# INLINE kthMaxRWM #-}
+kthMaxRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+kthMaxRWM wm l_ r_ k_
+  | k_ < 0 || k_ > r_ - l_ = Nothing
+  | otherwise = Just $ unsafeKthMaxRWM wm l_ r_ k_
+
+-- | \(O(\log a)\)
+{-# INLINE ikthMaxRWM #-}
+ikthMaxRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
+ikthMaxRWM wm l_ r_ k_
+  | k_ < 0 || k_ > r_ - l_ = Nothing
+  | otherwise = Just $ unsafeIKthMaxRWM wm l_ r_ k_
+
+-- * kth min (no boundary check)
+
+-- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
+-- treated as separate values. Quantile with index.
+{-# INLINE unsafeKthMinRWM #-}
+unsafeKthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
+unsafeKthMinRWM wm l_ r_ k_ =
   let (!x, !_, !_, !_) = _goDownRWM wm l_ r_ k_
    in x
 
 -- | \(O(\log a)\)
-ikthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int)
-ikthMinRWM wm l_ r_ k_ =
+{-# INLINE unsafeIKthMinRWM #-}
+unsafeIKthMinRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int)
+unsafeIKthMinRWM wm l_ r_ k_ =
   let (!x, !l, !_, !k) = _goDownRWM wm l_ r_ k_
       !i' = fromJust $ _goUpRWM wm (l + k) x
    in (i', x)
 
 -- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
 -- treated as separate values.
-{-# INLINE kthMaxRWM #-}
-kthMaxRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
-kthMaxRWM wm l_ r_ k_ = kthMinRWM wm l_ r_ (r_ - l_ - k_)
+{-# INLINE unsafeKthMaxRWM #-}
+unsafeKthMaxRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
+unsafeKthMaxRWM wm l_ r_ k_ = unsafeKthMinRWM wm l_ r_ (r_ - l_ - k_)
+
+-- | \(O(\log a)\)
+{-# INLINE unsafeIKthMaxRWM #-}
+unsafeIKthMaxRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int)
+unsafeIKthMaxRWM wm l_ r_ k_ = unsafeIKthMinRWM wm l_ r_ (r_ - l_ - k_)
+
+-- * Freq
 
 -- | \(O(\log a)\) Returns the number of \(x s.t. x < \mathcal{upper} in [l .. r]\).
 freqLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
@@ -182,6 +223,8 @@ freqInRWM wm l_ r_ lx rx = freqLTRWM wm l_ r_ (rx + 1) - freqLTRWM wm l_ r_ lx
 {-# INLINE freqRWM #-}
 freqRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
 freqRWM wm l_ r_ x = freqInRWM wm l_ r_ x x
+
+-- * Find index
 
 -- | \(O(\log a)\) Finds index of @x@. Select.
 findIndexRWM :: RawWaveletMatrix -> Int -> Maybe Int
@@ -214,6 +257,35 @@ findKthIndexRWM wm@RawWaveletMatrix {..} k x
             (0 :: Int, n)
             (V.zip bitsRWM csumsRWM)
 
--- TODO: prev, next
--- TODO: compress
+-- * Lookup
+
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \le x\).
+{-# INLINE lookupLERWM #-}
+lookupLERWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lookupLERWM wm l r x
+  | freq == 0 = Nothing
+  | otherwise = Just $ unsafeKthMinRWM wm l r (freq - 1)
+  where
+    -- TODO: minBound works?
+    !freq = freqInRWM wm l r (minBound `div` 2) x
+
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \lt x\).
+{-# INLINE lookupLTRWM #-}
+lookupLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lookupLTRWM wm l r x = lookupLERWM wm l r (x - 1)
+
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \gt x\).
+{-# INLINE lookupGERWM #-}
+lookupGERWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lookupGERWM wm l r x
+  | freq >= r - l + 1 = Nothing
+  | otherwise = Just $ unsafeKthMinRWM wm l r freq
+  where
+    -- TODO: minBound works?
+    !freq = freqInRWM wm l r (minBound `div` 2) (x - 1)
+
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \ge x\).
+{-# INLINE lookupGTRWM #-}
+lookupGTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lookupGTRWM wm l r x = lookupGERWM wm l r (x + 1)
 

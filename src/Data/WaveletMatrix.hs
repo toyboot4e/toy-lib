@@ -35,29 +35,70 @@ accessWM WaveletMatrix {..} i =
   let !x = accessRWM rawWM i
    in dictWM G.! x
 
--- TODO: Return Maybe?
+-- * kth min (safe)
 
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
 -- treated as separate values. Quantile.
-kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
-kthMinWM WaveletMatrix {..} l_ r_ k_ =
-  let !x = kthMinRWM rawWM l_ r_ k_
-   in dictWM G.! x
+{-# INLINE ikthMinWM #-}
+ikthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
+ikthMinWM WaveletMatrix{..} l_ r_ k_
+  | Just (!i, !x) <- ikthMinRWM rawWM l_ r_ k_ = Just (i, dictWM G.! x)
+  | otherwise = Nothing
 
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
--- treated as separate values. Quantile with index.
-ikthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> (Int, Int)
-ikthMinWM WaveletMatrix {..} l_ r_ k_ =
-  let (!i, !x) = ikthMinRWM rawWM l_ r_ k_
+-- treated as separate values. Quantile.
+{-# INLINE kthMinWM #-}
+kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
+kthMinWM WaveletMatrix{..} l_ r_ k_
+  | Just !x <- kthMinRWM rawWM l_ r_ k_ = Just $ dictWM G.! x
+  | otherwise = Nothing
+
+-- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
+-- treated as separate values. Quantile.
+{-# INLINE ikthMaxWM #-}
+ikthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
+ikthMaxWM WaveletMatrix{..} l_ r_ k_
+  | Just (!i, !x) <- ikthMaxRWM rawWM l_ r_ k_ = Just (i, dictWM G.! x)
+  | otherwise = Nothing
+
+-- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
+-- treated as separate values. Quantile.
+{-# INLINE kthMaxWM #-}
+kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
+kthMaxWM WaveletMatrix{..} l_ r_ k_
+  | Just !x <- kthMaxRWM rawWM l_ r_ k_ = Just $ dictWM G.! x
+  | otherwise = Nothing
+
+-- * kth min (no boundary check)
+
+-- | \(O(\log a)\)
+{-# INLINE unsafeIKthMinWM #-}
+unsafeIKthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> (Int, Int)
+unsafeIKthMinWM WaveletMatrix {..} l_ r_ k_ =
+  let (!i, !x) = unsafeIKthMinRWM rawWM l_ r_ k_
    in (i, dictWM G.! x)
 
--- | \(O(\log a)\) Returns k-th (0-based) biggest number in [l, r]. Two different values are
--- treated as separate values.
-{-# INLINE kthMaxWM #-}
-kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
-kthMaxWM WaveletMatrix {..} l_ r_ k_ =
-  let !x = kthMinRWM rawWM l_ r_ k_
+-- | \(O(\log a)\)
+unsafeKthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+unsafeKthMinWM WaveletMatrix {..} l_ r_ k_ =
+  let !x = unsafeKthMinRWM rawWM l_ r_ k_
    in dictWM G.! x
+
+-- | \(O(\log a)\)
+{-# INLINE unsafeIKthMaxWM #-}
+unsafeIKthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> (Int, Int)
+unsafeIKthMaxWM WaveletMatrix {..} l_ r_ k_ =
+  let (!i, !x) = unsafeIKthMaxRWM rawWM l_ r_ k_
+   in (i, dictWM G.! x)
+
+-- | \(O(\log a)\)
+{-# INLINE unsafeKthMaxWM #-}
+unsafeKthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+unsafeKthMaxWM WaveletMatrix {..} l_ r_ k_ =
+  let !x = unsafeKthMinRWM rawWM l_ r_ k_
+   in dictWM G.! x
+
+-- * Frequencies
 
 -- | \(O(\log a)\) Returns the number of x in [l .. r] in [xl, xr].
 {-# INLINE freqInWM #-}
@@ -78,6 +119,8 @@ freqInWM WaveletMatrix {..} l r xl xr
 freqWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 freqWM wm l r x = freqInWM wm l r x x
 
+-- * Find index
+
 -- | \(O(\log a)\) Finds index of @x@. Select.
 {-# INLINE findIndexWM #-}
 findIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Maybe Int
@@ -94,12 +137,14 @@ findKthIndexWM WaveletMatrix {..} k x
         else Nothing
   | otherwise = Nothing
 
+-- * Lookup
+
 -- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \le x\).
 {-# INLINE lookupLEWM #-}
 lookupLEWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupLEWM wm l r x
   | freq == 0 = Nothing
-  | otherwise = Just $ kthMinWM wm l r (freq - 1)
+  | otherwise = Just $ unsafeKthMinWM wm l r (freq - 1)
   where
     -- TODO: minBound works?
     !freq = freqInWM wm l r (minBound `div` 2) x
@@ -114,7 +159,7 @@ lookupLTWM wm l r x = lookupLEWM wm l r (x - 1)
 lookupGEWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGEWM wm l r x
   | freq >= r - l + 1 = Nothing
-  | otherwise = Just $ kthMinWM wm l r freq
+  | otherwise = Just $ unsafeKthMinWM wm l r freq
   where
     -- TODO: minBound works?
     !freq = freqInWM wm l r (minBound `div` 2) (x - 1)
