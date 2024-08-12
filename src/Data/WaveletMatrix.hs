@@ -4,6 +4,7 @@
 module Data.WaveletMatrix where
 
 import Algorithm.Bisect
+import Control.Monad
 import Data.Maybe
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
@@ -129,13 +130,12 @@ findIndexWM wm = findKthIndexWM wm 0
 -- | \(O(\log a)\) Finds kth index of @x@. Select.
 {-# INLINE findKthIndexWM #-}
 findKthIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Maybe Int
-findKthIndexWM WaveletMatrix {..} k x
-  | Just i <- bsearchL dictWM (<= x) =
-      -- TODO: we don't need such an explicit branch?
-      if dictWM G.! i == x
-        then findKthIndexRWM rawWM k i
-        else Nothing
-  | otherwise = Nothing
+findKthIndexWM WaveletMatrix {..} k x = do
+  i <- bsearchL dictWM (<= x)
+  -- TODO: we don't need such an explicit branch?
+  let !x' = dictWM G.! i
+  guard $ x' == x
+  findKthIndexRWM rawWM k i
 
 -- * Lookup
 
