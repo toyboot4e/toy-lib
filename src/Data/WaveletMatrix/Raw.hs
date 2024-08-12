@@ -232,7 +232,15 @@ findIndexRWM wm = findKthIndexRWM wm 0
 
 -- | \(O(\log a)\) Finds kth index of @x@. Select.
 findKthIndexRWM :: RawWaveletMatrix -> Int -> Int -> Maybe Int
-findKthIndexRWM wm@RawWaveletMatrix {..} k x
+findKthIndexRWM wm k x = lrFindKthIndexRWM wm k x 0 (lengthRWM wm - 1)
+
+-- | \(O(\log a)\) Finds index of @x@. Select.
+lrFindIndexRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lrFindIndexRWM wm = lrFindKthIndexRWM wm 0
+
+-- | \(O(\log a)\) Finds kth index of @x@. Select.
+lrFindKthIndexRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int -> Maybe Int
+lrFindKthIndexRWM wm@RawWaveletMatrix {..} k x l_ r_
   | not (0 <= x && x <= n - 1 && 0 <= k && k <= n - 1) = Nothing
   | otherwise = inner
   where
@@ -254,7 +262,7 @@ findKthIndexRWM wm@RawWaveletMatrix {..} k x
                       then (l - l0 + nZerosRWM G.! iRow, r - r0 + nZerosRWM G.! iRow)
                       else (l0, r0)
             )
-            (0 :: Int, n)
+            (l_, r_ + 1)
             (V.zip bitsRWM csumsRWM)
 
 -- * Lookup

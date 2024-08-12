@@ -61,22 +61,31 @@ freq1BV bits bitsCSum i = fromCSum + fromRest
 -- | \(O(\log N)\) Finds the index of kth @0@. Select 0.
 {-# INLINE findKthIndex0BV #-}
 findKthIndex0BV ::  U.Vector Bit -> U.Vector Int -> Int -> Maybe Int
-findKthIndex0BV bits bitsCSum k
-  -- TODO: use nZeros for filtering?
-  | k < 0 = Nothing
-  | G.length bits - G.last bitsCSum <= k = Nothing
-  | otherwise = inner 0 (G.length bits)
-  where
-    -- FIXME: reason about the indexing while the bisect takes [l, r]
-    inner l r = bisectL l r $ \i -> freq0BV bits bitsCSum i < k + 1
+findKthIndex0BV bits bitsCSum k = lrFindKthIndex0BV bits bitsCSum k 0 (G.length bits - 1)
 
 -- | \(O(\log N)\) Finds the index of kth @1@. Select 1.
 {-# INLINE findKthIndex1BV #-}
 findKthIndex1BV ::  U.Vector Bit -> U.Vector Int -> Int -> Maybe Int
-findKthIndex1BV bits bitsCSum k
+findKthIndex1BV bits bitsCSum k = lrFindKthIndex1BV bits bitsCSum k 0 (G.length bits -1)
+
+-- | \(O(\log N)\) Finds the index of kth @0@ in [l, r]. Select 0.
+lrFindKthIndex0BV ::  U.Vector Bit -> U.Vector Int -> Int -> Int -> Int -> Maybe Int
+lrFindKthIndex0BV bits bitsCSum k l r
+  -- TODO: use nZeros for filtering?
+  | k < 0 = Nothing
+  | nZeros <= k = Nothing
+  | otherwise = bisectL l (r + 1) $ \i -> freq0BV bits bitsCSum i - l0 < k + 1
+  where
+    nZeros = freq0BV bits bitsCSum (r + 1) - l0
+    l0 = freq0BV bits bitsCSum l
+
+-- | \(O(\log N)\) Finds the index of kth @1@ in [l, r]. Select 1.
+lrFindKthIndex1BV ::  U.Vector Bit -> U.Vector Int -> Int -> Int -> Int -> Maybe Int
+lrFindKthIndex1BV bits bitsCSum k l r
   -- TODO: use nOnes for filtering?
   | k < 0 = Nothing
-  | G.last bitsCSum <= k = Nothing
-  | otherwise = inner 0 (G.length bits)
+  | nOnes <= k = Nothing
+  | otherwise = bisectL l (r + 1) $ \i -> freq1BV bits bitsCSum i - l1 < k + 1
   where
-    inner l r = bisectL l r $ \i -> freq1BV bits bitsCSum i < k + 1
+    nOnes = freq1BV bits bitsCSum (r + 1) - l1
+    l1 = freq1BV bits bitsCSum l

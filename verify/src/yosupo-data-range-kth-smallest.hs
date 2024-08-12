@@ -22,7 +22,7 @@ solve = do
   lrks <- U.replicateM q ints3'
 
   let !wm = newWM xs
-  let res = U.map (\(!l, pred -> !r, !k) -> kthMinWM wm l r k) lrks
+  let res = U.map (\(!l, !r, !k) -> fromJust $ kthMinWM wm l (r - 1) k) lrks
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/range_kth_smallest

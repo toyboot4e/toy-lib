@@ -137,6 +137,17 @@ findKthIndexWM WaveletMatrix {..} k x = do
   guard $ x' == x
   findKthIndexRWM rawWM k i
 
+lrFindIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
+lrFindIndexWM wm = lrFindKthIndexWM wm 0
+
+lrFindKthIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int -> Maybe Int
+lrFindKthIndexWM WaveletMatrix {..} k x l r = do
+  i <- bsearchL dictWM (<= x)
+  -- TODO: we don't need such an explicit branch?
+  let !x' = dictWM G.! i
+  guard $ x' == x
+  lrFindKthIndexRWM rawWM k i l r
+
 -- * Lookup
 
 -- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_{ref} \le x\).

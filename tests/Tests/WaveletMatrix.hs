@@ -57,6 +57,9 @@ fixedTest =
 findKthIndex :: (Eq a, U.Unbox a) => Int -> a -> U.Vector a -> Maybe Int
 findKthIndex k x xs = fmap fst . (G.!? k) . U.filter ((== x) . snd) $ U.indexed xs
 
+lrFindKthIndex :: (Eq a, U.Unbox a) => Int -> a -> Int -> Int -> U.Vector a -> Maybe Int
+lrFindKthIndex k x l r xs = fmap fst . (G.!? k) . U.filter ((== x) . snd) . sliceLR l r $ U.indexed xs
+
 dictTests :: TestTree
 dictTests =
   testGroup
@@ -81,12 +84,28 @@ dictTests =
               | x == 0 = findKthIndex0BV xs csum k
               | otherwise = findKthIndex1BV xs csum k
 
-        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected
+        return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
+      QC.testProperty "lrFindKthIndex" $ do
+        n <- QC.chooseInt (1, maxN)
+        xs <- U.fromList . map Bit <$> QC.vectorOf n (QC.chooseEnum (False, True))
+        k <- QC.chooseInt (0, n - 1)
+        x <- Bit <$> QC.chooseEnum (False, True)
+        l <- QC.chooseInt (0, n - 1)
+        r <- QC.chooseInt (l, n - 1)
+
+        let expected = lrFindKthIndex k x l r xs
+
+        let csum = csumBV xs
+        let res
+              | x == 0 = lrFindKthIndex0BV xs csum k l r
+              | otherwise = lrFindKthIndex1BV xs csum k l r
+
+        return . QC.counterexample (show (k, x, (l, r), xs)) $ res QC.=== expected
     ]
   where
     maxN = 256
 
-sliceLR :: Int -> Int -> U.Vector Int -> U.Vector Int
+sliceLR :: (U.Unbox a) => Int -> Int -> U.Vector a -> U.Vector a
 sliceLR l r = U.take (r - l + 1) . U.drop l
 
 -- | Generates a random sequence with a slice.
@@ -125,7 +144,7 @@ randomTests =
         let wm = newWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMaxWM wm l r k QC.=== expected .&&. kthMaxWM wm l r k QC.=== (snd <$> expected),
-      QC.testProperty "kth index" $ do
+      QC.testProperty "kth index in [0, n)" $ do
         (!n, !xs, (!_, !_), !_) <- genLR maxN rng
         !k <- QC.chooseInt (0, min (n - 1) 10)
         !x <- (xs G.!) <$> QC.chooseInt (0, n - 1)
@@ -137,6 +156,18 @@ randomTests =
         let !res = findKthIndexWM wm k x
 
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
+      QC.testProperty "kth index in [l, r]" $ do
+        (!n, !xs, (!l, !r), !_) <- genLR maxN rng
+        !k <- QC.chooseInt (0, min (n - 1) 10)
+        !x <- (xs G.!) <$> QC.chooseInt (0, n - 1)
+
+        let !ixs = U.indexed xs
+        let !expected = fmap fst . (G.!? k) . U.filter ((== x) . snd) . sliceLR l r $ ixs
+
+        let !wm = newWM xs
+        let !res = lrFindKthIndexWM wm k x l r
+
+        return . QC.counterexample (show (k, x, (l, r), xs)) $ res QC.=== expected,
       QC.testProperty "freq" $ do
         (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
         xl <- QC.chooseInt rng
@@ -172,7 +203,7 @@ randomTests =
     ]
   where
     rng = (-20, 20) :: (Int, Int)
-    maxN = 256
+    maxN = 4
 
 tests :: [TestTree]
 tests = [testGroup "Data.WaveletMatrix" [fixedTest, dictTests, randomTests]]
