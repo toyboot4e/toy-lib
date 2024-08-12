@@ -2,8 +2,8 @@ module Tests.WaveletMatrix where
 
 import Algorithm.Bisect
 import Data.Bit
-import Data.Maybe
 import Data.Ix
+import Data.Maybe
 import Data.Ord
 import Data.Tuple.Extra
 import Data.Vector qualified as V
@@ -12,9 +12,11 @@ import Data.Vector.Extra
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import Data.WaveletMatrix
+import Data.WaveletMatrix.Raw
 import Data.WaveletMatrix.SuccinctDictionary
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck ((.&&.))
 import Test.Tasty.QuickCheck as QC
 
 fixedTest :: TestTree
@@ -42,16 +44,16 @@ fixedTest =
                     [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0]
                   ]
 
-        let wm = newWM 6 xs
-        bitsWM wm @?= bits
+        let wm = newRWM 6 xs
+        bitsRWM wm @?= bits
 
         let nZeros = U.convert $ V.map ((U.length xs -) . U.sum) ints
-        nZerosWM wm @?= nZeros
+        nZerosRWM wm @?= nZeros
 
         let csums = V.map (U.cons 0 . U.singleton . U.sum) ints
-        csumsWM wm @?= csums
+        csumsRWM wm @?= csums
 
-        let xs' = U.generate (U.length xs) (accessWM wm)
+        let xs' = U.generate (U.length xs) (accessRWM wm)
         xs' @?= xs
     ]
 
@@ -85,8 +87,10 @@ dictTests =
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected
     ]
   where
-    rng = (-20, 20) :: (Int, Int)
     maxN = 256
+
+sliceLR :: Int -> Int -> U.Vector Int -> U.Vector Int
+sliceLR l r = U.take (r - l + 1) . U.drop l
 
 randomTests :: TestTree
 randomTests =
@@ -96,31 +100,24 @@ randomTests =
         n <- QC.chooseInt (1, maxN)
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
 
-        let dict = U.uniq $ U.modify VAI.sort xs
-        let nx = U.length dict
-
         l <- QC.chooseInt (0, n - 1)
         r <- QC.chooseInt (l, n - 1)
 
         k <- QC.chooseInt (0, r - l)
-        let slice = U.take (r - l + 1) $ U.drop l xs
+        let slice = sliceLR l r xs
         let expected =
               let (!i, !x) = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice) G.! k
                in (i + l, x)
 
         -- TODO: automatic index compression
-        let xs' = U.map (bindex dict) xs
-        let wm = newWM nx xs'
-        let (!i, !x_) = ikthMinWM wm l r k
-        let x = dict G.! x_
+        let wm = newWM xs
+        let (!i, !x) = ikthMinWM wm l r k
 
-        return . QC.counterexample (show ((l, r, k), xs)) $ (i, x) QC.=== expected,
+        return . QC.counterexample (show ((l, r, k), xs)) $
+          ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== snd expected,
       QC.testProperty "kth index" $ do
         !n <- QC.chooseInt (1, maxN)
         !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
-        let !dict = U.uniq $ U.modify VAI.sort xs
-        let !nx = U.length dict
 
         !k <- QC.chooseInt (0, min (n - 1) 10)
         !x <- (xs G.!) <$> QC.chooseInt (0, n - 1)
@@ -128,29 +125,24 @@ randomTests =
         let !ixs = U.indexed xs
         let !expected = fmap fst . (G.!? k) $ U.filter ((== x) . snd) ixs
 
-        let !xs' = U.map (bindex dict) xs
-        let !wm = newWM nx xs'
-        let !res = findKthIndexWM wm k (bindex dict x)
+        let !wm = newWM xs
+        let !res = findKthIndexWM wm k x
 
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
       QC.testProperty "freq" $ do
         !n <- QC.chooseInt (1, maxN)
         !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
 
-        let !dict = U.uniq $ U.modify VAI.sort xs
-        let !nx = U.length dict
-
         l <- QC.chooseInt (0, n - 1)
         r <- QC.chooseInt (l, n - 1)
         xl <- QC.chooseInt rng
         xr <- QC.chooseInt (xl, snd rng)
 
-        let slice = U.take (r - l + 1) $ U.drop l xs
+        let slice = sliceLR l r xs
         let expected = U.length $ U.filter (inRange (xl, xr)) slice
 
-        let !wm = newWM nx $ U.map (bindex dict) xs
-        -- It handle the case @xl@ or  @xr@ is not in the dict
-        let !res = freqInWM wm l r (fromMaybe n (bsearchR dict (< xl))) (fromMaybe (-1) (bsearchL dict (<= xr)))
+        let !wm = newWM xs
+        let !res = freqInWM wm l r xl xr
         return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected
     ]
   where

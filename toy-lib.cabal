@@ -226,6 +226,7 @@ library
     Data.Vector.IxVector
     Data.Vector.SlideMin
     Data.WaveletMatrix
+    Data.WaveletMatrix.Raw
     Data.WaveletMatrix.SuccinctDictionary
     Heuristic.Randoms
     Math.BitSet
