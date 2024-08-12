@@ -1,14 +1,12 @@
 module Tests.WaveletMatrix where
 
-import Algorithm.Bisect
 import Data.Bit
+import Data.IntSet qualified as IS
 import Data.Ix
-import Data.Maybe
 import Data.Ord
 import Data.Tuple.Extra
 import Data.Vector qualified as V
 import Data.Vector.Algorithms.Intro qualified as VAI
-import Data.Vector.Extra
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import Data.WaveletMatrix
@@ -16,7 +14,6 @@ import Data.WaveletMatrix.Raw
 import Data.WaveletMatrix.SuccinctDictionary
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck ((.&&.))
 import Test.Tasty.QuickCheck as QC
 
 fixedTest :: TestTree
@@ -109,10 +106,7 @@ randomTests =
               let (!i, !x) = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice) G.! k
                in (i + l, x)
 
-        -- TODO: automatic index compression
         let wm = newWM xs
-        let (!i, !x) = ikthMinWM wm l r k
-
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== snd expected,
       QC.testProperty "kth index" $ do
@@ -143,7 +137,34 @@ randomTests =
 
         let !wm = newWM xs
         let !res = freqInWM wm l r xl xr
-        return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected
+        return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected,
+      QC.testProperty "lookupLE, lookupGE" $ do
+        !n <- QC.chooseInt (1, maxN)
+        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+
+        l <- QC.chooseInt (0, n - 1)
+        r <- QC.chooseInt (l, n - 1)
+        x <- QC.chooseInt rng
+        queryKind <- QC.chooseInt (0, 3)
+
+        let slice = sliceLR l r xs
+        let im = IS.fromList $ U.toList slice
+        let expected = case queryKind of
+              0 -> IS.lookupLE x im
+              1 -> IS.lookupLT x im
+              2 -> IS.lookupGE x im
+              3 -> IS.lookupGT x im
+              _ -> error "unreachable"
+
+        let !wm = newWM xs
+        let !res = case queryKind of
+              0 -> lookupLEWM wm l r x
+              1 -> lookupLTWM wm l r x
+              2 -> lookupGEWM wm l r x
+              3 -> lookupGTWM wm l r x
+              _ -> error "unreachable"
+
+        return . QC.counterexample (show (x, queryKind, (l, r), xs)) $ res QC.=== expected
     ]
   where
     rng = (-20, 20) :: (Int, Int)
