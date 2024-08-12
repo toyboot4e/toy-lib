@@ -5,6 +5,8 @@
 -- <https://github.com/maspypy/library/blob/main/ds/fastset.hpp>
 module Data.DenseIntSet where
 
+-- FIXME: too slow.
+
 import Control.Monad
 import Control.Monad.Extra (unlessM, whenM)
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -152,7 +154,7 @@ lookupGEDIS DenseIntSet {..} = inner 0
             else
               Just
                 <$> V.foldM'
-                  ( \acc vec -> do
+                  ( \ !acc vec -> do
                       !dx <- lsbOf <$> GM.unsafeRead vec acc
                       return $ acc * wordDIS + dx
                   )
@@ -195,7 +197,7 @@ lookupLEDIS DenseIntSet {..} = inner 0
             else do
               Just
                 <$> V.foldM'
-                  ( \acc vec -> do
+                  ( \ !acc vec -> do
                       !dx <- msbOf <$> GM.unsafeRead vec acc
                       return $ acc * wordDIS + dx
                   )
