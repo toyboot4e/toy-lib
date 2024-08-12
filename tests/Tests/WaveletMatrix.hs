@@ -89,46 +89,44 @@ dictTests =
 sliceLR :: Int -> Int -> U.Vector Int -> U.Vector Int
 sliceLR l r = U.take (r - l + 1) . U.drop l
 
+-- | Generates a random sequence with a slice.
+genLR :: Int -> (Int, Int) -> Gen (Int, U.Vector Int, (Int, Int), U.Vector Int)
+genLR maxN rng = do
+  n <- QC.chooseInt (1, maxN)
+  xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+  l <- QC.chooseInt (0, n - 1)
+  r <- QC.chooseInt (l, n - 1)
+  return (n, xs, (l, r), sliceLR l r xs)
+
 randomTests :: TestTree
 randomTests =
   testGroup
     "Wavelet Matrix random tests"
     [ QC.testProperty "kthMin" $ do
-        n <- QC.chooseInt (1, maxN)
-        xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
-        l <- QC.chooseInt (0, n - 1)
-        r <- QC.chooseInt (l, n - 1)
-
+        (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
         k <- QC.chooseInt (0, r - l)
-        let slice = sliceLR l r xs
+        let sorted = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice)
         let expected =
-              let (!i, !x) = U.modify (VAI.sortBy (comparing swap)) (U.indexed slice) G.! k
+              let (!i, !x) = sorted G.! k
                in Just (i + l, x)
 
         let wm = newWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== (snd <$> expected),
       QC.testProperty "kthMax" $ do
-        n <- QC.chooseInt (1, maxN)
-        xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
-        l <- QC.chooseInt (0, n - 1)
-        r <- QC.chooseInt (l, n - 1)
-
+        (!_, !xs, (!l, !r), !_) <- genLR maxN rng
         k <- QC.chooseInt (0, r - l)
         let slice = sliceLR l r xs
+        let sorted = U.modify (VAI.sortBy (comparing (Down . swap))) (U.indexed slice)
         let expected =
-              let (!i, !x) = U.modify (VAI.sortBy (comparing (Down . swap))) (U.indexed slice) G.! k
+              let (!i, !x) = sorted G.! k
                in Just (i + l, x)
 
         let wm = newWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMaxWM wm l r k QC.=== expected .&&. kthMaxWM wm l r k QC.=== (snd <$> expected),
       QC.testProperty "kth index" $ do
-        !n <- QC.chooseInt (1, maxN)
-        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
+        (!n, !xs, (!_, !_), !_) <- genLR maxN rng
         !k <- QC.chooseInt (0, min (n - 1) 10)
         !x <- (xs G.!) <$> QC.chooseInt (0, n - 1)
 
@@ -140,30 +138,20 @@ randomTests =
 
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
       QC.testProperty "freq" $ do
-        !n <- QC.chooseInt (1, maxN)
-        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
-        l <- QC.chooseInt (0, n - 1)
-        r <- QC.chooseInt (l, n - 1)
+        (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
         xl <- QC.chooseInt rng
         xr <- QC.chooseInt (xl, snd rng)
 
-        let slice = sliceLR l r xs
         let expected = U.length $ U.filter (inRange (xl, xr)) slice
 
         let !wm = newWM xs
         let !res = freqInWM wm l r xl xr
         return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected,
       QC.testProperty "lookupLE, lookupGE" $ do
-        !n <- QC.chooseInt (1, maxN)
-        !xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
-
-        l <- QC.chooseInt (0, n - 1)
-        r <- QC.chooseInt (l, n - 1)
+        (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
         x <- QC.chooseInt rng
         queryKind <- QC.chooseInt (0, 3)
 
-        let slice = sliceLR l r xs
         let im = IS.fromList $ U.toList slice
         let expected = case queryKind of
               0 -> IS.lookupLE x im
