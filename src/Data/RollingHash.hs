@@ -20,9 +20,11 @@
 --
 -- = Cumulative sum-based implementation
 --
+-- Unless extreamly fast calculaton is required, `RH` is better.
+--
 -- `RollingHash` is a cumulative sum-based implementation. It needs to calculate
 -- \(b^{n_1} / b^{n_2}\) for the inverse operation. Thus it holds a cache of \(\{b^{n}\}_{n}\) and
--- not so flexible. Unless extreamly fast calculaton is required, `RH` is better.
+-- not so flexible.
 --
 -- = Monoid-based implmentation
 --

@@ -259,7 +259,7 @@ findKthIndexRWM wm@RawWaveletMatrix {..} k x
 
 -- * Lookup
 
--- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \le x\).
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_{ref} \le x\).
 {-# INLINE lookupLERWM #-}
 lookupLERWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupLERWM wm l r x
@@ -269,12 +269,12 @@ lookupLERWM wm l r x
     -- TODO: minBound works?
     !freq = freqInRWM wm l r (minBound `div` 2) x
 
--- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \lt x\).
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_{ref} \lt x\).
 {-# INLINE lookupLTRWM #-}
 lookupLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupLTRWM wm l r x = lookupLERWM wm l r (x - 1)
 
--- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \gt x\).
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_{ref} \gt x\).
 {-# INLINE lookupGERWM #-}
 lookupGERWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGERWM wm l r x
@@ -284,7 +284,7 @@ lookupGERWM wm l r x
     -- TODO: minBound works?
     !freq = freqInRWM wm l r (minBound `div` 2) (x - 1)
 
--- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \ge x\).
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_{ref} \ge x\).
 {-# INLINE lookupGTRWM #-}
 lookupGTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGTRWM wm l r x = lookupGERWM wm l r (x + 1)

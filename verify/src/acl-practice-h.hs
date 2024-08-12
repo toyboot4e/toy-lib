@@ -5,7 +5,6 @@
 
 import Data.ModInt
 import Data.Graph.TwoSat
-import Math.NTT
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -29,13 +28,13 @@ solve = do
           forM_ [v1 + 1 .. n - 1] $ \v2 -> do
             let (!x2, !y2) = xys U.! v2
             when (abs (x1 - x2) < d) $ do
-              addOrClauseTSB tsb (F v1) (F v2)
+              addOrTSB tsb (F v1) (F v2)
             when (abs (x1 - y2) < d) $ do
-              addOrClauseTSB tsb (F v1) (T v2)
+              addOrTSB tsb (F v1) (T v2)
             when (abs (y1 - x2) < d) $ do
-              addOrClauseTSB tsb (T v1) (F v2)
+              addOrTSB tsb (T v1) (F v2)
             when (abs (y1 - y2) < d) $ do
-              addOrClauseTSB tsb (T v1) (T v2)
+              addOrTSB tsb (T v1) (T v2)
 
   case res of
     Nothing -> printBSB "No"

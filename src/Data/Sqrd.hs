@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | [Sqrt-decomposition](https://cp-algorithms.com/data_structures/sqrt_decomposition.html).
+-- It often solves Q queries in \(O(\sqrt N F)\).
 module Data.Sqrd where
 
 import Control.Monad
@@ -28,6 +29,7 @@ data Sqrd b ret act m = Sqrd
 
 -- TODO: propagate before folding
 
+-- | \(O(\sqrt N f)\)
 foldSqrd :: (PrimMonad m) => Sqrd b ret act m -> Int -> Int -> m ret
 foldSqrd Sqrd {..} l r = do
   let (!il, !remL) = l `divMod` blockLenSqrd
@@ -42,8 +44,9 @@ foldSqrd Sqrd {..} l r = do
       !ret <- mergeSqrd mx rx
       return ret
 
--- TODO: share the source code with @foldSqrd@.
+-- | \(O(\sqrt N f)\)
 actSqrd :: (PrimMonad m) => Sqrd b ret act m -> act -> Int -> Int -> m ()
+-- TODO: share the source code with @foldSqrd@.
 actSqrd Sqrd {..} act l r = do
   let (!il, !remL) = l `divMod` blockLenSqrd
   let (!ir, !remR) = r `divMod` blockLenSqrd

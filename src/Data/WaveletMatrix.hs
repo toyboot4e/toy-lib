@@ -139,7 +139,7 @@ findKthIndexWM WaveletMatrix {..} k x = do
 
 -- * Lookup
 
--- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \le x\).
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_{ref} \le x\).
 {-# INLINE lookupLEWM #-}
 lookupLEWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupLEWM wm l r x
@@ -149,12 +149,12 @@ lookupLEWM wm l r x
     -- TODO: minBound works?
     !freq = freqInWM wm l r (minBound `div` 2) x
 
--- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_ref \lt x\).
+-- | \(O(\log a)\) Finds maximum \(x\) in \([l, r]\) s.t. \(x_{ref} \lt x\).
 {-# INLINE lookupLTWM #-}
 lookupLTWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupLTWM wm l r x = lookupLEWM wm l r (x - 1)
 
--- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \gt x\).
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_{ref} \gt x\).
 {-# INLINE lookupGEWM #-}
 lookupGEWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGEWM wm l r x
@@ -164,7 +164,7 @@ lookupGEWM wm l r x
     -- TODO: minBound works?
     !freq = freqInWM wm l r (minBound `div` 2) (x - 1)
 
--- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_ref \ge x\).
+-- | \(O(\log a)\) Finds minimum \(x\) in \([l, r]\) s.t. \(x_{ref} \ge x\).
 {-# INLINE lookupGTWM #-}
 lookupGTWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGTWM wm l r x = lookupGEWM wm l r (x + 1)

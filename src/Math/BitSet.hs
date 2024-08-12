@@ -7,7 +7,7 @@ import Data.List (unfoldr)
 import Data.Tuple.Extra (dupe)
 import qualified Data.Vector.Unboxed as U
 
--- | Retrieves the most significant bit.
+-- | \(O(1)\) Retrieves the most significant bit.
 --
 -- >>> msbOf 0
 -- -1
@@ -19,7 +19,7 @@ import qualified Data.Vector.Unboxed as U
 msbOf :: Int -> Int
 msbOf !x = 63 - countLeadingZeros x
 
--- | Retrieves the least significant bit.
+-- | \(O(1)\) Retrieves the least significant bit.
 --
 -- >>> lsbOf 0
 -- -1
@@ -32,6 +32,7 @@ lsbOf :: Int -> Int
 lsbOf 0 = -1
 lsbOf x = countTrailingZeros x
 
+-- | \(O(1)\)
 {-# INLINE bitsOf #-}
 bitsOf :: Int -> U.Vector Int
 bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
@@ -42,7 +43,7 @@ bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
 
 -- TODO: super efficient bit operations
 
--- | Log base of two, floored.
+-- | \(O(1)\) Log base of two, floored.
 -- <https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-Bits.html#v:countLeadingZeros>
 --
 -- >>> log2 (0b11 :: Int)
@@ -53,7 +54,7 @@ bitsOf x0 = U.unfoldrExactN (popCount x0) f x0
 log2 :: (FiniteBits b) => b -> Int
 log2 !x = finiteBitSize x - 1 - countLeadingZeros x
 
--- | Ceiling of log base 2 of an `Int`.
+-- | \(O(1)\) Ceiling of log base 2 of an `Int`.
 --
 -- >>> bitCeil (0b11 :: Int)
 -- 2
@@ -66,7 +67,7 @@ bitCeil !x = msb + ceiling_
     !msb = log2 x
     !ceiling_ = if clearBit x msb > 0 then 1 else 0
 
--- | Calculates the smallest integral power of two that is not smaller than @x@.
+-- | \(O(1)\) Calculates the smallest integral power of two that is not smaller than @x@.
 --
 -- >>> ceil2 3
 -- 4
@@ -105,7 +106,9 @@ powersetU !x0 = U.unfoldrExactN n f x0
     !n = bit (popCount x0)
     f !x = (x, (x - 1) .&. x0)
 
--- | >>> unBitSet 4 5
+-- | \(O(W)\)
+--
+-- >>> unBitSet 4 5
 -- [0,2]
 --
 -- TODO: which is faster: unfoldrExactN with count leading zeros.

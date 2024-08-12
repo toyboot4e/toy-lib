@@ -103,7 +103,7 @@ unifyPUF !uf !v1 !v2 !dp = do
         else do
           unifyPUF uf v2 v1 $ invert dp
 
--- | `unifyPUF` with the return value discarded.
+-- | \(O(\alpha(N))\) `unifyPUF` with the return value discarded.
 {-# INLINE unifyPUF_ #-}
 unifyPUF_ :: (PrimMonad m, Group a, Ord a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> Int -> a -> m ()
 unifyPUF_ !uf !v1 !v2 !dp = void $ unifyPUF uf v1 v2 dp

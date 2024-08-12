@@ -1,4 +1,4 @@
--- | Strict segment tree
+-- | Strict segment tree.
 module Data.SegmentTree.Strict where
 
 import Algorithm.Bisect
@@ -21,7 +21,7 @@ import ToyLib.Debug
 -- A segment tree is a complete binary tree of monoid folding results.
 -- Each vertex corresponds to a folding range and the result.
 --
--- = Monoids
+-- = Typical monoids
 --
 -- - `Sum` (`+`), `Product` (`*`)
 -- - `Max` (`max`), `Min` (`min`)

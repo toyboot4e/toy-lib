@@ -1,10 +1,11 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | Lazily propageted segment tree, where we can perform operation over range.
+-- | Lazily propageted segment tree, where we can perform operation over intervals.
 --
 -- = Algebra
--- - (Op * Acc) <> (Op * Acc) = (Op <> Op) * (Acc <> Acc)
+--
+-- \((Op * Acc) \diamond (Op * Acc) = (Op \diamond Op) * (Acc \diamond Acc)\)
 --
 -- Typical example of @Op@ is a matrix and @Acc@ is a column vector.
 --
@@ -50,8 +51,8 @@ import ToyLib.Debug
 --
 -- = Invariant
 --
--- - New operators always come from the left: @(newOp <> oldOp) acc@ or
---   @newOp `sact` (oldOp `sact` ac)@.
+-- - New operators always come from the left: \((\mathcal{newOp} <> \mathcal{oldOp}) \mathcal{acc}\)
+--   or \(\mathcal{newOp} `\mathcal{sact}` (\mathcal{oldOp} `\mathcal{sact}` \mathcal{acc})\).
 --
 -- - Folding is performed from the left to the right. Use @Dual@ monoid if you need to reverse
 --   the folding direction.

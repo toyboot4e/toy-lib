@@ -12,23 +12,27 @@ import GHC.Stack (HasCallStack)
 -- | @gotoki_no_joe. Vertex -> -size | root (negative if it's root)
 type SparseUnionFind = IM.IntMap Int
 
+-- | \(O(1)\)
 newSUF :: SparseUnionFind
 newSUF = IM.empty
 
+-- | \(O(1)\)
 emptySUF :: SparseUnionFind
 emptySUF = IM.empty
 
+-- | \(O(\log N)\)
 memberSUF :: Int -> SparseUnionFind -> Bool
 memberSUF = IM.member
 
+-- | \(O(\log N)\)
 insertSUF :: Int -> SparseUnionFind -> SparseUnionFind
 insertSUF !x !uf = IM.insert x (-1) uf
 
--- | From edges
+-- | \(O(E)\) From edges
 fromListSUF :: [(Int, Int)] -> SparseUnionFind
 fromListSUF = foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 
--- | From edges
+-- | \(O(E)\) From edges
 fromVecSUF :: U.Vector (Int, Int) -> SparseUnionFind
 fromVecSUF = U.foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
 
@@ -54,4 +58,3 @@ unifySUF !i !j !uf
   where
     (!a, !r) = rootSUF i uf
     (!b, !s) = rootSUF j uf
-

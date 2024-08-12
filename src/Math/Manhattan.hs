@@ -7,7 +7,7 @@
 -- - [ABC 351 E - Jump Distance Sum](https://atcoder.jp/contests/abc351/tasks/abc351_e)
 module Math.Manhattan where
 
--- | Rotates @(x, y)@ pair in 45 degree and scales \(\sqrt 2\). Note that @x@ comes first in the
+-- | Rotates \((x, y)\) pair in 45 degree and scales \(\sqrt 2\). Note that \(x\) comes first in the
 -- pair.
 --
 -- 2D Manhattan distance is definned as \(\Delta x + \Delta y\). After this transformation, it's

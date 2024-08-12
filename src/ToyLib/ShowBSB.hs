@@ -17,9 +17,11 @@ import System.IO (stdout)
 endlBSB :: BSB.Builder
 endlBSB = BSB.char7 '\n'
 
+{-# INLINE putBSB #-}
 putBSB :: (MonadIO m) => BSB.Builder -> m ()
 putBSB = liftIO . BSB.hPutBuilder stdout
 
+{-# INLINE putLnBSB #-}
 putLnBSB :: (MonadIO m) => BSB.Builder -> m ()
 putLnBSB = liftIO . BSB.hPutBuilder stdout . (<> endlBSB)
 

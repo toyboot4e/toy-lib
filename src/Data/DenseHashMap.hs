@@ -87,6 +87,7 @@ indexHM hm@DenseHashMap {..} k = inner (hashHM hm k)
           inner $ (h + 1) .&. maskHM
         else return h
 
+-- | \(O(1)\)
 {-# INLINE memberHM #-}
 memberHM :: (HasCallStack, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> m Bool
 memberHM hm@DenseHashMap {..} k = do
@@ -95,12 +96,14 @@ memberHM hm@DenseHashMap {..} k = do
   k' <- GM.read keyHM i
   return $ b && k' == k
 
+-- | \(O(1)\)
 {-# INLINE readHM #-}
 readHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> m a
 readHM hm k = fromMaybe err <$> readMayHM hm k
   where
     err = error $ "readHM: cannot find value for key: " ++ show k
 
+-- | \(O(1)\)
 {-# INLINE readMayHM #-}
 readMayHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> m (Maybe a)
 readMayHM hm@DenseHashMap {..} k = do
@@ -110,13 +113,15 @@ readMayHM hm@DenseHashMap {..} k = do
     then Just <$> GM.read valHM i
     else return Nothing
 
--- FIXME: capacity check
+-- | \(O(1)\)
 {-# INLINE writeHM #-}
+-- FIXME: capacity check
 writeHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> a -> m ()
 writeHM hm k v = void $ exchangeHM hm k v
 
--- FIXME: capacity check
+-- | \(O(1)\)
 {-# INLINE exchangeHM #-}
+-- FIXME: capacity check
 exchangeHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> a -> m (Maybe a)
 exchangeHM hm@DenseHashMap {..} k v = do
   i <- indexHM hm k
@@ -133,7 +138,7 @@ exchangeHM hm@DenseHashMap {..} k v = do
       GM.write keyHM i k
       Just <$> GM.exchange valHM i v
 
--- | Not tested
+-- | \(O(1)\) Not tested.
 {-# INLINE modifyHM #-}
 modifyHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> (a -> a) -> Int -> m ()
 modifyHM hm@DenseHashMap {..} f k = do

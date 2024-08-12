@@ -43,3 +43,25 @@ appendCSum :: (PrimMonad m, Num a, GM.MVector v a) => v (PrimState m) a -> Int -
 appendCSum vec len dx = do
   x <- GM.read vec len
   GM.write vec (len + 1) $! x + dx
+
+-- -- | 3D cumulative sum (cubic only)
+-- {-# INLINE csum3D #-}
+-- csum3D :: (HasCallStack, Num a, U.Unbox a) => Int -> IxUVector (Int, Int, Int) a -> IxUVector (Int, Int, Int) a
+-- csum3D !n !gr = IxVector bnd $ U.constructN (succ n * succ n * succ n) $ \sofar -> case unindex bnd (G.length sofar) of
+--   (0, !_, !_) -> 0
+--   (!_, 0, !_) -> 0
+--   (!_, !_, 0) -> 0
+--   (!x, !y, !z) -> v0 + (fromZ + fromY + fromX) - 2 * fromDiag - (dupX + dupY + dupZ)
+--     where
+--       -- NOTE: Use zero-based indices for original grid access
+--       v0 = gr @! (x - 1, y - 1, z - 1)
+--       sofar' = IxVector bnd sofar
+--       fromZ = sofar' @! (x - 1, y, z)
+--       fromY = sofar' @! (x, y - 1, z)
+--       fromX = sofar' @! (x, y, z - 1)
+--       fromDiag = sofar' @! (x - 1, y - 1, z - 1)
+--       dupX = sofar' @! (x - 1, y - 1, z) - fromDiag
+--       dupY = sofar' @! (x - 1, y, z - 1) - fromDiag
+--       dupZ = sofar' @! (x, y - 1, z - 1) - fromDiag
+--   where
+--     !bnd = zero3 (n + 1) (n + 1) (n + 1)

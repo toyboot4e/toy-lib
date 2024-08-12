@@ -1,4 +1,4 @@
--- | Lazily segment tree with interval chmax/chmin.
+-- | Lazily propagated segment tree with interval chmax/chmin.
 --
 -- The internals are almost entirely copy of the @Lazy@ module.
 -- TODO: Do not duplicate code.

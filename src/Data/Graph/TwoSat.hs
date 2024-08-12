@@ -1,6 +1,34 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | \(O(V + E)\) 2-satisfiability problem.
+--
+-- 2-satisfiablity problem is about finding one possible assignment to boolean variables
+-- \(\{x_i\}_i\) under a conjunciton of or clauses: \(\vee_i \{x_{i,1} \wedge x_{i,2}\}_i\).
+--
+-- = Example
+--
+-- Use `twoSat` for denoting and solving the problem:
+--
+-- @
+-- let !nMaxEdges = (4 * n * pred n)
+-- let !res = twoSat n nMaxEdges $ \tsb -> do
+--       forM_ [0 .. n - 1] $ \v1 -> do
+--         let (!x1, !y1) = xys U.! v1
+--         forM_ [v1 + 1 .. n - 1] $ \v2 -> do
+--           let (!x2, !y2) = xys U.! v2
+--           when (abs (x1 - x2) < d) $ do
+--             addOrTSB tsb (F v1) (F v2)
+--           when (abs (x1 - y2) < d) $ do
+--             addOrTSB tsb (F v1) (T v2)
+--           when (abs (y1 - x2) < d) $ do
+--             addOrTSB tsb (T v1) (F v2)
+--           when (abs (y1 - y2) < d) $ do
+--             addOrTSB tsb (T v1) (T v2)
+-- @
+--
+-- = Typical problems
+-- - [ALPC H - Two Sat](https://atcoder.jp/contests/practice2/tasks/practice2_h).
+--   See also: https://drken1215.hatenablog.com/entry/2023/05/07/001800
 module Data.Graph.TwoSat where
 
 import Control.Monad
@@ -18,7 +46,7 @@ import ToyLib.Debug (dbgAssert)
 -- | Data with @True@ | @False@ tag.
 data TF a = T !a | F !a
 
--- | Constructs `TF` dynamically.
+-- | Converts the value and boolean pair into `TF`.
 asTF :: a -> Bool -> TF a
 asTF x True = T x
 asTF x False = F x
@@ -31,20 +59,22 @@ data TwoSatBuilder s = TwoSatBuilder
     bufTSB :: !(Buffer s (Int, Int))
   }
 
+-- | \(O(V+E)\) Creates a two-sat builder
 newTSB :: (PrimMonad m) => Int -> Int -> m (TwoSatBuilder (PrimState m))
 newTSB !nVarsTSB !nMaxEdges = do
   !bufTSB <- newBuffer nMaxEdges
   return TwoSatBuilder {..}
 
--- | Adds an or clause of $x1 = b1 || x2 = b2$.
-addOrClauseTSB :: (PrimMonad m) => TwoSatBuilder (PrimState m) -> TF Int -> TF Int -> m ()
-addOrClauseTSB !ts (T !x1) (T !x2) = addOrClauseTSB' ts x1 True x2 True
-addOrClauseTSB !ts (T !x1) (F !x2) = addOrClauseTSB' ts x1 True x2 False
-addOrClauseTSB !ts (F !x1) (T !x2) = addOrClauseTSB' ts x1 False x2 True
-addOrClauseTSB !ts (F !x1) (F !x2) = addOrClauseTSB' ts x1 False x2 False
+-- | \(O(1)\) Adds an or clause: \(x1 = b1 || x2 = b2\).
+addOrTSB :: (PrimMonad m) => TwoSatBuilder (PrimState m) -> TF Int -> TF Int -> m ()
+addOrTSB !ts (T !x1) (T !x2) = addOrTSB' ts x1 True x2 True
+addOrTSB !ts (T !x1) (F !x2) = addOrTSB' ts x1 True x2 False
+addOrTSB !ts (F !x1) (T !x2) = addOrTSB' ts x1 False x2 True
+addOrTSB !ts (F !x1) (F !x2) = addOrTSB' ts x1 False x2 False
 
-addOrClauseTSB' :: (PrimMonad m) => TwoSatBuilder (PrimState m) -> Int -> Bool -> Int -> Bool -> m ()
-addOrClauseTSB' TwoSatBuilder {..} x1 b1 x2 b2 = case (b1, b2) of
+-- | \(O(1)\) Adds an or clause: \(x1 = b1 || x2 = b2\).
+addOrTSB' :: (PrimMonad m) => TwoSatBuilder (PrimState m) -> Int -> Bool -> Int -> Bool -> m ()
+addOrTSB' TwoSatBuilder {..} x1 b1 x2 b2 = case (b1, b2) of
   -- x1 || x2 \iff not x1 => x2, not x2 => x1
   (True, True) -> do
     pushBack bufTSB (x1', x2)
@@ -94,6 +124,7 @@ solveTS !nVars !constraints = do
             UM.write vec (v `mod` nVars) $ bool 1 0 (v < nVars)
       return vec
 
+-- | \(O(V+E)\) The main interface of two-sat solve.
 twoSat :: Int -> Int -> (forall s. TwoSatBuilder s -> ST s ()) -> Maybe (U.Vector Bool)
 twoSat !nVars !nEdges f = runST $ do
   !tsb <- newTSB nVars nEdges

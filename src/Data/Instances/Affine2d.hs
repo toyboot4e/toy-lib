@@ -3,9 +3,10 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Affine2d` and `V2` as a `SemigroupAction` instance.
+-- | `Affine2d`, `Mat2x2` and `V2` as a `SemigroupAction` instance.
 --
--- `Affine2d` represents @x -> a x + b@. `V2` is the target vector type with scaling information.
+-- `Affine2d` or `Mat2x2` represents \(f: x \rightarrow a x + b\). `V2` is the target vector type
+-- with scaling information.
 --
 -- REMARK: It is super important to have @1@ as the second element in `V2`. Or else it fails to
 -- calculate comopsitional affine transformation.
@@ -21,14 +22,14 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- TODO: implement functor?
 
--- | 2D affine transformation f: x -> ax + b.
+-- | 2D affine transformation \(f: x \rightarrow a x + b\)
 --
 -- The acted target type is `V2`, which holds the length at the second element.
 --
 -- = Composition and dual
 --
--- (f_1 <> f_2) v := (f_1 . f_2) v. If yo need foldr [f_l, .., f_r] on segment tree, be sure to
--- wrap `Affine2d` with `Dual`.
+-- \((f_1 \diamond f_2) v := (f_1 . f_2) v\). If yo need foldr [f_l, .., f_r] on segment tree, be
+-- sure to wrap `Affine2d` with `Dual`.
 newtype Affine2d a = Affine2d (Affine2dRepr a)
   deriving newtype (Eq, Ord, Show)
 

@@ -10,7 +10,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Parser
 
--- | Reads next @h * w@ elements as matrix of type @a@.
+-- | \(O(HW)\) Reads next @h * w@ elements as matrix of type @a@.
 --
 -- = Example
 --
@@ -30,7 +30,7 @@ import ToyLib.Parser
 getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
 getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 
--- | Reads next @h * w@ elements as a char-based grid.
+-- | \(O(HW)\) Reads next @h * w@ elements as a char-based grid.
 --
 -- = Example
 --
@@ -50,7 +50,7 @@ getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 getGrid' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
 getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) char'
 
--- | Gets diagnoal matrix input.
+-- | \(O(HW)\) Gets diagnoal matrix input.
 --
 -- = Example
 --

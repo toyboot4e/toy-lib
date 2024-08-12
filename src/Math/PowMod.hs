@@ -8,6 +8,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
 import Math.Stimes (mulTimes)
 
+-- | \(O(1)\)
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
 {-# INLINE addMod #-}
 addMod !modulo !x !a = (x + a) `mod` modulo

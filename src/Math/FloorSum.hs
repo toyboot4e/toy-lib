@@ -5,10 +5,10 @@ import Data.Bool (bool)
 -- | \(O(\log ma)\) Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
 --
 -- = Input constraints
--- - n > 0
--- - m >= 0
--- - a >= 0
--- - b >= 0
+-- - \(n > 0\)
+-- - \(m >= 0\)
+-- - \(a >= 0\)
+-- - \(b >= 0\)
 floorSumUnsigned :: Int -> Int -> Int -> Int -> Int
 floorSumUnsigned = inner
   where
@@ -27,8 +27,8 @@ floorSumUnsigned = inner
 -- | \(O(\log ma)\) Floor sum: <https://atcoder.jp/contests/practice2/tasks/practice2_c>
 --
 -- = Input constraints
--- - n > 0
--- - m >= 0
+-- - \(n > 0\)
+-- - \(m >= 0\)
 floorSum :: Int -> Int -> Int -> Int -> Int
 floorSum n m a b = n1 + n2 + floorSumUnsigned n m a' b'
   where

@@ -1,7 +1,7 @@
--- | Alias to `(Int, [Int])`.
+-- | Alias to @(Int, [Int])@.
 module Data.SizedList where
 
--- | `(length, digitsInDescendingOrder)`
+-- | Pair of @(length, digitsInDescendingOrder)@
 type SizedList = (Int, [Int])
 
 compareSL :: SizedList -> SizedList -> Ordering

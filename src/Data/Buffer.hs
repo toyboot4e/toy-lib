@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | [Data.Buffer](https://github.com/cojna/iota/blob/master/src/Data/Buffer.hs) taken from [cojna/iota](https://github.com/cojna/iota) (thanks!)
+-- It's a fixed-sized mutable vector with push/pop API.
 module Data.Buffer where
 
 import Control.Applicative

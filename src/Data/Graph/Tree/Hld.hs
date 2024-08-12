@@ -46,7 +46,7 @@ type VertexHLD = Vertex
 --     4
 -- @
 --
--- == @indexHLD: Vertex -> vertexHLD@
+-- == `indexHLD`: Vertex -> vertexHLD
 --
 -- The tree vertices are reindexed with `indexHLD`, ensuring vertices in each line have consecutive
 -- numbers:
@@ -61,7 +61,7 @@ type VertexHLD = Vertex
 --
 -- Note that vertices on higher lines are assigned smaller numbers.
 --
--- == `headHLD: Vertex -> Vertex`
+-- == `headHLD`: Vertex -> Vertex
 --
 -- `headHLD` can be used for finding LCA of two vertices. To find the LCA, move up to the head, go
 -- up to the parental line's vertex and repeat until they are on the same line.
@@ -77,7 +77,7 @@ type VertexHLD = Vertex
 -- `headHLD` also works for identifying lines. When two vertices are on the same line, they have the
 -- same head.
 --
--- == `parentHLD: Vertex -> Vertex`
+-- == `parentHLD`: Vertex -> Vertex
 --
 -- `parentHLD` lets you go up to the parental line's vertex from a head:
 --
@@ -473,19 +473,19 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
 
 -- ** Segment tree methods
 
--- | \(O(log^2 V)\) Folds a path between two vertices.
+-- | \(O(\log^2 V)\) Folds a path between two vertices.
 foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
 foldTM TreeMonoid {..} v1 v2
   | isCommuteTM = foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
   | otherwise = foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
 
--- | \(O(log V)\) Folds commute monoids on vertives of a subtree.
+-- | \(O(\log V)\) Folds commute monoids on vertives of a subtree.
 foldSubtreeVertsTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 foldSubtreeVertsTM TreeMonoid {..} subtreeRoot = foldSTree streeFTM l r
   where
     (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
 
--- | \(O(log V)\) Folds commute monoids on edges of a subtree. TODO: test
+-- | \(O(\log V)\) Folds commute monoids on edges of a subtree. TODO: test
 foldSubtreeEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 foldSubtreeEdgeTM TreeMonoid {..} subtreeRoot
   | l == r = return mempty
@@ -493,13 +493,13 @@ foldSubtreeEdgeTM TreeMonoid {..} subtreeRoot
   where
     (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
 
--- | \(O(log V)\) Reads a `TreeMonoid` value on a `Vertex`.
+-- | \(O(\log V)\) Reads a `TreeMonoid` value on a `Vertex`.
 readTM :: (PrimMonad m, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 readTM TreeMonoid {..} i_ = do
   let !i = indexHLD hldTM G.! i_
   readSTree streeFTM i
 
--- | \(O(log V)\) Write a `TreeMonoid` value on a `Vertex`.
+-- | \(O(\log V)\) Write a `TreeMonoid` value on a `Vertex`.
 writeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m ()
 writeTM TreeMonoid {..} i_ x = do
   let !i = indexHLD hldTM G.! i_
@@ -508,7 +508,7 @@ writeTM TreeMonoid {..} i_ x = do
   unless isCommuteTM $ do
     writeSTree streeBTM i $ Dual x
 
--- | \(O(log V)\) Exchanges a `TreeMonoid` value on a `Vertex`.
+-- | \(O(\log V)\) Exchanges a `TreeMonoid` value on a `Vertex`.
 exchangeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> a -> m a
 exchangeTM TreeMonoid {..} i_ x = do
   let !i = indexHLD hldTM G.! i_
@@ -518,7 +518,7 @@ exchangeTM TreeMonoid {..} i_ x = do
     writeSTree streeBTM i $ Dual x
   return res
 
--- | \(O(log V)\) Modifies a `TreeMonoid` value on a `Vertex`.
+-- | \(O(\log V)\) Modifies a `TreeMonoid` value on a `Vertex`.
 modifyTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> (a -> a) -> Int -> m ()
 modifyTM TreeMonoid {..} f i_ = do
   let !i = indexHLD hldTM G.! i_

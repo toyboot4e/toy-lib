@@ -63,7 +63,7 @@ maxFlow ::
 maxFlow !nVerts !src !sink !edges = runST $ do
   fst <$> maxFlow' nVerts src sink edges
 
--- | Runs `maxFlow` and retrieves the last state.
+-- | \(O(V^2E)\) Runs `maxFlow` and retrieves the last state.
 --
 -- TODO: Return a freezed version?
 maxFlow' ::
@@ -78,7 +78,7 @@ maxFlow' !nVerts !src !sink !edges = do
   !flow <- runMaxFlow src sink container
   return (flow, container)
 
--- | Handy API for retrieving edge information @(v1, v2, cap, flow)@ from the `maxFlow` results.
+-- | \(O(E)\) Handy API for retrieving edge information @(v1, v2, cap, flow)@ from the `maxFlow` results.
 --
 -- Be warned that it contains reverse edges and edge from/to source/sink.
 edgesMF :: (PrimMonad m, U.Unbox c, Num c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
@@ -99,7 +99,7 @@ edgesMF MaxFlow {..} = do
 undefMF :: Int
 undefMF = -1
 
--- | Builds `MaxFlow` from edges.
+-- | \(O(V+E)\) Builds `MaxFlow` from edges.
 buildMaxFlow ::
   forall c m.
   (U.Unbox c, Num c, PrimMonad m) =>
@@ -145,7 +145,7 @@ buildMaxFlow !nVertsMF !edges = do
 
 -- TODO: Does `Bounded` work for `Double` for example?
 
--- | Runs the Dinic's algorithm.
+-- | \(O(V^2E)\) Runs the Dinic's algorithm.
 --
 -- = Overview
 -- Dinic's algorithm loops the following steps:
