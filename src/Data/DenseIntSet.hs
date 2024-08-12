@@ -22,6 +22,7 @@ import Math.BitSet (lsbOf, msbOf)
 import ToyLib.Macro
 
 -- | Dense int set or a W-ary tree where @W = wordDIS@.
+{-# INLINE wordDIS #-}
 wordDIS :: Int
 wordDIS = 64
 
@@ -46,6 +47,7 @@ data DenseIntSet s = DenseIntSet
   }
 
 -- | \(O(N \log N)\) Creates a new `DenseIntSet` that covers @[0, n)@.
+{-# INLINE newDIS #-}
 newDIS :: (PrimMonad m) => Int -> m (DenseIntSet (PrimState m))
 newDIS capacityDIS = do
   vecDIS <-
@@ -69,16 +71,19 @@ newDIS capacityDIS = do
 -- buildDIS capacityDIS f = runST $ do
 
 -- | (Internal) Keys out of the range are reported as runtime error.
+{-# INLINE validateKeyDIS #-}
 validateKeyDIS :: (HasCallStack) => String -> DenseIntSet s -> Int -> ()
 validateKeyDIS name DenseIntSet {..} k
   | debug && not (inRange (0, capacityDIS - 1) k) = error $ name ++ ": out of range (" ++ show capacityDIS ++ "): " ++ show k
   | otherwise = ()
 
 -- | \(O(1)\) Returns the number of elements in the set.
+{-# INLINE sizeDIS #-}
 sizeDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 sizeDIS = (`UM.unsafeRead` 0) . sizeDIS_
 
 -- | \(O(\log N)\) Tests if @k@ is in the set.
+{-# INLINE memberDIS #-}
 memberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
 memberDIS is@DenseIntSet {..} k = do
   let (!q, !r) = k `divMod` wordDIS
@@ -87,10 +92,12 @@ memberDIS is@DenseIntSet {..} k = do
     !_ = validateKeyDIS "memberDIS" is k
 
 -- | \(O(\log N)\) Tests if @k@ is not in the set.
+{-# INLINE notMemberDIS #-}
 notMemberDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Bool
 notMemberDIS dis k = not <$> memberDIS dis k
 
 -- | \(O(\log N)\) Inserts @k@ to the set.
+{-# INLINE insertDIS #-}
 insertDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 insertDIS is@DenseIntSet {..} k = do
   unlessM (memberDIS is k) $ do
@@ -107,6 +114,7 @@ insertDIS is@DenseIntSet {..} k = do
     !_ = validateKeyDIS "insertDIS" is k
 
 -- | \(O(\log N)\) Deletes @k@ from the set.
+{-# INLINE deleteDIS #-}
 deleteDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m ()
 deleteDIS is@DenseIntSet {..} k = do
   whenM (memberDIS is k) $ do
@@ -129,6 +137,7 @@ deleteDIS is@DenseIntSet {..} k = do
 -- * GT / GE
 
 -- | \(O(\log N)\) Finds the smallest @k'@ s.t. @k' >= k@ in the set.
+{-# INLINE lookupGEDIS #-}
 lookupGEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
 lookupGEDIS DenseIntSet {..} = inner 0
   where
@@ -153,22 +162,26 @@ lookupGEDIS DenseIntSet {..} = inner 0
         (!q, !r) = i `divMod` wordDIS
 
 -- | \(O(\log N)\)
+{-# INLINE findGEDIS #-}
 findGEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
 findGEDIS is k = fromMaybe err <$> lookupGEDIS is k
   where
     err = error $ "findGEDIS: no element >= " ++ show k
 
 -- | \(O(\log N)\)
+{-# INLINE lookupGTDIS #-}
 lookupGTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
 lookupGTDIS is k = lookupGEDIS is (k + 1)
 
 -- | \(O(\log N)\)
+{-# INLINE findGTDIS #-}
 findGTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
 findGTDIS is k = findGEDIS is (k + 1)
 
 -- * LT / LE
 
 -- | \(O(\log N)\) Finds the biggest @k'@ s.t. @k' <= k@ in the set.
+{-# INLINE lookupLEDIS #-}
 lookupLEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
 lookupLEDIS DenseIntSet {..} = inner 0
   where
@@ -192,32 +205,38 @@ lookupLEDIS DenseIntSet {..} = inner 0
         (!q, !r) = i `divMod` wordDIS
 
 -- | \(O(\log N)\)
+{-# INLINE findLEDIS #-}
 findLEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
 findLEDIS is k = fromMaybe err <$> lookupLEDIS is k
   where
     err = error $ "findLEDIS: no element <= " ++ show k
 
 -- | \(O(\log N)\)
+{-# INLINE lookupLTDIS #-}
 lookupLTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int)
 lookupLTDIS is k = lookupLEDIS is (k - 1)
 
 -- | \(O(\log N)\)
+{-# INLINE findLTDIS #-}
 findLTDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m Int
 findLTDIS is k = findLEDIS is (k - 1)
 
 -- * Min / Max
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE lookupMinDIS #-}
 lookupMinDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
 lookupMinDIS is = lookupGEDIS is 0
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE findMinDIS #-}
 findMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 findMinDIS is = fromMaybe err <$> lookupMinDIS is
   where
     err = error "findMinDIS: not such a value"
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE deleteFindMinMayDIS #-}
 deleteFindMinMayDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
 deleteFindMinMayDIS is = do
   lookupMinDIS is
@@ -228,6 +247,7 @@ deleteFindMinMayDIS is = do
       )
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE deleteFindMinDIS #-}
 deleteFindMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 deleteFindMinDIS is = do
   key <- findMinDIS is
@@ -235,16 +255,19 @@ deleteFindMinDIS is = do
   return key
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE lookupMaxDIS #-}
 lookupMaxDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
 lookupMaxDIS is = lookupLEDIS is (capacityDIS is - 1)
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE findMaxDIS #-}
 findMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 findMaxDIS is = fromMaybe err <$> lookupMaxDIS is
   where
     err = error "findMaxDIS: not such a value"
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE deleteFindMaxMayDIS #-}
 deleteFindMaxMayDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (Maybe Int)
 deleteFindMaxMayDIS is = do
   lookupMinDIS is
@@ -255,6 +278,7 @@ deleteFindMaxMayDIS is = do
       )
 
 -- | \(O(\log N)\) Not tested.
+{-# INLINE deleteFindMaxDIS #-}
 deleteFindMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> m Int
 deleteFindMaxDIS is = do
   key <- findMaxDIS is
@@ -262,6 +286,7 @@ deleteFindMaxDIS is = do
   return key
 
 -- | \(O(N)\) Not tested.
+{-# INLINE unsafeKeysDIS #-}
 unsafeKeysDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (U.Vector Int)
 unsafeKeysDIS is = do
   vec <- U.unsafeFreeze (V.head (vecDIS is))
