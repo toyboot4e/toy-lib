@@ -21,17 +21,8 @@ solve = do
   xs <- intsU'
   lrks <- U.replicateM q ints3'
 
-  let !dict = U.uniq $ U.modify VAI.sort xs
-  let !xs' = U.map (bindex dict) xs
-  let !wm = newWM n xs'
-
-  let res =
-        U.map
-          ( \(!l, pred -> !r, !k) ->
-              let !i = kthMinWM wm l r k
-               in dict G.! i
-          )
-          lrks
+  let !wm = newWM xs
+  let res = U.map (\(!l, pred -> !r, !k) -> kthMinWM wm l r k) lrks
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/range_kth_smallest

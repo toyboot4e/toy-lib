@@ -27,19 +27,8 @@ solve = do
   xs <- intsU'
   lrxs <- U.replicateM q ints3'
 
-  let !dict = U.uniq $ U.modify VAI.sort xs
-  let !wm = newWM (G.length dict) $ U.map (bindex dict) xs
-
-  let res =
-        U.map
-          ( \(!l, !r, !x) ->
-              let !i = bsearchL dict (<= x)
-                  !x' = maybe (-1) (dict G.!) i
-               in if x' == x
-                    then freqWM wm l (r - 1) $ fromJust i
-                    else 0
-          )
-          lrxs
+  let !wm = newWM xs
+  let res = U.map (\(!l, !r, !x) -> freqWM wm l (r - 1) x) lrxs
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/static_range_frequency

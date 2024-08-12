@@ -11,6 +11,7 @@ import qualified Data.Vector.Unboxed as U
 import Data.WaveletMatrix.Raw
 import GHC.Stack
 
+-- | Wavelet Matrix with automatic index compression.
 data WaveletMatrix = WaveletMatrix
   { -- | The wavelet matrix.
     rawWM :: !RawWaveletMatrix,
@@ -18,6 +19,7 @@ data WaveletMatrix = WaveletMatrix
     dictWM :: !(U.Vector Int)
   }
 
+-- | Creates `WaveletMatrix`, internally performing index compression.
 newWM :: U.Vector Int -> WaveletMatrix
 newWM xs =
   let !dictWM = U.uniq $ U.modify VAI.sort xs
@@ -59,9 +61,10 @@ kthMaxWM WaveletMatrix {..} l_ r_ k_ =
 {-# INLINE freqInWM #-}
 freqInWM :: WaveletMatrix -> Int -> Int -> Int -> Int -> Int
 freqInWM WaveletMatrix {..} l r xl xr
-  -- FIXME: duplicate bound check
-  | 0 <= xl' && xl' <= xr' && xr' < n = freqInRWM rawWM l r xl' xr'
-  | otherwise = 0
+  | not $ 0 <= l && l <= r && r < n = 0
+  -- | not $ 0 <= xl && xl <= xr && xr < n = 0
+  | not $ xl <= xr = 0
+  | otherwise = freqInRWM rawWM l r xl' xr'
   where
     -- Handles the case @xl@ or  @xr@ is not in the dict
     !n = lengthRWM rawWM
@@ -70,7 +73,7 @@ freqInWM WaveletMatrix {..} l r xl xr
 
 -- | \(O(\log a)\) Returns the number of x in [l .. r].
 {-# INLINE freqWM #-}
-freqWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int
+freqWM :: WaveletMatrix -> Int -> Int -> Int -> Int
 freqWM wm l r x = freqInWM wm l r x x
 
 -- | \(O(\log a)\) Finds index of @x@. Select.
