@@ -3,7 +3,9 @@
 -- | Wavelet Matrix without index comperssion.
 module Data.WaveletMatrix.Raw where
 
+import Control.Monad
 import Control.Monad.ST (runST)
+import Control.Monad.Trans.State.Strict (execState, modify')
 import Data.Bifunctor (bimap)
 import Data.Bit
 import Data.Bits
@@ -101,7 +103,7 @@ accessRWM RawWaveletMatrix {..} i0 = res
 
 -- * kth min (safe)
 
--- | \(O(\log a)\)
+-- | \(O(\log a)\) Goes down the wavelet matrix for collecting kth minimum value.
 _goDownRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int, Int, Int)
 _goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsRWM csumsRWM)
   where
@@ -124,7 +126,7 @@ _goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1
         !l0 = freq0BV bits csum l
         !r0 = freq0BV bits csum r
 
--- | \(O(\log a)\)
+-- | \(O(\log a)\) Goes up the wavelet matrix for collecting the value @x@.
 _goUpRWM :: RawWaveletMatrix -> Int -> Int -> Maybe Int
 _goUpRWM RawWaveletMatrix {..} i0 x =
   V.ifoldM'
@@ -259,7 +261,7 @@ lrFindKthIndexRWM wm@RawWaveletMatrix {..} k x l_ r_
                 let !l0 = freq0BV bits csum l
                     !r0 = freq0BV bits csum r
                  in if testBit x (heightRWM - 1 - iRow)
-                      then (l - l0 + nZerosRWM G.! iRow, r - r0 + nZerosRWM G.! iRow)
+                      then (l + nZerosRWM G.! iRow - l0, r + nZerosRWM G.! iRow - r0)
                       else (l0, r0)
             )
             (l_, r_ + 1)
@@ -297,3 +299,77 @@ lookupGERWM wm l r x
 lookupGTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGTRWM wm l r x = lookupGERWM wm l r (x + 1)
 
+-- * Associations of (freq, value)
+
+-- FIXME: assocs is for (x, freq) rather than to (freq, x)
+-- TODO: unfoldr could be faster?
+
+-- | \(O(\log A \min(|A|, L))\) Internal implementation of @assocs@.
+{-# INLINE _assocsWithRWM #-}
+_assocsWithRWM :: RawWaveletMatrix -> Int -> Int -> (Int -> Int) -> [(Int, Int)]
+_assocsWithRWM RawWaveletMatrix {..} l_ r_ f
+  | 0 <= l_ && l_ <= r_ && r_ < lengthRWM = execState (inner (0 :: Int) (0 :: Int) l_ (r_ + 1)) []
+  | otherwise = []
+  where
+    -- DFS. [l, r)
+    inner !acc iRow !l !r
+      | iRow >= heightRWM = do
+          let !n = r - l
+          let !acc' = f acc
+          modify' ((acc', n) :)
+      | otherwise = do
+          let !bits = bitsRWM G.! iRow
+              !bitsCSum = csumsRWM G.! iRow
+              !l0 = freq0BV bits bitsCSum l
+              !r0 = freq0BV bits bitsCSum r
+              !nZeros = nZerosRWM G.! iRow
+          -- go right (visit bigger values first)
+          let !l' = l + nZeros - l0
+          let !r' = r + nZeros - r0
+          when (l' < r') $ do
+            inner (acc .|. bit (heightRWM - 1 - iRow)) (iRow + 1) l' r'
+          -- go left
+          when (l0 < r0) $ do
+            inner acc (iRow + 1) l0 r0
+
+-- | \(O(\log A \min(|A|, L))\) Internal implementation of @descAssoc@.
+{-# INLINE _descAssocsWithRWM #-}
+_descAssocsWithRWM :: RawWaveletMatrix -> Int -> Int -> (Int -> Int) -> [(Int, Int)]
+_descAssocsWithRWM RawWaveletMatrix {..} l_ r_ f
+  | 0 <= l_ && l_ <= r_ && r_ < lengthRWM = execState (inner (0 :: Int) (0 :: Int) l_ (r_ + 1)) []
+  | otherwise = []
+  where
+    -- DFS. [l, r)
+    inner !acc iRow !l !r
+      | iRow >= heightRWM = do
+          let !n = r - l
+          let !acc' = f acc
+          modify' ((acc', n) :)
+      | otherwise = do
+          let !bits = bitsRWM G.! iRow
+              !bitsCSum = csumsRWM G.! iRow
+              !l0 = freq0BV bits bitsCSum l
+              !r0 = freq0BV bits bitsCSum r
+              !nZeros = nZerosRWM G.! iRow
+          -- go left
+          when (l0 < r0) $ do
+            inner acc (iRow + 1) l0 r0
+          -- go right (visit bigger values first)
+          let !l' = l + nZeros - l0
+          let !r' = r + nZeros - r0
+          when (l' < r') $ do
+            inner (acc .|. bit (heightRWM - 1 - iRow)) (iRow + 1) l' r'
+
+-- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in ascending order of
+-- @x@. It's only fast when the domain \(A\) is very small.
+{-# INLINE assocsRWM #-}
+assocsRWM :: RawWaveletMatrix -> Int -> Int -> [(Int, Int)]
+assocsRWM wm l_ r_ = _assocsWithRWM wm l_ r_ id
+
+-- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in descending order of
+-- @x@. It's only fast when the domain \(A\) is very small.
+{-# INLINE descAssocsRWM #-}
+descAssocsRWM :: RawWaveletMatrix -> Int -> Int -> [(Int, Int)]
+descAssocsRWM wm l_ r_ = _descAssocsWithRWM wm l_ r_ id
+
+-- FIXME: sort by frequency

@@ -180,4 +180,16 @@ lookupGEWM wm l r x
 lookupGTWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lookupGTWM wm l r x = lookupGEWM wm l r (x + 1)
 
+-- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in ascending order of
+-- @x@. It's only fast when the domain \(A\) is very small.
+{-# INLINE assocsWM #-}
+assocsWM :: WaveletMatrix -> Int -> Int -> [(Int, Int)]
+assocsWM WaveletMatrix {..} l_ r_ = _assocsWithRWM rawWM l_ r_ (dictWM G.!)
+
+-- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in ascending order of
+-- @x@. It's only fast when the domain \(A\) is very small.
+{-# INLINE descAssocsWM #-}
+descAssocsWM :: WaveletMatrix -> Int -> Int -> [(Int, Int)]
+descAssocsWM WaveletMatrix {..} l_ r_ = _descAssocsWithRWM rawWM l_ r_ (dictWM G.!)
+
 -- TODO: remove HasCallStack

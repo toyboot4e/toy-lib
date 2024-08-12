@@ -1,6 +1,7 @@
 module Tests.WaveletMatrix where
 
 import Data.Bit
+import Data.IntMap qualified as IM
 import Data.IntSet qualified as IS
 import Data.Ix
 import Data.Ord
@@ -199,11 +200,25 @@ randomTests =
               3 -> lookupGTWM wm l r x
               _ -> error "unreachable"
 
-        return . QC.counterexample (show (x, queryKind, (l, r), xs)) $ res QC.=== expected
+        return . QC.counterexample (show (x, queryKind, (l, r), xs)) $ res QC.=== expected,
+      QC.testProperty "assocs" $ do
+        (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
+
+        let expected = IM.assocs . IM.fromListWith (+) . U.toList $ U.map (,1 :: Int) slice
+        let wm = newWM xs
+        let res = assocsWM wm l r
+        return . QC.counterexample (show ((l, r), xs)) $ res QC.=== expected,
+      QC.testProperty "descAssocs" $ do
+        (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
+
+        let expected = reverse . IM.assocs . IM.fromListWith (+) . U.toList $ U.map (,1 :: Int) slice
+        let wm = newWM xs
+        let res = descAssocsWM wm l r
+        return . QC.counterexample (show ((l, r), xs)) $ res QC.=== expected
     ]
   where
     rng = (-20, 20) :: (Int, Int)
-    maxN = 4
+    maxN = 256
 
 tests :: [TestTree]
 tests = [testGroup "Data.WaveletMatrix" [fixedTest, dictTests, randomTests]]
