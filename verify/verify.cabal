@@ -222,6 +222,10 @@ executable yosupo-data-rectangle-sum-exe
   import:  verify
   main-is: yosupo-data-rectangle-sum.hs
 
+executable yosupo-data-point-add-rectangle-sum-exe
+  import:  verify
+  main-is: yosupo-data-point-add-rectangle-sum.hs
+
 executable yosupo-data-persistent-unionfind-exe
   import:  verify
   main-is: yosupo-data-persistent-unionfind.hs
