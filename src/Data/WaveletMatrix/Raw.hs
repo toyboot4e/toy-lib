@@ -24,7 +24,8 @@ data RawWaveletMatrix = RawWaveletMatrix
     heightRWM :: {-# UNPACK #-} !Int,
     -- | The length of the original array.
     lengthRWM :: {-# UNPACK #-} !Int,
-    -- | The bit matrix. Each row represents (heightRWM - 1 - iRow) bit's on/off.
+    -- | The bit matrix. Each row represents (heightRWM - 1 - iRow) bit's on/off. It takes memory
+    -- space of \(N\) bytes.
     bitsRWM :: !(V.Vector BitVector),
     -- | The number of zeros in each row in the bit matrix.
     -- TODO: consider removing it ('cause we have @csumsRWM@). It could be even faster.
@@ -36,9 +37,9 @@ data RawWaveletMatrix = RawWaveletMatrix
 --
 -- - @nx@: The number of different @x@, starting from zero. In other words, every @x@ is in
 -- \([0, nx)\).
-{-# INLINE newRWM #-}
-newRWM :: Int -> U.Vector Int -> RawWaveletMatrix
-newRWM nx xs = runST $ do
+{-# INLINE buildRWM #-}
+buildRWM :: Int -> U.Vector Int -> RawWaveletMatrix
+buildRWM nx xs = runST $ do
   -- TODO: less mutable variables
   orgBits <- UM.replicate (lengthRWM * heightRWM) $ Bit False
   orgCsum <- UM.replicate (lenCSum * heightRWM) (0 :: Int)
@@ -357,16 +358,15 @@ _descAssocsWithRWM RawWaveletMatrix {..} l_ r_ f
             inner (acc .|. bit (heightRWM - 1 - iRow)) (iRow + 1) l' r'
 
 -- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in ascending order of
--- @x@. It's only fast when the domain \(A\) is very small.
+-- @x@. Be warned that it's very slow unless the domain \(A\) is very small.
 {-# INLINE assocsRWM #-}
 assocsRWM :: RawWaveletMatrix -> Int -> Int -> [(Int, Int)]
 assocsRWM wm l_ r_ = _assocsWithRWM wm l_ r_ id
 
 -- | \(O(\log A \min(|A|, L))\) Collects \((x, freq)\) in range \([l, r]\) in descending order of
--- @x@. It's only fast when the domain \(A\) is very small.
+-- @x@. Be warned that it's very slow unless the domain \(A\) is very small.
 {-# INLINE descAssocsRWM #-}
 descAssocsRWM :: RawWaveletMatrix -> Int -> Int -> [(Int, Int)]
 descAssocsRWM wm l_ r_ = _descAssocsWithRWM wm l_ r_ id
 
--- TODO: topK
--- FIXME: sort by frequency
+-- TODO: topK and intersects are not implemented as they are not so fast.

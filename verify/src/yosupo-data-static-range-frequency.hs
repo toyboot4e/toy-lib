@@ -27,7 +27,7 @@ solve = do
   xs <- intsU'
   lrxs <- U.replicateM q ints3'
 
-  let !wm = newWM xs
+  let !wm = buildWM xs
   let res = U.map (\(!l, !r, !x) -> freqWM wm l (r - 1) x) lrxs
   printBSB $ unlinesBSB res
 

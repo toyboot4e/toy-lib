@@ -10,8 +10,8 @@
 --
 -- = Succinct bit vector
 --
--- Another way to implement a bit vector with less memory is using a succinct bit vector.
--- TODO: Compare it with the cumulative sum implementation.
+-- Another way to implement a bit vector with less memory is using a succinct bit vector. Unless
+-- large $N$ problems come, I might not implement it.
 module Data.WaveletMatrix.BitVector where
 
 import Algorithm.Bisect

@@ -42,7 +42,7 @@ fixedTest =
                     [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0]
                   ]
 
-        let wm = newRWM 6 xs
+        let wm = buildRWM 6 xs
         V.map bitsBV (bitsRWM wm) @?= bits
 
         let nZeros = U.convert $ V.map ((U.length xs -) . U.sum) ints
@@ -130,7 +130,7 @@ randomTests =
               let (!i, !x) = sorted G.! k
                in Just (i + l, x)
 
-        let wm = newWM xs
+        let wm = buildWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMinWM wm l r k QC.=== expected .&&. kthMinWM wm l r k QC.=== (snd <$> expected),
       QC.testProperty "kthMax" $ do
@@ -142,7 +142,7 @@ randomTests =
               let (!i, !x) = sorted G.! k
                in Just (i + l, x)
 
-        let wm = newWM xs
+        let wm = buildWM xs
         return . QC.counterexample (show ((l, r, k), xs)) $
           ikthMaxWM wm l r k QC.=== expected .&&. kthMaxWM wm l r k QC.=== (snd <$> expected),
       QC.testProperty "kth index in [0, n)" $ do
@@ -153,7 +153,7 @@ randomTests =
         let !ixs = U.indexed xs
         let !expected = fmap fst . (G.!? k) $ U.filter ((== x) . snd) ixs
 
-        let !wm = newWM xs
+        let !wm = buildWM xs
         let !res = findKthIndexWM wm k x
 
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
@@ -165,7 +165,7 @@ randomTests =
         let !ixs = U.indexed xs
         let !expected = fmap fst . (G.!? k) . U.filter ((== x) . snd) . sliceLR l r $ ixs
 
-        let !wm = newWM xs
+        let !wm = buildWM xs
         let !res = lrFindKthIndexWM wm k x l r
 
         return . QC.counterexample (show (k, x, (l, r), xs)) $ res QC.=== expected,
@@ -176,7 +176,7 @@ randomTests =
 
         let expected = U.length $ U.filter (inRange (xl, xr)) slice
 
-        let !wm = newWM xs
+        let !wm = buildWM xs
         let !res = freqInWM wm l r xl xr
         return . QC.counterexample (show ((l, r), (xl, xr), xs)) $ res QC.=== expected,
       QC.testProperty "lookupLE, lookupGE" $ do
@@ -192,7 +192,7 @@ randomTests =
               3 -> IS.lookupGT x im
               _ -> error "unreachable"
 
-        let !wm = newWM xs
+        let !wm = buildWM xs
         let !res = case queryKind of
               0 -> lookupLEWM wm l r x
               1 -> lookupLTWM wm l r x
@@ -205,14 +205,14 @@ randomTests =
         (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
 
         let expected = IM.assocs . IM.fromListWith (+) . U.toList $ U.map (,1 :: Int) slice
-        let wm = newWM xs
+        let wm = buildWM xs
         let res = assocsWM wm l r
         return . QC.counterexample (show ((l, r), xs)) $ res QC.=== expected,
       QC.testProperty "descAssocs" $ do
         (!_, !xs, (!l, !r), !slice) <- genLR maxN rng
 
         let expected = reverse . IM.assocs . IM.fromListWith (+) . U.toList $ U.map (,1 :: Int) slice
-        let wm = newWM xs
+        let wm = buildWM xs
         let res = descAssocsWM wm l r
         return . QC.counterexample (show ((l, r), xs)) $ res QC.=== expected
     ]

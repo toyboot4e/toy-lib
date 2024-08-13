@@ -21,7 +21,7 @@ solve = do
   xs <- intsU'
   lrks <- U.replicateM q ints3'
 
-  let !wm = newWM xs
+  let !wm = buildWM xs
   let res = U.map (\(!l, !r, !k) -> fromJust $ kthMinWM wm l (r - 1) k) lrks
   printBSB $ unlinesBSB res
 

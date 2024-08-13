@@ -21,11 +21,11 @@ data WaveletMatrix = WaveletMatrix
   }
 
 -- | Creates `WaveletMatrix`, internally performing index compression.
-newWM :: U.Vector Int -> WaveletMatrix
-newWM xs =
+buildWM :: U.Vector Int -> WaveletMatrix
+buildWM xs =
   let !dictWM = U.uniq $ U.modify VAI.sort xs
       !xs' = U.map (\x -> fromJust $ bsearchL dictWM (<= x)) xs
-      !rawWM = newRWM (G.length xs) xs'
+      !rawWM = buildRWM (G.length xs) xs'
    in WaveletMatrix {..}
 
 -- | \(O(\log a)\) Returns @a[k]@.
@@ -42,7 +42,7 @@ accessWM WaveletMatrix {..} i =
 -- treated as separate values. Quantile.
 {-# INLINE ikthMinWM #-}
 ikthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
-ikthMinWM WaveletMatrix{..} l_ r_ k_
+ikthMinWM WaveletMatrix {..} l_ r_ k_
   | Just (!i, !x) <- ikthMinRWM rawWM l_ r_ k_ = Just (i, dictWM G.! x)
   | otherwise = Nothing
 
@@ -50,7 +50,7 @@ ikthMinWM WaveletMatrix{..} l_ r_ k_
 -- treated as separate values. Quantile.
 {-# INLINE kthMinWM #-}
 kthMinWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
-kthMinWM WaveletMatrix{..} l_ r_ k_
+kthMinWM WaveletMatrix {..} l_ r_ k_
   | Just !x <- kthMinRWM rawWM l_ r_ k_ = Just $ dictWM G.! x
   | otherwise = Nothing
 
@@ -58,7 +58,7 @@ kthMinWM WaveletMatrix{..} l_ r_ k_
 -- treated as separate values. Quantile.
 {-# INLINE ikthMaxWM #-}
 ikthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe (Int, Int)
-ikthMaxWM WaveletMatrix{..} l_ r_ k_
+ikthMaxWM WaveletMatrix {..} l_ r_ k_
   | Just (!i, !x) <- ikthMaxRWM rawWM l_ r_ k_ = Just (i, dictWM G.! x)
   | otherwise = Nothing
 
@@ -66,7 +66,7 @@ ikthMaxWM WaveletMatrix{..} l_ r_ k_
 -- treated as separate values. Quantile.
 {-# INLINE kthMaxWM #-}
 kthMaxWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
-kthMaxWM WaveletMatrix{..} l_ r_ k_
+kthMaxWM WaveletMatrix {..} l_ r_ k_
   | Just !x <- kthMaxRWM rawWM l_ r_ k_ = Just $ dictWM G.! x
   | otherwise = Nothing
 
