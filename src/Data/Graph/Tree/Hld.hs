@@ -430,9 +430,9 @@ data TreeMonoid a s = TreeMonoid
     -- | Indicates if it's targetting edge weights (If not, it's targetting vertex weights).
     isEdgeTM :: !Bool,
     -- | Segment tree for folding upwards.
-    streeFTM :: !(SegmentTree UM.MVector s a),
+    streeFTM :: !(SegmentTree s a),
     -- | Segment tree for folding downwards. Only created when the monoid is not commutative.
-    streeBTM :: !(SegmentTree UM.MVector s (Dual a))
+    streeBTM :: !(SegmentTree s (Dual a))
   }
 
 -- ** Construction

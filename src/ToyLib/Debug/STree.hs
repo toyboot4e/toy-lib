@@ -18,7 +18,7 @@ import ToyLib.Macro
 -- | Shows the leaves of a strict segment tree.
 --
 -- WARNING: It shows unused leaves, too.
-dbgSTree :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
+dbgSTree :: (Show a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> m ()
 dbgSTree (SegmentTree mVec nValidLeaves)
   | debug = do
       !vec <- G.unsafeFreeze mVec
@@ -32,7 +32,7 @@ dbgSTree (SegmentTree mVec nValidLeaves)
 -- | Shows the nodes and the leaves of a strict segment tree,
 --
 -- WARNING: It shows unused nodes and leaves, too.
-dbgSTreeAll :: (Show (v a), G.Vector v a, PrimMonad m) => SegmentTree (G.Mutable v) (PrimState m) a -> m ()
+dbgSTreeAll :: (Show a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> m ()
 dbgSTreeAll (SegmentTree mVec _)
   | debug = do
       !vec <- G.unsafeFreeze mVec

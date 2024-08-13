@@ -50,10 +50,13 @@ import ToyLib.Debug
 --
 -- Most of the time, the top-down approach has to retrieve the values of the bottom leaves.
 -- So bottom-up implementation is almost always faster.
-data SegmentTree v s a = SegmentTree {unSegmentTree :: !(v s a), nValidLeavesSegmentTree :: {-# UNPACK #-} !Int}
+data SegmentTree s a = SegmentTree
+  { unSegmentTree :: !(UM.MVector s a),
+    nValidLeavesSegmentTree :: {-# UNPACK #-} !Int
+  }
 
 -- | \(O(\log N)\) Creates a segment tree for `n` leaves.
-newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree UM.MVector (PrimState m) a)
+newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree (PrimState m) a)
 newSTree nValidLeaves = do
   vec <- GM.replicate nVerts mempty
   return $ SegmentTree vec nValidLeaves
@@ -61,7 +64,7 @@ newSTree nValidLeaves = do
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
 
 -- | \(\Theta(N)\) Creates a segment tree from the given leaf values.
-buildSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree UM.MVector (PrimState m) a)
+buildSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree (PrimState m) a)
 buildSTree leaves = do
   verts <- GM.unsafeNew nVerts
 
@@ -83,14 +86,14 @@ buildSTree leaves = do
 
 -- | \(O(\log N)\) Reads a leaf value.
 {-# INLINE readSTree #-}
-readSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> m a
+readSTree :: (HasCallStack, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> m a
 readSTree (SegmentTree vec nValidLeaves) i = GM.unsafeRead vec (nLeaves + i)
   where
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "readSTree: given invalid index: " ++ show i ++ " out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
 
 -- | \(O(\log N)\) (Internal) Updates parent nodes after modifying a leaf.
-_unsafeUpdateParentNodes :: (Monoid a, GM.MVector v a, PrimMonad m) => v (PrimState m) a -> Int -> m ()
+_unsafeUpdateParentNodes :: (U.Unbox a, Monoid a, PrimMonad m) => UM.MVector (PrimState m) a -> Int -> m ()
 _unsafeUpdateParentNodes vec v0 = stToPrim $ do
   flip fix (v0 .>>. 1) $ \loop v -> do
     !x' <- (<>) <$> GM.unsafeRead vec (v .<<. 1) <*> GM.unsafeRead vec ((v .<<. 1) .|. 1)
@@ -99,7 +102,7 @@ _unsafeUpdateParentNodes vec v0 = stToPrim $ do
 
 -- | \(\Theta(\log N)\) Writes a leaf value.
 {-# INLINE writeSTree #-}
-writeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m ()
+writeSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> a -> m ()
 writeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
   GM.unsafeWrite vec v0 x
@@ -110,7 +113,7 @@ writeSTree (SegmentTree vec nValidLeaves) i x = do
 
 -- | \(\Theta(\log N)\) Writes a leaf value and returns the old value.
 {-# INLINE exchangeSTree #-}
-exchangeSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> a -> m a
+exchangeSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> a -> m a
 exchangeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
   !ret <- GM.unsafeExchange vec v0 x
@@ -122,7 +125,7 @@ exchangeSTree (SegmentTree vec nValidLeaves) i x = do
 
 -- | \(\Theta(\log N)\) Modifies a leaf value.
 {-# INLINE modifySTree #-}
-modifySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> (a -> a) -> Int -> m ()
+modifySTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> (a -> a) -> Int -> m ()
 modifySTree (SegmentTree vec nValidLeaves) f i = do
   let v0 = nLeaves + i
   GM.unsafeModify vec f v0
@@ -133,7 +136,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
 -- (so this is actually @unsafeFoldSTree@).
-foldSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m a
+foldSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where
     !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
@@ -153,7 +156,7 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLe
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns `Nothing` when given invalid range.
 {-# INLINE foldMaySTree #-}
-foldMaySTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> m (Maybe a)
+foldMaySTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> m (Maybe a)
 foldMaySTree stree@(SegmentTree vec _) l0 r0
   -- FIXME: check with the number of valid leaves
   | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = return Nothing
@@ -163,7 +166,7 @@ foldMaySTree stree@(SegmentTree vec _) l0 r0
 
 -- | \(O(1)\) Reads the whole span segment.
 {-# INLINE foldAllSTree #-}
-foldAllSTree :: (HasCallStack, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> m a
+foldAllSTree :: (HasCallStack, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> m a
 foldAllSTree (SegmentTree vec _) = GM.read vec 1
 
 -- TODO: faster bsearch
@@ -174,7 +177,7 @@ foldAllSTree (SegmentTree vec _) = GM.read vec 1
 -- - [PAST 07 - L](https://atcoder.jp/contests/past202107-open/tasks/past202107_l)
 --   Find minimum value indices.
 {-# INLINE bsearchSTree #-}
-bsearchSTree :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
+bsearchSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int, Maybe Int)
 bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
   let !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) l0) $ "bsearhSTree: wrong range " ++ show (l0, r0) ++ " for " ++ show nValidLeaves
   bisectM l0 r0 $ \r -> do
@@ -183,22 +186,22 @@ bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
 
 -- | \(O(\log^2 N)\)
 {-# INLINE bsearchSTreeL #-}
-bsearchSTreeL :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
+bsearchSTreeL :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeL stree l0 r0 f = fst <$> bsearchSTree stree l0 r0 f
 
 -- | \(O(\log^2 N)\)
 {-# INLINE bsearchSTreeR #-}
-bsearchSTreeR :: (HasCallStack, Monoid a, GM.MVector v a, PrimMonad m) => SegmentTree v (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
+bsearchSTreeR :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> (a -> Bool) -> m (Maybe Int)
 bsearchSTreeR stree l0 r0 f = snd <$> bsearchSTree stree l0 r0 f
 
 -- | \(\Theta(N)\) Freezes the leaf values making a copy.
 {-# INLINE freezeLeavesSTree #-}
-freezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
+freezeLeavesSTree :: (U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> m (U.Vector a)
 freezeLeavesSTree (SegmentTree vec nLeaves) = do
   G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.freeze vec
 
 -- | \(\Theta(1)\) Freezes the leaf values without making a copy.
 {-# INLINE unsafeFreezeLeavesSTree #-}
-unsafeFreezeLeavesSTree :: (PrimMonad m, G.Vector v a) => SegmentTree (G.Mutable v) (PrimState m) a -> m (v a)
+unsafeFreezeLeavesSTree :: (U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> m (U.Vector a)
 unsafeFreezeLeavesSTree (SegmentTree vec nLeaves) = do
   G.take nLeaves . G.drop (GM.length vec `div` 2) <$> G.unsafeFreeze vec
