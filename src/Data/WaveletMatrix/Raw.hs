@@ -45,6 +45,7 @@ buildRWM nx xs = runST $ do
   orgCsum <- UM.replicate (lenCSum * heightRWM) (0 :: Int)
   nZeros <- UM.unsafeNew heightRWM
 
+  -- views by row over the contiguous memory:
   let !bits = V.unfoldrExactN heightRWM (UM.splitAt lengthRWM) orgBits
   let !csums = V.unfoldrExactN heightRWM (UM.splitAt lenCSum) orgCsum
 
@@ -77,9 +78,7 @@ buildRWM nx xs = runST $ do
     !lengthRWM = G.length xs
     !lenCSum = (lengthRWM + wordWM - 1) `div` wordWM + 1 -- +1 for the zero
     -- TODO: use bit operations
-    !heightRWM =
-      let (!h, !_) = until ((>= nx) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
-       in max 1 h
+    (!heightRWM, !_) = until ((>= nx) . snd) (bimap succ (* 2)) (1 :: Int, 2 :: Int)
 
 -- | \(O(\log a)\) Returns @a[k]@.
 accessRWM :: RawWaveletMatrix -> Int -> Int

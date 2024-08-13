@@ -227,6 +227,7 @@ library
     Data.WaveletMatrix
     Data.WaveletMatrix.BitVector
     Data.WaveletMatrix.Raw
+    Data.WaveletMatrix.SegTree
     Heuristic.Randoms
     Math.BitSet
     Math.Digits

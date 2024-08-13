@@ -17,6 +17,10 @@ instance (Num a) => Group (Sum a) where
   {-# INLINE invert #-}
   invert (Sum x) = Sum (-x)
 
+instance (Fractional a) => Group (Product a) where
+  {-# INLINE invert #-}
+  invert (Product x) = Product (recip x)
+
 instance (Group a) => Group (Dual a) where
   {-# INLINE invert #-}
   invert (Dual x) = Dual (invert x)
