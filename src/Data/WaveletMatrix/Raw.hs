@@ -16,7 +16,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Data.WaveletMatrix.SuccinctDictionary
+import Data.WaveletMatrix.BitVector
 
 -- | Wavelet Matrix without index comperssion.
 data RawWaveletMatrix = RawWaveletMatrix
@@ -25,13 +25,10 @@ data RawWaveletMatrix = RawWaveletMatrix
     -- | The length of the original array.
     lengthRWM :: {-# UNPACK #-} !Int,
     -- | The bit matrix. Each row represents (heightRWM - 1 - iRow) bit's on/off.
-    bitsRWM :: !(V.Vector (U.Vector Bit)),
+    bitsRWM :: !(V.Vector BitVector),
     -- | The number of zeros in each row in the bit matrix.
     -- TODO: consider removing it ('cause we have @csumsRWM@). It could be even faster.
-    nZerosRWM :: !(U.Vector Int),
-    -- | The cummulative sum of bits in each row in words. Each row has length of
-    -- \(\lceil N / 64 \rceil + 1\).
-    csumsRWM :: !(V.Vector (U.Vector Int))
+    nZerosRWM :: !(U.Vector Int)
   }
   deriving (Eq, Show)
 
@@ -70,9 +67,10 @@ newRWM nx xs = runST $ do
     -- preform a stable sort by the bit:
     VAR.sortBy 2 2 (\_ x -> fromEnum (testBit x iBit)) vec
 
-  bitsRWM <- V.unfoldrExactN heightRWM (U.splitAt lengthRWM) <$> U.unsafeFreeze orgBits
   nZerosRWM <- U.unsafeFreeze nZeros
-  csumsRWM <- V.unfoldrExactN heightRWM (U.splitAt lenCSum) <$> U.unsafeFreeze orgCsum
+  bits' <- V.unfoldrExactN heightRWM (U.splitAt lengthRWM) <$> U.unsafeFreeze orgBits
+  csums' <- V.unfoldrExactN heightRWM (U.splitAt lenCSum) <$> U.unsafeFreeze orgCsum
+  let !bitsRWM = V.zipWith BitVector bits' csums'
   return $ RawWaveletMatrix {..}
   where
     !lengthRWM = G.length xs
@@ -88,28 +86,28 @@ accessRWM RawWaveletMatrix {..} i0 = res
   where
     (!_, !res) =
       V.ifoldl'
-        ( \(!i, !acc) !iRow (!bits, !csum) ->
-            let Bit !goRight = G.unsafeIndex bits i
+        ( \(!i, !acc) !iRow !bits ->
+            let Bit !goRight = G.unsafeIndex (bitsBV bits) i
                 !i'
-                  | goRight = freq1BV bits csum i + G.unsafeIndex nZerosRWM iRow
-                  | otherwise = freq0BV bits csum i
+                  | goRight = freq1BV bits i + G.unsafeIndex nZerosRWM iRow
+                  | otherwise = freq0BV bits i
                 !acc'
                   | goRight = setBit acc (heightRWM - 1 - iRow)
                   | otherwise = acc
              in (i', acc')
         )
         (i0, 0)
-        (V.zip bitsRWM csumsRWM)
+        bitsRWM
 
 -- * kth min (safe)
 
 -- | \(O(\log a)\) Goes down the wavelet matrix for collecting kth minimum value.
 _goDownRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int, Int, Int)
-_goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) (V.zip bitsRWM csumsRWM)
+_goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) bitsRWM
   where
     -- It's binary search over the value range. In each row, we'll focus on either 0 bit values or
     -- 1 bit values in [l, r) and update the range to [l', r').
-    step (!acc, !l, !r, !k) !iRow (!bits, !csum)
+    step (!acc, !l, !r, !k) !iRow !bits
       -- `r0 - l0`, the number of zeros in [l, r), is bigger than or equal to k:
       -- Go left.
       | k < r0 - l0 = (acc, l0, r0, k)
@@ -123,20 +121,20 @@ _goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1
               !k' = k - (r0 - l0) -- `r0 - l0` zeros go left
            in (acc', l', r', k')
       where
-        !l0 = freq0BV bits csum l
-        !r0 = freq0BV bits csum r
+        !l0 = freq0BV bits l
+        !r0 = freq0BV bits r
 
 -- | \(O(\log a)\) Goes up the wavelet matrix for collecting the value @x@.
 _goUpRWM :: RawWaveletMatrix -> Int -> Int -> Maybe Int
 _goUpRWM RawWaveletMatrix {..} i0 x =
   V.ifoldM'
-    ( \ !i !iBit (!bits, !csum) ->
+    ( \ !i !iBit !bits ->
         if testBit x iBit
-          then findKthIndex1BV bits csum $ i - nZerosRWM G.! (heightRWM - 1 - iBit)
-          else findKthIndex0BV bits csum i
+          then findKthIndex1BV bits $ i - nZerosRWM G.! (heightRWM - 1 - iBit)
+          else findKthIndex0BV bits i
     )
     i0
-    (V.zip (V.reverse bitsRWM) (V.reverse csumsRWM))
+    (V.reverse bitsRWM)
 
 -- | \(O(\log a)\) Returns k-th (0-based) smallest number in [l, r]. Two different values are
 -- treated as separate values. Quantile with index.
@@ -204,14 +202,14 @@ freqLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
 freqLTRWM RawWaveletMatrix {..} l_ r_ upper
   | upper >= bit heightRWM = r_ + 1 - l_
   | otherwise =
-      let (!res, !_, !_) = V.ifoldl' step (0, l_, r_ + 1) $ V.zip bitsRWM csumsRWM
+      let (!res, !_, !_) = V.ifoldl' step (0, l_, r_ + 1) bitsRWM
        in res
   where
     -- [l, r)
-    step (!acc, !l, !r) !iRow (!bits, !csum) =
+    step (!acc, !l, !r) !iRow !bits =
       let !b = testBit upper (heightRWM - 1 - iRow)
-          !l0 = freq0BV bits csum l
-          !r0 = freq0BV bits csum r
+          !l0 = freq0BV bits l
+          !r0 = freq0BV bits r
        in if b
             then (acc + r0 - l0, l - l0 + G.unsafeIndex nZerosRWM iRow, r - r0 + G.unsafeIndex nZerosRWM iRow)
             else (acc, l0, r0)
@@ -246,7 +244,7 @@ lrFindKthIndexRWM wm@RawWaveletMatrix {..} k x l_ r_
   | not (0 <= x && x <= n - 1 && 0 <= k && k <= n - 1) = Nothing
   | otherwise = inner
   where
-    !n = G.length (G.head bitsRWM)
+    !n = lengthRWM
     inner :: Maybe Int
     inner
       | rEnd <= lEnd + k = Nothing
@@ -257,15 +255,15 @@ lrFindKthIndexRWM wm@RawWaveletMatrix {..} k x l_ r_
         -- Go down. Gets the [l, r) range of @x@ in the last array.
         (!lEnd, !rEnd) =
           V.ifoldl'
-            ( \(!l, !r) !iRow (!bits, !csum) ->
-                let !l0 = freq0BV bits csum l
-                    !r0 = freq0BV bits csum r
+            ( \(!l, !r) !iRow !bits ->
+                let !l0 = freq0BV bits l
+                    !r0 = freq0BV bits r
                  in if testBit x (heightRWM - 1 - iRow)
                       then (l + nZerosRWM G.! iRow - l0, r + nZerosRWM G.! iRow - r0)
                       else (l0, r0)
             )
             (l_, r_ + 1)
-            (V.zip bitsRWM csumsRWM)
+            bitsRWM
 
 -- * Lookup
 
@@ -319,9 +317,8 @@ _assocsWithRWM RawWaveletMatrix {..} l_ r_ f
           modify' ((acc', n) :)
       | otherwise = do
           let !bits = bitsRWM G.! iRow
-              !bitsCSum = csumsRWM G.! iRow
-              !l0 = freq0BV bits bitsCSum l
-              !r0 = freq0BV bits bitsCSum r
+              !l0 = freq0BV bits l
+              !r0 = freq0BV bits r
               !nZeros = nZerosRWM G.! iRow
           -- go right (visit bigger values first)
           let !l' = l + nZeros - l0
@@ -347,9 +344,8 @@ _descAssocsWithRWM RawWaveletMatrix {..} l_ r_ f
           modify' ((acc', n) :)
       | otherwise = do
           let !bits = bitsRWM G.! iRow
-              !bitsCSum = csumsRWM G.! iRow
-              !l0 = freq0BV bits bitsCSum l
-              !r0 = freq0BV bits bitsCSum r
+              !l0 = freq0BV bits l
+              !r0 = freq0BV bits r
               !nZeros = nZerosRWM G.! iRow
           -- go left
           when (l0 < r0) $ do
@@ -372,4 +368,5 @@ assocsRWM wm l_ r_ = _assocsWithRWM wm l_ r_ id
 descAssocsRWM :: RawWaveletMatrix -> Int -> Int -> [(Int, Int)]
 descAssocsRWM wm l_ r_ = _descAssocsWithRWM wm l_ r_ id
 
+-- TODO: topK
 -- FIXME: sort by frequency

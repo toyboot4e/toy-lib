@@ -11,8 +11,8 @@ import Data.Vector.Algorithms.Intro qualified as VAI
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import Data.WaveletMatrix
+import Data.WaveletMatrix.BitVector
 import Data.WaveletMatrix.Raw
-import Data.WaveletMatrix.SuccinctDictionary
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
@@ -43,13 +43,13 @@ fixedTest =
                   ]
 
         let wm = newRWM 6 xs
-        bitsRWM wm @?= bits
+        V.map bitsBV (bitsRWM wm) @?= bits
 
         let nZeros = U.convert $ V.map ((U.length xs -) . U.sum) ints
         nZerosRWM wm @?= nZeros
 
         let csums = V.map (U.cons 0 . U.singleton . U.sum) ints
-        csumsRWM wm @?= csums
+        V.map csumBV (bitsRWM wm) @?= csums
 
         let xs' = U.generate (U.length xs) (accessRWM wm)
         xs' @?= xs
@@ -61,29 +61,29 @@ findKthIndex k x xs = fmap fst . (G.!? k) . U.filter ((== x) . snd) $ U.indexed 
 lrFindKthIndex :: (Eq a, U.Unbox a) => Int -> a -> Int -> Int -> U.Vector a -> Maybe Int
 lrFindKthIndex k x l r xs = fmap fst . (G.!? k) . U.filter ((== x) . snd) . sliceLR l r $ U.indexed xs
 
-dictTests :: TestTree
-dictTests =
+bitVectorTests :: TestTree
+bitVectorTests =
   testGroup
-    "Succinct dictinary funciton tests"
+    "BitVector function tests"
     [ QC.testProperty "freq" $ do
         n <- QC.chooseInt (1, maxN)
         xs <- U.fromList . map Bit <$> QC.vectorOf n (QC.chooseEnum (False, True))
-        let csum = csumBV xs
         let expected = (U.length (U.filter (== 0) xs), U.length (U.filter (== 1) xs))
-        let res = (freq0BV xs csum n, freq1BV xs csum n)
+
+        let bv = BitVector xs $ newCSumBV xs
+        let res = (freq0BV bv n, freq1BV bv n)
         return $ res QC.=== expected,
       QC.testProperty "findKthIndex" $ do
         n <- QC.chooseInt (1, maxN)
         xs <- U.fromList . map Bit <$> QC.vectorOf n (QC.chooseEnum (False, True))
         k <- QC.chooseInt (0, n - 1)
         x <- Bit <$> QC.chooseEnum (False, True)
-
         let expected = findKthIndex k x xs
 
-        let csum = csumBV xs
+        let bv = BitVector xs $ newCSumBV xs
         let res
-              | x == 0 = findKthIndex0BV xs csum k
-              | otherwise = findKthIndex1BV xs csum k
+              | x == 0 = findKthIndex0BV bv k
+              | otherwise = findKthIndex1BV bv k
 
         return . QC.counterexample (show (k, x, xs)) $ res QC.=== expected,
       QC.testProperty "lrFindKthIndex" $ do
@@ -96,10 +96,10 @@ dictTests =
 
         let expected = lrFindKthIndex k x l r xs
 
-        let csum = csumBV xs
+        let bv = BitVector xs $ newCSumBV xs
         let res
-              | x == 0 = lrFindKthIndex0BV xs csum k l r
-              | otherwise = lrFindKthIndex1BV xs csum k l r
+              | x == 0 = lrFindKthIndex0BV bv k l r
+              | otherwise = lrFindKthIndex1BV bv k l r
 
         return . QC.counterexample (show (k, x, (l, r), xs)) $ res QC.=== expected
     ]
@@ -221,4 +221,4 @@ randomTests =
     maxN = 256
 
 tests :: [TestTree]
-tests = [testGroup "Data.WaveletMatrix" [fixedTest, dictTests, randomTests]]
+tests = [testGroup "Data.WaveletMatrix" [fixedTest, bitVectorTests, randomTests]]
