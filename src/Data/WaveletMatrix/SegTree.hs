@@ -45,10 +45,10 @@ buildWMST xys = do
   segTreesWMST <- V.replicateM (heightRWM rawWmWMST) (newSTree n)
   return WaveletMatrixSegTree {..}
 
--- | \(O(N (\log A)\) Modifies a point. Access to unknown points are undefined.
+-- | \(O(N (\log N + \log A)\) Modifies a point. Access to unknown points are undefined.
 {-# INLINE modifyWMST #-}
 modifyWMST :: (Monoid a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> (a -> a) -> (Int, Int) -> m ()
-modifyWMST WaveletMatrixSegTree {..} f (!x, !y) = do
+modifyWMST WaveletMatrixSegTree {..} f (!x, !y) = stToPrim $ do
   let !i_ = fromJust $ bsearchL xysWMST (<= (x, y))
   V.ifoldM'_
     ( \ !i !iRow (!bits, !stree) -> do
@@ -63,14 +63,15 @@ modifyWMST WaveletMatrixSegTree {..} f (!x, !y) = do
     i_
     $ V.zip (bitsRWM rawWmWMST) segTreesWMST
 
--- | \(O(\log N)\) Folding.
+-- | \(O(\log^2 N)\) Folding.
 {-# INLINE _foldLTWMST #-}
 _foldLTWMST :: (Monoid a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> m a
-_foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = do
+_foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
   (!res, !_, !_) <- do
     V.ifoldM'
       ( \(!acc, !l, !r) !iRow (!bits, !stree) -> do
-          let !l0 = freq0BV bits l; !r0 = freq0BV bits r
+          let !l0 = freq0BV bits l
+              !r0 = freq0BV bits r
           if testBit yUpper (heightRWM rawWmWMST - 1 - iRow)
             then do
               acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
@@ -84,42 +85,38 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = do
       $ V.zip (bitsRWM rawWmWMST) segTreesWMST
   return res
 
--- | \(O(\log N)\) Folding.
+-- | \(O(\log^2 N)\) Folding.
 {-# INLINE foldMayWMST #-}
 foldMayWMST :: (Group a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> Int -> m (Maybe a)
-foldMayWMST wm@WaveletMatrixSegTree {..} !xl !xr !yl !yr = do
-  let !xl' = fromJust $ bisectR 0 (G.length xysWMST - 1) $ \i -> (< xl) . fst $ xysWMST G.! i
-  let !xr' = fromJust $ bisectL 0 (G.length xysWMST - 1) $ \i -> (<= xr) . fst $ xysWMST G.! i
-  let !yl' = fromJust $ bisectR 0 (G.length ysWMST - 1) $ \i -> (< yl) $ ysWMST G.! i
-  let !yr' = fromJust $ bisectL 0 (G.length ysWMST - 1) $ \i -> (<= yr) $ ysWMST G.! i
-  -- TODO: do we really need such a boundary check?
-  if 0 <= xl'
-    && xl' <= xr'
-    && xr' < G.length xysWMST
-    && 0 <= yl'
-    && yl' <= yr'
-    && yr' < G.length ysWMST
-    then do
+foldMayWMST wm@WaveletMatrixSegTree {..} !xl !xr !yl !yr
+  | not $ 0 <= xl' && xl' <= xr' && xr' < G.length xysWMST = return Nothing
+  | not $ 0 <= yl' && yl' <= yr' && yr' < G.length ysWMST = return Nothing
+  | otherwise = do
       s1 <- _foldLTWMST wm xl' xr' (yr' + 1)
       s2 <- _foldLTWMST wm xl' xr' yl'
       return . Just $ s1 <> invert s2
-    else do return Nothing
+  where
+    !n = lengthRWM rawWmWMST
+    !xl' = fromMaybe n $ bisectR 0 (G.length xysWMST - 1) $ \i -> (< xl) . fst $ xysWMST G.! i
+    !xr' = fromMaybe (-1) $ bisectL 0 (G.length xysWMST - 1) $ \i -> (<= xr) . fst $ xysWMST G.! i
+    !yl' = fromMaybe n $ bisectR 0 (G.length ysWMST - 1) $ \i -> (< yl) $ ysWMST G.! i
+    !yr' = fromMaybe (-1) $ bisectL 0 (G.length ysWMST - 1) $ \i -> (<= yr) $ ysWMST G.! i
 
 -- TODO: monoid folding.
 
--- | \(O(N (\log N)\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexXWMST #-}
 indexXWMST :: WaveletMatrixSegTree s a -> Int -> Int
 indexXWMST WaveletMatrixSegTree {xysWMST} x =
   maybe (error "cannot index x") (fst . (xysWMST G.!)) $ bsearchL xysWMST ((<= x) . fst)
 
--- | \(O(N (\log N)\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexYWMST #-}
 indexYWMST :: WaveletMatrixSegTree s a -> Int -> Int
 indexYWMST WaveletMatrixSegTree {ysWMST} y =
   maybe (error "cannot index y") (ysWMST G.!) $ bsearchL ysWMST (<= y)
 
--- | \(O(N (\log N)\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexXYWMST #-}
 indexXYWMST :: WaveletMatrixSegTree s a -> Int -> Int -> (Int, Int)
 indexXYWMST WaveletMatrixSegTree {xysWMST} x y =

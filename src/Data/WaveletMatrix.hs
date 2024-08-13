@@ -20,7 +20,7 @@ data WaveletMatrix = WaveletMatrix
     dictWM :: !(U.Vector Int)
   }
 
--- | Creates `WaveletMatrix`, internally performing index compression.
+-- | \(O(N \log N)\) Creates `WaveletMatrix`, internally performing index compression.
 buildWM :: U.Vector Int -> WaveletMatrix
 buildWM xs =
   let !dictWM = U.uniq $ U.modify VAI.sort xs
@@ -137,9 +137,11 @@ findKthIndexWM WaveletMatrix {..} k x = do
   guard $ x' == x
   findKthIndexRWM rawWM k i
 
+-- | \(O(\log a)\) Finds index of @x@ in [l, r]. Select.
 lrFindIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lrFindIndexWM wm = lrFindKthIndexWM wm 0
 
+-- | \(O(\log a)\) Finds kth index of @x@ in [l, r]. Select.
 lrFindKthIndexWM :: (HasCallStack) => WaveletMatrix -> Int -> Int -> Int -> Int -> Maybe Int
 lrFindKthIndexWM WaveletMatrix {..} k x l r = do
   i <- bsearchL dictWM (<= x)
