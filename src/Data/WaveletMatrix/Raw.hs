@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Wavelet Matrix without index comperssion.
+--
+-- https://miti-7.hatenablog.com/entry/2018/04/28/152259
 module Data.WaveletMatrix.Raw where
 
 import Control.Monad
@@ -200,6 +202,7 @@ unsafeIKthMaxRWM wm l_ r_ k_ = unsafeIKthMinRWM wm l_ r_ (r_ - l_ - k_)
 -- | \(O(\log a)\) Returns the number of \(x s.t. x < \mathcal{upper} in [l .. r]\).
 freqLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
 freqLTRWM RawWaveletMatrix {..} l_ r_ upper
+  -- REMARK: This is required. The function below cannot handle the case N = 2^i and upper = N.
   | upper >= bit heightRWM = r_ + 1 - l_
   | otherwise =
       let (!res, !_, !_) = V.ifoldl' step (0, l_, r_ + 1) bitsRWM

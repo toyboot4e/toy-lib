@@ -1,7 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Bit vector (in the context of wavelet matrix) is a collection of bits that can handle @rank@
--- (@freq@) in \(O(1)\) and @select@ (@findIndex@) in \(O(N)\) without much memory.
+-- (@freq@) in \(O(1)\) and @select@ (@findIndex@) in \(O(\log N)\) without much memory.
+--
+-- There are two popular ways for implementing such a bit vector.
 --
 -- = Word-based cumulative sum
 --

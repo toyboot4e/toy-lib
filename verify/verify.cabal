@@ -218,6 +218,10 @@ executable yosupo-data-static-range-frequency-exe
   import:  verify
   main-is: yosupo-data-static-range-frequency.hs
 
+executable yosupo-data-static-range-count-distinct-exe
+  import:  verify
+  main-is: yosupo-data-static-range-count-distinct.hs
+
 executable yosupo-data-rectangle-sum-exe
   import:  verify
   main-is: yosupo-data-rectangle-sum.hs

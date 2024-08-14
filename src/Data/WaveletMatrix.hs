@@ -1,6 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Wavelet Matrix with automatic index compression.
+--
+-- = Typical problems
+-- - [Range Kth Smallest](https://judge.yosupo.jp/problem/range_kth_smallest)
+-- - [Static Range Frequency](https://judge.yosupo.jp/problem/static_range_frequency)
+--
+-- FIXME: My wavelet matrix is somehow slow.
 module Data.WaveletMatrix where
 
 import Algorithm.Bisect

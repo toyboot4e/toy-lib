@@ -4,9 +4,9 @@
 -- | Dense int map or a 64-ary tree that covers @[0, n)@.
 --
 -- <https://github.com/maspypy/library/blob/main/ds/fastset.hpp>
+--
+-- FIXME: too slow compared to the original implementation.
 module Data.DenseIntMap where
-
--- TODO: test
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bits

@@ -3,9 +3,9 @@
 -- | Dense int set or a 64-ary tree that covers @[0, n)@.
 --
 -- <https://github.com/maspypy/library/blob/main/ds/fastset.hpp>
+--
+-- FIXME: too slow compared to the original implementation.
 module Data.DenseIntSet where
-
--- FIXME: too slow.
 
 import Control.Monad
 import Control.Monad.Extra (unlessM, whenM)

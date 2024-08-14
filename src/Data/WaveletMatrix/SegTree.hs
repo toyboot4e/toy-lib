@@ -3,6 +3,11 @@
 -- | Segment Tree on Wavelet Matrix: points on a 2D plane and rectangle folding.
 --
 -- = Typical problems
+-- - [Rectangle Sum](https://judge.yosupo.jp/problem/rectangle_sum)
+-- - [Point Add Rectangle Sum](https://judge.yosupo.jp/problem/point_add_rectangle_sum)
+-- - [Static Range Count Distinct](https://judge.yosupo.jp/problem/static_range_count_distinct)
+--
+-- FIXME: My wavelet matrix is somehow slow.
 module Data.WaveletMatrix.SegTree where
 
 import Algorithm.Bisect
@@ -32,7 +37,7 @@ data WaveletMatrixSegTree s a = WaveletMatrixSegTree
     segTreesWMST :: !(V.Vector (SegmentTree s a))
   }
 
--- | \(O(N (\log N + \log A)\) Creates the 2D wavelet matrix.
+-- | \(O(N (\log N + \log A)\) Creates a 2D wavelet matrix.
 {-# INLINE buildWMST #-}
 buildWMST :: (Monoid a, U.Unbox a, PrimMonad m) => U.Vector (Int, Int) -> m (WaveletMatrixSegTree (PrimState m) a)
 buildWMST xys = do
@@ -72,6 +77,8 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
       ( \(!acc, !l, !r) !iRow (!bits, !stree) -> do
           let !l0 = freq0BV bits l
               !r0 = freq0BV bits r
+          -- REMARK: The function cannot handle the case yUpper = N = 2^i. See the constructor for
+          -- how it's handled and note that l_ and r_ are compressed indices.
           if testBit yUpper (heightRWM rawWmWMST - 1 - iRow)
             then do
               acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
@@ -104,19 +111,19 @@ foldMayWMST wm@WaveletMatrixSegTree {..} !xl !xr !yl !yr
 
 -- TODO: monoid folding.
 
--- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N)\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexXWMST #-}
 indexXWMST :: WaveletMatrixSegTree s a -> Int -> Int
 indexXWMST WaveletMatrixSegTree {xysWMST} x =
   maybe (error "cannot index x") (fst . (xysWMST G.!)) $ bsearchL xysWMST ((<= x) . fst)
 
--- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N)\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexYWMST #-}
 indexYWMST :: WaveletMatrixSegTree s a -> Int -> Int
 indexYWMST WaveletMatrixSegTree {ysWMST} y =
   maybe (error "cannot index y") (ysWMST G.!) $ bsearchL ysWMST (<= y)
 
--- | \(O(\log N\) Index restoration. Access to unknown points are undefined.
+-- | \(O(\log N)\) Index restoration. Access to unknown points are undefined.
 {-# INLINE indexXYWMST #-}
 indexXYWMST :: WaveletMatrixSegTree s a -> Int -> Int -> (Int, Int)
 indexXYWMST WaveletMatrixSegTree {xysWMST} x y =
