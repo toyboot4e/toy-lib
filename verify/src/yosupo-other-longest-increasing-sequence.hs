@@ -5,7 +5,7 @@ import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
 import ToyLib.DP
-import Data.Vector.Extra (bindex)
+import Data.Vector.Extra
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}

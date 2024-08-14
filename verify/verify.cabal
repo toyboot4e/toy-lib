@@ -306,6 +306,10 @@ executable yosupo-number-theory-sum-of-floor-of-linear-exe
   import:  verify
   main-is: yosupo-number-theory-sum-of-floor-of-linear.hs
 
+executable yosupo-la-matrix-product-exe
+  import:  verify
+  main-is: yosupo-la-matrix-product.hs
+
 executable yosupo-string-zalgorithm-exe
   import:  verify
   main-is: yosupo-string-zalgorithm.hs

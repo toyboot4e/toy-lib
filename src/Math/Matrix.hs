@@ -10,6 +10,7 @@ import Data.Vector.Extra (chunksOfG)
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
+import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 import ToyLib.Prelude (zero2)
 
@@ -38,31 +39,32 @@ mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip
     mulMod_ x y = (x * y) `mod` modulus
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix.
-mulMat :: (Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
-mulMat !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
-  U.sum $ U.zipWith (*) (rows1 V.! row) (cols2 V.! col)
+{-# INLINE mulMat #-}
+mulMat :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
+mulMat !a !b = generateIV (zero2 h w') $ \(!row, !col) ->
+  U.sum $ U.zipWith (*) (rows1 G.! row) (cols2 G.! col)
   where
-    ((!x1, !y1), (!x2, !y2)) = boundsIV a
-    w = x2 + 1 - x1
-    h = y2 + 1 - y1
-    ((!x1', !y1'), (!x2', !y2')) = boundsIV a
-    w' = x2' + 1 - x1'
-    h' = y2' + 1 - y1'
+    ((!y1, !x1), (!y2, !x2)) = boundsIV a
+    !h = y2 + 1 - y1
+    !w = x2 + 1 - x1
+    ((!y1', !x1'), (!y2', !x2')) = boundsIV b
+    !h' = y2' + 1 - y1'
+    !w' = x2' + 1 - x1'
     !_ = dbgAssert (w == h') $ "matrix size mismatch: " ++ show (boundsIV a) ++ " - " ++ show (boundsIV b)
     rows1 = chunksOfG w (vecIV a)
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
-mulMatMod :: (Integral e, U.Unbox e) => e -> Mat e -> Mat e -> Mat e
-mulMatMod !m !a !b = generateIV (zero2 w' h) $ \(!row, !col) ->
-  U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 V.! row) (cols2 V.! col)
+mulMatMod :: (HasCallStack, Integral e, U.Unbox e) => e -> Mat e -> Mat e -> Mat e
+mulMatMod !m !a !b = generateIV (zero2 h w') $ \(!row, !col) ->
+  U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 G.! row) (cols2 G.! col)
   where
-    ((!x1, !y1), (!x2, !y2)) = boundsIV a
-    w = x2 + 1 - x1
-    h = y2 + 1 - y1
-    ((!x1', !y1'), (!x2', !y2')) = boundsIV a
-    w' = x2' + 1 - x1'
-    h' = y2' + 1 - y1'
+    ((!y1, !x1), (!y2, !x2)) = boundsIV a
+    !h = y2 + 1 - y1
+    !w = x2 + 1 - x1
+    ((!y1', !x1'), (!y2', !x2')) = boundsIV b
+    !h' = y2' + 1 - y1'
+    !w' = x2' + 1 - x1'
     !_ = dbgAssert (w == h') $ "matrix size mismatch: " ++ show (boundsIV a) ++ " - " ++ show (boundsIV b)
     rows1 = chunksOfG w (vecIV a)
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
