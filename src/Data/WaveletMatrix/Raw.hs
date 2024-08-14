@@ -5,6 +5,8 @@
 -- https://miti-7.hatenablog.com/entry/2018/04/28/152259
 module Data.WaveletMatrix.Raw where
 
+-- TODO: use y, instead of x
+
 import Control.Monad
 import Control.Monad.ST (runST)
 import Control.Monad.Trans.State.Strict (execState, modify')
@@ -83,6 +85,8 @@ buildRWM nx xs = runST $ do
     (!heightRWM, !_) = until ((>= nx) . snd) (bimap succ (* 2)) (1 :: Int, 2 :: Int)
 
 -- | \(O(\log a)\) Returns @a[k]@.
+--
+-- TODO: Return `Maybe`?
 accessRWM :: RawWaveletMatrix -> Int -> Int
 accessRWM RawWaveletMatrix {..} i0 = res
   where

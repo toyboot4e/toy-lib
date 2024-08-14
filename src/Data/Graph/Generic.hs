@@ -384,6 +384,28 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
       where
         v' = toParent G.! v
 
+-- * Tree
+
+-- | Vistor-based DFS for query processing with persistent data structure with minimum garbage
+-- collectin. Be sure to not make a bi-directed graph.
+--
+-- = Typical problems
+-- - [Persistente Queue](https://judge.yosupo.jp/problem/persistent_queue)
+-- - [Persistent Unionfind](https://judge.yosupo.jp/problem/persistent_unionfind)
+runPersistentDfs ::
+  (Monad m, U.Unbox w) =>
+  (Vertex -> U.Vector (Vertex, w)) ->
+  Vertex ->
+  a ->
+  (a -> Vertex -> Vertex -> w -> m a) ->
+  m ()
+runPersistentDfs gr start acc0 process = inner start acc0
+  where
+    inner u acc = do
+      U.forM_ (gr u) $ \(!v, !w) -> do
+        !acc' <- process acc u v w
+        inner v acc'
+
 -- * Misc
 
 -- | \(O(V^3)\) Floyd-Warshall algorith. It uses `max` as relax operator and the second argument is
