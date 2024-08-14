@@ -26,6 +26,7 @@ import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
 
 -- * Graph search
 
@@ -374,7 +375,7 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
 -- | \(O(V)\) Given a vector of vertex parents, restores path from the source to a sink.
 --
 -- TODO: restore without reverse?
-restorePath :: U.Vector Vertex -> Vertex -> U.Vector Vertex
+restorePath :: (HasCallStack) => U.Vector Vertex -> Vertex -> U.Vector Vertex
 restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
   where
     f !v
@@ -393,11 +394,11 @@ restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
 -- - [Persistente Queue](https://judge.yosupo.jp/problem/persistent_queue)
 -- - [Persistent Unionfind](https://judge.yosupo.jp/problem/persistent_unionfind)
 runPersistentDfs ::
-  (Monad m, U.Unbox w) =>
+  (HasCallStack, Monad m, U.Unbox w) =>
   (Vertex -> U.Vector (Vertex, w)) ->
   Vertex ->
   a ->
-  (a -> Vertex -> Vertex -> w -> m a) ->
+  ((HasCallStack) => a -> Vertex -> Vertex -> w -> m a) ->
   m ()
 runPersistentDfs gr start acc0 process = inner start acc0
   where

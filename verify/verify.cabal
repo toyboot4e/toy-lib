@@ -321,3 +321,7 @@ executable yosupo-string-number-of-substrings-exe
 executable yosupo-other-two-sat-exe
   import:  verify
   main-is: yosupo-other-two-sat.hs
+
+executable yosupo-other-longest-increasing-sequence-exe
+  import:  verify
+  main-is: yosupo-other-longest-increasing-sequence.hs

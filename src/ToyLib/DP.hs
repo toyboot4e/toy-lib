@@ -11,6 +11,7 @@ import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (ord)
+import Data.Graph.Generic (restorePath)
 import Data.Ix
 import Data.SegmentTree.Strict
 import Data.Semigroup
@@ -176,16 +177,48 @@ ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU set'
     lsb = countTrailingZeros set0
     set' = clearBit set0 lsb
 
--- | Longest increasing subsequence. The input must be zero-based.
+-- | Longest increasing subsequence. **The input must be compressed**.
 lisOf :: (HasCallStack) => U.Vector Int -> Int
 lisOf !xs = runST $ do
   !stree <- buildSTree (U.replicate (G.length xs) (Max (0 :: Int)))
 
   U.forM_ xs $ \x -> do
-    !n0 <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
-    writeSTree stree x (Max (n0 + 1))
+    !len <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
+    writeSTree stree x (Max (len + 1))
 
   getMax <$> foldAllSTree stree
+
+-- | Longest increasing subsequence with path restoration. **The input must be compressed**.
+lisOf' :: (HasCallStack) => U.Vector Int -> U.Vector Int
+lisOf' !xs = runST $ do
+  -- value -> maximum length
+  stree <- buildSTree (U.replicate (G.length xs) (Max (0 :: Int)))
+
+  -- length -> most recent vertex
+  lenToVertex <- UM.replicate (G.length xs + 1) (-1 :: Int)
+
+  -- vertex -> last vertex
+  prev <- UM.replicate (G.length xs) (-1 :: Int)
+
+  (!_, !maxVert) <-
+    U.ifoldM'
+      ( \(!maxLen, !maxVert) i x -> do
+          !len <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
+          writeSTree stree x (Max (len + 1))
+          -- record the previous vertex
+          iFrom <- GM.read lenToVertex len
+          GM.write prev i iFrom
+          -- update the most recent vertex of length:
+          GM.write lenToVertex (len + 1) i
+          if len + 1 > maxLen
+            then return (len + 1, i)
+            else return (maxLen, maxVert)
+      )
+      (-1 :: Int, -1 :: Int)
+      xs
+
+  prev' <- U.unsafeFreeze prev
+  return $ restorePath prev' maxVert
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int
