@@ -314,6 +314,6 @@ executable yosupo-string-number-of-substrings-exe
   import:  verify
   main-is: yosupo-string-number-of-substrings.hs
 
-executable tmp-exe
+executable yosupo-other-two-sat-exe
   import:  verify
-  main-is: tmp.hs
+  main-is: yosupo-other-two-sat.hs

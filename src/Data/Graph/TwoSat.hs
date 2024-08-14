@@ -10,8 +10,8 @@
 -- Use `twoSat` for denoting and solving the problem:
 --
 -- @
--- let !nMaxEdges = (4 * n * pred n)
--- let !res = twoSat n nMaxEdges $ \tsb -> do
+-- let !nClauses = (2 * n * pred n)
+-- let !res = twoSat n nClauses $ \tsb -> do
 --       forM_ [0 .. n - 1] $ \v1 -> do
 --         let (!x1, !y1) = xys U.! v1
 --         forM_ [v1 + 1 .. n - 1] $ \v2 -> do
@@ -59,10 +59,10 @@ data TwoSatBuilder s = TwoSatBuilder
     bufTSB :: !(Buffer s (Int, Int))
   }
 
--- | \(O(V+E)\) Creates a two-sat builder
+-- | \(O(V+E)\) Creates a two-sat builder.
 newTSB :: (PrimMonad m) => Int -> Int -> m (TwoSatBuilder (PrimState m))
-newTSB !nVarsTSB !nMaxEdges = do
-  !bufTSB <- newBuffer nMaxEdges
+newTSB !nVarsTSB !nMaxClauses = do
+  !bufTSB <- newBuffer (2 * nMaxClauses)
   return TwoSatBuilder {..}
 
 -- | \(O(1)\) Adds an or clause: \(x1 = b1 || x2 = b2\).

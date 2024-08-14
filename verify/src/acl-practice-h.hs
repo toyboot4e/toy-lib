@@ -22,7 +22,7 @@ solve = do
   (!n, !d) <- ints2'
   !xys <- U.replicateM n ints2'
 
-  let !res = twoSat n (4 * n * pred n) $ \tsb -> do
+  let !res = twoSat n (2 * n * pred n) $ \tsb -> do
         forM_ [0 .. n - 1] $ \v1 -> do
           let (!x1, !y1) = xys U.! v1
           forM_ [v1 + 1 .. n - 1] $ \v2 -> do
