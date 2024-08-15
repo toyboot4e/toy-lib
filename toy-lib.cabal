@@ -204,6 +204,7 @@ library
     Data.MultiSet
     Data.MultiSet2
     Data.MultiSetVec
+    Data.Pool
     Data.RollingHash
     Data.SafeList
     Data.SegmentTree.Beats

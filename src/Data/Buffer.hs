@@ -36,11 +36,13 @@ _bufferFrontPos = 0
 _bufferBackPos :: Int
 _bufferBackPos = 1
 
--- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@.
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@. This is mostlly for
+-- queues.
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newBuffer n = Buffer <$> UM.replicate 2 0 <*> return 0 <*> UM.unsafeNew n <*> pure n
 
--- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@.
+-- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@. This is mostly for
+-- stacks.
 newRevBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> return (n - 1) <*> UM.unsafeNew n <*> pure n
 
@@ -50,10 +52,11 @@ buildBuffer internalBuffer = do
   let !n = GM.length internalBuffer
   Buffer <$> UM.generate 2 (* n) <*> return 0 <*> return internalBuffer <*> pure n
 
--- | \(O(N)\) Wraps a mutable vector with push/pop API.
+-- | \(O(N)\) Creates a mutable vector with push/pop API.
 generateBuffer :: (U.Unbox a, PrimMonad m) => Int -> (Int -> a) -> m (Buffer (PrimState m) a)
 generateBuffer n f = buildBuffer =<< UM.generate n f
 
+-- | Alias to `Buffer` creates with `newBufferAsDeuque`.
 type Deque s a = Buffer s a
 
 -- | \(O(N)\) Creates a buffer of length @2 * n@ with initial value at @n@.
