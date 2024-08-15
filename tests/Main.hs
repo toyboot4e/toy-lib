@@ -7,6 +7,7 @@ import Tests.NTT qualified
 import Tests.PUnionFind qualified
 import Tests.PowMod qualified
 import Tests.SplayMap qualified
+import Tests.SplaySeq qualified
 import Tests.SuffixArray qualified
 import Tests.SumMinMax qualified
 import Tests.WaveletMatrix qualified
@@ -21,6 +22,7 @@ tests =
       Tests.PowMod.tests,
       Tests.PUnionFind.tests,
       Tests.SplayMap.tests,
+      Tests.SplaySeq.tests,
       Tests.SuffixArray.tests,
       Tests.SumMinMax.tests,
       Tests.WaveletMatrix.tests,

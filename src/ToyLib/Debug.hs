@@ -13,6 +13,14 @@ dbg x
   | debug = let !_ = traceShow x () in ()
   | otherwise = ()
 
+dbgM :: (Monad m, Show a) => m a -> m ()
+dbgM m
+  | debug = do
+      !s <- m
+      let !_ = traceShow s ()
+      return ()
+  | otherwise = return ()
+
 dbgS :: String -> ()
 dbgS s
   | debug = let !_ = trace s () in ()
