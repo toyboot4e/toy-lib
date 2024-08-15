@@ -230,6 +230,10 @@ executable yosupo-data-point-add-rectangle-sum-exe
   import:  verify
   main-is: yosupo-data-point-add-rectangle-sum.hs
 
+executable yosupo-data-area-of-union-of-rectangles-exe
+  import:  verify
+  main-is: yosupo-data-area-of-union-of-rectangles.hs
+
 executable yosupo-data-persistent-queue-exe
   import:  verify
   main-is: yosupo-data-persistent-queue.hs
@@ -309,6 +313,10 @@ executable yosupo-number-theory-sum-of-floor-of-linear-exe
 executable yosupo-la-matrix-product-exe
   import:  verify
   main-is: yosupo-la-matrix-product.hs
+
+executable yosupo-la-pow-of-matrix-exe
+  import:  verify
+  main-is: yosupo-la-pow-of-matrix.hs
 
 executable yosupo-string-zalgorithm-exe
   import:  verify

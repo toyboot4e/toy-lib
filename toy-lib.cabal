@@ -192,7 +192,6 @@ library
     Data.Graph.Sparse
     Data.Graph.Tree.Hld
     Data.Graph.Tree.Lca
-    Data.Graph.Tree.LCT
     Data.Graph.Tree.TreeSG
     Data.Graph.TwoSat
     Data.Instances.A2
@@ -214,6 +213,7 @@ library
     Data.SegmentTree.Util
     Data.SizedList
     Data.SplayMap
+    Data.SplaySeq
     Data.Sqrd
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial

@@ -10,7 +10,6 @@ import Data.Vector.Extra (chunksOfG)
 import qualified Data.Vector.Generic as G
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
-import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 import ToyLib.Prelude (zero2)
 
@@ -40,7 +39,7 @@ mulMatToColMod !modulus !mat !col = U.convert $ G.map (G.foldl' addMod_ 0 . flip
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix.
 {-# INLINE mulMat #-}
-mulMat :: (HasCallStack, Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
+mulMat :: (Num e, U.Unbox e) => Mat e -> Mat e -> Mat e
 mulMat !a !b = generateIV (zero2 h w') $ \(!row, !col) ->
   U.sum $ U.zipWith (*) (rows1 G.! row) (cols2 G.! col)
   where
@@ -55,7 +54,7 @@ mulMat !a !b = generateIV (zero2 h w') $ \(!row, !col) ->
     cols2 = V.generate w' $ \col -> U.generate h' $ \row -> vecIV b G.! (w' * row + col)
 
 -- | \(O(H_1 W_2 K)\) Multiplies H1xK matrix to a KxW2 matrix, taking the modulus.
-mulMatMod :: (HasCallStack, Integral e, U.Unbox e) => e -> Mat e -> Mat e -> Mat e
+mulMatMod :: (Integral e, U.Unbox e) => e -> Mat e -> Mat e -> Mat e
 mulMatMod !m !a !b = generateIV (zero2 h w') $ \(!row, !col) ->
   U.foldl' addMod_ 0 $ U.zipWith mulMod_ (rows1 G.! row) (cols2 G.! col)
   where

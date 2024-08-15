@@ -286,7 +286,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
     -- Insert the zero row and the column:
     !bnd = second (both (+ 1)) (boundsIV gr)
 
--- | \(O(1)\) Returns cummulative sum in the given 2D range.
+-- | \(O(1)\) Returns cumulative sum in the given 2D range.
 -- @
 -- - - * * *
 -- - - * * *
