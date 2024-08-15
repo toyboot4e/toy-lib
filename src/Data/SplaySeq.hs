@@ -75,8 +75,10 @@ data SplaySeq s v = SplaySeq
     lSS :: !(UM.MVector s SplayIndex),
     -- | Decomposed node data storage: right children.
     rSS :: !(UM.MVector s SplayIndex),
-    -- | Decomposed node data storage: left parents
+    -- | Decomposed node data storage: left parents.
     pSS :: !(UM.MVector s SplayIndex),
+    -- | Decomposed node data storage: size.
+    sSS :: !(UM.MVector s SplayIndex),
     -- | Decomposed node data storage: payloads.
     vSS :: !(UM.MVector s v)
   }
@@ -90,6 +92,7 @@ newSS n = do
   lSS <- UM.unsafeNew n
   rSS <- UM.unsafeNew n
   pSS <- UM.unsafeNew n
+  sSS <- UM.unsafeNew n
   vSS <- UM.unsafeNew n
   return $ SplaySeq {capacitySS = n, ..}
 
@@ -132,7 +135,7 @@ freeSubtreeSS seq@SplaySeq {..} =
     freeNodeSS seq i
 
 -- | \(O(1)\) Rotates a node. Propagation and updates are done outside of the function.
-rotateSS :: (PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+rotateSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 rotateSS seq@SplaySeq {..} !i = do
   p <- GM.read pSS i
   l <- GM.read lSS i
@@ -168,3 +171,108 @@ rotateSS seq@SplaySeq {..} !i = do
   unless (nullSI c) $ do
     GM.write pSS c p
 
+-- | Amortized \(O(\log N)\) \(O(1)\) Splays a node.
+--
+-- = Prerequisites
+-- Parents are already propagated.
+--
+-- = After call
+-- The node is updated and propagated.
+splaySS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Bool -> m ()
+splaySS seq@SplaySeq {..} i0 doneProp = do
+  unless doneProp $ do
+    propFromRootSS seq i0
+
+  flip fix i0 $ \loop i -> do
+    p <- GM.read pSS i
+    unless (nullSI p) $ do
+      pp <- GM.read pSS p
+      if nullSI pp
+        then do
+          rotateSS seq i
+          updateSS seq p
+          return ()
+        else do
+          pl <- GM.read lSS p
+          pr <- GM.read rSS p
+          ppl <- GM.read lSS pp
+          ppr <- GM.read rSS pp
+          let !same = pl == i && ppl == p || pr == i && ppr == p
+          if same
+            then do
+              rotateSS seq p
+              rotateSS seq i
+            else do
+              rotateSS seq i
+              rotateSS seq i
+          updateSS seq pp
+          updateSS seq p
+      loop i
+
+  updateSS seq i0
+
+-- | Amortized \(O(\log N)\) Finds a node with left child which has size of @k@ and splays it.
+splayKthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m ()
+splayKthSS seq@SplaySeq {..} root0 k0 = do
+  size <- GM.read sSS root0
+  let !_ = assert (0 <= k0 && k0 < size) "size mismatch"
+
+  let inner root k = do
+        propSS seq root
+        l <- GM.read lSS root
+        sizeL <- if nullSI l then return 0 else GM.read sSS l
+        case compare k sizeL of
+          EQ -> return root
+          LT -> inner l k
+          GT -> do
+            r <- GM.read rSS root
+            inner r (k - (sizeL + 1))
+
+  target <- inner root0 k0
+  splaySS seq target True
+
+updateSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+updateSS seq@SplaySeq {..} i = do
+  return ()
+
+propSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+propSS seq@SplaySeq {..} i = do
+  return ()
+
+propFromRootSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+propFromRootSS seq@SplaySeq {..} i = do
+  return ()
+
+-- | Amortized \(O(\log N)\)
+mergeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> SplayIndex -> m SplayIndex
+mergeSS seq@SplaySeq {..} l r
+  | nullSI l = return r
+  | nullSI r = return l
+  | otherwise=  do
+      lp <- GM.read pSS l
+      rp <- GM.read pSS r
+      let !_ = assert (nullSI lp) "left root is null"
+      let !_ = assert (nullSI rp) "right root is null"
+      -- TODO: what is this?
+      splayKthSS seq r 0 -- propagateD
+      GM.write lSS r l
+      GM.write pSS l r
+      updateSS seq r
+      return r
+  
+-- | Amortized \(O(\log N)\)
+splitSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
+splitSS seq@SplaySeq {..} root k
+  | k == 0 = return (undefSI, root)
+  | otherwise = do
+      p <- GM.read pSS root
+      let !_ = assert (nullSI p) "split: not given root"
+      size <- GM.read sSS root
+      if k == size
+        then return (root, undefSI)
+        else do
+          splayKthSS seq root (k - 1)
+          r <- GM.exchange rSS root undefSI
+          GM.write pSS r undefSI
+          updateSS seq root
+          return (root, r)
