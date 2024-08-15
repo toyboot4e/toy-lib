@@ -8,11 +8,12 @@
 module Data.SplaySeq where
 
 import Control.Exception (assert)
-import Control.Monad (unless, void, when)
+import Control.Monad (unless, when)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Buffer
 import Data.Maybe
+import Data.Pool
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -69,15 +70,18 @@ data SplaySeq s v = SplaySeq
     capacitySS :: {-# UNPACK #-} !Int,
     -- | Index of the root node.
     rootSS :: !(UM.MVector s SplayIndex),
-    -- | Free slots in the data storage for \(O(1)\) node allocation.
+    -- | Stack of free slots in the data storage for \(O(1)\) node allocation. We could wemove it
+    -- if Haskell has sum type with the niche optimization.
+    --
+    -- FIXME: It's not compatible with O(1) reset.
     freeSS :: !(Buffer s Int),
     -- | Decomposed node data storage: left children.
     lSS :: !(UM.MVector s SplayIndex),
     -- | Decomposed node data storage: right children.
     rSS :: !(UM.MVector s SplayIndex),
-    -- | Decomposed node data storage: left parents.
+    -- | Decomposed node data storage: parents.
     pSS :: !(UM.MVector s SplayIndex),
-    -- | Decomposed node data storage: size.
+    -- | Decomposed node data storage: subtree sizes.
     sSS :: !(UM.MVector s SplayIndex),
     -- | Decomposed node data storage: payloads.
     vSS :: !(UM.MVector s v)
@@ -96,30 +100,29 @@ newSS n = do
   vSS <- UM.unsafeNew n
   return $ SplaySeq {capacitySS = n, ..}
 
--- TODO: newBuffer
+{-# INLINE lengthSS #-}
+lengthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m Int
+lengthSS SplaySeq {..} = do
+  nFree <- lengthBuffer freeSS
+  return $ capacitySS - nFree
 
--- | \(O(1)\) Resets the splay tree to the initial state.
-{-# INLINE clearSS #-}
-clearSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m ()
-clearSS SplaySeq {..} = do
-  clearBuffer freeSS
-
--- {-# INLINE lengthSS #-}
--- lengthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m Int
--- lengthSS = UM.length . dataSS
+-- * Allocation
 
 -- | \(O(1)\) Allocates a new node.
-allocNodeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> v -> m SplayIndex
-allocNodeSS seq@SplaySeq {..} !x = do
+allocNodeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> Int -> Int -> v -> m SplayIndex
+allocNodeSS seq@SplaySeq {..} !l !r !x = do
   i <- fromJust <$> popFront freeSS
-  -- FIXME:
+  GM.write lSS i l
+  GM.write rSS i r
+  GM.write pSS i undefSI
   GM.write vSS i x
+  GM.write sSS i 1
   return i
 
 -- | \(O(1)\) Frees a node.
 freeNodeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 freeNodeSS seq@SplaySeq {..} !i = do
-  pushBack freeSS i
+  pushFront freeSS i
 
 -- | \(O(N)\) Frees a subtree.
 freeSubtreeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
@@ -134,7 +137,18 @@ freeSubtreeSS seq@SplaySeq {..} =
     unless (nullSI r) $ dfs r
     freeNodeSS seq i
 
--- | \(O(1)\) Rotates a node. Propagation and updates are done outside of the function.
+-- | TODO: Hide index update from user, maybe separating the handle.
+{-# INLINE writeSS #-}
+writeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> v -> m SplayIndex
+writeSS seq@SplaySeq {..} root k v = do
+  root' <- splayKthSS seq root k
+  _writeSS seq root' v
+  return root'
+
+-- * Self-balancing
+
+-- | Amortized \(O(\log N)\). Rotates a node. Propagation and updates are done outside of the
+-- function.
 rotateSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 rotateSS seq@SplaySeq {..} !i = do
   p <- GM.read pSS i
@@ -143,7 +157,6 @@ rotateSS seq@SplaySeq {..} !i = do
 
   pp <- GM.read pSS p
   pl <- GM.read lSS p
-  pr <- GM.read rSS p
 
   -- TODO: check what's going on
   c <-
@@ -171,7 +184,8 @@ rotateSS seq@SplaySeq {..} !i = do
   unless (nullSI c) $ do
     GM.write pSS c p
 
--- | Amortized \(O(\log N)\) \(O(1)\) Splays a node.
+-- | Amortized \(O(\log N)\). Moves a node to the root, performing self-balancing heuristic called
+-- rotations.
 --
 -- = Prerequisites
 -- Parents are already propagated.
@@ -211,8 +225,9 @@ splaySS seq@SplaySeq {..} i0 doneProp = do
 
   updateSS seq i0
 
--- | Amortized \(O(\log N)\) Finds a node with left child which has size of @k@ and splays it.
-splayKthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m ()
+-- | Amortized \(O(\log N)\). Finds a node with left child which has size of @k@ and splays it.
+-- Returns the new root.
+splayKthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m SplayIndex
 splayKthSS seq@SplaySeq {..} root0 k0 = do
   size <- GM.read sSS root0
   let !_ = assert (0 <= k0 && k0 < size) "size mismatch"
@@ -230,36 +245,49 @@ splayKthSS seq@SplaySeq {..} root0 k0 = do
 
   target <- inner root0 k0
   splaySS seq target True
+  return target
 
+-- * Node operations
+
+{-# INLINE updateSS #-}
 updateSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 updateSS seq@SplaySeq {..} i = do
   return ()
 
+{-# INLINE _writeSS #-}
+_writeSS :: (PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> v -> m ()
+_writeSS seq@SplaySeq {..} i v = do
+  GM.write vSS i v
+
+{-# INLINE propSS #-}
 propSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 propSS seq@SplaySeq {..} i = do
   return ()
 
+{-# INLINE propFromRootSS #-}
 propFromRootSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 propFromRootSS seq@SplaySeq {..} i = do
   return ()
+
+-- * Tree operations
 
 -- | Amortized \(O(\log N)\)
 mergeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> SplayIndex -> m SplayIndex
 mergeSS seq@SplaySeq {..} l r
   | nullSI l = return r
   | nullSI r = return l
-  | otherwise=  do
+  | otherwise = do
       lp <- GM.read pSS l
       rp <- GM.read pSS r
       let !_ = assert (nullSI lp) "left root is null"
       let !_ = assert (nullSI rp) "right root is null"
       -- TODO: what is this?
-      splayKthSS seq r 0 -- propagateD
+      r' <- splayKthSS seq r 0 -- propagateD
       GM.write lSS r l
-      GM.write pSS l r
-      updateSS seq r
-      return r
-  
+      GM.write pSS l r'
+      updateSS seq r'
+      return r'
+
 -- | Amortized \(O(\log N)\)
 splitSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
 splitSS seq@SplaySeq {..} root k
@@ -271,8 +299,35 @@ splitSS seq@SplaySeq {..} root k
       if k == size
         then return (root, undefSI)
         else do
-          splayKthSS seq root (k - 1)
-          r <- GM.exchange rSS root undefSI
+          root' <- splayKthSS seq root (k - 1)
+          r <- GM.exchange rSS root' undefSI
           GM.write pSS r undefSI
-          updateSS seq root
-          return (root, r)
+          updateSS seq root'
+          return (root', r)
+
+-- | Amortized \(O(\log N)\)Returns a node that corresponds to [l, r). Be sure to splay the new root
+-- after call.
+gotoSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex)
+gotoSS seq@SplaySeq {..} root l r
+  | l == 0 = do
+      size <- GM.read sSS root
+      if r == size
+        then return (root, root)
+        else do
+          root' <- splayKthSS seq root r
+          (root',) <$> GM.read lSS root'
+  | otherwise = do
+      size <- GM.read sSS root
+      if r == size
+        then do
+          root' <- splayKthSS seq root (l - 1)
+          (root',) <$> GM.read rSS root'
+        else do
+          root' <- splayKthSS seq root r
+          rootL <- GM.read lSS root'
+          GM.write pSS rootL undefSI
+          root'' <- splayKthSS seq root' (l - 1)
+          GM.write pSS rootL root''
+          GM.write lSS root'' rootL
+          updateSS seq root''
+          (root'',) <$> GM.read rSS root''
