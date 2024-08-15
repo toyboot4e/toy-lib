@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -29,118 +30,141 @@ undefSI = -1
 nullSI :: SplayIndex -> Bool
 nullSI = (== undefSI)
 
+-- TODO: use abstract type
+
 -- | Splay tree node.
-data SplayNode k v = SplayNode
-  { lSN :: {-# UNPACK #-} !SplayIndex,
-    rSN :: {-# UNPACK #-} !SplayIndex,
-    keySN :: !k,
+data SplayNode v = SplayNode
+  { -- -- | Parent node.
+    -- pSN :: {-# UNPACK #-} !SplayIndex,
+    -- -- | Left child node.
+    -- lSN :: {-# UNPACK #-} !SplayIndex,
+    -- -- | Right child node.
+    -- rSN :: {-# UNPACK #-} !SplayIndex,
+
+    -- | The payload.
     valSN :: !v
   }
   deriving (Show, Eq)
 
 -- | Internal representation of `SplayNode a` for implementing `U.Unbox`.
-type SplayNodeRepr k v = (SplayIndex, SplayIndex, k, v)
+type SplayNodeRepr v = v
 
-instance U.IsoUnbox (SplayNode k v) (SplayNodeRepr k v) where
+instance U.IsoUnbox (SplayNode v) (SplayNodeRepr v) where
   {-# INLINE toURepr #-}
-  toURepr SplayNode {..} = (lSN, rSN, keySN, valSN)
+  toURepr SplayNode {..} = valSN
   {-# INLINE fromURepr #-}
-  fromURepr (!lSN, !rSN, !keySN, !valSN) = SplayNode {..}
+  fromURepr !valSN = SplayNode {..}
 
 {- ORMOLU_DISABLE -}
-newtype instance U.MVector s (SplayNode k v) = MV_SplayNode (UM.MVector s (SplayNodeRepr k v))
-newtype instance U.Vector (SplayNode k v) = V_SplayNode (U.Vector (SplayNodeRepr k v))
-deriving via (SplayNode k v `U.As` SplayNodeRepr k v) instance (U.Unbox k, U.Unbox v) => GM.MVector UM.MVector (SplayNode k v)
-deriving via (SplayNode k v `U.As` SplayNodeRepr k v) instance (U.Unbox k, U.Unbox v) => G.Vector U.Vector (SplayNode k v)
-instance (U.Unbox k, U.Unbox v) => U.Unbox (SplayNode k v)
+newtype instance U.MVector s (SplayNode v) = MV_SplayNode (UM.MVector s (SplayNodeRepr v))
+newtype instance U.Vector (SplayNode v) = V_SplayNode (U.Vector (SplayNodeRepr v))
+deriving via (SplayNode v `U.As` SplayNodeRepr v) instance (U.Unbox v) => GM.MVector UM.MVector (SplayNode v)
+deriving via (SplayNode v `U.As` SplayNodeRepr v) instance (U.Unbox v) => G.Vector U.Vector (SplayNode v)
+instance (U.Unbox v) => U.Unbox (SplayNode v)
 {- ORMOLU_ENABLE -}
 
 -- | Mutable, splay tree-based map.
-data SplaySeq k v s = SplaySeq
+data SplaySeq s v = SplaySeq
   { -- | The maximum number of elements.
     capacitySS :: {-# UNPACK #-} !Int,
     -- | Index of the root node.
     rootSS :: !(UM.MVector s SplayIndex),
-    -- | Data storage.
-    dataSS :: !(Buffer s (SplayNode k v))
+    -- | Free slots in the data storage for \(O(1)\) node allocation.
+    freeSS :: !(Buffer s Int),
+    -- | Decomposed node data storage: left children.
+    lSS :: !(UM.MVector s SplayIndex),
+    -- | Decomposed node data storage: right children.
+    rSS :: !(UM.MVector s SplayIndex),
+    -- | Decomposed node data storage: left parents
+    pSS :: !(UM.MVector s SplayIndex),
+    -- | Decomposed node data storage: payloads.
+    vSS :: !(UM.MVector s v)
   }
 
 -- | \(O(N)\) Creates a new `SplaySeq` of capacity @n@.
 {-# INLINE newSS #-}
-newSS :: (U.Unbox k, U.Unbox v, PrimMonad m) => Int -> m (SplaySeq k v (PrimState m))
+newSS :: (U.Unbox v, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v)
 newSS n = do
   rootSS <- UM.replicate 1 undefSI
-  dataSS <- newBuffer n
+  freeSS <- generateBuffer n id
+  lSS <- UM.unsafeNew n
+  rSS <- UM.unsafeNew n
+  pSS <- UM.unsafeNew n
+  vSS <- UM.unsafeNew n
   return $ SplaySeq {capacitySS = n, ..}
 
--- | \(O(N)\) Creates a new `SplaySeq` of capacity @n@ with initial values @xs@.
---
--- TODO: faster implementation?
-{-# INLINE buildSS #-}
-buildSS :: (Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => Int -> U.Vector (k, v) -> m (SplaySeq k v (PrimState m))
-buildSS n xs = do
-  sm <- newSS n
-  U.forM_ xs $ \(!k, !v) -> do
-    insertSS sm k v
-  return sm
+-- TODO: newBuffer
 
 -- | \(O(1)\) Resets the splay tree to the initial state.
 {-# INLINE clearSS #-}
-clearSS :: (PrimMonad m) => SplaySeq k v (PrimState m) -> m ()
+clearSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m ()
 clearSS SplaySeq {..} = do
-  clearBuffer dataSS
+  clearBuffer freeSS
 
-{-# INLINE lengthSS #-}
-lengthSS :: (PrimMonad m) => SplaySeq k v (PrimState m) -> m Int
-lengthSS = lengthBuffer . dataSS
+-- {-# INLINE lengthSS #-}
+-- lengthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m Int
+-- lengthSS = UM.length . dataSS
 
--- * Internal update
+-- | \(O(1)\) Allocates a new node.
+allocNodeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> v -> m SplayIndex
+allocNodeSS seq@SplaySeq {..} !x = do
+  i <- fromJust <$> popFront freeSS
+  -- FIXME:
+  GM.write vSS i x
+  return i
 
--- | Efficiently modify `SplayNode`.
-{-# INLINE writeLSS #-}
-writeLSS :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
-writeLSS (internalBuffer -> MV_SplayNode (U.MV_4 _ l _ _ _)) i l' = do
-  GM.write l i l'
+-- | \(O(1)\) Frees a node.
+freeNodeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+freeNodeSS seq@SplaySeq {..} !i = do
+  pushBack freeSS i
 
--- | Efficiently modify `SplayNode`.
-{-# INLINE writeRSS #-}
-writeRSS :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> SplayIndex -> m ()
-writeRSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ r _ _)) i r' = do
-  GM.write r i r'
+-- | \(O(N)\) Frees a subtree.
+freeSubtreeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+freeSubtreeSS seq@SplaySeq {..} =
+  fix $ \dfs i -> do
+    -- FIXME: efficiently read part of the node
+    -- TODO: optics?
+    l <- GM.read lSS i
+    r <- GM.read rSS i
+    -- free children first
+    unless (nullSI l) $ dfs l
+    unless (nullSI r) $ dfs r
+    freeNodeSS seq i
 
--- | Efficiently modify `SplayNode`.
-{-# INLINE writeKSS #-}
-writeKSS :: (HasCallStack, U.Unbox k, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> k -> m ()
-writeKSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ k _)) i k' = do
-  GM.write k i k'
+-- | \(O(1)\) Rotates a node. Propagation and updates are done outside of the function.
+rotateSS :: (PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+rotateSS seq@SplaySeq {..} !i = do
+  p <- GM.read pSS i
+  l <- GM.read lSS i
+  r <- GM.read rSS i
 
--- | Efficiently modify `SplayNode`.
-{-# INLINE writeVSS #-}
-writeVSS :: (HasCallStack, U.Unbox v, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> v -> m ()
-writeVSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ _ v)) i v' = do
-  GM.write v i v'
+  pp <- GM.read pSS p
+  pl <- GM.read lSS p
+  pr <- GM.read rSS p
 
--- | Efficiently read `SplayNode`.
-{-# INLINE readLSS #-}
-readLSS :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
-readLSS (internalBuffer -> MV_SplayNode (U.MV_4 _ l _ _ _)) i = do
-  GM.read l i
+  -- TODO: check what's going on
+  c <-
+    if pl == i
+      then do
+        GM.write rSS i p
+        GM.write lSS p r
+        return r
+      else do
+        GM.write lSS i p
+        GM.write rSS p l
+        return l
 
--- | Efficiently read `SplayNode`.
-{-# INLINE readRSS #-}
-readRSS :: (HasCallStack, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m SplayIndex
-readRSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ r _ _)) i = do
-  GM.read r i
+  unless (nullSI pp) $ do
+    ppl <- GM.read lSS pp
+    ppr <- GM.read rSS pp
+    when (ppl == p) $ do
+      GM.write lSS pp i
+    when (ppr == p) $ do
+      GM.write rSS pp i
 
--- | Efficiently read `SplayNode`.
-{-# INLINE readKSS #-}
-readKSS :: (HasCallStack, U.Unbox k, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m k
-readKSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ k _)) i = do
-  GM.read k i
+  GM.write pSS i pp
+  GM.write pSS p i
 
--- | Efficiently read `SplayNode`.
-{-# INLINE readVSS #-}
-readVSS :: (HasCallStack, U.Unbox v, PrimMonad m) => Buffer (PrimState m) (SplayNode k v) -> SplayIndex -> m v
-readVSS (internalBuffer -> MV_SplayNode (U.MV_4 _ _ _ _ v)) i = do
-  GM.read v i
-i
+  unless (nullSI c) $ do
+    GM.write pSS c p
+

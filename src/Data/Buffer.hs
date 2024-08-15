@@ -15,7 +15,8 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-
+       -- 
+-- | A fixed-sized mutable vector with push/pop API.
 data Buffer s a = Buffer
   { -- | Stores the @[front, back)@ position of the buffer in use. The @front@ value is zero when
     -- the buffer is initialized as a stack or queue. The front value is at the middle of the
@@ -42,6 +43,16 @@ newBuffer n = Buffer <$> UM.replicate 2 0 <*> return 0 <*> UM.unsafeNew n <*> pu
 -- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@.
 newRevBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
 newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> return (n - 1) <*> UM.unsafeNew n <*> pure n
+
+-- | \(O(N)\) Wraps a mutable vector with push/pop API.
+buildBuffer :: (U.Unbox a, PrimMonad m) => UM.MVector (PrimState m) a -> m (Buffer (PrimState m) a)
+buildBuffer internalBuffer = do
+  let !n = GM.length internalBuffer
+  Buffer <$> UM.generate 2 (* n) <*> return 0 <*> return internalBuffer <*> pure n
+
+-- | \(O(N)\) Wraps a mutable vector with push/pop API.
+generateBuffer :: (U.Unbox a, PrimMonad m) => Int -> (Int -> a) -> m (Buffer (PrimState m) a)
+generateBuffer n f = buildBuffer =<< UM.generate n f
 
 type Deque s a = Buffer s a
 
