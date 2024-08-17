@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Type class-based binary lifting with caches. Prefer @Stimes@ module if it's one-shot.
+-- Actually, `BinaryLifting` makes almost no sense.
 --
 -- Binary lifting is a technique for calculating nth power of a semigroup element in a (big)
 -- constant time, or applying them to their semigroup action target.
@@ -21,18 +22,21 @@ import Math.BitSet (bitsOf)
 class BinaryLifting a where
   -- | @V.Vector a@ or @U.Vector a@
   type VecBL a
+
   -- | @cacheBLV@ or @cacheBLU@
   cacheBL :: a -> VecBL a
 
+-- | \(O(W(\diamond))\)
 {-# INLINE cacheBLU #-}
 cacheBLU :: (Semigroup a, U.Unbox a) => a -> U.Vector a
 cacheBLU = U.iterateN 63 (\x -> x <> x)
 
+-- | \(O(W(\diamond))\)
 {-# INLINE cacheBLV #-}
 cacheBLV :: (Semigroup a) => a -> V.Vector a
 cacheBLV = V.iterateN 63 (\x -> x <> x)
 
--- | \(O({(<>)} \cdot \mathit{popCount}(n))\)
+-- | \(O((\diamond) \cdot \mathit{popCount}(n))\)
 {-# INLINE stimesBL #-}
 stimesBL :: (Semigroup a, G.Vector v a) => v a -> Int -> a -> a
 stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
@@ -40,7 +44,7 @@ stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
     {-# INLINE step #-}
     step !s i = let !s' = s <> cache G.! i in s'
 
--- | \(O({(<>)} \cdot \mathit{popCount}(n))\)
+-- | \(O({(\diamond)} \cdot \mathit{popCount}(n))\)
 {-# INLINE mtimesBL #-}
 mtimesBL :: (Monoid a, G.Vector v a) => v a -> Int -> a
 mtimesBL cache n = stimesBL cache n mempty
@@ -53,9 +57,7 @@ sactBL cache n !b0 = U.foldl' step b0 (bitsOf n)
     {-# INLINE step #-}
     step !b i = let !b' = cache G.! i `sact` b in b'
 
-----------------------------------------------------------------------------------------------------
--- Product
-----------------------------------------------------------------------------------------------------
+-- * Product
 
 instance SemigroupAction (Product Int) Int where
   {-# INLINE sact #-}
@@ -66,18 +68,62 @@ instance (Num a, U.Unbox a) => BinaryLifting (Product a) where
   {-# INLINE cacheBL #-}
   cacheBL = cacheBLU
 
-----------------------------------------------------------------------------------------------------
--- TransitionalSemigroup: Permutation + Semigroup
-----------------------------------------------------------------------------------------------------
+-- * Permutation
 
--- TODO: proper english
+-- | Semigroup action of permutation.
+newtype Permutation = Permutation (U.Vector Int)
 
-type Permutation = TransitionalSemigroup ()
-
--- | The identity element of `Permutation`.
+-- | Creates identity `Permutation` of length `n`.
 {-# INLINE idPerm #-}
 idPerm :: Int -> Permutation
-idPerm = TransitionalSemigroup . (`U.generate` (,()))
+idPerm = Permutation . (`U.generate` id)
+
+instance Semigroup Permutation where
+  -- Because it's a permutation, it never fails.
+  {-# INLINE (<>) #-}
+  Permutation r2 <> Permutation r1 = Permutation $ U.backpermute r2 r1
+
+-- | @Int@ as target
+instance SemigroupAction Permutation Int where
+  {-# INLINE sact #-}
+  sact (Permutation vec) i = vec G.! i
+
+instance BinaryLifting Permutation where
+  type VecBL Permutation = V.Vector Permutation
+  {-# INLINE cacheBL #-}
+  cacheBL = cacheBLV
+
+-- * Transition
+
+-- | Semigroup action of @G.!@.
+newtype Transition = Transition (U.Vector Int)
+
+-- | Creates identity `Permutation` of length `n`.
+{-# INLINE idTransition #-}
+idTransition :: Int -> Transition
+idTransition = Transition . (`U.generate` id)
+
+instance Semigroup Transition where
+  -- Because it's a permutation, it never fails.
+  {-# INLINE (<>) #-}
+  Transition r2 <> Transition r1 = Transition $ U.map f r1
+    where
+      {-# INLINE f #-}
+      f (-1) = -1
+      f (!i) = r2 G.! i
+
+-- | @Int@ as target
+instance SemigroupAction Transition Int where
+  {-# INLINE sact #-}
+  sact (Transition _) (-1) = -1
+  sact (Transition vec) i = vec G.! i
+
+instance BinaryLifting Transition where
+  type VecBL Transition = V.Vector Transition
+  {-# INLINE cacheBL #-}
+  cacheBL = cacheBLV
+
+-- * TransitionalSemigroup: Transition + Semigroup
 
 -- | Transition + semigroup concatanation. LCA is based on this.
 --
