@@ -6,6 +6,7 @@ import Data.List.Extra (nubSort)
 import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.Vector.Unboxed qualified as U
+import GHC.Stack
 import Language.Haskell.Exts qualified as H
 import Lib qualified
 
@@ -46,7 +47,7 @@ partitionParseResults = foldr step ([], [])
     step (!f, (!exts, H.ParseFailed loc s)) (!accL, !accR) = ((f, exts, (loc, s)) : accL, accR)
     step (!f, (!exts, H.ParseOk l)) (!accL, !accR) = (accL, (f, exts, l) : accR)
 
-buildDepGraph :: [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph Int
+buildDepGraph :: (HasCallStack) => [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph Int
 buildDepGraph input = buildSG (length input) edges
   where
     edges :: U.Vector (Int, Int)
@@ -62,4 +63,3 @@ buildDepGraph input = buildSG (length input) edges
 
     moduleNameToVertex :: M.Map String Int
     !moduleNameToVertex = M.fromList $ zip (map (\(!path, _, _) -> fromJust $ Lib.moduleName path) input) [0 :: Int ..]
-

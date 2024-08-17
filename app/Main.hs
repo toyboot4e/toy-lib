@@ -4,11 +4,12 @@ module Main (main) where
 
 import Control.Monad
 import Data.Graph.Sparse
-import Data.Tuple.Extra (fst3)
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.Maybe
+import Data.Tuple.Extra (fst3)
 import Data.Vector.Unboxed qualified as U
+import GHC.Stack
 import Language.Haskell.Exts qualified as H
 import Lib qualified
 import Lib.Parse qualified
@@ -91,7 +92,7 @@ mainMinifyLibrary moduleNames = do
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
   return (Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles, map fst3 targetSourceFiles)
 
-getSourceFileGraph :: IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int)
+getSourceFileGraph :: (HasCallStack) => IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int)
 getSourceFileGraph = do
   parsedFiles <- getAllTheSourceFiles
   let gr = Lib.Parse.buildDepGraph parsedFiles
@@ -162,7 +163,7 @@ mainEmbedLibrary file = do
   return (L.intercalate "\n" lns', deps')
 
 -- | Replace line 15 with new library. That should be the line of minified library.
-mainUpdateLibraryLine :: FilePath -> IO String
+mainUpdateLibraryLine :: (HasCallStack) => FilePath -> IO String
 mainUpdateLibraryLine file = do
   s <- readFile file
 
