@@ -69,9 +69,16 @@ newSS n = do
   return $ SplaySeq {capacitySS = n, ..}
 
 -- | \(O(1)\) Returns the number of elements stored. Requires monad for tracking the state.
-{-# INLINE lengthSS #-}
-lengthSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m Int
-lengthSS = sizePool . freeSS
+{-# INLINE sizeSS #-}
+sizeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> m Int
+sizeSS = sizePool . freeSS
+
+-- | \(O(1)\) Returns the number of elements in a sequence.
+{-# INLINE seqSizeSS #-}
+seqSizeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> Int -> m Int
+seqSizeSS seq root
+  | nullSI root = return 0
+  | otherwise = GM.read (sSS seq) root
 
 -- * Allocation
 
@@ -114,7 +121,7 @@ freeNodeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 freeNodeSS = deallocPool . freeSS
 
 -- | \(O(N)\) Frees a subtree.
-freeSubtreeSS :: (HasCallStack, PrimMonad m, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+freeSubtreeSS :: (HasCallStack, PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 freeSubtreeSS seq@SplaySeq {..} =
   fix $ \dfs i -> do
     -- FIXME: efficiently read part of the node
@@ -128,12 +135,14 @@ freeSubtreeSS seq@SplaySeq {..} =
 
 -- | \(O(1)\) Asserts the node is the root.
 {-# INLINE assertRootSS #-}
-assertRootSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+assertRootSS :: (HasCallStack, PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 assertRootSS SplaySeq {..} root = dbgM $ do
   let !_ = assert (not (nullSI root)) "null as a root"
   p <- GM.read pSS root
   let !_ = assert (nullSI p) "not a root"
   return ()
+
+-- * API
 
 -- | Amortized \(O(\log N)\). Reads a kth node's value.
 {-# INLINE readSS #-}
@@ -148,11 +157,29 @@ readSS seq@SplaySeq {..} root k = do
 -- | Amortized \(O(\log N)\). Writes a kth node's value.
 {-# INLINE writeSS #-}
 writeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> v -> m SplayIndex
-writeSS seq@SplaySeq {..} root k v = do
+writeSS seq root k v = do
   assertRootSS seq root
   root' <- splayKthSS seq root k
   writeNodeSS seq root' v
   return root'
+
+-- | Amortized \(O(\log N)\). Modifies a kth node's value.
+{-# INLINE modifySS #-}
+modifySS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> v) -> Int -> m SplayIndex
+modifySS seq root f k = do
+  assertRootSS seq root
+  root' <- splayKthSS seq root k
+  modifyNodeSS seq f root'
+  return root'
+
+-- | Amortized \(O(\log N)\). Exchanges a kth node's value.
+{-# INLINE exchangeSS #-}
+exchangeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> v -> m (v, SplayIndex)
+exchangeSS seq root k v = do
+  assertRootSS seq root
+  root' <- splayKthSS seq root k
+  res <- exchangeNodeSS seq root' v
+  return (res, root')
 
 -- | Amortized \(O(\log N)\). Folds an interval @[l, r]@.
 {-# INLINE foldSS #-}
@@ -169,7 +196,7 @@ foldSS seq@SplaySeq {..} root l r
       splaySS seq target True
       return (res, target)
 
--- * Self-balancing
+-- * Self-balancing methods (internals)
 
 -- | Amortized \(O(\log N)\). Rotates the node. Propagation and updates are done outside of the
 -- function.
@@ -281,7 +308,7 @@ splayKthSS seq@SplaySeq {..} root0 k0 = do
   splaySS seq target True
   return target
 
--- * Node operations
+-- * Node operations (internals)
 
 -- | \(O(1)\) Recomputes the node size and the monoid aggregation.
 {-# INLINE updateNodeSS #-}
@@ -295,7 +322,7 @@ updateNodeSS SplaySeq {..} i = do
   GM.write sSS i $! sizeL + 1 + sizeR
   GM.write aggSS i $! aggL <> v <> aggR
 
--- | \(O(1)\) Write the monoid.
+-- | \(O(1)\) Writes the monoid.
 --
 -- = Prerequisties
 -- The node is a root (it's splayed).
@@ -305,6 +332,29 @@ writeNodeSS seq@SplaySeq {..} root v = do
   assertRootSS seq root
   GM.write vSS root v
   updateNodeSS seq root
+
+-- | \(O(1)\) Modifies the monoid.
+--
+-- = Prerequisties
+-- The node is a root (it's splayed).
+{-# INLINE modifyNodeSS #-}
+modifyNodeSS :: (PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> (v -> v) -> SplayIndex -> m ()
+modifyNodeSS seq@SplaySeq {..} f root = do
+  assertRootSS seq root
+  GM.modify vSS f root
+  updateNodeSS seq root
+
+-- | \(O(1)\) Modifies the monoid.
+--
+-- = Prerequisties
+-- The node is a root (it's splayed).
+{-# INLINE exchangeNodeSS #-}
+exchangeNodeSS :: (PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> v -> m v
+exchangeNodeSS seq@SplaySeq {..} root v = do
+  assertRootSS seq root
+  res <- GM.exchange vSS root v
+  updateNodeSS seq root
+  return res
 
 {-# INLINE propNode #-}
 propNode :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
@@ -316,7 +366,7 @@ propNodeFromRootSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex ->
 propNodeFromRootSS seq@SplaySeq {..} i = do
   return ()
 
--- * Tree operations
+-- * Tree operations (internals)
 
 -- | Amortized \(O(\log N)\)
 mergeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> SplayIndex -> m SplayIndex
@@ -352,8 +402,7 @@ splitSS seq@SplaySeq {..} root k
           updateNodeSS seq root'
           return (root', r)
 
--- | Amortized \(O(\log N)\) Returns a node that corresponds to [l, r). Be sure to splay the new root
--- after call.
+-- | Amortized \(O(\log N)\) Captures a subtree of [l, r). Be sure to splay the new root after call.
 captureSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> Int -> m SplayIndex
 captureSS seq@SplaySeq {..} root l r
   | l == 0 = do
@@ -374,7 +423,7 @@ captureSS seq@SplaySeq {..} root l r
           --    [        )
           --             * root' (splayed)
           --          * rootL (detached from the root)
-          -- * rootL' (detached and splayed)
+          -- \* rootL' (detached and splayed)
           --    * right(rootL'): node that corresponds to [l, r)
           root' <- splayKthSS seq root r
           rootL <- GM.read lSS root'
@@ -386,3 +435,5 @@ captureSS seq@SplaySeq {..} root l r
           GM.write lSS root' rootL'
           updateNodeSS seq root'
           GM.read rSS rootL'
+
+-- TODO: sact
