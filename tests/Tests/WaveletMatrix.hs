@@ -16,6 +16,7 @@ import Data.WaveletMatrix.Raw
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
+import Tests.Util (sliceLR)
 
 fixedTest :: TestTree
 fixedTest =
@@ -105,9 +106,6 @@ bitVectorTests =
     ]
   where
     maxN = 256
-
-sliceLR :: (U.Unbox a) => Int -> Int -> U.Vector a -> U.Vector a
-sliceLR l r = U.take (r - l + 1) . U.drop l
 
 -- | Generates a random sequence with a slice.
 genLR :: Int -> (Int, Int) -> Gen (Int, U.Vector Int, (Int, Int), U.Vector Int)

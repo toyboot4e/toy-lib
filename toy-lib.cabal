@@ -302,6 +302,7 @@ test-suite toy-lib-test
     Tests.SplaySeq
     Tests.SuffixArray
     Tests.SumMinMax
+    Tests.Util
     Tests.WaveletMatrix
     Tests.ZFunction
 
