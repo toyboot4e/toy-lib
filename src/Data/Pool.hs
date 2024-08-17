@@ -23,7 +23,7 @@ import GHC.Stack (HasCallStack)
 data Pool s a = Pool
   { -- | Data array.
     dataPool :: !(UM.MVector s a),
-    -- | Free slot indices.
+    -- | Free slot indices after deallocation.
     freePool :: !(Buffer s Int),
     -- | Next index when `freePool` is empty.
     nextPool :: !(UM.MVector s Int)
