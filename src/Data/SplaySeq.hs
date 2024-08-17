@@ -6,11 +6,9 @@
 module Data.SplaySeq where
 
 import Control.Exception (assert)
-import Control.Monad (unless, when)
+import Control.Monad (unless)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import Data.Buffer
-import Data.Maybe
 import Data.Pool
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -283,10 +281,14 @@ updateNodeSS SplaySeq {..} i = do
 -- | \(O(1)\) Write the monoid.
 --
 -- = Prerequisties
--- The node is a root.
+-- The node is a root (it's splayed).
 {-# INLINE writeNodeSS #-}
 writeNodeSS :: (PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> v -> m ()
 writeNodeSS seq@SplaySeq {..} root v = do
+  dbgM $ do
+    p <- GM.read pSS root
+    let !_ = assert (nullSI p) "not a root"
+    return ()
   GM.write vSS root v
   updateNodeSS seq root
 
