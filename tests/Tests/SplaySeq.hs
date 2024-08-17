@@ -61,7 +61,7 @@ randomTests =
         lrs <- U.fromList <$> QC.vectorOf q (rangeGen n)
 
         -- TODO: G.fold not in scope??
-        let !expected = U.map (\(!l, !r) -> G.foldMap id $ sliceLR l r xs) lrs
+        let !expected = U.map (\(!l, !r) -> G.foldMap' id $ sliceLR l r xs) lrs
 
         let res = runST $ do
               seq <- newSS @(Sum Int) n

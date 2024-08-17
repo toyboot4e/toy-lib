@@ -5,6 +5,8 @@
 -- It's good for both performance and monad transformers.
 module ToyLib.ShowBSB where
 
+-- TODO: foldMap vs foldMap'
+
 import Control.Monad.IO.Class
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB

@@ -101,7 +101,7 @@ instance (U.Unbox a, Semigroup a) => Semigroup (TransitionalSemigroup a) where
       {-# INLINE f #-}
       f (-1, !a) = (-1, a)
       f (!i, !a) =
-        let (!i', !a') = r2 U.! i
+        let (!i', !a') = r2 G.! i
             !a'' = a' <> a
          in (i', a'')
 
@@ -110,7 +110,7 @@ instance (U.Unbox a) => SemigroupAction (TransitionalSemigroup a) Int where
   {-# INLINE sact #-}
   sact (TransitionalSemigroup _) (-1) = -1
   sact (TransitionalSemigroup vec) i =
-    let (!i', !_) = vec U.! i
+    let (!i', !_) = vec G.! i
      in i'
 
 -- | @b@ as target
@@ -118,7 +118,7 @@ instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (TransitionalSemigr
   {-# INLINE sact #-}
   sact (TransitionalSemigroup _) (-1, !b) = (-1, b)
   sact (TransitionalSemigroup vec) (!i, !b) =
-    let (!i', !a) = vec U.! i
+    let (!i', !a) = vec G.! i
         !b' = a `sact` b
      in (i', b')
 
