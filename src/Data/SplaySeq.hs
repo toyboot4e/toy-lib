@@ -196,6 +196,21 @@ foldSS seq@SplaySeq {..} root l r
       splaySS seq target True
       return (res, target)
 
+-- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point.
+{-# INLINE bisectSS #-}
+bisectSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> Int -> m (v, SplayIndex)
+bisectSS seq@SplaySeq {..} root l r
+  | l > r = return (mempty, root)
+  | otherwise = do
+      size <- GM.read sSS root
+      -- TODO: foldMaySS
+      let !_ = assert (0 <= l && l <= r && r < size) "invalid interval"
+      assertRootSS seq root
+      !target <- captureSS seq root l (r + 1)
+      res <- GM.read aggSS target
+      splaySS seq target True
+      return (res, target)
+
 -- * Self-balancing methods (internals)
 
 -- | Amortized \(O(\log N)\). Rotates the node. Propagation and updates are done outside of the
@@ -386,8 +401,8 @@ mergeSS seq@SplaySeq {..} l r
       return r'
 
 -- | Amortized \(O(\log N)\)
-splitSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
-splitSS seq@SplaySeq {..} root k
+splitAtSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
+splitAtSS seq@SplaySeq {..} root k
   | k == 0 = return (undefSI, root)
   | otherwise = do
       p <- GM.read pSS root
