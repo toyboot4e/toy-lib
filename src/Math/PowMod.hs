@@ -6,7 +6,7 @@ module Math.PowMod where
 import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
-import Math.Stimes (mulTimes)
+import Math.Stimes (power)
 
 -- | \(O(1)\)
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
@@ -26,7 +26,7 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 -- | \(O(W)\) \(\mathit{base} ^ \mathit{power} \bmod \mathit{modulo}\) using binary lifting.
 {-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
-powModConst !modulo !base !power = mulTimes power (mulMod modulo) base
+powModConst !modulo !base !p = power p (mulMod modulo) base
 
 -- | \(O(W)\) \(x / d \bmod p\) using Fermat's little theorem and binary lifting.
 {-# INLINE invModConst #-}
