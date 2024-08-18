@@ -214,9 +214,9 @@ executable yosupo-data-range-kth-smallest-exe
   import:  verify
   main-is: yosupo-data-range-kth-smallest.hs
 
-executable yosupo-data-static-range-frequency-exe
+executable yosupo-data-range-reverse-range-sum-exe
   import:  verify
-  main-is: yosupo-data-static-range-frequency.hs
+  main-is: yosupo-data-range-reverse-range-sum.hs
 
 executable yosupo-data-static-range-count-distinct-exe
   import:  verify
