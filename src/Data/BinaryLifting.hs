@@ -41,7 +41,8 @@ stimesBL cache n !s0 = U.foldl' step s0 (bitsOf n)
 mtimesBL :: (Monoid a, G.Vector v a) => v a -> Int -> a
 mtimesBL cache n = stimesBL cache n mempty
 
--- | \(O(\mathit{sact} \cdot \mathit{popCount}(n))\)
+-- | \(O(\mathit{sact} \cdot \mathit{popCount}(n))\) Performs semigroup action based on the binary
+-- lifting table.
 {-# INLINE sactBL #-}
 sactBL :: (SemigroupAction a b, G.Vector v a) => v a -> Int -> b -> b
 sactBL cache n !b0 = U.foldl' step b0 (bitsOf n)
@@ -61,9 +62,9 @@ instance SemigroupAction (Product Int) Int where
 newtype Permutation = Permutation (U.Vector Int)
 
 -- | Creates identity `Permutation` of length `n`.
-{-# INLINE idPerm #-}
-idPerm :: Int -> Permutation
-idPerm = Permutation . (`U.generate` id)
+{-# INLINE idPermutation #-}
+idPermutation :: Int -> Permutation
+idPermutation = Permutation . (`U.generate` id)
 
 -- | Creates identity `Permutation` of length `n`.
 {-# INLINE unPermutation #-}
@@ -79,6 +80,11 @@ instance Semigroup Permutation where
 instance SemigroupAction Permutation Int where
   {-# INLINE sact #-}
   sact (Permutation vec) i = vec G.! i
+
+-- | @U.Vector Int@ as target
+instance SemigroupAction Permutation (U.Vector Int) where
+  {-# INLINE sact #-}
+  sact (Permutation indices) xs = U.backpermute xs indices
 
 -- * IndexMap
 

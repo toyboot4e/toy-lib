@@ -10,6 +10,13 @@ stimes' n0 x1
   | n0 <= 0 = errorWithoutStackTrace "stimes: positive multiplier expected"
   | otherwise = power n0 (<>) x1
 
+-- | \(O(W)\) Strict, much faster `stimes`.
+{-# INLINE stimesOr' #-}
+stimesOr' :: (Semigroup a) => Int -> a -> a -> a
+stimesOr' n0 x1 x0
+  | n0 <= 0 = x0
+  | otherwise = power n0 (<>) x1
+
 -- | \(O(W)\) Strict, much faster `mtimes`.
 {-# INLINE mtimes' #-}
 mtimes' :: (Monoid a) => Int -> a -> a
