@@ -198,18 +198,20 @@ foldSS seq@SplaySeq {..} root l r
 
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point.
 {-# INLINE bisectSS #-}
-bisectSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> Int -> Int -> m (v, SplayIndex)
-bisectSS seq@SplaySeq {..} root l r
-  | l > r = return (mempty, root)
-  | otherwise = do
-      size <- GM.read sSS root
-      -- TODO: foldMaySS
-      let !_ = assert (0 <= l && l <= r && r < size) "invalid interval"
-      assertRootSS seq root
-      !target <- captureSS seq root l (r + 1)
-      res <- GM.read aggSS target
-      splaySS seq target True
-      return (res, target)
+bisectSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> Bool) -> m (SplayIndex, (Maybe SplayIndex, Maybe SplayIndex))
+bisectSS seq@SplaySeq {..} root0 check = do
+  let inner parent root acc lastOk
+        | nullSI root = (lastOK, parent)
+        | otherwise = do
+          propNodeSS seq root
+          l <- GM.read lSS root
+          m <- if nullSI l then return acc else (<> acc) <$> GM.read aggSS l
+          if check m
+            then inner l m
+            else do
+              r <- GM.read rSS root
+              inner r m
+  inner root0 undefSI mempty undefSI
 
 -- * Self-balancing methods (internals)
 
@@ -307,7 +309,7 @@ splayKthSS seq@SplaySeq {..} root0 k0 = do
   let !_ = assert (0 <= k0 && k0 < size) "no kth element in the sequence"
 
   let inner root k = do
-        propNode seq root
+        propNodeSS seq root
         l <- GM.read lSS root
         -- The number of left children = the node's index counting from the leftmost.
         sizeL <- if nullSI l then return 0 else GM.read sSS l
@@ -371,9 +373,9 @@ exchangeNodeSS seq@SplaySeq {..} root v = do
   updateNodeSS seq root
   return res
 
-{-# INLINE propNode #-}
-propNode :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
-propNode seq@SplaySeq {..} i = do
+{-# INLINE propNodeSS #-}
+propNodeSS :: (PrimMonad m) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
+propNodeSS seq@SplaySeq {..} i = do
   return ()
 
 {-# INLINE propNodeFromRootSS #-}

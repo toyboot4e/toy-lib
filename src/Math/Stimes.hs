@@ -12,8 +12,8 @@ stimes' n0 x1
 
 -- | \(O(W)\) Strict, much faster `stimes`.
 {-# INLINE stimesOr' #-}
-stimesOr' :: (Semigroup a) => Int -> a -> a -> a
-stimesOr' n0 x1 x0
+stimesOr' :: (Semigroup a) => a -> Int -> a -> a
+stimesOr' x0 n0 x1
   | n0 <= 0 = x0
   | otherwise = power n0 (<>) x1
 
@@ -43,8 +43,8 @@ power n0 op x1
 
 -- | \(O(W)\) Calculates @s^n@ by @n@ (N > 0) times using the binary lifting technique.
 {-# INLINE powerOr #-}
-powerOr :: Int -> (a -> a -> a) -> a -> a -> a
-powerOr n0 op x1 x0
+powerOr :: a -> Int -> (a -> a -> a) -> a -> a
+powerOr x0 n0 op x1
   | n0 <= 0 = x0
   | otherwise = power n0 op x1
 
