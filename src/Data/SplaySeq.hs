@@ -7,6 +7,7 @@ module Data.SplaySeq where
 
 import Control.Exception (assert)
 import Control.Monad (unless)
+import Control.Monad.Extra (whenJust)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Pool
@@ -197,21 +198,28 @@ foldSS seq@SplaySeq {..} root l r
       return (res, target)
 
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point.
-{-# INLINE bisectSS #-}
-bisectSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> Bool) -> m (SplayIndex, (Maybe SplayIndex, Maybe SplayIndex))
-bisectSS seq@SplaySeq {..} root0 check = do
-  let inner parent root acc lastOk
-        | nullSI root = (lastOK, parent)
+{-# INLINE bisectLSS #-}
+bisectLSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
+bisectLSS seq@SplaySeq {..} root0 check = do
+  let inner root acc parent lastYes
+        -- FIXME
+        | nullSI root && nullSI lastYes = return (parent, Nothing)
+        | nullSI root = return (parent, Just lastYes)
         | otherwise = do
-          propNodeSS seq root
-          l <- GM.read lSS root
-          m <- if nullSI l then return acc else (<> acc) <$> GM.read aggSS l
-          if check m
-            then inner l m
-            else do
-              r <- GM.read rSS root
-              inner r m
-  inner root0 undefSI mempty undefSI
+            propNodeSS seq root
+            l <- GM.read lSS root
+            acc' <- if nullSI l then return acc else (<> acc) <$> GM.read aggSS l
+            if check acc'
+              then do
+                r <- GM.read rSS root
+                inner r acc' root root
+              else do
+                inner l acc root lastYes
+
+  (!root', !found) <- inner root0 mempty undefSI undefSI
+  unless (nullSI root') $ do
+    splaySS seq root' True
+  return (root', found)
 
 -- * Self-balancing methods (internals)
 
