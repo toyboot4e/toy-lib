@@ -9,12 +9,13 @@ import Algorithm.Bisect
 import Data.BinaryLifting
 import Data.Graph.Alias (Vertex)
 import Data.Maybe
+import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
 import GHC.Stack (HasCallStack)
 
 -- | `(parents, depths, parents')`
-type LcaCache a = (U.Vector Int, TransitionalSemigroup a, VecBL (TransitionalSemigroup a))
+type LcaCache a = (U.Vector Int, IndexMapWithAction a, V.Vector (IndexMapWithAction a))
 
 -- | \(O(\log^2 N)\) Returns the lowest common ancestor `(v, d)` with the help of the binary lifting technique.
 -- REMARK: Use 0-based index for the graph vertices.

@@ -18,14 +18,6 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Math.BitSet (bitsOf)
 
--- | Binary lifting.
-class BinaryLifting a where
-  -- | @V.Vector a@ or @U.Vector a@
-  type VecBL a
-
-  -- | @cacheBLV@ or @cacheBLU@
-  cacheBL :: a -> VecBL a
-
 -- | \(O(W(\diamond))\)
 {-# INLINE cacheBLU #-}
 cacheBLU :: (Semigroup a, U.Unbox a) => a -> U.Vector a
@@ -63,11 +55,6 @@ instance SemigroupAction (Product Int) Int where
   {-# INLINE sact #-}
   sact (Product !x1) !x2 = x1 * x2
 
-instance (Num a, U.Unbox a) => BinaryLifting (Product a) where
-  type VecBL (Product a) = U.Vector (Product a)
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLU
-
 -- * Permutation
 
 -- | Semigroup action of permutation.
@@ -77,6 +64,11 @@ newtype Permutation = Permutation (U.Vector Int)
 {-# INLINE idPerm #-}
 idPerm :: Int -> Permutation
 idPerm = Permutation . (`U.generate` id)
+
+-- | Creates identity `Permutation` of length `n`.
+{-# INLINE unPermutation #-}
+unPermutation :: Permutation -> U.Vector Int
+unPermutation (Permutation x) = x
 
 instance Semigroup Permutation where
   -- Because it's a permutation, it never fails.
@@ -88,42 +80,37 @@ instance SemigroupAction Permutation Int where
   {-# INLINE sact #-}
   sact (Permutation vec) i = vec G.! i
 
-instance BinaryLifting Permutation where
-  type VecBL Permutation = V.Vector Permutation
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLV
-
--- * Transition
+-- * IndexMap
 
 -- | Semigroup action of @G.!@.
-newtype Transition = Transition (U.Vector Int)
+newtype IndexMap = IndexMap (U.Vector Int)
 
 -- | Creates identity `Permutation` of length `n`.
-{-# INLINE idTransition #-}
-idTransition :: Int -> Transition
-idTransition = Transition . (`U.generate` id)
+{-# INLINE unIndexMap #-}
+unIndexMap :: IndexMap -> U.Vector Int
+unIndexMap (IndexMap x) = x
 
-instance Semigroup Transition where
+-- | Creates identity `Permutation` of length `n`.
+{-# INLINE idIndexMap #-}
+idIndexMap :: Int -> IndexMap
+idIndexMap = IndexMap . (`U.generate` id)
+
+instance Semigroup IndexMap where
   -- Because it's a permutation, it never fails.
   {-# INLINE (<>) #-}
-  Transition r2 <> Transition r1 = Transition $ U.map f r1
+  IndexMap r2 <> IndexMap r1 = IndexMap $ U.map f r1
     where
       {-# INLINE f #-}
       f (-1) = -1
       f (!i) = r2 G.! i
 
 -- | @Int@ as target
-instance SemigroupAction Transition Int where
+instance SemigroupAction IndexMap Int where
   {-# INLINE sact #-}
-  sact (Transition _) (-1) = -1
-  sact (Transition vec) i = vec G.! i
+  sact (IndexMap _) (-1) = -1
+  sact (IndexMap vec) i = vec G.! i
 
-instance BinaryLifting Transition where
-  type VecBL Transition = V.Vector Transition
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLV
-
--- * TransitionalSemigroup: Transition + Semigroup
+-- * IndexMapWithAction: Transition + Semigroup
 
 -- | Transition + semigroup concatanation. LCA is based on this.
 --
@@ -131,18 +118,18 @@ instance BinaryLifting Transition where
 -- - [Typical 058 - Original Calculator (★4)](https://atcoder.jp/contests/typical90/tasks/typical90_bf)
 -- = Typical problems (Permutation)
 --
--- = Typical problems (TransitionalSemigroup)
+-- = Typical problems (IndexMapWithAction)
 -- c.f. LCA.
-newtype TransitionalSemigroup a = TransitionalSemigroup (U.Vector (Int, a))
+newtype IndexMapWithAction a = IndexMapWithAction (U.Vector (Int, a))
   deriving (Show, Eq)
 
-{-# INLINE unTransitionalSemigroup #-}
-unTransitionalSemigroup :: TransitionalSemigroup a -> U.Vector (Int, a)
-unTransitionalSemigroup (TransitionalSemigroup vec) = vec
+{-# INLINE unIndexMapWithAction #-}
+unIndexMapWithAction :: IndexMapWithAction a -> U.Vector (Int, a)
+unIndexMapWithAction (IndexMapWithAction vec) = vec
 
-instance (U.Unbox a, Semigroup a) => Semigroup (TransitionalSemigroup a) where
+instance (U.Unbox a, Semigroup a) => Semigroup (IndexMapWithAction a) where
   {-# INLINE (<>) #-}
-  TransitionalSemigroup r2 <> TransitionalSemigroup r1 = TransitionalSemigroup $ U.map f r1
+  IndexMapWithAction r2 <> IndexMapWithAction r1 = IndexMapWithAction $ U.map f r1
     where
       {-# INLINE f #-}
       f (-1, !a) = (-1, a)
@@ -152,28 +139,24 @@ instance (U.Unbox a, Semigroup a) => Semigroup (TransitionalSemigroup a) where
          in (i', a'')
 
 -- | @Int@ as target
-instance (U.Unbox a) => SemigroupAction (TransitionalSemigroup a) Int where
+instance (U.Unbox a) => SemigroupAction (IndexMapWithAction a) Int where
   {-# INLINE sact #-}
-  sact (TransitionalSemigroup _) (-1) = -1
-  sact (TransitionalSemigroup vec) i =
+  sact (IndexMapWithAction _) (-1) = -1
+  sact (IndexMapWithAction vec) i =
     let (!i', !_) = vec G.! i
      in i'
 
 -- | @b@ as target
-instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (TransitionalSemigroup a) (Int, b) where
+instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (IndexMapWithAction a) (Int, b) where
   {-# INLINE sact #-}
-  sact (TransitionalSemigroup _) (-1, !b) = (-1, b)
-  sact (TransitionalSemigroup vec) (!i, !b) =
+  sact (IndexMapWithAction _) (-1, !b) = (-1, b)
+  sact (IndexMapWithAction vec) (!i, !b) =
     let (!i', !a) = vec G.! i
         !b' = a `sact` b
      in (i', b')
 
--- | The identity element of `TransiteSemigroup`.
-{-# INLINE idTransitionalSemigroup #-}
-idTransitionalSemigroup :: (U.Unbox a) => Int -> a -> TransitionalSemigroup a
-idTransitionalSemigroup !n !ident = TransitionalSemigroup $ U.generate n (,ident)
+-- | The identity element of `IndexMapWithAction`.
+{-# INLINE idIndexMapWithAction #-}
+idIndexMapWithAction :: (U.Unbox a) => Int -> a -> IndexMapWithAction a
+idIndexMapWithAction !n !ident = IndexMapWithAction $ U.generate n (,ident)
 
-instance (U.Unbox a, Semigroup a) => BinaryLifting (TransitionalSemigroup a) where
-  type VecBL (TransitionalSemigroup a) = V.Vector (TransitionalSemigroup a)
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLV

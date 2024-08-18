@@ -3,7 +3,6 @@
 -- | Vector-based matrix implementation.
 module Math.Matrix where
 
-import Data.BinaryLifting
 import Data.Core.SemigroupAction
 import qualified Data.Vector as V
 import Data.Vector.Extra (chunksOfG)
@@ -83,7 +82,3 @@ instance (Num a, U.Unbox a) => SemigroupAction (Mat a) (Col a) where
   {-# INLINE sact #-}
   sact = mulMatToCol
 
-instance (Num a, U.Unbox a) => BinaryLifting (Mat a) where
-  type VecBL (Mat a) = V.Vector (Mat a)
-  {-# INLINE cacheBL #-}
-  cacheBL = cacheBLV

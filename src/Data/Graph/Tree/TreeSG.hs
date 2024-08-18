@@ -45,7 +45,7 @@ treeDiameterPathSG gr undefW =
 -- * LCA (prefer HLD though)
 
 -- | \(O(N)\) Returns @(depths, parents)@.
-treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph w -> Int -> (U.Vector Int, TransitionalSemigroup w)
+treeDepthInfoSG :: (Monoid w, U.Unbox w) => SparseGraph w -> Int -> (U.Vector Int, IndexMapWithAction w)
 treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
   !parents <- UM.unsafeNew nVertsSG
   !depths <- UM.unsafeNew nVertsSG
@@ -57,11 +57,11 @@ treeDepthInfoSG gr@SparseGraph {..} !root = runST $ do
       let !vs' = U.filter ((/= parent) . fst) $ gr `adjW` v
       loop (depth + 1, v, vs')
 
-  (,) <$> U.unsafeFreeze depths <*> (TransitionalSemigroup <$> U.unsafeFreeze parents)
+  (,) <$> U.unsafeFreeze depths <*> (IndexMapWithAction <$> U.unsafeFreeze parents)
 
 -- | Returns `LcaCache`, i.e., @(parents, depths, parents')@.
 lcaCacheSG :: (Monoid w, U.Unbox w) => SparseGraph w -> Vertex -> LcaCache w
-lcaCacheSG !gr !root = (depths, toParent, cacheBL toParent)
+lcaCacheSG !gr !root = (depths, toParent, cacheBLV toParent)
   where
     (!depths, !toParent) = treeDepthInfoSG gr root
 
