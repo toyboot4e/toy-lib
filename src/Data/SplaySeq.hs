@@ -55,7 +55,7 @@ data SplaySeq s v = SplaySeq
     vSS :: !(UM.MVector s v),
     -- | Decomposed node data storage: aggregation of payloads.
     aggSS :: !(UM.MVector s v),
-    -- | Decomposed node data storage: reversed flag.
+    -- | Decomposed node data storage: reversed flag of children.
     -- TODO: use Bit?
     revSS :: !(UM.MVector s Bool)
   }
@@ -413,7 +413,8 @@ swapLrNodeSS SplaySeq {..} i = do
 reverseNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> m ()
 reverseNodeSS seq@SplaySeq {..} i = do
   swapLrNodeSS seq i
-  GM.write revSS i True
+  -- reverse or quit
+  GM.modify revSS (xor True) i
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE propNodeSS #-}

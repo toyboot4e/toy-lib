@@ -103,7 +103,7 @@ randomTests =
                   return m
 
         return . QC.counterexample (show (U.map getSum xs, lrs)) $ U.map getSum res QC.=== U.map getSum expected,
-      QC.testProperty "SplaySeq: reverse" $ QCM.monadicIO $ do
+      QC.testProperty "SplaySeq-reverse" $ QCM.monadicIO $ do
         QCM.forAllM (problemGen maxN maxQ rng) $ \(!n, !q, !xs, !qs) -> do
           vec <- lift $ U.thaw $ U.map Sum xs
           seq <- lift $ newSS @(Sum Int) n
@@ -139,8 +139,8 @@ randomTests =
             qs
     ]
   where
-    maxN = 3
-    maxQ = 3
+    maxN = 16
+    maxQ = 16
     rng = (-20, 20)
 
 tests :: [TestTree]
