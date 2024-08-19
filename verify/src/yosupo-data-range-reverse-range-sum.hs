@@ -16,7 +16,15 @@ solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
 
+  -- TODO: handle correctly
+  when (q == 0) $ do
+    liftIO exitSuccess
+
+  -- TODO: handle correctly
   when (n == 0) $ do
+    qs <- U.replicateM q ints3'
+    let nq = U.length $ U.filter ((== 1) . fst3) qs
+    printBSB $ unlinesBSB $ U.replicate nq (0 :: Int)
     liftIO exitSuccess
 
   xs <- intsU'
