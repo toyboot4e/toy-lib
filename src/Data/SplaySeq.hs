@@ -215,26 +215,27 @@ reverseSS seq root0 l r
       splaySS seq root' True
       return root'
 
--- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point.
+-- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
+-- user function is run over each node, not fold of an interval.
 {-# INLINE bisectLSS #-}
-bisectLSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
+bisectLSS :: (Show v,HasCallStack, PrimMonad m, Monoid v, U.Unbox v) => SplaySeq (PrimState m) v -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
 bisectLSS seq@SplaySeq {..} root0 check = do
-  let inner root acc parent lastYes
+  let inner root parent lastYes
         -- FIXME
         | nullSI root && nullSI lastYes = return (parent, Nothing)
         | nullSI root = return (parent, Just lastYes)
         | otherwise = do
             propNodeSS seq root
-            l <- GM.read lSS root
-            acc' <- if nullSI l then return acc else (<> acc) <$> GM.read aggSS l
-            if check acc'
+            v <- GM.read vSS root
+            if check v
               then do
                 r <- GM.read rSS root
-                inner r acc' root root
+                inner r root root
               else do
-                inner l acc root lastYes
+                l <- GM.read lSS root
+                inner l root lastYes
 
-  (!root', !found) <- inner root0 mempty undefSI undefSI
+  (!root', !found) <- inner root0 undefSI undefSI
   unless (nullSI root') $ do
     splaySS seq root' True
   return (root', found)

@@ -1,5 +1,6 @@
 module Tests.SplaySeq where
 
+import Algorithm.Bisect
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.Trans.Class
@@ -136,7 +137,19 @@ randomTests =
                     return root''
             )
             root0
-            qs
+            qs,
+      QC.testProperty "SplaySeq-bisect" $ QCM.monadicIO $ do
+        n <- QCM.pick (QC.chooseInt (1, maxN))
+        let xs = U.generate n Sum
+        boundary <- QCM.pick $ QC.chooseInt (0, n)
+  
+        let expected = bisectL 0 (n - 1) $ \i -> xs G.! i <= Sum boundary
+  
+        seq <- lift $ newSS n
+        root <- lift $ allocSeqSS seq xs
+        (!_, !res) <- lift $ bisectLSS seq root (<= Sum boundary)
+  
+        QCM.assertWith (res == expected) $ show (res, expected)
     ]
   where
     maxN = 16
