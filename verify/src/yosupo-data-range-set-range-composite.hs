@@ -16,7 +16,7 @@ import ToyLib.ShowBSB
 -- }}} toy-lib import
 
 debug :: Bool
-debug = True
+debug = False
 
 -- TODO: manage subtree size within the semgnet tree:
 -- https://maspypy.com/library-checker-range-set-range-composite

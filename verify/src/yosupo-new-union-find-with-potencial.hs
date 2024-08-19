@@ -13,7 +13,7 @@ import Data.Vector.IxVector
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug :: Bool
-debug = True
+debug = False
 
 {- ORMOLU_DISABLE -}
 type MyModulo = (998244353 :: Nat) -- (1_000_000_007 :: Nat)

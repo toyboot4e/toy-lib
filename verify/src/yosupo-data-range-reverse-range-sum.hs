@@ -10,11 +10,15 @@ import Data.SplaySeq
 -- }}} toy-lib import
 
 debug :: Bool
-debug = True
+debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
+
+  when (n == 0) $ do
+    liftIO exitSuccess
+
   xs <- intsU'
   qs <- U.replicateM q ints3'
 
