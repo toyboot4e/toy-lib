@@ -218,6 +218,10 @@ executable yosupo-data-range-reverse-range-sum-exe
   import:  verify
   main-is: yosupo-data-range-reverse-range-sum.hs
 
+executable yosupo-data-dynamic-sequence-range-affine-range-sum-exe
+  import:  verify
+  main-is: yosupo-data-dynamic-sequence-range-affine-range-sum.hs
+
 executable yosupo-data-static-range-count-distinct-exe
   import:  verify
   main-is: yosupo-data-static-range-count-distinct.hs
