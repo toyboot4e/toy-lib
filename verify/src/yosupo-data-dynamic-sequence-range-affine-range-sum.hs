@@ -35,7 +35,7 @@ solve = do
       _ -> error "unreachable"
 
   seq <- newSS (n + q)
-  root0 <- allocSeqSS seq $ U.map (toV2 . Sum) xs
+  root0 <- allocSeqSS seq $ U.map Sum xs
 
   -- TODO: easier state monad, like `stateT` function?
   let f :: (Int, Int, Int, Int, Int) -> StateT SplayIndex (StateT BS.ByteString IO) (Maybe Int)
@@ -44,7 +44,7 @@ solve = do
         case q of
           (0, !i, !x, !_, !_) -> do
             -- insert
-            root' <- insertSS seq root i $ toV2 $ Sum x
+            root' <- insertSS seq root i $ Sum x
             put root'
             return Nothing
           (1, !i, !_, !_, !_) -> do
@@ -59,12 +59,12 @@ solve = do
             return Nothing
           (3, !l, pred -> !r, !b, !c) -> do
             -- apply affine transformation
-            root' <- sactSS seq root l r $ Affine2d (Sum b, Sum c)
+            root' <- sactSS seq root l r $ Affine2d (b, c)
             put root'
             return Nothing
           (4, !l, pred -> !r, !_, !_) -> do
             -- fold
-            (V2 (Sum !x, Sum !_), !root') <- foldSS seq root l r
+            (Sum !x, !root') <- foldSS seq root l r
             put root'
             return $ Just x
 

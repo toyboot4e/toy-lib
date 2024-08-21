@@ -13,8 +13,9 @@
 module Data.Instances.Affine2d where
 
 import Data.Core.Group
-import Data.Core.SemigroupAction
 import Data.Core.SegmentAction
+import Data.Core.SemigroupAction
+import Data.Semigroup
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -53,6 +54,18 @@ instance (Num a) => Monoid (Affine2d a) where
 instance (Integral a) => SegmentAction (Affine2d a) a where
   {-# INLINE segActWithLength #-}
   segActWithLength (Affine2d (!a, !b)) !x !len = a'
+    where
+      !a' = a * x + b * fromIntegral len
+
+instance (Integral a) => SegmentAction (Affine2d a) (Sum a) where
+  {-# INLINE segActWithLength #-}
+  segActWithLength (Affine2d (!a, !b)) (Sum !x) !len = Sum a'
+    where
+      !a' = a * x + b * fromIntegral len
+
+instance (Integral a) => SegmentAction (Affine2d a) (Product a) where
+  {-# INLINE segActWithLength #-}
+  segActWithLength (Affine2d (!a, !b)) (Product !x) !len = Product a'
     where
       !a' = a * x + b * fromIntegral len
 
