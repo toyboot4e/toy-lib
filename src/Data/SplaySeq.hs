@@ -11,7 +11,7 @@ import Control.Monad.Extra (whenM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bits
-import Data.Core.SemigroupAction
+import Data.Core.SegmentAction
 import Data.Pool
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
@@ -161,7 +161,7 @@ assertRootSS SplaySeq {..} root = dbgM $ do
 
 -- | Amortized \(O(\log N)\). Reads a kth node's value.
 {-# INLINE readSS #-}
-readSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, v)
+readSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, v)
 readSS seq@SplaySeq {..} root k = do
   assertRootSS seq root
   root' <- splayKthSS seq root k
@@ -171,7 +171,7 @@ readSS seq@SplaySeq {..} root k = do
 
 -- | Amortized \(O(\log N)\). Writes a kth node's value.
 {-# INLINE writeSS #-}
-writeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m SplayIndex
+writeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m SplayIndex
 writeSS seq root k v = do
   assertRootSS seq root
   root' <- splayKthSS seq root k
@@ -180,7 +180,7 @@ writeSS seq root k v = do
 
 -- | Amortized \(O(\log N)\). Modifies a kth node's value.
 {-# INLINE modifySS #-}
-modifySS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> (v -> v) -> Int -> m SplayIndex
+modifySS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> (v -> v) -> Int -> m SplayIndex
 modifySS seq root f k = do
   assertRootSS seq root
   root' <- splayKthSS seq root k
@@ -189,7 +189,7 @@ modifySS seq root f k = do
 
 -- | Amortized \(O(\log N)\). Exchanges a kth node's value.
 {-# INLINE exchangeSS #-}
-exchangeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m (v, SplayIndex)
+exchangeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m (v, SplayIndex)
 exchangeSS seq root k v = do
   assertRootSS seq root
   root' <- splayKthSS seq root k
@@ -198,7 +198,7 @@ exchangeSS seq root k v = do
 
 -- | Amortized \(O(\log N)\). Folds an interval @[l, r]@.
 {-# INLINE foldSS #-}
-foldSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (v, SplayIndex)
+foldSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (v, SplayIndex)
 foldSS seq@SplaySeq {..} root l r
   | l > r = return (mempty, root)
   | otherwise = do
@@ -214,14 +214,14 @@ foldSS seq@SplaySeq {..} root l r
 
 -- | Amortized \(O(\log N)\). Folds the whole sequence.
 {-# INLINE foldAllSS #-}
-foldAllSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m v
+foldAllSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m v
 foldAllSS seq@SplaySeq {..} root = do
   assertRootSS seq root
   GM.read aggSS root
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE sactSS #-}
-sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> a -> m SplayIndex
+sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> a -> m SplayIndex
 sactSS seq@SplaySeq {..} root l r act = do
   let !_ = assert (0 <= l && l <= r && r < capacitySS) $ "invalid interval: " ++ show (l, r)
   assertRootSS seq root
@@ -233,7 +233,7 @@ sactSS seq@SplaySeq {..} root l r act = do
 -- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
 {-# INLINE reverseSS #-}
-reverseSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
+reverseSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
 reverseSS seq root0 l r
   | l > r = return root0
   | otherwise = do
@@ -244,7 +244,7 @@ reverseSS seq root0 l r
 
 -- | Amortized \(O(\log N)\). Inserts a node at @k@.
 {-# INLINE insertSS #-}
-insertSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m SplayIndex
+insertSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> v -> m SplayIndex
 insertSS seq root k v = do
   (!l, !r) <- splitAtSS seq root k
   node <- allocNodeSS seq v
@@ -252,7 +252,7 @@ insertSS seq root k v = do
 
 -- | Amortized \(O(\log N)\). Deletes a node at @k@.
 {-# INLINE deleteSS #-}
-deleteSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
+deleteSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
 deleteSS seq root i = do
   (!l, !m, !r) <- split3SS seq root i (i + 1)
   freeNodeSS seq m
@@ -262,7 +262,7 @@ deleteSS seq root i = do
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
 -- user function is run over each node, not fold of an interval.
 {-# INLINE bisectLSS #-}
-bisectLSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
+bisectLSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
 bisectLSS seq@SplaySeq {..} root0 check = do
   let inner root parent lastYes
         | nullSI root && nullSI lastYes = return (parent, Nothing)
@@ -337,7 +337,7 @@ rotateSS SplaySeq {..} !i = do
 --
 -- = After call
 -- The node is updated and propagated.
-splaySS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Bool -> m ()
+splaySS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Bool -> m ()
 splaySS seq@SplaySeq {..} i doneParentProp = do
   if doneParentProp
     then propNodeSS seq i
@@ -373,7 +373,7 @@ splaySS seq@SplaySeq {..} i doneParentProp = do
 
 -- | Amortized \(O(\log N)\). Finds @k@ th node from the left and splays it.
 -- Returns the new root.
-splayKthSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
+splayKthSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
 splayKthSS seq@SplaySeq {..} root0 k0 = do
   size <- GM.read sSS root0
   let !_ = assert (0 <= k0 && k0 < size) "no kth element in the sequence"
@@ -461,7 +461,7 @@ reverseNodeSS seq@SplaySeq {..} i = do
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE propNodeSS #-}
-propNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
+propNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
 propNodeSS seq@SplaySeq {..} i = do
   -- action
   act <- GM.exchange actSS i mempty
@@ -488,7 +488,7 @@ propNodeSS seq@SplaySeq {..} i = do
 
 -- | Amortized \(O(\log N)\). Propagetes from the root to the given node.
 {-# INLINE propNodeFromRootSS #-}
-propNodeFromRootSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
+propNodeFromRootSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
 propNodeFromRootSS seq@SplaySeq {..} i0 = inner i0
   where
     inner i = do
@@ -499,16 +499,17 @@ propNodeFromRootSS seq@SplaySeq {..} i0 = inner i0
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE sactNodeSS #-}
-sactNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
+sactNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
 sactNodeSS SplaySeq {..} i act = do
-  GM.modify vSS (act `sact`) i
-  GM.modify aggSS (act `sact`) i
+  len <- GM.read sSS i
+  GM.modify vSS (\x -> segActWithLength act x len) i
+  GM.modify aggSS (\x -> segActWithLength act x len) i
   GM.modify actSS (act <>) i
 
 -- * Split / merge
 
 -- | Amortized \(O(\log N)\). Merges two nodes. It's implemented a reverse operation of `splitSS`.
-mergeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> m SplayIndex
+mergeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> m SplayIndex
 mergeSS seq@SplaySeq {..} l r
   | nullSI l = return r
   | nullSI r = return l
@@ -523,14 +524,14 @@ mergeSS seq@SplaySeq {..} l r
       return r'
 
 -- | Amortized \(O(\log N)\). Folds three nodes from left to right.
-merge3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
+merge3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
 merge3SS seq l m r = do
   node <- mergeSS seq l m
   mergeSS seq node r
 
 -- | Amortized \(O(\log N)\). Splits a sequneces into two nodes. It's implemented a reverse
 -- operation of `splitSS`.
-splitAtSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
+splitAtSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
 splitAtSS seq@SplaySeq {..} root k
   | k == 0 = return (undefSI, root)
   | otherwise = do
@@ -546,7 +547,7 @@ splitAtSS seq@SplaySeq {..} root k
           return (root', r)
 
 -- | Amortized \(O(\log N)\). Splits into three sequences from right to left.
-split3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
+split3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
 split3SS seq root l r = do
   (!root', !nodeR) <- splitAtSS seq root r
   (!nodeL, !nodeM) <- splitAtSS seq root' l
@@ -554,7 +555,7 @@ split3SS seq root l r = do
 
 -- | Amortized \(O(\log N)\). Captures a subtree of [l, r). Be sure that it's half-open interval!
 -- Splay the new root after call.
-captureSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
+captureSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
 captureSS seq@SplaySeq {..} root l r
   | l == 0 = do
       size <- GM.read sSS root
