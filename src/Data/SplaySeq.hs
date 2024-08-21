@@ -207,6 +207,7 @@ foldSS seq@SplaySeq {..} root l r
       let !_ = assert (0 <= l && l <= r && r < size) "invalid interval"
       assertRootSS seq root
       target <- captureSS seq root l (r + 1)
+      size_ <- GM.read sSS target
       res <- GM.read aggSS target
       splaySS seq target True
       return (res, target)
@@ -220,11 +221,14 @@ foldAllSS seq@SplaySeq {..} root = do
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE sactSS #-}
-sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> s -> m SplayIndex
+sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> a -> m SplayIndex
 sactSS seq@SplaySeq {..} root l r act = do
+  let !_ = assert (0 <= l && l <= r && r < capacitySS) $ "invalid interval: " ++ show (l, r)
   assertRootSS seq root
-  -- GM.read aggSS root
-  return root
+  root' <- captureSS seq root l (r + 1)
+  sactNodeSS seq root' act
+  splaySS seq root' True
+  return root'
 
 -- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
@@ -261,7 +265,6 @@ deleteSS seq root i = do
 bisectLSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> (v -> Bool) -> m (SplayIndex, Maybe SplayIndex)
 bisectLSS seq@SplaySeq {..} root0 check = do
   let inner root parent lastYes
-        -- FIXME
         | nullSI root && nullSI lastYes = return (parent, Nothing)
         | nullSI root = return (parent, Just lastYes)
         | otherwise = do
@@ -276,14 +279,13 @@ bisectLSS seq@SplaySeq {..} root0 check = do
                 inner l root lastYes
 
   (!root', !found) <- inner root0 undefSI undefSI
-  unless (nullSI root') $ do
-    splaySS seq root' True
+  splaySS seq root' True
   return (root', found)
 
 -- * Self-balancing methods (internals)
 
 -- | Amortized \(O(\log N)\). Rotates the node. Propagation and updates are done outside of the
--- function.
+-- function (see `propFromRootSS`).
 rotateSS :: (HasCallStack, PrimMonad m) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
 rotateSS SplaySeq {..} !i = do
   p <- GM.read pSS i
@@ -512,23 +514,20 @@ mergeSS seq@SplaySeq {..} l r
   | nullSI l = return r
   | nullSI r = return l
   | otherwise = do
-      lp <- GM.read pSS l
-      rp <- GM.read pSS r
-      let !_ = assert (not (nullSI lp)) "left root is null"
-      let !_ = assert (not (nullSI rp)) "right root is null"
-      -- TODO: what is this?
-      r' <- splayKthSS seq r 0 -- propagateD
-      GM.write lSS r l
+      assertRootSS seq l
+      assertRootSS seq r
+      -- find leftmost
+      r' <- splayKthSS seq r 0
+      GM.write lSS r' l
       GM.write pSS l r'
       updateNodeSS seq r'
       return r'
 
--- | Amortized \(O(\log N)\)
+-- | Amortized \(O(\log N)\). Folds three nodes from left to right.
 merge3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
 merge3SS seq l m r = do
   node <- mergeSS seq l m
-  root <- mergeSS seq node r
-  return root
+  mergeSS seq node r
 
 -- | Amortized \(O(\log N)\). Splits a sequneces into two nodes. It's implemented a reverse
 -- operation of `splitSS`.
@@ -536,8 +535,7 @@ splitAtSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox 
 splitAtSS seq@SplaySeq {..} root k
   | k == 0 = return (undefSI, root)
   | otherwise = do
-      p <- GM.read pSS root
-      let !_ = assert (nullSI p) "split: not given root"
+      assertRootSS seq root
       size <- GM.read sSS root
       if k == size
         then return (root, undefSI)
@@ -548,15 +546,15 @@ splitAtSS seq@SplaySeq {..} root k
           updateNodeSS seq root'
           return (root', r)
 
--- | Amortized \(O(\log N)\). Splits a tree into three.
+-- | Amortized \(O(\log N)\). Splits into three sequences from right to left.
 split3SS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
 split3SS seq root l r = do
   (!root', !nodeR) <- splitAtSS seq root r
   (!nodeL, !nodeM) <- splitAtSS seq root' l
   return (nodeL, nodeM, nodeR)
 
--- | Amortized \(O(\log N)\). Captures a subtree of [l, r). Be sure it's half-open interval! Be sure
--- to splay the new root after call.
+-- | Amortized \(O(\log N)\). Captures a subtree of [l, r). Be sure that it's half-open interval!
+-- Splay the new root after call.
 captureSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
 captureSS seq@SplaySeq {..} root l r
   | l == 0 = do

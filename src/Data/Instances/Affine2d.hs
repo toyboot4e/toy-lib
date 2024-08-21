@@ -50,6 +50,12 @@ instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
   mempty = identAffine2d
 
+instance (Integral a) => SegmentTreeAction (Affine2d a) a where
+  {-# INLINE segActWithLength #-}
+  segActWithLength (Affine2d (!a, !b)) !x !len = a'
+    where
+      !a' = a * x + b * fromIntegral len
+
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}
   sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a', len)

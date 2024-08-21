@@ -2,6 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
+import Data.Instances.Affine2d
 import Data.ModInt
 import Data.SplaySeq
 import ToyLib.Parser
@@ -31,31 +32,42 @@ solve = do
       2 -> (2 :: Int,,,-1,-1) <$> int' <*> int'
       3 -> (3 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
       4 -> (4 :: Int,,,-1,-1) <$> int' <*> int'
+      _ -> error "unreachable"
 
-  seq <- newSS (n + q)
-  root0 <- allocSeqSS seq $ U.map Sum xs
-  res <- (`evalStateT` root0) . (`U.mapMaybeM` qs) $ state $ \q root -> do
-    case q of
-      (0, !i, !x, !_, !_) -> do
-        -- insert
-        root' <- insertSS seq root i x
-        return (Nothing, root')
-      (1, !i, !_, !_, !_) -> do
-        -- delete
-        (!root', !_) <- deleteSS seq root i
-        return (Nothing, root')
-      (2, !l, !r, !_, !_) -> do
-        -- reverse
-        root' <- reverseSS seq root l r
-        return (Nothing, root')
-      (3, !l, !r, !b, !c) -> do
-        -- apply affine transformation
-        sactSS seq l (r - 1) $ Affine2D b c
-        return (Nothing, root)
-      (4, !l, !r, !_, !_) -> do
-        -- fold
-        x <- foldSS seq l (r - 1)
-        return (Just x, root)
+  seq <- newSS @(V2 (Sum Int)) @(Affine2d (Sum Int)) (n + q)
+  root0 <- allocSeqSS seq $ U.map (toV2 . Sum) xs
+
+  let f :: (Int, Int, Int, Int, Int) -> StateT SplayIndex (StateT BS.ByteString IO) (Maybe Int)
+      f q = do
+        root <- get
+        case q of
+          (0, !i, !x, !_, !_) -> do
+            -- insert
+            root' <- insertSS seq root i $ toV2 $ Sum x
+            put root'
+            return Nothing
+          (1, !i, !_, !_, !_) -> do
+            -- delete
+            !root' <- deleteSS seq root i
+            put root'
+            return Nothing
+          (2, !l, pred -> !r, !_, !_) -> do
+            -- reverse
+            root' <- reverseSS seq root l r
+            put root'
+            return Nothing
+          (3, !l, pred -> !r, !b, !c) -> do
+            -- apply affine transformation
+            root' <- sactSS seq root l r $ Affine2d (Sum b, Sum c)
+            put root'
+            return Nothing
+          (4, !l, pred -> !r, !_, !_) -> do
+            -- fold
+            (V2 (Sum !x, Sum !_), !root') <- foldSS seq root l r
+            put root'
+            return $ Just x
+
+  (res :: U.Vector Int) <- (`evalStateT` root0) . (`U.mapMaybeM` qs) $ f
 
   printBSB $ unlinesBSB res
 
