@@ -10,8 +10,8 @@ import Data.BinaryLifting
 import Data.Graph.Alias (Vertex)
 import Data.Maybe
 import qualified Data.Vector as V
-import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Unboxed as U
 import GHC.Stack (HasCallStack)
 
 -- | `(parents, depths, parents')`

@@ -7,7 +7,7 @@ module Data.SplaySeq where
 
 import Control.Exception (assert)
 import Control.Monad (unless, when)
-import Control.Monad.Extra (whenJust, whenM)
+import Control.Monad.Extra (whenM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bits
@@ -22,6 +22,7 @@ import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
 -- TODO: always return root as the first or the second element.
+-- TODO: duplicate code with strict/lazy.
 
 -- | Index of a `SplayNode` stored in a `SplayMap`.
 type SplayIndex = PoolIndex
@@ -39,8 +40,8 @@ nullSI = nullPI
 -- | Mutable, splay tree-based sequences.
 --
 -- = Invariants
--- - The sequence order is kept in the tree. Left children have smaller indices and right children
---   have bigger indices.
+-- - The sequence order is kept in the tree before and after the splaying operation. Left children
+-- have smaller indices and right children have bigger indices.
 data SplaySeq s v a = SplaySeq
   { -- | The maximum number of elements.
     capacitySS :: {-# UNPACK #-} !Int,
@@ -65,7 +66,7 @@ data SplaySeq s v a = SplaySeq
     actSS :: !(UM.MVector s a)
   }
 
--- | \(O(N)\) Creates a new `SplaySeq` of capacity @n@.
+-- | \(O(N)\) Creates a new `SplaySeq` of capacity @n@ with lazily propagated values.
 {-# INLINE newSS #-}
 newSS :: (U.Unbox v, U.Unbox a, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v a)
 newSS n = do
@@ -225,7 +226,8 @@ sactSS seq@SplaySeq {..} root l r act = do
   -- GM.read aggSS root
   return root
 
--- | Amortised \(O(\log N)\).
+-- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
+-- monoid and the action to be commutative.
 {-# INLINE reverseSS #-}
 reverseSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
 reverseSS seq root0 l r

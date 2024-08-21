@@ -17,8 +17,13 @@ import Test.Tasty
 import Test.Tasty.QuickCheck qualified as QC
 import Tests.Util
 
+type Seq s = SplaySeq s (Sum Int) (Sum Int)
+
+newSeq :: (PrimMonad m) => Int -> m (Seq (PrimState m))
+newSeq = newSS
+
 -- | Reads from left to right and right to left.
-readLR :: (PrimMonad m) => SplaySeq (PrimState m) (Sum Int) -> StateT SplayIndex m (U.Vector (Sum Int))
+readLR :: (PrimMonad m) => Seq (PrimState m) -> StateT SplayIndex m (U.Vector (Sum Int))
 readLR seq = do
   let !n = capacitySS seq
   !forwards <- U.generateM n $ \k -> do
@@ -33,7 +38,7 @@ readLR seq = do
     return x
   return $ forwards U.++ backwards
 
-readInterval :: (PrimMonad m) => SplaySeq (PrimState m) (Sum Int) -> Int -> Int -> StateT SplayIndex m (U.Vector (Sum Int))
+readInterval :: (PrimMonad m) => Seq (PrimState m) -> Int -> Int -> StateT SplayIndex m (U.Vector (Sum Int))
 readInterval seq l r = do
   let !n = capacitySS seq
   U.generateM (r + 1 - l) $ \i_ -> do
@@ -66,7 +71,7 @@ randomTests =
         n <- QC.chooseInt (1, maxN)
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         let res = runST $ do
-              seq <- newSS @(Sum Int) n
+              seq <- newSeq n
               root <- allocSeqSS seq $ U.map Sum xs
               evalStateT (readLR seq) root
         return . QC.counterexample (show xs) $ (xs U.++ U.reverse xs) QC.=== U.map getSum res,
@@ -75,7 +80,7 @@ randomTests =
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         ys <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         let res = runST $ do
-              seq <- newSS @(Sum Int) n
+              seq <- newSeq n
               root <- allocSeqSS seq $ U.map Sum xs
               root' <- (`execStateT` root) $ do
                 U.iforM_ ys $ \i x -> do
@@ -94,7 +99,7 @@ randomTests =
         let !expected = U.map (\(!l, !r) -> G.foldMap' id $ sliceLR l r xs) lrs
 
         let res = runST $ do
-              seq <- newSS @(Sum Int) n
+              seq <- newSeq n
               root <- allocSeqSS seq xs
               (`evalStateT` root) $ do
                 U.forM lrs $ \(!l, !r) -> do
@@ -107,7 +112,7 @@ randomTests =
       QC.testProperty "SplaySeq-reverse" $ QCM.monadicIO $ do
         QCM.forAllM (problemGen maxN maxQ rng) $ \(!n, !q, !xs, !qs) -> do
           vec <- lift $ U.thaw $ U.map Sum xs
-          seq <- lift $ newSS @(Sum Int) n
+          seq <- lift $ newSeq n
           root0 <- lift $ allocSeqSS seq $ U.map Sum xs
 
           let testFold root l r = do
@@ -142,13 +147,13 @@ randomTests =
         n <- QCM.pick (QC.chooseInt (1, maxN))
         let xs = U.generate n Sum
         boundary <- QCM.pick $ QC.chooseInt (0, n)
-  
+
         let expected = bisectL 0 (n - 1) $ \i -> xs G.! i <= Sum boundary
-  
-        seq <- lift $ newSS n
+
+        seq <- lift $ newSeq n
         root <- lift $ allocSeqSS seq xs
         (!_, !res) <- lift $ bisectLSS seq root (<= Sum boundary)
-  
+
         QCM.assertWith (res == expected) $ show (res, expected)
     ]
   where
