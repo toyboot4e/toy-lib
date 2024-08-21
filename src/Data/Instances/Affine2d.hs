@@ -14,7 +14,7 @@ module Data.Instances.Affine2d where
 
 import Data.Core.Group
 import Data.Core.SemigroupAction
-import Data.Core.SegmentTreeAction
+import Data.Core.SegmentAction
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -50,7 +50,7 @@ instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
   mempty = identAffine2d
 
-instance (Integral a) => SegmentTreeAction (Affine2d a) a where
+instance (Integral a) => SegmentAction (Affine2d a) a where
   {-# INLINE segActWithLength #-}
   segActWithLength (Affine2d (!a, !b)) !x !len = a'
     where
@@ -62,7 +62,7 @@ instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
     where
       !a' = a * x + b * len
 
-instance (Num a) => SegmentTreeAction (Affine2d a) (V2 a) where
+instance (Num a) => SegmentAction (Affine2d a) (V2 a) where
   {-# INLINE segActWithLength #-}
   segActWithLength op a _ = sact op a
 

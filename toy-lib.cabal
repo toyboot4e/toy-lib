@@ -179,7 +179,7 @@ library
     Data.ByteString.SuffixArray
     Data.ByteString.ZFunction
     Data.Core.Group
-    Data.Core.SegmentTreeAction
+    Data.Core.SegmentAction
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.DenseHashMap

@@ -19,7 +19,7 @@ import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bifunctor
 import Data.Bits
-import Data.Core.SegmentTreeAction
+import Data.Core.SegmentAction
 import Data.SegmentTree.Util
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -176,7 +176,7 @@ buildLSTree xs = do
 -- | \(O(\log N)\)
 foldLSTree ::
   forall a op m.
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -217,7 +217,7 @@ foldLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
 -- | \(O(\log N)\)
 {-# INLINE foldMayLSTree #-}
 foldMayLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -232,7 +232,7 @@ foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 {-# INLINE readLSTree #-}
 readLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m a
@@ -241,7 +241,7 @@ readLSTree stree i = foldLSTree stree i i
 -- | \(O(\log N)\)
 {-# INLINE foldAllLSTree #-}
 foldAllLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   m a
 -- TODO: faster implementation
@@ -251,7 +251,7 @@ foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
 sactLSTree ::
   forall a op m.
-  (Semigroup a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (Semigroup a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -298,7 +298,7 @@ sactLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPr
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 {-# INLINE sactAtLSTree #-}
 sactAtLSTree ::
-  (Semigroup a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (Semigroup a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   op ->
@@ -318,7 +318,7 @@ sactAtLSTree stree i = sactLSTree stree i i
 -- propagation is performed just before performing the first glitch. That's enough for both folding
 -- and acting.
 _propDownFromRoot ::
-  (HasCallStack, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -344,7 +344,7 @@ _propDownFromRoot stree@(LazySegmentTree !as !_ !height) !iLeaf !lrAdjuster = do
 -- - The new coming operator operator always comes from the left.
 {-# INLINE _sactAt #-}
 _sactAt ::
-  (HasCallStack, U.Unbox a, Semigroup op, SegmentTreeAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, Semigroup op, SegmentAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   op ->
@@ -362,7 +362,7 @@ _sactAt (LazySegmentTree !as !ops !height) !vertex !op = do
 -- | Propagates the operator onto the children. Push.
 {-# INLINE _propAt #-}
 _propAt ::
-  (HasCallStack, U.Unbox a, Monoid op, Eq op, SegmentTreeAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, Monoid op, Eq op, SegmentAction op a, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   m ()
@@ -381,7 +381,7 @@ _propAt stree@(LazySegmentTree !_ !ops !_) !vertex = do
 
 -- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
 bisectLSTree ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -398,7 +398,7 @@ bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
 
 -- | \(O(\log^2 N)\)
 bisectLSTreeL ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->
@@ -408,7 +408,7 @@ bisectLSTreeL stree l r f = fst <$> bisectLSTree stree l r f
 
 -- | \(O(\log^2 N)\)
 bisectLSTreeR ::
-  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentTreeAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
   Int ->
   Int ->

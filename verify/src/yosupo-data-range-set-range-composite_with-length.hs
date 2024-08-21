@@ -3,7 +3,7 @@
 -- {{{ toy-lib import
 
 import Data.Core.SemigroupAction
-import Data.Core.SegmentTreeAction
+import Data.Core.SegmentAction
 import Data.Instances.Affine2d
 import Data.ModInt
 import Data.SegmentTree.Lazy
@@ -42,7 +42,7 @@ instance SemigroupAction Op Acc where
   {-# INLINE sact #-}
   sact = segAct
 
-instance SegmentTreeAction Op Acc where
+instance SegmentAction Op Acc where
   {-# INLINE segActWithLength #-}
   segActWithLength op@(Op f) x len
     | op == mempty = x

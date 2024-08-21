@@ -34,9 +34,10 @@ solve = do
       4 -> (4 :: Int,,,-1,-1) <$> int' <*> int'
       _ -> error "unreachable"
 
-  seq <- newSS @(V2 (Sum Int)) @(Affine2d (Sum Int)) (n + q)
+  seq <- newSS (n + q)
   root0 <- allocSeqSS seq $ U.map (toV2 . Sum) xs
 
+  -- TODO: easier state monad, like `stateT` function?
   let f :: (Int, Int, Int, Int, Int) -> StateT SplayIndex (StateT BS.ByteString IO) (Maybe Int)
       f q = do
         root <- get

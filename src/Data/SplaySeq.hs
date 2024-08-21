@@ -501,7 +501,6 @@ propNodeFromRootSS seq@SplaySeq {..} i0 = inner i0
 {-# INLINE sactNodeSS #-}
 sactNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SemigroupAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
 sactNodeSS SplaySeq {..} i act = do
-  -- TODO: consider using `SegmentTreeAction`. no, it's `SemigroupActionWithLength`.
   GM.modify vSS (act `sact`) i
   GM.modify aggSS (act `sact`) i
   GM.modify actSS (act <>) i
