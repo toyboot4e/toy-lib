@@ -352,7 +352,7 @@ _sactAt ::
 _sactAt (LazySegmentTree !as !ops !height) !vertex !op = do
   -- The propagated value to the vertex is evaluated instantly:
   let !len = 1 .<<. (height - 1 - msbOf vertex)
-  GM.modify as (\a -> segActWithLength op a len) vertex
+  GM.modify as (segActWithLength len op) vertex
   when (vertex < nLeaves) $ do
     -- The propagated value for the children are stored and propagated lazily:
     GM.modify ops (op <>) vertex

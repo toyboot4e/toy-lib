@@ -147,7 +147,7 @@ instance (Num a, Ord a, Bounded a) => Monoid (AddChminChmax a) where
 instance (Num a, Ord a, Bounded a) => SegmentAction (AddChminChmax a) (SumMinMax a) where
   -- TODO: not inline?
   {-# INLINE segActWithLength #-}
-  segActWithLength (AddChminChmax !aAdd !aMin !aMax) !x len
+  segActWithLength len (AddChminChmax !aAdd !aMin !aMax) !x
     -- when @x@ is identity element
     | minSMM x > maxSMM x = x
     -- No chmin or chmax

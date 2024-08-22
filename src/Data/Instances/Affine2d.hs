@@ -51,23 +51,27 @@ instance (Num a) => Monoid (Affine2d a) where
   {-# INLINE mempty #-}
   mempty = identAffine2d
 
+-- * SegmentAction implementations
+
 instance (Integral a) => SegmentAction (Affine2d a) a where
   {-# INLINE segActWithLength #-}
-  segActWithLength (Affine2d (!a, !b)) !x !len = a'
+  segActWithLength !len (Affine2d (!a, !b)) !x = a'
     where
       !a' = a * x + b * fromIntegral len
 
 instance (Integral a) => SegmentAction (Affine2d a) (Sum a) where
   {-# INLINE segActWithLength #-}
-  segActWithLength (Affine2d (!a, !b)) (Sum !x) !len = Sum a'
+  segActWithLength !len (Affine2d (!a, !b)) (Sum !x) = Sum a'
     where
       !a' = a * x + b * fromIntegral len
 
 instance (Integral a) => SegmentAction (Affine2d a) (Product a) where
   {-# INLINE segActWithLength #-}
-  segActWithLength (Affine2d (!a, !b)) (Product !x) !len = Product a'
+  segActWithLength !len (Affine2d (!a, !b)) (Product !x) = Product a'
     where
       !a' = a * x + b * fromIntegral len
+
+-- * SemigroupAction implementations
 
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}
@@ -77,7 +81,7 @@ instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
 
 instance (Num a) => SegmentAction (Affine2d a) (V2 a) where
   {-# INLINE segActWithLength #-}
-  segActWithLength op a _ = sact op a
+  segActWithLength _ = sact
 
 -- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine2d` for
 -- efficiency.

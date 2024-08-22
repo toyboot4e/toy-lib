@@ -44,7 +44,7 @@ instance SemigroupAction Op Acc where
 
 instance SegmentAction Op Acc where
   {-# INLINE segActWithLength #-}
-  segActWithLength op@(Op f) x len
+  segActWithLength len op@(Op f) x
     | op == mempty = x
     | len == 1 = Dual f
     | otherwise = Dual $ stimes' len f

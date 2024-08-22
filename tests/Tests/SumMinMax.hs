@@ -24,11 +24,11 @@ testSMM =
         mempty <> smm @?= smm,
       testCase "SumMinMax length 1" $ do
         let smm = singletonSMM (10 :: Int)
-        let s1 = segActWithLength (newAddACC (15 :: Int)) smm 1
-        let s2 = segActWithLength (newChminACC (5 :: Int)) smm 1
-        let s3 = segActWithLength (newChminACC (15 :: Int)) smm 1
-        let s4 = segActWithLength (newChmaxACC (15 :: Int)) smm 1
-        let s5 = segActWithLength (newChmaxACC (5 :: Int)) smm 1
+        let s1 = segActWithLength 1 (newAddACC (15 :: Int)) smm
+        let s2 = segActWithLength 1 (newChminACC (5 :: Int)) smm
+        let s3 = segActWithLength 1 (newChminACC (15 :: Int)) smm
+        let s4 = segActWithLength 1 (newChmaxACC (15 :: Int)) smm
+        let s5 = segActWithLength 1 (newChmaxACC (5 :: Int)) smm
         sumSMM s1 @?= 25
         sumSMM s2 @?= 5
         sumSMM s3 @?= 10
@@ -49,7 +49,7 @@ testACC =
         newChmaxACC x <> mempty @?= newChmaxACC x
         mempty <> newChmaxACC x @?= newChmaxACC x,
       testCase "AddChminChmax simple sact" $ do
-        let y = segActWithLength (newAddACC (-1 :: Int)) (singletonSMM (0 :: Int)) 1
+        let y = segActWithLength 1 (newAddACC (-1 :: Int)) (singletonSMM (0 :: Int))
         failsSMM y @?= False
         sumSMM y @?= -1
     ]
@@ -70,7 +70,7 @@ testCompositeACC =
         x <- singletonSMM <$> QC.chooseInt (-10, 10)
         let len = 1 -- len <- QC.chooseInt (1, 5)
         return . QC.counterexample (show (a1, a2)) $
-          segActWithLength (a1 <> a2) x len QC.=== segActWithLength a1 (segActWithLength a2 x len) len,
+          segActWithLength len (a1 <> a2) x QC.=== segActWithLength len a1 (segActWithLength len a2 x),
       QC.testProperty "AddChminChmax multi composite" $ do
         n <- QC.chooseInt (2, 10)
         as <- QC.vectorOf n $ do
@@ -82,8 +82,8 @@ testCompositeACC =
             2 -> newAddACC x
             _ -> error "unreachable"
         x <- singletonSMM <$> QC.chooseInt (-10, 10)
-        let x1 = segActWithLength (foldl' (<>) mempty (reverse as)) x 1
-        let x2 = foldl' (\acc op -> segActWithLength op acc 1) x as
+        let x1 = segActWithLength 1 (foldl' (<>) mempty (reverse as)) x
+        let x2 = foldl' (flip (segActWithLength 1)) x as
         return . QC.counterexample (show as) $ x1 QC.=== x2
     ]
 

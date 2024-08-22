@@ -46,7 +46,7 @@ instance SemigroupAction Op Acc where
 
 instance SegmentAction Op Acc where
   {-# INLINE segActWithLength #-}
-  segActWithLength op x _ = sact op x
+  segActWithLength _ = sact
 
 type Acc = (Sum Int, Dual (Affine2d MyModInt))
 

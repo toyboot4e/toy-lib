@@ -96,6 +96,7 @@ seqSizeSS seq root
 -- * Allocation
 
 -- | \(O(1)\) Allocates a new node as a single element sequence.
+{-# INLINE allocNodeSS #-}
 allocNodeSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid a, U.Unbox a) => SplaySeq (PrimState m) v a -> v -> m SplayIndex
 allocNodeSS SplaySeq {..} !v = do
   i <- allocPool freeSS ()
@@ -207,7 +208,6 @@ foldSS seq@SplaySeq {..} root l r
       let !_ = assert (0 <= l && l <= r && r < size) "invalid interval"
       assertRootSS seq root
       target <- captureSS seq root l (r + 1)
-      size_ <- GM.read sSS target
       res <- GM.read aggSS target
       splaySS seq target True
       return (res, target)
@@ -223,6 +223,7 @@ foldAllSS seq@SplaySeq {..} root = do
 {-# INLINE sactSS #-}
 sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> a -> m SplayIndex
 sactSS seq@SplaySeq {..} root l r act = do
+  -- TODO: assert with size
   let !_ = assert (0 <= l && l <= r && r < capacitySS) $ "invalid interval: " ++ show (l, r)
   assertRootSS seq root
   root' <- captureSS seq root l (r + 1)
@@ -447,16 +448,15 @@ exchangeNodeSS seq@SplaySeq {..} root v = do
 swapLrNodeSS :: (HasCallStack, PrimMonad m) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
 swapLrNodeSS SplaySeq {..} i = do
   l <- GM.read lSS i
-  r <- GM.read rSS i
+  r <- GM.exchange rSS i l
   GM.write lSS i r
-  GM.write rSS i l
 
 -- | \(O(1)\) Reverses left and right children, recursively and lazily.
 {-# INLINE reverseNodeSS #-}
 reverseNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a) => SplaySeq (PrimState m) v a -> SplayIndex -> m ()
 reverseNodeSS seq@SplaySeq {..} i = do
   swapLrNodeSS seq i
-  -- reverse or quit
+  -- propagate new reverse or cancel:
   GM.modify revSS (xor True) i
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
@@ -469,7 +469,7 @@ propNodeSS seq@SplaySeq {..} i = do
     l <- GM.read lSS i
     unless (nullSI l) $ do
       sactNodeSS seq l act
-    r <- GM.read lSS i
+    r <- GM.read rSS i
     unless (nullSI r) $ do
       sactNodeSS seq r act
 
@@ -478,13 +478,11 @@ propNodeSS seq@SplaySeq {..} i = do
     l <- GM.read lSS i
     unless (nullSI l) $ do
       -- propagate new reverse or cancel:
-      GM.modify revSS (xor True) l
-      swapLrNodeSS seq l
+      reverseNodeSS seq l
     r <- GM.read rSS i
     unless (nullSI r) $ do
       -- propagate new reverse or cancel:
-      GM.modify revSS (xor True) r
-      swapLrNodeSS seq r
+      reverseNodeSS seq r
 
 -- | Amortized \(O(\log N)\). Propagetes from the root to the given node.
 {-# INLINE propNodeFromRootSS #-}
@@ -499,11 +497,11 @@ propNodeFromRootSS seq@SplaySeq {..} i0 = inner i0
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE sactNodeSS #-}
-sactNodeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
+sactNodeSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v) => SplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
 sactNodeSS SplaySeq {..} i act = do
   len <- GM.read sSS i
-  GM.modify vSS (\x -> segActWithLength act x len) i
-  GM.modify aggSS (\x -> segActWithLength act x len) i
+  GM.modify vSS (segAct act) i
+  GM.modify aggSS (segActWithLength len act) i
   GM.modify actSS (act <>) i
 
 -- * Split / merge
@@ -575,7 +573,7 @@ captureSS seq@SplaySeq {..} root l r
           --    [        )
           --             * root' (splayed)
           --          * rootL (detached from the root)
-          -- \* rootL' (detached and splayed)
+          -- \* rootL' (splayed)
           --    * right(rootL'): node that corresponds to [l, r)
           root' <- splayKthSS seq root r
           rootL <- GM.read lSS root'

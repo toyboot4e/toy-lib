@@ -5,7 +5,11 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
+import Data.Core.SegmentAction
+import Data.Foldable
+import Data.Instances.Affine2d
 import Data.Semigroup
+import Data.Sequence qualified as Seq
 import Data.SplaySeq
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
@@ -19,8 +23,19 @@ import Tests.Util
 
 type Seq s = SplaySeq s (Sum Int) (Sum Int)
 
+type AffineSeq s = SplaySeq s (Sum Int) (Affine2d Int)
+
 newSeq :: (PrimMonad m) => Int -> m (Seq (PrimState m))
 newSeq = newSS
+
+newAffineSeq :: (PrimMonad m) => Int -> m (AffineSeq (PrimState m))
+newAffineSeq = newSS
+
+clamp :: Int -> Int -> Int -> Int
+clamp l r x
+  | x < l = l
+  | x > r = r
+  | otherwise = x
 
 -- | Reads from left to right and right to left.
 readLR :: (PrimMonad m) => Seq (PrimState m) -> StateT SplayIndex m (U.Vector (Sum Int))
@@ -62,6 +77,38 @@ problemGen maxN maxQ rng = do
   xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
   qs <- U.fromList <$> QC.vectorOf q (queryGen n)
   return (n, q, xs, qs)
+
+-- | Reads from left to right and right to left.
+dynamicSequenceQueryGen :: Int -> Int -> (Int, Int) -> QC.Gen (U.Vector Int, U.Vector (Int, Int, Int, Int, Int))
+dynamicSequenceQueryGen maxN maxQ rng = do
+  n <- QC.chooseInt (1, maxN)
+  q <- QC.chooseInt (1, maxQ)
+  xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
+  qs <- U.replicateM q $ do
+    t <- QC.chooseInt (0, 4)
+    (!l, !r) <- rangeGen n
+    i <- QC.chooseInt (0, n - 1)
+    case t of
+      0 -> do
+        -- insert
+        x <- QC.chooseInt rng
+        return (0 :: Int, i, x, -1, -1)
+      1 -> do
+        -- delete
+        return (1, i, -1, -1, -1)
+      2 -> do
+        -- reverse
+        return (2, l, r, -1, -1)
+      3 -> do
+        -- affine
+        b <- QC.chooseInt rng
+        c <- QC.chooseInt rng
+        return (3, l, r, b, c)
+      4 -> do
+        -- fold
+        return (4, l, r, -1, -1)
+      _ -> error "unreachable"
+  return (xs, qs)
 
 randomTests :: TestTree
 randomTests =
@@ -154,7 +201,69 @@ randomTests =
         root <- lift $ allocSeqSS seq xs
         (!_, !res) <- lift $ bisectLSS seq root (<= Sum boundary)
 
-        QCM.assertWith (res == expected) $ show (res, expected)
+        QCM.assertWith (res == expected) $ show (res, expected),
+      QC.testProperty "SplaySeq-sact" $ QCM.monadicIO $ do
+        -- smaller version of this:
+        -- https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum
+        (!xs, !qs) <- QCM.pick $ dynamicSequenceQueryGen maxN maxQ rng
+
+        seq <- lift $ newAffineSeq (G.length xs + G.length qs)
+        root0 <- lift $ allocSeqSS seq $ U.map Sum xs
+        let pureSeq0 = Seq.fromList $ U.toList xs
+        U.foldM'_
+          ( \(!root, !acc) q -> case q of
+              (0, !i_, !x, !_, !_) -> do
+                -- insert
+                let !i = max 0 $ clamp 0 (Seq.length acc - 1) i_
+                let !acc' = Seq.insertAt i x acc
+                root' <- insertSS seq root i $ Sum x
+
+                return (root', acc')
+              _ | Seq.length acc == 0 -> do
+                return (root, acc)
+              (1, !i_, !_, !_, !_) -> do
+                -- delete
+                let !i = clamp 0 (Seq.length acc - 1) i_
+                let !acc' = Seq.deleteAt i acc
+                !root' <- deleteSS seq root i
+
+                return (root', acc')
+              (2, !l_, r_, !_, !_) -> do
+                -- reverse
+                let !l = clamp 0 (Seq.length acc - 1) l_
+                let !r = clamp 0 (Seq.length acc - 1) r_
+                let !acc' =
+                      let (!mid, !right) = Seq.splitAt (r + 1) acc
+                          (!left, !mid') = Seq.splitAt l mid
+                       in left Seq.>< Seq.reverse mid' Seq.>< right
+                root' <- reverseSS seq root l r
+
+                return (root', acc')
+              (3, !l_, !r_, !b, !c) -> do
+                -- apply affine transformation
+                let !l = clamp 0 (Seq.length acc - 1) l_
+                let !r = clamp 0 (Seq.length acc - 1) r_
+                let !acc' =
+                      let (!mid, !right) = Seq.splitAt (r + 1) acc
+                          (!left, !mid') = Seq.splitAt l mid
+                          !mid'' = (Affine2d (b, c) `segAct`) <$> mid'
+                       in left Seq.>< mid'' Seq.>< right
+                root' <- lift $ sactSS seq root l r $ Affine2d (b, c)
+
+                return (root', acc')
+              (4, !l_, !r_, !_, !_) -> do
+                -- fold
+                let !l = clamp 0 (Seq.length acc - 1) l_
+                let !r = clamp 0 (Seq.length acc - 1) r_
+                let !expected = sum $ map (Seq.index acc) [l .. r]
+                (Sum !res, !root') <- lift $ foldSS seq root l r
+                QCM.assertWith (res == expected) $ show ("fold", (l, r), res, expected)
+
+                return (root', acc)
+              _ -> error "unreachable"
+          )
+          (root0, pureSeq0)
+          qs
     ]
   where
     maxN = 16

@@ -40,6 +40,11 @@ instance (KnownNat p) => Num (ModInt p) where
   signum _ = 1
   fromInteger = ModInt . fromInteger
 
+-- FIXME: is this correct?
+instance (KnownNat p) => Integral (ModInt p) where
+  quotRem x y = (x / y, x - x / y * y)
+  toInteger = coerce (toInteger @Int)
+
 instance (KnownNat p) => Fractional (ModInt p) where
   -- Reciprocal of x (inverse of x).
   -- FIXME: use exgcd instead.
