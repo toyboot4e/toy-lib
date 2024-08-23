@@ -51,7 +51,7 @@ seqSizeSS SplaySeq {..} = do
 
 -- | \(O(N)\) Allocates a new sequence, internally as a binary tree from the bottom to the top.
 allocSeqSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a) => SplaySeq (PrimState m) v a -> U.Vector v -> m ()
-allocSeqSS SplaySeq{..} xs = do
+allocSeqSS SplaySeq {..} xs = do
   root <- allocSeqRSS rawSS xs
   GM.unsafeWrite rootSS 0 root
 
@@ -73,7 +73,7 @@ freeSS SplaySeq {..} =
 readSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> m v
 readSS SplaySeq {..} k = do
   root <- GM.unsafeRead rootSS 0
-  (!root', !x) <- readRSS rawSS root k
+  (!x, !root') <- readRSS rawSS k root
   GM.unsafeWrite rootSS 0 root'
   return x
 
@@ -81,20 +81,20 @@ readSS SplaySeq {..} k = do
 {-# INLINE writeSS #-}
 writeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> v -> m ()
 writeSS SplaySeq {..} k v = do
-  GM.unsafeModifyM rootSS (\root -> writeRSS rawSS root k v) 0
+  GM.unsafeModifyM rootSS (writeRSS rawSS k v) 0
 
 -- | Amortized \(O(\log N)\). Modifies a kth node's value.
 {-# INLINE modifySS #-}
 modifySS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> (v -> v) -> Int -> m ()
 modifySS SplaySeq {..} f k = do
-  GM.unsafeModifyM rootSS (\root -> modifyRSS rawSS root f k) 0
+  GM.unsafeModifyM rootSS (modifyRSS rawSS f k) 0
 
 -- | Amortized \(O(\log N)\). Exchanges a kth node's value.
 {-# INLINE exchangeSS #-}
 exchangeSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> v -> m v
 exchangeSS SplaySeq {..} k v = do
   root <- GM.unsafeRead rootSS 0
-  (!x, !root') <- exchangeRSS rawSS root k v
+  (!x, !root') <- exchangeRSS rawSS k v root
   GM.unsafeWrite rootSS 0 root'
   return x
 
@@ -103,7 +103,7 @@ exchangeSS SplaySeq {..} k v = do
 foldSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> Int -> m v
 foldSS SplaySeq {..} l r = do
   root <- GM.unsafeRead rootSS 0
-  (!x, !root') <- foldRSS rawSS root l r
+  (!x, !root') <- foldRSS rawSS l r root
   GM.unsafeWrite rootSS 0 root'
   return x
 
@@ -118,26 +118,26 @@ foldAllSS SplaySeq {..} = do
 {-# INLINE sactSS #-}
 sactSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> Int -> a -> m ()
 sactSS SplaySeq {..} l r act = do
-  GM.unsafeModifyM rootSS (\root -> sactRSS rawSS root l r act) 0
+  GM.unsafeModifyM rootSS (sactRSS rawSS l r act) 0
 
 -- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
 {-# INLINE reverseSS #-}
 reverseSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> Int -> m ()
 reverseSS SplaySeq {..} l r = do
-  GM.unsafeModifyM rootSS (\root -> reverseRSS rawSS root l r) 0
+  GM.unsafeModifyM rootSS (reverseRSS rawSS l r) 0
 
 -- | Amortized \(O(\log N)\). Inserts a node at @k@.
 {-# INLINE insertSS #-}
 insertSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> v -> m ()
 insertSS SplaySeq {..} k v = do
-  GM.unsafeModifyM rootSS (\root -> insertRSS rawSS root k v) 0
+  GM.unsafeModifyM rootSS (insertRSS rawSS k v) 0
 
 -- | Amortized \(O(\log N)\). Deletes a node at @k@.
 {-# INLINE deleteSS #-}
 deleteSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> Int -> m ()
 deleteSS SplaySeq {..} i = do
-  GM.unsafeModifyM rootSS (\root -> deleteRSS rawSS root i) 0
+  GM.unsafeModifyM rootSS (deleteRSS rawSS i) 0
 
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
 -- user function is run over each node, not fold of an interval.
@@ -145,6 +145,6 @@ deleteSS SplaySeq {..} i = do
 bisectLSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> (v -> Bool) -> m (Maybe SplayIndex)
 bisectLSS SplaySeq {..} check = do
   root <- GM.unsafeRead rootSS 0
-  (!res, !root') <- bisectLRSS rawSS root check
+  (!res, !root') <- bisectLRSS rawSS check root
   GM.unsafeWrite rootSS 0 root'
   return res

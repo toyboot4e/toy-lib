@@ -35,40 +35,30 @@ solve = do
       _ -> error "unreachable"
 
   seq <- newSS (n + q)
-  root0 <- allocSeqSS seq $ U.map (Sum . ModInt @MyModulo) xs
+  allocSeqSS seq $ U.map (Sum . ModInt @MyModulo) xs
 
-  -- TODO: easier state monad, like `stateT` function?
-  let f :: (Int, Int, Int, Int, Int) -> StateT SplayIndex (StateT BS.ByteString IO) (Maybe Int)
-      f q = do
-        root <- get
-        case q of
-          (0, !i, !x, !_, !_) -> do
-            -- insert
-            root' <- insertSS seq root i $ Sum (ModInt x)
-            put root'
-            return Nothing
-          (1, !i, !_, !_, !_) -> do
-            -- delete
-            !root' <- deleteSS seq root i
-            put root'
-            return Nothing
-          (2, !l, pred -> !r, !_, !_) -> do
-            -- reverse
-            root' <- reverseSS seq root l r
-            put root'
-            return Nothing
-          (3, !l, pred -> !r, !b, !c) -> do
-            -- apply affine transformation
-            root' <- sactSS seq root l r $ Affine2d (ModInt @MyModulo b, ModInt @MyModulo c)
-            put root'
-            return Nothing
-          (4, !l, pred -> !r, !_, !_) -> do
-            -- fold
-            (Sum (ModInt !x), !root') <- foldSS seq root l r
-            put root'
-            return $ Just x
+  res <- (`U.mapMaybeM` qs) $ \case
+    (0, !i, !x, !_, !_) -> do
+      -- insert
+      insertSS seq i $ Sum (ModInt x)
+      return Nothing
+    (1, !i, !_, !_, !_) -> do
+      -- delete
+      deleteSS seq i
+      return Nothing
+    (2, !l, pred -> !r, !_, !_) -> do
+      -- reverse
+      reverseSS seq l r
+      return Nothing
+    (3, !l, pred -> !r, !b, !c) -> do
+      -- apply affine transformation
+      sactSS seq l r $ Affine2d (ModInt @MyModulo b, ModInt @MyModulo c)
+      return Nothing
+    (4, !l, pred -> !r, !_, !_) -> do
+      -- fold
+      Sum (ModInt !x) <- foldSS seq l r
+      return $ Just x
 
-  res <- (`evalStateT` root0) . (`U.mapMaybeM` qs) $ f
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum
