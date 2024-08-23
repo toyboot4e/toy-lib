@@ -46,6 +46,8 @@ data RawSplaySeq s v a = RawSplaySeq
     capacityRSS :: {-# UNPACK #-} !Int,
     -- | Pool for free slot handing.
     freeRSS :: !(Pool s ()),
+    -- | The segment action
+    segActRSS :: {-# UNPACK #-} !(Int -> a -> v -> v),
     -- | Decomposed node data storage: left children.
     lRSS :: !(UM.MVector s SplayIndex),
     -- | Decomposed node data storage: right children.
@@ -65,10 +67,10 @@ data RawSplaySeq s v a = RawSplaySeq
     actRSS :: !(UM.MVector s a)
   }
 
--- | \(O(N)\) Creates a new `RawSplaySeq` of capacity @n@ with lazily propagated values.
-{-# INLINE newRSS #-}
-newRSS :: (U.Unbox v, U.Unbox a, PrimMonad m) => Int -> m (RawSplaySeq (PrimState m) v a)
-newRSS n = do
+-- | \(O(N)\) (Internal) Creates a new `RawSplaySeq`.
+{-# INLINE _newRSS #-}
+_newRSS :: (U.Unbox v, U.Unbox a, PrimMonad m) => (Int -> a -> v -> v) -> Int -> m (RawSplaySeq (PrimState m) v a)
+_newRSS !segActRSS !n = do
   freeRSS <- newPool n
   lRSS <- UM.unsafeNew n
   rRSS <- UM.unsafeNew n
@@ -79,6 +81,21 @@ newRSS n = do
   revRSS <- UM.unsafeNew n
   actRSS <- UM.unsafeNew n
   return $ RawSplaySeq {capacityRSS = n, ..}
+
+-- | \(O(N)\) Creates a new `RawSplaySeq` of capacity @n@ without lazily propagated values (other
+-- than the reverse).
+{-# INLINE newRSS #-}
+newRSS :: (U.Unbox v, PrimMonad m) => Int -> m (RawSplaySeq (PrimState m) v ())
+newRSS = _newRSS _noActionRSS
+
+{-# INLINE _noActionRSS #-}
+_noActionRSS :: Int -> a -> b -> b
+_noActionRSS _ _ = id
+
+-- | \(O(N)\) Creates a new `RawSplaySeq` of capacity @n@ with lazily propagated values.
+{-# INLINE newLazyRSS #-}
+newLazyRSS :: forall v a m. (U.Unbox v, U.Unbox a, SegmentAction a v, PrimMonad m) => Int -> m (RawSplaySeq (PrimState m) v a)
+newLazyRSS = _newRSS (segActWithLength :: Int -> a -> v -> v)
 
 -- | \(O(1)\) Returns the number of elements stored. Requires monad for tracking the state.
 {-# INLINE sizeRSS #-}
@@ -163,7 +180,7 @@ assertRootRSS RawSplaySeq {..} root = dbgM $ do
 
 -- | Amortized \(O(\log N)\). Reads a kth node's value.
 {-# INLINE readRSS #-}
-readRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> SplayIndex -> m (v, SplayIndex)
+readRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> SplayIndex -> m (v, SplayIndex)
 readRSS seq@RawSplaySeq {..} k root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
@@ -173,7 +190,7 @@ readRSS seq@RawSplaySeq {..} k root = do
 
 -- | Amortized \(O(\log N)\). Writes a kth node's value.
 {-# INLINE writeRSS #-}
-writeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m SplayIndex
+writeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m SplayIndex
 writeRSS seq k v root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
@@ -182,7 +199,7 @@ writeRSS seq k v root = do
 
 -- | Amortized \(O(\log N)\). Modifies a kth node's value.
 {-# INLINE modifyRSS #-}
-modifyRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> (v -> v) -> Int -> SplayIndex -> m SplayIndex
+modifyRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> (v -> v) -> Int -> SplayIndex -> m SplayIndex
 modifyRSS seq f k root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
@@ -191,7 +208,7 @@ modifyRSS seq f k root = do
 
 -- | Amortized \(O(\log N)\). Exchanges a kth node's value.
 {-# INLINE exchangeRSS #-}
-exchangeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m (v, SplayIndex)
+exchangeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m (v, SplayIndex)
 exchangeRSS seq k v root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
@@ -200,7 +217,7 @@ exchangeRSS seq k v root = do
 
 -- | Amortized \(O(\log N)\). Folds an interval @[l, r]@.
 {-# INLINE foldRSS #-}
-foldRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m (v, SplayIndex)
+foldRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m (v, SplayIndex)
 foldRSS seq@RawSplaySeq {..} l r root
   | l > r = return (mempty, root)
   | otherwise = do
@@ -215,14 +232,14 @@ foldRSS seq@RawSplaySeq {..} l r root
 
 -- | Amortized \(O(\log N)\). Folds the whole sequence.
 {-# INLINE foldAllRSS #-}
-foldAllRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m v
+foldAllRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m v
 foldAllRSS seq@RawSplaySeq {..} root = do
   assertRootRSS seq root
   GM.read aggRSS root
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE sactRSS #-}
-sactRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> a -> SplayIndex -> m SplayIndex
+sactRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> a -> SplayIndex -> m SplayIndex
 sactRSS seq@RawSplaySeq {..} l r act root = do
   -- TODO: assert with size
   let !_ = assert (0 <= l && l <= r && r < capacityRSS) $ "invalid interval: " ++ show (l, r)
@@ -235,7 +252,7 @@ sactRSS seq@RawSplaySeq {..} l r act root = do
 -- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
 {-# INLINE reverseRSS #-}
-reverseRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m SplayIndex
+reverseRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m SplayIndex
 reverseRSS seq l r root0
   | l > r = return root0
   | otherwise = do
@@ -246,7 +263,7 @@ reverseRSS seq l r root0
 
 -- | Amortized \(O(\log N)\). Inserts a node at @k@.
 {-# INLINE insertRSS #-}
-insertRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m SplayIndex
+insertRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> v -> SplayIndex -> m SplayIndex
 insertRSS seq k v root = do
   (!l, !r) <- splitAtRSS seq root k
   node <- allocNodeRSS seq v
@@ -254,7 +271,7 @@ insertRSS seq k v root = do
 
 -- | Amortized \(O(\log N)\). Deletes a node at @k@.
 {-# INLINE deleteRSS #-}
-deleteRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> SplayIndex -> m SplayIndex
+deleteRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> SplayIndex -> m SplayIndex
 deleteRSS seq i root = do
   (!l, !m, !r) <- split3RSS seq root i (i + 1)
   freeNodeRSS seq m
@@ -264,7 +281,7 @@ deleteRSS seq i root = do
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
 -- user function is run over each node, not fold of an interval.
 {-# INLINE bisectLRSS #-}
-bisectLRSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> (v -> Bool) -> SplayIndex -> m (Maybe SplayIndex, SplayIndex)
+bisectLRSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> (v -> Bool) -> SplayIndex -> m (Maybe SplayIndex, SplayIndex)
 bisectLRSS seq@RawSplaySeq {..} check root0 = do
   let inner root parent lastYes
         | nullSI root && nullSI lastYes = return (Nothing, parent)
@@ -341,7 +358,7 @@ rotateRSS RawSplaySeq {..} !i = do
 --
 -- = After call
 -- The node is updated and propagated.
-splayRSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Bool -> m ()
+splayRSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid v, Monoid a, U.Unbox a, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Bool -> m ()
 splayRSS seq@RawSplaySeq {..} i doneParentProp = do
   if doneParentProp
     then propNodeRSS seq i
@@ -377,7 +394,7 @@ splayRSS seq@RawSplaySeq {..} i doneParentProp = do
 
 -- | Amortized \(O(\log N)\). Finds @k@ th node from the left and splays it.
 -- Returns the new root.
-splayKthRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
+splayKthRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> m SplayIndex
 splayKthRSS seq@RawSplaySeq {..} root0 k0 = do
   size <- GM.read sRSS root0
   let !_ = assert (0 <= k0 && k0 < size) "no kth element in the sequence"
@@ -464,7 +481,7 @@ reverseNodeRSS seq@RawSplaySeq {..} i = do
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE propNodeRSS #-}
-propNodeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
+propNodeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 propNodeRSS seq@RawSplaySeq {..} i = do
   -- action
   act <- GM.exchange actRSS i mempty
@@ -489,7 +506,7 @@ propNodeRSS seq@RawSplaySeq {..} i = do
 
 -- | Amortized \(O(\log N)\). Propagetes from the root to the given node.
 {-# INLINE propNodeFromRootRSS #-}
-propNodeFromRootRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
+propNodeFromRootRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 propNodeFromRootRSS seq@RawSplaySeq {..} i0 = inner i0
   where
     inner i = do
@@ -500,11 +517,11 @@ propNodeFromRootRSS seq@RawSplaySeq {..} i0 = inner i0
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE sactNodeRSS #-}
-sactNodeRSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v) => RawSplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
+sactNodeRSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid a, U.Unbox a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> a -> m ()
 sactNodeRSS RawSplaySeq {..} i act = do
   len <- GM.read sRSS i
-  GM.modify vRSS (segAct act) i
-  GM.modify aggRSS (segActWithLength len act) i
+  GM.modify vRSS (segActRSS 1 act) i
+  GM.modify aggRSS (segActRSS len act) i
   GM.modify actRSS (act <>) i
 
 -- * Split / merge
@@ -512,7 +529,7 @@ sactNodeRSS RawSplaySeq {..} i act = do
 -- These functions take root indices as object, not context.
 
 -- | Amortized \(O(\log N)\). Merges two nodes. It's implemented a reverse operation of `splitRSS`.
-mergeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> m SplayIndex
+mergeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> m SplayIndex
 mergeRSS seq@RawSplaySeq {..} l r
   | nullSI l = return r
   | nullSI r = return l
@@ -527,14 +544,14 @@ mergeRSS seq@RawSplaySeq {..} l r
       return r'
 
 -- | Amortized \(O(\log N)\). Folds three nodes from left to right.
-merge3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
+merge3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
 merge3RSS seq l m r = do
   node <- mergeRSS seq l m
   mergeRSS seq node r
 
 -- | Amortized \(O(\log N)\). Splits a sequneces into two nodes. It's implemented a reverse
 -- operation of `splitRSS`.
-splitAtRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
+splitAtRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
 splitAtRSS seq@RawSplaySeq {..} root k
   | k == 0 = return (undefSI, root)
   | otherwise = do
@@ -550,7 +567,7 @@ splitAtRSS seq@RawSplaySeq {..} root k
           return (root', r)
 
 -- | Amortized \(O(\log N)\). Splits into three sequences from right to left.
-split3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
+split3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
 split3RSS seq root l r = do
   (!root', !nodeR) <- splitAtRSS seq root r
   (!nodeL, !nodeM) <- splitAtRSS seq root' l
@@ -558,7 +575,7 @@ split3RSS seq root l r = do
 
 -- | Amortized \(O(\log N)\). Captures a subtree of [l, r). Be sure that it's half-open interval!
 -- Splay the new root after call.
-captureRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
+captureRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a,  Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m SplayIndex
 captureRSS seq@RawSplaySeq {..} root l r
   | l == 0 = do
       size <- GM.read sRSS root
