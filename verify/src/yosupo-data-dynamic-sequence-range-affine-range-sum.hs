@@ -34,7 +34,7 @@ solve = do
       4 -> (4 :: Int,,,-1,-1) <$> int' <*> int'
       _ -> error "unreachable"
 
-  seq <- newLazySS (n + q)
+  seq <- newSS (n + q)
   allocSeqSS seq $ U.map (Sum . ModInt @MyModulo) xs
 
   res <- (`U.mapMaybeM` qs) $ \case

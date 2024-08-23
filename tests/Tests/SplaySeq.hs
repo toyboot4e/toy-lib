@@ -4,6 +4,7 @@ import Algorithm.Bisect
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.Trans.Class
+import Control.Monad.Trans.State.Strict
 import Data.Core.SegmentAction
 import Data.Instances.Affine2d
 import Data.Semigroup
@@ -17,7 +18,7 @@ import Test.Tasty
 import Test.Tasty.QuickCheck qualified as QC
 import Tests.Util
 
-type Seq s = SplaySeq s (Sum Int) ()
+type Seq s = SplaySeq s (Sum Int) (Sum Int)
 
 type AffineSeq s = SplaySeq s (Sum Int) (Affine2d Int)
 
@@ -25,7 +26,7 @@ newSeq :: (PrimMonad m) => Int -> m (Seq (PrimState m))
 newSeq = newSS
 
 newAffineSeq :: (PrimMonad m) => Int -> m (AffineSeq (PrimState m))
-newAffineSeq = newLazySS
+newAffineSeq = newSS
 
 clamp :: Int -> Int -> Int -> Int
 clamp l r x
