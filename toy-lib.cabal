@@ -215,6 +215,7 @@ library
     Data.SizedList
     Data.SplayMap
     Data.SplaySeq
+    Data.SplaySeq.Raw
     Data.Sqrd
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
@@ -318,8 +319,8 @@ test-suite toy-lib-test
     , tasty-hspec        ^>=1.2.0.3
     , tasty-hunit        ^>=0.10.0.3
     , tasty-quickcheck   ^>=0.10.2
-    , transformers       ^>=0.6.1.0
     , toy-lib
+    , transformers       ^>=0.6.1.0
     , utility-ht         ^>=0.0.17
     , vector             ^>=0.13.0.0
     , vector-algorithms  ^>=0.9.0.1

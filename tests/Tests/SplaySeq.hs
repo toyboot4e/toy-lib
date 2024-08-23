@@ -6,7 +6,6 @@ import Control.Monad.ST
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
 import Data.Core.SegmentAction
-import Data.Foldable
 import Data.Instances.Affine2d
 import Data.Semigroup
 import Data.Sequence qualified as Seq
@@ -14,8 +13,6 @@ import Data.SplaySeq
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U
-import Data.Vector.Unboxed.Mutable qualified as UM
-import Debug.Trace
 import Test.QuickCheck.Monadic qualified as QCM
 import Test.Tasty
 import Test.Tasty.QuickCheck qualified as QC
@@ -38,29 +35,17 @@ clamp l r x
   | otherwise = x
 
 -- | Reads from left to right and right to left.
-readLR :: (PrimMonad m) => Seq (PrimState m) -> StateT SplayIndex m (U.Vector (Sum Int))
+readLR :: (PrimMonad m) => Seq (PrimState m) -> m (U.Vector (Sum Int))
 readLR seq = do
   let !n = capacitySS seq
-  !forwards <- U.generateM n $ \k -> do
-    root' <- get
-    (!root'', !x) <- readSS seq root' k
-    put root''
-    return x
-  !backwards <- U.generateM n $ \k -> do
-    root'' <- get
-    (!root''', !x) <- readSS seq root'' (n - 1 - k)
-    put root'''
-    return x
+  !forwards <- U.generateM n $ readSS seq
+  !backwards <- U.generateM n $ \k -> readSS seq (n - 1 - k)
   return $ forwards U.++ backwards
 
-readInterval :: (PrimMonad m) => Seq (PrimState m) -> Int -> Int -> StateT SplayIndex m (U.Vector (Sum Int))
+readInterval :: (PrimMonad m) => Seq (PrimState m) -> Int -> Int -> m (U.Vector (Sum Int))
 readInterval seq l r = do
   let !n = capacitySS seq
-  U.generateM (r + 1 - l) $ \i_ -> do
-    root' <- get
-    (!root'', !x) <- readSS seq root' (i_ + l)
-    put root''
-    return x
+  U.generateM (r + 1 - l) $ \i_ -> readSS seq (i_ + l)
 
 -- | Reads from left to right and right to left.
 queryGen :: Int -> QC.Gen (Int, Int, Int)
@@ -119,8 +104,8 @@ randomTests =
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         let res = runST $ do
               seq <- newSeq n
-              root <- allocSeqSS seq $ U.map Sum xs
-              evalStateT (readLR seq) root
+              allocSeqSS seq $ U.map Sum xs
+              readLR seq
         return . QC.counterexample (show xs) $ (xs U.++ U.reverse xs) QC.=== U.map getSum res,
       QC.testProperty "SplaySeq: write" $ do
         n <- QC.chooseInt (1, maxN)
@@ -128,13 +113,10 @@ randomTests =
         ys <- U.fromList <$> QC.vectorOf n (QC.chooseInt rng)
         let res = runST $ do
               seq <- newSeq n
-              root <- allocSeqSS seq $ U.map Sum xs
-              root' <- (`execStateT` root) $ do
-                U.iforM_ ys $ \i x -> do
-                  root' <- get
-                  root'' <- writeSS seq root' i $ Sum x
-                  put root''
-              evalStateT (readLR seq) root'
+              allocSeqSS seq $ U.map Sum xs
+              U.iforM_ ys $ \i x -> do
+                writeSS seq i $ Sum x
+              readLR seq
         return . QC.counterexample (show ys) $ U.map getSum res QC.=== (ys U.++ U.reverse ys),
       QC.testProperty "SplaySeq: fold" $ do
         n <- QC.chooseInt (1, maxN)
@@ -147,49 +129,37 @@ randomTests =
 
         let res = runST $ do
               seq <- newSeq n
-              root <- allocSeqSS seq xs
-              (`evalStateT` root) $ do
-                U.forM lrs $ \(!l, !r) -> do
-                  root' <- get
-                  (!m, !root'') <- foldSS seq root' l r
-                  put root''
-                  return m
+              allocSeqSS seq xs
+              U.forM lrs $ \(!l, !r) -> do
+                foldSS seq l r
 
         return . QC.counterexample (show (U.map getSum xs, lrs)) $ U.map getSum res QC.=== U.map getSum expected,
       QC.testProperty "SplaySeq-reverse" $ QCM.monadicIO $ do
         QCM.forAllM (problemGen maxN maxQ rng) $ \(!n, !q, !xs, !qs) -> do
           vec <- lift $ U.thaw $ U.map Sum xs
           seq <- lift $ newSeq n
-          root0 <- lift $ allocSeqSS seq $ U.map Sum xs
+          lift $ allocSeqSS seq $ U.map Sum xs
 
-          let testFold root l r = do
-                (!m1, !root') <- lift $ foldSS seq root l r
+          let testFold l r = do
+                m1 <- lift $ foldSS seq l r
                 m2 <- U.foldl' (<>) mempty <$> lift (U.unsafeFreeze (GM.slice l (r + 1 - l) vec))
                 QCM.assertWith (m1 == m2) $ show (m1, m2)
-                return root'
 
-          let testMatch root l r = do
-                (!ys1, !root') <- runStateT (readInterval seq l r) root
+          let testMatch l r = do
+                ys1 <- readInterval seq l r
                 ys2 <- lift $ U.unsafeFreeze $ GM.slice l (r + 1 - l) vec
                 QCM.assertWith (ys1 == ys2) $ show (ys1, ys2)
-                return root'
 
-          U.foldM'_
-            ( \root (!t, !l, !r) -> do
-                if t == 0
-                  then do
-                    -- reverse
-                    GM.reverse $ GM.slice l (r + 1 - l) vec
-                    !root' <- lift $ reverseSS seq root l r
-                    return root'
-                  else do
-                    -- evaluate
-                    root' <- testFold root l r
-                    root'' <- testMatch root' l r
-                    return root''
-            )
-            root0
-            qs,
+          U.forM_ qs $ \(!t, !l, !r) -> do
+            if t == 0
+              then do
+                -- reverse
+                GM.reverse $ GM.slice l (r + 1 - l) vec
+                lift $ reverseSS seq l r
+              else do
+                -- evaluate
+                testFold l r
+                testMatch l r,
       QC.testProperty "SplaySeq-bisect" $ QCM.monadicIO $ do
         n <- QCM.pick (QC.chooseInt (1, maxN))
         let xs = U.generate n Sum
@@ -198,8 +168,8 @@ randomTests =
         let expected = bisectL 0 (n - 1) $ \i -> xs G.! i <= Sum boundary
 
         seq <- lift $ newSeq n
-        root <- lift $ allocSeqSS seq xs
-        (!_, !res) <- lift $ bisectLSS seq root (<= Sum boundary)
+        allocSeqSS seq xs
+        !res <- lift $ bisectLSS seq (<= Sum boundary)
 
         QCM.assertWith (res == expected) $ show (res, expected),
       QC.testProperty "SplaySeq-sact" $ QCM.monadicIO $ do
@@ -208,26 +178,26 @@ randomTests =
         (!xs, !qs) <- QCM.pick $ dynamicSequenceQueryGen maxN maxQ rng
 
         seq <- lift $ newAffineSeq (G.length xs + G.length qs)
-        root0 <- lift $ allocSeqSS seq $ U.map Sum xs
+        lift $ allocSeqSS seq $ U.map Sum xs
         let pureSeq0 = Seq.fromList $ U.toList xs
         U.foldM'_
-          ( \(!root, !acc) q -> case q of
+          ( \ !acc q -> case q of
               (0, !i_, !x, !_, !_) -> do
                 -- insert
                 let !i = max 0 $ clamp 0 (Seq.length acc - 1) i_
                 let !acc' = Seq.insertAt i x acc
-                root' <- insertSS seq root i $ Sum x
+                insertSS seq i $ Sum x
 
-                return (root', acc')
+                return acc'
               _ | Seq.length acc == 0 -> do
-                return (root, acc)
+                    return acc
               (1, !i_, !_, !_, !_) -> do
                 -- delete
                 let !i = clamp 0 (Seq.length acc - 1) i_
                 let !acc' = Seq.deleteAt i acc
-                !root' <- deleteSS seq root i
+                deleteSS seq i
 
-                return (root', acc')
+                return acc'
               (2, !l_, r_, !_, !_) -> do
                 -- reverse
                 let !l = clamp 0 (Seq.length acc - 1) l_
@@ -236,9 +206,9 @@ randomTests =
                       let (!mid, !right) = Seq.splitAt (r + 1) acc
                           (!left, !mid') = Seq.splitAt l mid
                        in left Seq.>< Seq.reverse mid' Seq.>< right
-                root' <- reverseSS seq root l r
+                reverseSS seq l r
 
-                return (root', acc')
+                return acc'
               (3, !l_, !r_, !b, !c) -> do
                 -- apply affine transformation
                 let !l = clamp 0 (Seq.length acc - 1) l_
@@ -248,21 +218,21 @@ randomTests =
                           (!left, !mid') = Seq.splitAt l mid
                           !mid'' = (Affine2d (b, c) `segAct`) <$> mid'
                        in left Seq.>< mid'' Seq.>< right
-                root' <- lift $ sactSS seq root l r $ Affine2d (b, c)
+                lift $ sactSS seq l r $ Affine2d (b, c)
 
-                return (root', acc')
+                return acc'
               (4, !l_, !r_, !_, !_) -> do
                 -- fold
                 let !l = clamp 0 (Seq.length acc - 1) l_
                 let !r = clamp 0 (Seq.length acc - 1) r_
                 let !expected = sum $ map (Seq.index acc) [l .. r]
-                (Sum !res, !root') <- lift $ foldSS seq root l r
+                Sum !res <- lift $ foldSS seq l r
                 QCM.assertWith (res == expected) $ show ("fold", (l, r), res, expected)
 
-                return (root', acc)
+                return acc
               _ -> error "unreachable"
           )
-          (root0, pureSeq0)
+          pureSeq0
           qs
     ]
   where
