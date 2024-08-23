@@ -31,19 +31,15 @@ solve = do
   qs <- U.replicateM q ints3'
 
   seq <- newSS (n + q)
-  root0 <- allocSeqSS seq $ U.map Sum xs
+  allocSeqSS seq $ U.map Sum xs
 
   -- TODO: hide the varying root from the user
-  res <- (`evalStateT` root0) . (`U.mapMaybeM` qs) $ \case
+  res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, pred -> !r) -> do
-      root <- get
-      root' <- reverseSS seq root l r
-      put root'
+      reverseSS seq l r
       return Nothing
     (1, !l, pred -> !r) -> do
-      root <- get
-      (Sum !x, !root') <- foldSS seq root l r
-      put root'
+      Sum !x <- foldSS seq l r
       return $ Just x
 
   printBSB $ unlinesBSB res
