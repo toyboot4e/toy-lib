@@ -10,6 +10,7 @@ import Control.Monad (unless, when)
 import Control.Monad.Extra (whenM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Data.Bit
 import Data.Bits
 import Data.Core.SegmentAction
 import Data.Pool
@@ -59,8 +60,7 @@ data RawSplaySeq s v a = RawSplaySeq
     -- | Decomposed node data storage: aggregation of payloads.
     aggRSS :: !(UM.MVector s v),
     -- | Decomposed node data storage: reversed flag of children.
-    -- TODO: use Bit?
-    revRSS :: !(UM.MVector s Bool),
+    revRSS :: !(UM.MVector s Bit),
     -- | Decomposed node data storage: lazily propagated semigroup action.
     actRSS :: !(UM.MVector s a)
   }
@@ -105,7 +105,7 @@ allocNodeRSS RawSplaySeq {..} !v = do
   GM.write sRSS i (1 :: Int)
   GM.write vRSS i v
   GM.write aggRSS i v
-  GM.write revRSS i False
+  GM.write revRSS i $ Bit False
   GM.write actRSS i mempty
   return i
 
@@ -460,7 +460,7 @@ reverseNodeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.U
 reverseNodeRSS seq@RawSplaySeq {..} i = do
   swapLrNodeRSS seq i
   -- propagate new reverse or cancel:
-  GM.modify revRSS (xor True) i
+  GM.modify revRSS (xor (Bit True)) i
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE propNodeRSS #-}
@@ -477,7 +477,7 @@ propNodeRSS seq@RawSplaySeq {..} i = do
       sactNodeRSS seq r act
 
   -- reverse
-  whenM (GM.exchange revRSS i False) $ do
+  whenM (unBit <$> GM.exchange revRSS i (Bit False)) $ do
     l <- GM.read lRSS i
     unless (nullSI l) $ do
       -- propagate new reverse or cancel:
