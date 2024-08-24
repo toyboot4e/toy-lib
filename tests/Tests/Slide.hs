@@ -33,7 +33,7 @@ gen1 q = do
 
 gen2 :: Int -> Gen (Int, Int, Int)
 gen2 q = do
-  t <- QC.chooseInt (0, 2)
+  t <- QC.chooseInt (0, 4)
   case t of
     0 -> do
       a <- QC.chooseInt rng
@@ -83,7 +83,7 @@ props =
             QCM.assertWith (res == expected) $ show (res, expected),
       QC.testProperty "slide-deque" $ QCM.monadicIO $ do
         q <- QCM.pick $ QC.chooseInt (1, maxQ)
-        qs <- QCM.pick $ U.fromList <$> QC.vectorOf q (gen1 q)
+        qs <- QCM.pick $ U.fromList <$> QC.vectorOf q (gen2 q)
         buf <- QCM.run $ newBufferAsDeque q
         window <- QCM.run $ newDSF q
 
@@ -112,11 +112,10 @@ props =
             -- fold
             expected <- (`sact` x) . getDual <$> QCM.run (U.foldl' (<>) mempty <$> unsafeFreezeBuffer buf)
             res <- (`sact` x) . getDual <$> QCM.run (foldDSF window)
-            let !_ = traceShow res
             QCM.assertWith (res == expected) $ show (res, expected)
     ]
   where
-    maxQ = 64
+    maxQ = 16
 
 tests :: [TestTree]
 tests = [testGroup "Data.Slide" [props]]

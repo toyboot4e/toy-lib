@@ -5,17 +5,13 @@
 -- = Typical Problems
 module Data.Slide where
 
-import Control.Monad (when)
-import Control.Monad.Extra (whenJustM, whenM)
-import Control.Monad.Fix
+import Control.Monad.Extra (whenM)
 import Control.Monad.Primitive
 import Data.Buffer
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack
-
--- TODO: INLINE
 
 -- | Stack-based sliding window folding, going from left to right only.
 -- SWAG (sliding window aggregation).
@@ -39,7 +35,7 @@ newSSF n = do
   return StackSlidingFold {..}
 
 -- | \(O(1)\)
-{-# INLINE newSSF #-}
+{-# INLINE clearSSF #-}
 clearSSF :: (PrimMonad m, Monoid a, U.Unbox a) => StackSlidingFold (PrimState m) a -> m ()
 clearSSF StackSlidingFold {..} = do
   clearBuffer bufferSSF
@@ -176,8 +172,10 @@ foldDSF DequeSlidingFold {..} = do
 {-# INLINE balanceDSF #-}
 balanceDSF :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => DequeSlidingFold (PrimState m) a -> m ()
 balanceDSF window@DequeSlidingFold {..} = do
-  xs <- (U.++) <$> unsafeFreezeBuffer frontBufferDSF <*> unsafeFreezeBuffer backBufferDSF
+  -- be sure to revere!
+  xs <- (U.++) <$> (U.reverse <$> unsafeFreezeBuffer frontBufferDSF) <*> unsafeFreezeBuffer backBufferDSF
   let (!xsL, !xsR) = U.splitAt (U.length xs `div` 2) xs
   clearDSF window
-  U.forM_ xsL $ pushFrontDSF window
+  -- be sure to revere!
+  U.forM_ (U.reverse xsL) $ pushFrontDSF window
   U.forM_ xsR $ pushBackDSF window
