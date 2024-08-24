@@ -26,7 +26,7 @@ newSeq :: (PrimMonad m) => Int -> m (Seq (PrimState m))
 newSeq = newSS
 
 newAffineSeq :: (PrimMonad m) => Int -> m (AffineSeq (PrimState m))
-newAffineSeq = newSS
+newAffineSeq = newLazySS
 
 clamp :: Int -> Int -> Int -> Int
 clamp l r x

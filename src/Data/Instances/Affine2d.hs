@@ -44,7 +44,7 @@ instance (Num a) => Semigroup (Affine2d a) where
   {-# INLINE (<>) #-}
   (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a', b')
     where
-      !a' = a2 * a1
+      !a' = a1 * a2
       !b' = a1 * b2 + b1
 
 instance (Num a) => Monoid (Affine2d a) where
@@ -72,6 +72,13 @@ instance (Integral a) => SegmentAction (Affine2d a) (Product a) where
       !a' = a * x + b * fromIntegral len
 
 -- * SemigroupAction implementations
+
+-- | Limited to length 1
+instance (Num a) => SemigroupAction (Affine2d a) a where
+  {-# INLINE sact #-}
+  sact (Affine2d (!a, !b)) !x = x'
+    where
+      !x' = a * x + b
 
 instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
   {-# INLINE sact #-}

@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | A mutable splay tree-based sequence.
+--
+-- = Typical Problems
 module Data.SplaySeq where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)

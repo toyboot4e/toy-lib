@@ -15,7 +15,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
-       -- 
+
 -- | A fixed-sized mutable vector with push/pop API.
 data Buffer s a = Buffer
   { -- | Stores the @[front, back)@ position of the buffer in use. The @front@ value is zero when

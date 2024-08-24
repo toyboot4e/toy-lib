@@ -6,6 +6,7 @@ import Tests.IntervalMap qualified
 import Tests.NTT qualified
 import Tests.PUnionFind qualified
 import Tests.PowMod qualified
+import Tests.Slide qualified
 import Tests.SplayMap qualified
 import Tests.SplaySeq qualified
 import Tests.SuffixArray qualified
@@ -21,6 +22,7 @@ tests =
       Tests.IntervalMap.tests,
       Tests.PowMod.tests,
       Tests.PUnionFind.tests,
+      Tests.Slide.tests,
       Tests.SplayMap.tests,
       Tests.SplaySeq.tests,
       Tests.SuffixArray.tests,

@@ -172,6 +172,7 @@ library
   exposed-modules:
     Algorithm.Bisect
     Algorithm.Mo
+    Algorithm.SlideMin
     Algorithm.TwoPointers
     Data.BinaryHeap
     Data.BinaryLifting
@@ -213,6 +214,7 @@ library
     Data.SegmentTree.Strict
     Data.SegmentTree.Util
     Data.SizedList
+    Data.Slide
     Data.SplayMap
     Data.SplaySeq
     Data.SplaySeq.Raw
@@ -225,7 +227,6 @@ library
     Data.Vector.Extra
     Data.Vector.InvNum
     Data.Vector.IxVector
-    Data.Vector.SlideMin
     Data.WaveletMatrix
     Data.WaveletMatrix.BitVector
     Data.WaveletMatrix.Raw
@@ -299,6 +300,7 @@ test-suite toy-lib-test
     Tests.NTT
     Tests.PowMod
     Tests.PUnionFind
+    Tests.Slide
     Tests.SplayMap
     Tests.SplaySeq
     Tests.SuffixArray

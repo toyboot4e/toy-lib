@@ -1,5 +1,5 @@
 -- | Sliding minimum.
-module Data.Vector.SlideMin where
+module Algorithm.SlideMin where
 
 import Control.Monad
 import Control.Monad.Extra (whenM)
