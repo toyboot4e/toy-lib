@@ -42,6 +42,10 @@ nullSI = nullPI
 -- = Invariants
 -- - The sequence order is kept in the tree before and after the splaying operation. Left children
 -- have smaller indices and right children have bigger indices.
+--
+-- = I don't need lazily propagated actions
+-- Well, use `RawSplaySeq s v v`. It allocates an unused vector, but doesn't duplicate the source
+-- code anyways.
 data RawSplaySeq s v a = RawSplaySeq
   { -- | The maximum number of elements.
     capacityRSS :: {-# UNPACK #-} !Int,

@@ -23,12 +23,19 @@ data SplaySeq s v a = SplaySeq
     rootSS :: !(UM.MVector s SplayIndex)
   }
 
-{-# INLINE newSS #-}
-newSS :: (U.Unbox v, U.Unbox a, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v a)
-newSS n = do
+-- | \(O(N)\) Allocates a `SplaySeq` with lazily propagated values.
+{-# INLINE newLazySS #-}
+newLazySS :: (U.Unbox v, U.Unbox a, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v a)
+newLazySS n = do
   rawSS <- newRSS n
   rootSS <- UM.replicate 1 (-1 :: SplayIndex)
   return SplaySeq {..}
+
+-- | \(O(N)\) Allocates a `SplaySeq` without lazily propagated values. It still allocates needless
+-- vector, but I failed to fix it.
+{-# INLINE newSS #-}
+newSS :: (U.Unbox v, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v v)
+newSS = newLazySS
 
 -- | \(O(1)\) Returns the maximum number of elements.
 {-# INLINE capacitySS #-}
