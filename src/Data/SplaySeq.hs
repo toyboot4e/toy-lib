@@ -9,6 +9,7 @@ module Data.SplaySeq where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Core.SegmentAction
+import Data.Pool (PoolIndex(..))
 import Data.SplaySeq.Raw
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -30,7 +31,7 @@ data SplaySeq s v a = SplaySeq
 newLazySS :: (U.Unbox v, U.Unbox a, PrimMonad m) => Int -> m (SplaySeq (PrimState m) v a)
 newLazySS n = do
   rawSS <- newRSS n
-  rootSS <- UM.replicate 1 (-1 :: SplayIndex)
+  rootSS <- UM.replicate 1 $ PoolIndex (-1)
   return SplaySeq {..}
 
 -- | \(O(N)\) Allocates a `SplaySeq` without lazily propagated values. It still allocates needless
@@ -151,7 +152,7 @@ deleteSS SplaySeq {..} i = do
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
 -- user function is run over each node, not fold of an interval.
 {-# INLINE bisectLSS #-}
-bisectLSS :: (Show v, HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> (v -> Bool) -> m (Maybe SplayIndex)
+bisectLSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => SplaySeq (PrimState m) v a -> (v -> Bool) -> m (Maybe SplayIndex)
 bisectLSS SplaySeq {..} check = do
   root <- GM.unsafeRead rootSS 0
   (!res, !root') <- bisectLRSS rawSS check root

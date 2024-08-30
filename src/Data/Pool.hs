@@ -2,40 +2,49 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- | Fixed-sized array for \(O(1)\) allocation and \(O(1)\) clearing after \(O(N)\) construction.
 module Data.Pool where
 
-import Control.Exception (assert)
-import Control.Monad (unless, void, when)
-import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Buffer
-import Data.Maybe
+import Data.Coerce
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import GHC.Stack (HasCallStack)
 
 -- | Fixed-sized array for \(O(1)\) allocation.
 data Pool s a = Pool
   { -- | Data array.
     dataPool :: !(UM.MVector s a),
     -- | Free slot indices after deallocation.
-    freePool :: !(Buffer s Int),
+    freePool :: !(Buffer s PoolIndex),
     -- | Next index when `freePool` is empty.
-    nextPool :: !(UM.MVector s Int)
+    nextPool :: !(UM.MVector s PoolIndex)
   }
 
--- | Index of an element in the `Pool`.
-type PoolIndex = Int
+-- | Strongly typed index of pool items. User has to explicitly @corece@ on raw index use, but it's
+-- ok as far as the end user don't see it.
+newtype PoolIndex = PoolIndex {unPoolIndex :: Int}
+  deriving (Eq, P.Prim)
+  deriving newtype (Ord, Show)
+
+newtype instance U.MVector s PoolIndex = MV_PoolIndex (P.MVector s PoolIndex)
+
+newtype instance U.Vector PoolIndex = V_PoolIndex (P.Vector PoolIndex)
+
+deriving via (U.UnboxViaPrim PoolIndex) instance GM.MVector UM.MVector PoolIndex
+
+deriving via (U.UnboxViaPrim PoolIndex) instance G.Vector U.Vector PoolIndex
+
+instance U.Unbox PoolIndex
 
 -- | Invalid, @null@ `PoolIndex`.
 {-# INLINE undefPI #-}
 undefPI :: PoolIndex
-undefPI = -1
+undefPI = PoolIndex (-1)
 
 -- | Returns `True` if the index is invalid.
 {-# INLINE nullPI #-}
@@ -48,7 +57,7 @@ newPool :: (U.Unbox a, PrimMonad m) => Int -> m (Pool (PrimState m) a)
 newPool capacity = do
   dataPool <- UM.unsafeNew capacity
   freePool <- newRevBuffer capacity
-  nextPool <- UM.replicate 1 (0 :: Int)
+  nextPool <- UM.replicate 1 (PoolIndex 0)
   return Pool {..}
 
 -- | \(O(1)\) Returns the maximum number of elements the pool can store.
@@ -58,19 +67,19 @@ capacityPool = GM.length . dataPool
 
 -- | \(O(1)\) Returns the number of elements in the pool.
 {-# INLINE sizePool #-}
-sizePool :: (PrimMonad m,U.Unbox a) => Pool (PrimState m) a -> m Int
+sizePool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> m Int
 sizePool Pool {..} = do
   !nFree <- lengthBuffer freePool
-  !next <- GM.read nextPool 0
+  PoolIndex !next <- GM.unsafeRead nextPool 0
   let !cap = GM.length dataPool
   return $ cap - (next - nFree)
 
 -- | \(O(1)\) Resets the pool to the initial state.
 {-# INLINE clearPool #-}
-clearPool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> m()
+clearPool :: (PrimMonad m) => Pool (PrimState m) a -> m ()
 clearPool Pool {..} = do
   clearBuffer freePool
-  GM.write nextPool 0 0
+  GM.unsafeWrite nextPool 0 $ PoolIndex 0
 
 -- | \(O(1)\) Allocates a new element. TODO: capacity validation?
 {-# INLINE allocPool #-}
@@ -79,15 +88,38 @@ allocPool Pool {..} !x = do
   popFront freePool >>= \case
     Just i -> return i
     Nothing -> do
-      i <- GM.read nextPool 0
-      GM.write nextPool 0 (i + 1)
+      PoolIndex i <- GM.unsafeRead nextPool 0
+      GM.unsafeWrite nextPool 0 $ coerce (i + 1)
       GM.write dataPool i x
-      return i
-  
+      return $ coerce i
+
 -- | \(O(1)\) Deallocates an element. Be sure to not deallocate a deleted element.
 -- TODO: consider setting up validation of slots?
 {-# INLINE deallocPool #-}
-deallocPool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> PoolIndex -> m ()
-deallocPool Pool {..} i= do
+deallocPool :: (PrimMonad m) => Pool (PrimState m) a -> PoolIndex -> m ()
+deallocPool Pool {..} i = do
   pushFront freePool i
 
+-- | \(O(1)\)
+{-# INLINE writePool #-}
+writePool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> PoolIndex -> a -> m ()
+writePool Pool {dataPool} !i !x = do
+  GM.write dataPool (coerce i) x
+
+-- | \(O(1)\)
+{-# INLINE modifyPool #-}
+modifyPool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> (a -> a) -> PoolIndex -> m ()
+modifyPool Pool {dataPool} !f !i = do
+  GM.modify dataPool f (coerce i)
+
+-- | \(O(1)\)
+{-# INLINE exchangePool #-}
+exchangePool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> PoolIndex -> a -> m a
+exchangePool Pool {dataPool} !i !x = do
+  GM.exchange dataPool (coerce i) x
+
+-- | \(O(1)\)
+{-# INLINE readPool #-}
+readPool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> PoolIndex -> m a
+readPool Pool {dataPool} !i = do
+  GM.read dataPool (coerce i)
