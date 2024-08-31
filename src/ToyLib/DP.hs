@@ -253,6 +253,7 @@ lastCharOccurrences s = runST $ do
 
   V.mapM U.unsafeFreeze vec
 
+{-# INLINE lexPerms #-}
 lexPerms :: (G.Vector v a, Ord a) => v a -> V.Vector (v a)
 lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
   where

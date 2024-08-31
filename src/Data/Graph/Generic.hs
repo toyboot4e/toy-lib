@@ -414,7 +414,9 @@ runPersistentDfs gr start acc0 process = inner start acc0
 --
 -- It's strict about path connection and invalid paths are ignored.
 --
--- REMARK: Prefer to use @maxBound@ for the @undef@ value.
+-- NOTE: @maxBound .>>. 1@ is the propert value for @undef@, but now it can be any value outside
+-- the weight's domain.
+{-# INLINE distsNN #-}
 distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
   !vec <- UM.replicate (nVerts * nVerts) undef
@@ -431,7 +433,7 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
     when (w0 /= undef && w0 < w) $ do
       UM.write vec (index bnd (v1, v2)) w0
 
-  -- multiple walks
+  -- multiple walks (O(N^3))
   forM_ [0 .. nVerts - 1] $ \k -> do
     forM_ [0 .. nVerts - 1] $ \i -> do
       forM_ [0 .. nVerts - 1] $ \j -> do
