@@ -419,12 +419,19 @@ distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> Ix
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
   !vec <- UM.replicate (nVerts * nVerts) undef
 
+  -- diagonals (self to self)
   forM_ [0 .. nVerts - 1] $ \v -> do
     UM.write vec (index bnd (v, v)) 0
 
+  -- initial walks
   U.forM_ wEdges $ \(!v1, !v2, !w) -> do
-    UM.write vec (index bnd (v1, v2)) w
+    let !i = index bnd (v1, v2)
+    w0 <- UM.exchange vec i w
+    -- consider multiple edges
+    when (w0 /= undef && w0 < w) $ do
+      UM.write vec (index bnd (v1, v2)) w0
 
+  -- multiple walks
   forM_ [0 .. nVerts - 1] $ \k -> do
     forM_ [0 .. nVerts - 1] $ \i -> do
       forM_ [0 .. nVerts - 1] $ \j -> do
