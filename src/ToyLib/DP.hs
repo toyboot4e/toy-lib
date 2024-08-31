@@ -263,7 +263,7 @@ lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
           nextPermutation vec' >>= \case
             True -> do
               vec'' <- G.unsafeFreeze vec'
-              return $ Just (vec'', vec'')
+              return $ Just (vec, vec'')
             False -> return $ Just (vec, G.empty)
 
 -- -- | \(O(NM)\) Counts unique common subsequences. Duplicates are counted multple times.
