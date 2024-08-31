@@ -417,7 +417,11 @@ runPersistentDfs gr start acc0 process = inner start acc0
 -- REMARK: Use @maxBound@ for the @undef@ value.
 distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
+  -- FIXME: undef needs to be big int due to the min
   !vec <- UM.replicate (nVerts * nVerts) undef
+
+  forM_ [0 .. nVerts - 1] $ \v -> do
+    UM.write vec (index bnd (v, v)) 0
 
   U.forM_ wEdges $ \(!v1, !v2, !w) -> do
     UM.write vec (index bnd (v1, v2)) w
