@@ -414,10 +414,9 @@ runPersistentDfs gr start acc0 process = inner start acc0
 --
 -- It's strict about path connection and invalid paths are ignored.
 --
--- REMARK: Use @maxBound@ for the @undef@ value.
+-- REMARK: Prefer to use @maxBound@ for the @undef@ value.
 distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
-  -- FIXME: undef needs to be big int due to the min
   !vec <- UM.replicate (nVerts * nVerts) undef
 
   forM_ [0 .. nVerts - 1] $ \v -> do
@@ -434,7 +433,11 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
           !tmp1 <- UM.read vec (index bnd (i, k))
           !tmp2 <- UM.read vec (index bnd (k, j))
           return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
-        UM.write vec (index bnd (i, j)) $! min x1 x2
+        let !x'
+             | x1 == undef = x2
+             | x2 == undef = x1
+             | otherwise = min x1 x2
+        UM.write vec (index bnd (i, j)) x'
 
   return vec
   where
