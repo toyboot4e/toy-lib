@@ -77,7 +77,10 @@ getMidDouble eps l r
 -- | \(O(f \log N)\) Monadic binary search for an `Int` range.
 {-# INLINE bisectM #-}
 bisectM :: forall m. (Monad m) => Int -> Int -> (Int -> m Bool) -> m (Maybe Int, Maybe Int)
-bisectM !l !r !p = bisectImpl getMidInt l r (l - 1) (r + 1) p
+bisectM !l !r !p
+  | l <= r = bisectImpl getMidInt l r (l - 1) (r + 1) p
+  -- l > r is allowed
+  | otherwise = bisectImpl getMidInt l r (l + 1) (r - 1) p
 
 -- | \(O(f \log N)\)
 {-# INLINE bisectML #-}
@@ -112,7 +115,10 @@ bisectR !l !r !p = snd $! bisect l r p
 -- | \(O(f \log N)\) Monadic binary search for an `Double` range.
 {-# INLINE bisectMF64 #-}
 bisectMF64 :: forall m. (Monad m) => Double -> Double -> Double -> (Double -> m Bool) -> m (Maybe Double, Maybe Double)
-bisectMF64 !eps !l !r !p = bisectImpl (getMidDouble eps) l r (l - eps) (r + eps) p
+bisectMF64 !eps !l !r !p
+  | l <= r = bisectImpl (getMidDouble eps) l r (l - eps) (r + eps) p
+  -- l > r is allowed
+  | otherwise = bisectImpl (getMidDouble eps) l r (l + eps) (r - eps) p
 
 -- | \(O(f \log N)\)
 {-# INLINE bisectMLF64 #-}
