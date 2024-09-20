@@ -267,6 +267,7 @@ modifyBH BinaryHeap {..} f = do
 {-# INLINE modifyBH #-}
 
 -- | \(O(\log N)\) Deletes and returns the top node.
+{-# INLINE deleteBH #-}
 deleteBH ::
   (HasCallStack, OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
@@ -276,9 +277,9 @@ deleteBH bh = do
   if size > 0
     then unsafeDeleteBH bh
     else error "tried to remove the top value from an empty binary heap"
-{-# INLINE deleteBH #-}
 
 -- | \(O(\log N)\) Optionally deletes and returns the top node.
+{-# INLINE deleteMaybeBH #-}
 deleteMaybeBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
@@ -288,7 +289,6 @@ deleteMaybeBH bh = do
   if size > 0
     then Just <$> unsafeDeleteBH bh
     else return Nothing
-{-# INLINE deleteMaybeBH #-}
 
 -- | \(O(1)\) Clears the heap.
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
