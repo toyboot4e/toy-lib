@@ -6,8 +6,8 @@
 --
 -- == Construction
 --
--- - `newMinBinaryHeap`, `buildMinBinaryHeap`
--- - `newMaxBinaryHeap`, `buildMaxBinaryHeap`
+-- - `newMinBH`, `buildMinBH`
+-- - `newMaxBH`, `buildMaxBH`
 --
 -- == Operations and views
 --
@@ -67,15 +67,19 @@ type MinBinaryHeap s a = BinaryHeap Identity s a
 
 type MaxBinaryHeap s a = BinaryHeap Down s a
 
-newBinaryHeap :: (U.Unbox a, PrimMonad m) => (a -> f a) -> Int -> m (BinaryHeap f (PrimState m) a)
-newBinaryHeap prio n = BinaryHeap prio <$> UM.replicate 1 0 <*> UM.unsafeNew n
+-- | \(O(N)\)
+_newBH :: (U.Unbox a, PrimMonad m) => (a -> f a) -> Int -> m (BinaryHeap f (PrimState m) a)
+_newBH prio n = BinaryHeap prio <$> UM.replicate 1 0 <*> UM.unsafeNew n
 
-newMinBinaryHeap :: (U.Unbox a, PrimMonad m) => Int -> m (MinBinaryHeap (PrimState m) a)
-newMinBinaryHeap = newBinaryHeap Identity
+-- | \(O(N)\)
+newMinBH :: (U.Unbox a, PrimMonad m) => Int -> m (MinBinaryHeap (PrimState m) a)
+newMinBH = _newBH Identity
 
-newMaxBinaryHeap :: (U.Unbox a, PrimMonad m) => Int -> m (MaxBinaryHeap (PrimState m) a)
-newMaxBinaryHeap = newBinaryHeap Down
+-- | \(O(N)\)
+newMaxBH :: (U.Unbox a, PrimMonad m) => Int -> m (MaxBinaryHeap (PrimState m) a)
+newMaxBH = _newBH Down
 
+-- TODO: BH
 sizeBN :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
 sizeBN BinaryHeap {..} = UM.unsafeRead intVarsBH _sizeBH
 {-# INLINE sizeBN #-}
@@ -168,24 +172,24 @@ instance (Ord a) => OrdVia Down a where
   {-# INLINE compareVia #-}
 
 -- | \(O(N \log N)\) Creates a binary heap with a newtype comparator and a vector.
-buildBinaryHeapVia ::
+buildBHVia ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   (a -> f a) ->
   U.Vector a ->
   m (BinaryHeap f (PrimState m) a)
-buildBinaryHeapVia priorityBH vec = do
+buildBHVia priorityBH vec = do
   intVarsBH <- UM.replicate 1 $ U.length vec
   internalVecBH <- U.thaw vec
   heapifyBy (compareVia priorityBH) internalVecBH
   return $! BinaryHeap {..}
-{-# INLINE buildBinaryHeapVia #-}
+{-# INLINE buildBHVia #-}
 
 -- | \(O(N \log N)\) Creates a `BinaryHeap` from a vector.
 buildMinBinaryHeap ::
   (Ord a, U.Unbox a, PrimMonad m) =>
   U.Vector a ->
   m (BinaryHeap Identity (PrimState m) a)
-buildMinBinaryHeap = buildBinaryHeapVia Identity
+buildMinBinaryHeap = buildBHVia Identity
 {-# INLINE buildMinBinaryHeap #-}
 
 -- | \(O(N \log N)\) Creates a `BinaryHeap` from a vector.
@@ -193,7 +197,7 @@ buildMaxBinaryHeap ::
   (Ord a, U.Unbox a, PrimMonad m) =>
   U.Vector a ->
   m (BinaryHeap Down (PrimState m) a)
-buildMaxBinaryHeap = buildBinaryHeapVia Down
+buildMaxBinaryHeap = buildBHVia Down
 {-# INLINE buildMaxBinaryHeap #-}
 
 -- | \(O(1)\) Reads the top node. Returns an unknown value when the heap is emtpy.

@@ -174,7 +174,7 @@ genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
 genericDj :: forall w. (U.Unbox w, Num w, Ord w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
-  !heap <- newMinBinaryHeap (nEdges + 1)
+  !heap <- newMinBH (nEdges + 1)
   -- !last <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
@@ -206,7 +206,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
 dj' :: forall w. (U.Unbox w, Monoid w, Ord w) => (Int -> U.Vector (Int, w)) -> Int -> Int -> w -> U.Vector Vertex -> U.Vector w
 dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   !dist <- UM.replicate nVerts undef
-  !heap <- newMinBinaryHeap (nEdges + 1)
+  !heap <- newMinBH (nEdges + 1)
   -- !last <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
@@ -344,7 +344,7 @@ genericBfsTree !gr !n !source !undefW = runST $ do
 genericDjTree :: forall w. (U.Unbox w, Num w, Ord w) => (Vertex -> U.Vector (Vertex, w)) -> Int -> Int -> w -> U.Vector Vertex -> (U.Vector w, U.Vector Vertex)
 genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
   !dist <- UM.replicate nVerts undef
-  !heap <- newMinBinaryHeap (nEdges + 1)
+  !heap <- newMinBH (nEdges + 1)
   !parents <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
