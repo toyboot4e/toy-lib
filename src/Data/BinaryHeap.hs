@@ -13,7 +13,7 @@
 --
 -- - `insertBH`
 -- - `deleteBH`
--- - `viewBH`
+-- - `peekBH`
 -- - `deleteBH`
 -- - `unsafeDeleteBH`
 --
@@ -209,16 +209,16 @@ unsafeViewBH BinaryHeap {..} = UM.unsafeRead internalVecBH 0
 {-# INLINE unsafeViewBH #-}
 
 -- | \(O(1)\) Reads the top nodes.
-viewBH ::
+peekBH ::
   (U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
-viewBH bh = do
+peekBH bh = do
   size <- sizeBN bh
   if size > 0
     then Just <$!> unsafeViewBH bh
     else return Nothing
-{-# INLINE viewBH #-}
+{-# INLINE peekBH #-}
 
 -- | \(O(\log N)\) Inserts a value as a leaf and sorts upwards.
 insertBH ::
