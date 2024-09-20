@@ -182,7 +182,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     insertBH heap (0, v)
 
   fix $ \loop ->
-    deleteBH heap >>= \case
+    deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> UM.read dist v1
@@ -214,7 +214,7 @@ dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
     insertBH heap (mempty, v)
 
   fix $ \loop ->
-    deleteBH heap >>= \case
+    deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> UM.read dist v1
@@ -352,7 +352,7 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
     insertBH heap (0, v)
 
   fix $ \loop ->
-    deleteBH heap >>= \case
+    deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> UM.read dist v1

@@ -32,6 +32,7 @@ import Data.Kind
 import Data.Ord
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
 
 -- | Binary tree backed by a vector.
 --
@@ -267,20 +268,33 @@ modifyBH BinaryHeap {..} f = do
 
 -- | \(O(\log N)\) Deletes and returns the top node.
 deleteBH ::
+  (HasCallStack, OrdVia f a, U.Unbox a, PrimMonad m) =>
+  BinaryHeap f (PrimState m) a ->
+  m a
+deleteBH bh = do
+  size <- sizeBN bh
+  if size > 0
+    then unsafeDeleteBH bh
+    else error "tried to remove the top value from an empty binary heap"
+{-# INLINE deleteBH #-}
+
+-- | \(O(\log N)\) Optionally deletes and returns the top node.
+deleteMaybeBH ::
   (OrdVia f a, U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
-deleteBH bh = do
+deleteMaybeBH bh = do
   size <- sizeBN bh
   if size > 0
     then Just <$> unsafeDeleteBH bh
     else return Nothing
-{-# INLINE deleteBH #-}
+{-# INLINE deleteMaybeBH #-}
 
 -- | \(O(1)\) Clears the heap.
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
 clearBH BinaryHeap {..} = UM.unsafeWrite intVarsBH 0 0
 
+-- | \(O(1)\)
 unsafeFreezeBH ::
   (U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->
