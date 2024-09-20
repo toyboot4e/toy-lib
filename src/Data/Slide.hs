@@ -78,7 +78,7 @@ foldSSF StackSlidingFold {..} = do
   r <- GM.unsafeRead bufferFoldSSF 0
   return $! l <> r
 
--- | Dequeue-based sliding window folding. Prefer `StackSlidingFold` for speed.
+-- | Dequeue-based sliding window folding. Prefer `StackSlidingFold` for (just a little) speed.
 -- SWAG (sliding window aggregation).
 data DequeSlidingFold s a = DequeSlidingFold
   { frontBufferDSF :: !(Buffer s a),

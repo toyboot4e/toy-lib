@@ -4,9 +4,10 @@ import Algorithm.Bisect
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.State.Strict
+import Data.Coerce (coerce)
 import Data.Core.SegmentAction
 import Data.Instances.Affine2d
+import Data.Pool (PoolIndex (..))
 import Data.Semigroup
 import Data.Sequence qualified as Seq
 import Data.SplaySeq
@@ -44,7 +45,6 @@ readLR seq = do
 
 readInterval :: (PrimMonad m) => Seq (PrimState m) -> Int -> Int -> m (U.Vector (Sum Int))
 readInterval seq l r = do
-  let !n = capacitySS seq
   U.generateM (r + 1 - l) $ \i_ -> readSS seq (i_ + l)
 
 -- | Reads from left to right and right to left.
@@ -171,7 +171,7 @@ randomTests =
         allocSeqSS seq xs
         !res <- lift $ bisectLSS seq (<= Sum boundary)
 
-        QCM.assertWith (res == expected) $ show (res, expected),
+        QCM.assertWith ((coerce <$> res) == expected) $ show (res, expected),
       QC.testProperty "SplaySeq-sact" $ QCM.monadicIO $ do
         -- smaller version of this:
         -- https://judge.yosupo.jp/problem/dynamic_sequence_range_affine_range_sum
@@ -190,7 +190,7 @@ randomTests =
 
                 return acc'
               _ | Seq.length acc == 0 -> do
-                    return acc
+                return acc
               (1, !i_, !_, !_, !_) -> do
                 -- delete
                 let !i = clamp 0 (Seq.length acc - 1) i_

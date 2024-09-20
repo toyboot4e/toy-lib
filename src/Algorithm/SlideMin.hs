@@ -13,21 +13,32 @@ import qualified Data.Vector.Unboxed as U
 --
 -- TODO: Explain what it's like.
 --
--- Returns indices of elements of the minimum values in the windows with the specified length.
+-- Returns indices of maximum values in the windows with the specified length.
+--
+-- = Example
+--
+-- @
+-- indices: 0 1 2 3 4 5
+-- values:  0 1 2 3 4 5   max value indices:
+--          [---]         2
+--            [---]       3
+--              [---]     4
+--                [---]   5
+-- @
 {-# INLINE slideMaxIndicesOn #-}
 slideMaxIndicesOn :: (G.Vector v a, Ord b) => (a -> b) -> Int -> v a -> U.Vector Int
 slideMaxIndicesOn wrap len xs = runST $ do
-  -- queue of minimum numbers
+  -- dequeue of maximum number indices.
   !buf <- newBuffer (G.length xs)
 
   fmap (U.drop (len - 1)) $ G.generateM (G.length xs) $ \i -> do
-    -- remove indices that are no longer in the span
+    -- remove the front indices that are no longer in the span
     fix $ \loop -> do
       whenM (maybe False (<= i - len) <$> readMaybeFront buf 0) $ do
         popFront_ buf
         loop
 
-    -- remove indices that are less attractive to the new coming value
+    -- remove the last indices that are less attractive to the new coming value
     fix $ \loop -> do
       whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> readMaybeBack buf 0) $ do
         popBack_ buf
@@ -37,17 +48,6 @@ slideMaxIndicesOn wrap len xs = runST $ do
     readFront buf 0
 
 -- | \(O(N)\)
---
--- = Example
---
--- @
--- indices: 0 1 2 3 4 5
--- values:  5 4 3 2 1 0   min value indices:
---          [---]         2
---            [---]       3
---              [---]     4
---                [---]   5
--- @
 --
 -- >>> slideMinIndices 3 (U.fromList [0 .. 5])
 -- [0,1,2,3]
