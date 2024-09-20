@@ -38,7 +38,7 @@ chunksOfG k xs0 = V.unfoldrExactN n step xs0
     n = (G.length xs0 + k - 1) `div` k
     step xs = (G.take k xs, G.drop k xs)
 
--- | \(O(N f)\)
+-- | \(O(N f)\) @U.constructN@ with monadic actions.
 {-# INLINE constructMN #-}
 constructMN :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
 constructMN !n f = do
@@ -57,7 +57,7 @@ constructMN !n f = do
             fill v'' (i + 1)
     fill v _ = return v
 
--- | \(O(N f)\)
+-- | \(O(N f)\) @U.constructrN@ with monadic actions.
 {-# INLINE constructrMN #-}
 constructrMN :: forall a m. (PrimMonad m, U.Unbox a) => Int -> (U.Vector a -> m a) -> m (U.Vector a)
 constructrMN !n f = do

@@ -22,7 +22,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
--- | Index of a `SplayNode` stored in a `SplayMap`, wrapped in a newtype.
+-- | Strongly typed index of nodes in a `SplayMap`.
 type SplayIndex = PoolIndex
 
 {-# INLINE undefSI #-}
@@ -454,7 +454,7 @@ exchangeNodeRSS seq@RawSplaySeq {..} root v = do
   updateNodeRSS seq root
   return res
 
--- | \(O(1)\) Reverses left and right children.
+-- | \(O(1)\) Swaps the left and the right children.
 {-# INLINE swapLrNodeRSS #-}
 swapLrNodeRSS :: (HasCallStack, PrimMonad m) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 swapLrNodeRSS RawSplaySeq {..} i = do
@@ -462,15 +462,15 @@ swapLrNodeRSS RawSplaySeq {..} i = do
   r <- GM.exchange rRSS (coerce i) l
   GM.write lRSS (coerce i) r
 
--- | \(O(1)\) Reverses left and right children, recursively and lazily.
+-- | \(O(1)\) Reverses the left and the right children, lazily and recursively.
 {-# INLINE reverseNodeRSS #-}
 reverseNodeRSS :: (HasCallStack, PrimMonad m) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 reverseNodeRSS seq@RawSplaySeq {..} i = do
   swapLrNodeRSS seq i
-  -- propagate new reverse or cancel:
+  -- lazily propagate new reverse or cancel:
   GM.modify revRSS (xor (Bit True)) $ coerce i
 
--- | Amortized \(O(\log N)\). Propgates at a node.
+-- | Amortized \(O(\log N)\). Propgates the lazily propagated values on a node.
 {-# INLINE propNodeRSS #-}
 propNodeRSS :: (HasCallStack, PrimMonad m, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 propNodeRSS seq@RawSplaySeq {..} i = do

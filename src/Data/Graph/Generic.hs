@@ -373,17 +373,28 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
     merge = (+)
 
 -- | \(O(V)\) Given a vector of vertex parents, restores path from the source to a sink.
+restorePath :: (HasCallStack) => U.Vector Vertex -> Vertex -> U.Vector Vertex
+restorePath !toParent !sink =
+  restoreAnyPath
+    ( \v -> case toParent G.! v of
+        (-1) -> Nothing
+        p -> Just p
+    )
+    sink
+
+-- | \(O(V)\) `restorePath` for any dimensional vertices.
 --
 -- TODO: restore without reverse?
-restorePath :: (HasCallStack) => U.Vector Vertex -> Vertex -> U.Vector Vertex
-restorePath !toParent !sink = U.reverse $ U.unfoldr f sink
+{-# INLINE restoreAnyPath #-}
+restoreAnyPath :: forall a. (U.Unbox a) => (a -> Maybe a) -> a -> U.Vector a
+restoreAnyPath !toParent !sink = U.reverse $ U.unfoldr f (sink, False)
   where
-    f !v
-      | v == -2 = Nothing
-      | v' == -1 = Just (v, -2)
-      | otherwise = Just (v, v')
-      where
-        v' = toParent G.! v
+    f :: (a, Bool) -> Maybe (a, (a, Bool))
+    f (!v, !done)
+      | done = Nothing
+      | otherwise = case toParent v of
+          Nothing -> Just (v, (v, True))
+          Just p -> Just (v, (p, False))
 
 -- * Tree
 
@@ -443,9 +454,9 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
           !tmp2 <- UM.read vec (index bnd (k, j))
           return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
         let !x'
-             | x1 == undef = x2
-             | x2 == undef = x1
-             | otherwise = min x1 x2
+              | x1 == undef = x2
+              | x2 == undef = x1
+              | otherwise = min x1 x2
         UM.write vec (index bnd (i, j)) x'
 
   return vec

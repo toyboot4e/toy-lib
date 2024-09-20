@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
--- | Segment Tree on Wavelet Matrix: points on a 2D plane and rectangle folding.
+-- | Points on a 2D plane with monoids. The monoid values can be altered dynamically in
+-- \(O(\log N)\) and rectangle folding can be performed in \(O(\log^2 N)\).
 --
 -- = Typical problems
 -- - [Rectangle Sum](https://judge.yosupo.jp/problem/rectangle_sum)
