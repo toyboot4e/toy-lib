@@ -335,8 +335,8 @@ rotateRSS RawSplaySeq {..} !i = do
   unless (nullSI c) $ do
     GM.write pRSS (coerce c) p
 
--- | Amortized \(O(\log N)\). Moves a node to the root, performing self-balancing heuristic called
--- rotations.
+-- | Amortized \(O(\log N)\). Moves a node up to the root, performing self-balancing heuristic
+-- called rotations.
 --
 -- = Prerequisites
 -- Parents are already propagated.
