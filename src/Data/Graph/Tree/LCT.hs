@@ -103,6 +103,24 @@ newLCT n = do
   -- midLCT <- UM.replicate n mempty
   return LCT {..}
 
+-- | \(O(N + E \log E)\)
+buildLCT :: (Monoid a, U.Unbox a, PrimMonad m) => U.Vector a -> U.Vector (Vertex, Vertex) -> m (LCT (PrimState m) a)
+buildLCT xs es = do
+  lct <- do
+    let !n = U.length xs
+    lLCT <- UM.replicate n undefLCT
+    rLCT <- UM.replicate n undefLCT
+    pLCT <- UM.replicate n undefLCT
+    sLCT <- UM.replicate n 0
+    revLCT <- UM.replicate n (Bit False)
+    vLCT <- U.thaw xs
+    aggLCT <- UM.replicate n mempty
+    -- midLCT <- UM.replicate n mempty
+    return LCT {..}
+  U.forM_  es $ \(!u, !v) -> do
+    linkLCT lct u v
+  return lct
+
 -- TODO: build method
 
 -- * Balancing

@@ -27,12 +27,7 @@ solve = do
         2 -> (2,,,-1,-1) <$> int' <*> int'
         _ -> error "unreachable"
 
-  lct <- newLCT @(Sum Int) n
-  U.iforM_ xs $ \i x -> do
-    writeLCT lct i $ Sum x
-  U.forM_ uvs $ \(!u, !v) -> do
-    linkLCT lct u v
-
+  lct <- buildLCT (U.map Sum xs) uvs
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !u, !v, !w, !x) -> do
       -- delete edge (u, v)
