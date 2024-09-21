@@ -35,13 +35,13 @@ solve = do
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !u, !v, !w, !x) -> do
-      -- delete (u, v)
-      linkLCT lct u v
-      -- add (w, x)
-      linkLCT lct u v
-
+      -- delete edge (u, v)
+      cutLCT lct u v
+      -- add edge (w, x)
+      linkLCT lct w x
       return Nothing
     (1, !p, !x, !_, !_) -> do
+      -- add x
       modifyLCT lct (<> Sum x) p
       return Nothing
     (2, !u, !v, !_, !_) -> do

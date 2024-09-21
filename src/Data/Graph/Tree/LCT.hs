@@ -45,19 +45,15 @@
 module Data.Graph.Tree.LCT where
 
 import Control.Exception (assert)
-import Control.Monad (unless, void, when)
-import Control.Monad.Extra (unlessM, whenM)
+import Control.Monad (unless, when)
+import Control.Monad.Extra (unlessM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.Trans.State.Strict (execStateT, modify')
 import Data.Bit
 import Data.Bits
 import Data.Bool (bool)
-import Data.Buffer
-import Data.Core.SegmentAction
 import Data.Graph.Alias
-import Data.Maybe
-import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -89,6 +85,9 @@ data LCT s a = LCT
     vLCT :: !(UM.MVector s a),
     -- | Decomposed node data storage: aggregation of payloads.
     aggLCT :: !(UM.MVector s a)
+    -- TODO: subtree info??
+    -- -- | Decomposed node data storage: FIXME: what?
+    -- midLCT :: !(UM.MVector s a)
   }
 
 -- | \(O(N)\)
@@ -101,12 +100,15 @@ newLCT n = do
   revLCT <- UM.replicate n (Bit False)
   vLCT <- UM.replicate n mempty
   aggLCT <- UM.replicate n mempty
+  -- midLCT <- UM.replicate n mempty
   return LCT {..}
+
+-- TODO: build method
 
 -- * Balancing
 
 -- | \(O(1)\) Rotates up a non-root node.
-rotateNodeLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
+rotateNodeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 rotateNodeLCT lct@LCT {..} v = do
   p <- GM.read pLCT v
   pp <- GM.read pLCT p
@@ -148,6 +150,7 @@ rotateNodeLCT lct@LCT {..} v = do
         if ppr == p
           then GM.write rLCT pp v
           else do
+            -- TODO: what?
             changeLightLCT lct p v
 
   -- update parent pointers to `pp`: pp <-- v <-- p <-- c
@@ -158,7 +161,7 @@ rotateNodeLCT lct@LCT {..} v = do
 
 -- | Amortized \(O(\log N)\). Moves a node up to the root, performing self-balancing heuristic
 -- called rotations.
-splayLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
+splayLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 splayLCT lct@LCT {..} c = do
   propNodeLCT lct c
   fix $ \loop -> do
@@ -172,6 +175,9 @@ splayLCT lct@LCT {..} c = do
           propNodeLCT lct c
           rotateNodeLCT lct c
         else do
+          propNodeLCT lct pp
+          propNodeLCT lct p
+          propNodeLCT lct c
           placeC <- nodePlaceLCT lct c
           if placeP == placeC
             then do
@@ -190,21 +196,15 @@ splayLCT lct@LCT {..} c = do
               --    p     ->  pp   c  ->    p
               --     \                     /
               --      c                   pp
-              propNodeLCT lct pp
-              propNodeLCT lct p
-              propNodeLCT lct c
+
               rotateNodeLCT lct p
               rotateNodeLCT lct c
             else do
-              --       pp       p           c
-              --      /        / \           \
-              --    p     -> c    pp  ->      p
-              --     \                         \
-              --      c                         pp
-
-              propNodeLCT lct pp
-              propNodeLCT lct p
-              propNodeLCT lct c
+              --       pp         pp         c
+              --      /          /          | \
+              --    p     ->   c      ->   p   pp
+              --     \        /
+              --      c      p
               rotateNodeLCT lct c
               rotateNodeLCT lct c
       loop
@@ -212,7 +212,7 @@ splayLCT lct@LCT {..} c = do
 -- * Node helpers
 
 -- | \(O(1)\)
-isRootNodeLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m Bool
+isRootNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m Bool
 isRootNodeLCT LCT {..} v = do
   (== undefLCT) <$> GM.read pLCT v
 
@@ -221,7 +221,7 @@ data NodePlaceLCT = RootNodeLCT | LeftNodeLCT | RightNodeLCT
   deriving (Eq)
 
 -- | \(O(1)\)
-nodePlaceLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m NodePlaceLCT
+nodePlaceLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m NodePlaceLCT
 nodePlaceLCT LCT {..} v = do
   p <- GM.read pLCT v
   if nullLCT p
@@ -233,7 +233,7 @@ nodePlaceLCT LCT {..} v = do
 -- * Node operations
 
 -- | Amortized \(O(\log N)\). Propgates the lazily propagated values on a node.
-propNodeLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
+propNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
 propNodeLCT lct@LCT {..} v = do
   Bit b <- GM.exchange revLCT v (Bit False)
   when b $ do
@@ -246,7 +246,7 @@ propNodeLCT lct@LCT {..} v = do
 reverseNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
 reverseNodeLCT lct@LCT {..} i = do
   swapLrNodeLCT lct i
-  -- lazily propagate new reverse or cancel:
+  -- lazily propagate new reverse from the children, or cancel:
   GM.modify revLCT (xor (Bit True)) i
 
 -- | \(O(1)\) Reverses the left and the right children, lazily and recursively.
@@ -273,64 +273,82 @@ updateNodeLCT LCT {..} i = do
   GM.write sLCT i $! sizeL + 1 + sizeR
   GM.write aggLCT i $! aggL <> v <> aggR
 
+-- | \(O(1)\) Adds a path-parent edge.
 addLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
 addLightLCT lct@LCT {..} u v = do
   return ()
 
+-- | \(O(1)\) TODO: what?
 changeLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
 changeLightLCT lct@LCT {..} u v = do
   return ()
 
+-- | \(O(1)\) Removes a path-parent edge.
 eraseLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
 eraseLightLCT lct@LCT {..} u v = do
   return ()
 
 -- * Link/cut operations
 
--- | Amortized \(O(\logN)\). Make the root and @v0@ to be in the same preferred path (same
+-- | Amortized \(O(\logN)\). Makes the root and @v0@ to be in the same preferred path (same
 -- auxiliary tree).
-exposeLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m IndexLCT
+exposeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m IndexLCT
 exposeLCT lct@LCT {..} v0 = do
-  let inner v rp
-        | nullLCT v = return rp
+  let inner v lastRoot
+        | nullLCT v = return lastRoot
         | otherwise = do
+            -- @v@ will be at the top of the auxiliary tree:
             splayLCT lct v
+
+            -- make @lastRoot@ the right child of @v@:
+            --    v               v
+            --   /|\        ->   /|\
+            --    | r             | lastRoot  <-- it makes sure @v0@ will be connected to the root
+            --    lastRoot        r
             r <- GM.read rLCT v
-            -- FIXME: what is happening?
-            -- v
-            --  \
-            --   r
             unless (nullLCT r) $ addLightLCT lct v r
-            unless (nullLCT rp) $ eraseLightLCT lct v rp
-            GM.write rLCT v rp
+            unless (nullLCT lastRoot) $ eraseLightLCT lct v lastRoot
+            GM.write rLCT v lastRoot
             updateNodeLCT lct v
+
+            -- go up to thenext auxiliary tree:
+            --    p
+            --    |
+            --    v
+            --     \
+            --      lastRoot
             vp <- GM.read pLCT v
             inner vp v
 
   res <- inner v0 undefLCT
+  -- TODO: why splaying here?
   splayLCT lct v0
   return res
 
--- | Amortized \(O(\logN)\).
-exposeLCT_ :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
+-- | Amortized \(O(\logN)\). Makes the root and @v0@ to be in the same preferred path (same
+-- auxiliary tree).
+exposeLCT_ :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 exposeLCT_ lct v0 = do
   _ <- exposeLCT lct v0
   return ()
 
--- | Amortized \(O(\logN)\). Makes @v@ the root of the underlying tree.
-evertLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
+-- | Amortized \(O(\logN)\). Makes @v@ a new root of the underlying tree.
+evertLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 evertLCT lct v = do
+  -- make @v@ be in the same preferred path as root. note that @v@ is at the root of the auxiliary tree.
   exposeLCT_ lct v
+  -- now reverse and @v@ is at the root of the underlying tree.
   reverseNodeLCT lct v
   propNodeLCT lct v
 
 -- | \(O(\log N)\) Returns i-th vertex of a path between @u@, @v@.
-jumpLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> Int -> m IndexLCT
+jumpLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> Int -> m IndexLCT
 jumpLCT lct@LCT {..} u0 v0 k0 = do
-  -- make @v0@ a new root of the underlying
+  -- make @v0@ a new root of the underlying tree
   evertLCT lct v0
-  -- make @u0@ in the same preferred path as @v0@
+  -- make @u0@ in the same preferred path as the root
   exposeLCT_ lct u0
+
   do
     size <- GM.read sLCT u0
     let !_ = assert (0 <= k0 && k0 < size) "invalid jump"
@@ -357,26 +375,29 @@ jumpLCT lct@LCT {..} u0 v0 k0 = do
 -- * API
 
 -- -- | \(O(1)\)
--- readLCT :: (PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> Vertex -> m a
+-- readLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> m a
 -- readLCT lct v = do
 --   GM.read (vLCT lct) v
 
--- | \(O(1)\)
-writeLCT :: (PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> Vertex -> a -> m ()
+-- | Amortized \(O(\log N)\).
+writeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> a -> m ()
 writeLCT lct v x = do
+  evertLCT lct v
   GM.write (vLCT lct) v x
 
--- TODO: not update the aggregated value?
-
 -- | \(O(1)\)
-modifyLCT :: (PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> (a -> a) -> Vertex -> m ()
+modifyLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> (a -> a) -> Vertex -> m ()
 modifyLCT lct f v = do
+  evertLCT lct v
   GM.modify (vLCT lct) f v
 
--- | Amortized \(O(\log N)\). Merges two
-linkLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> Vertex -> m ()
+-- | Amortized \(O(\log N)\). Creates an edge between @(u, v)@. In the represented tree, parent of
+-- @c@ is @p@ after the operation.
+linkLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> Vertex -> m ()
 linkLCT lct@LCT {..} c p = do
+  -- make @c@ the new root of the underlying tree
   evertLCT lct c
+  -- make @p@ in the same preferred path as the root
   exposeLCT_ lct p
   propNodeLCT lct p
   dbgM $ do
@@ -389,11 +410,13 @@ linkLCT lct@LCT {..} c p = do
   GM.write rLCT p c
   updateNodeLCT lct p
 
--- | Amortized \(O(\log N)\). Detaches
-cutLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
+-- | Amortized \(O(\log N)\). Deletes an edge between @(u, v)@.
+cutLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
 cutLCT lct@LCT {..} u v = do
+  -- make @u@ the new root of the underlying tree
   evertLCT lct u
-  evertLCT lct v
+  -- make @v@ in the same preferred path as the root
+  exposeLCT_ lct v
   vl <- GM.read lLCT v
   dbgM $ do
     vp <- GM.read pLCT v
@@ -404,18 +427,18 @@ cutLCT lct@LCT {..} u v = do
   GM.write lLCT v undefLCT
   updateNodeLCT lct v
 
--- | \(O(\log N)\)
-foldPathLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m a
+-- | Amortized \(O(\log N)\). Folds a path between @(u, v)@.
+foldPathLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m a
 foldPathLCT lct@LCT {..} u v = do
   -- make @u@ the root of the underlying tree
   evertLCT lct u
-  -- put @v@ in the same preferred path as @u@
+  -- make @v@ in the same preferred path as @u@
   exposeLCT_ lct v
   -- FIXME: what is x, rx and vx?
   GM.read aggLCT v
 
 -- | \(O(\log N)\)
-foldSubtreeLCT :: (PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m a
+foldSubtreeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m a
 foldSubtreeLCT lct@LCT {..} v root = do
   if v == root
     then do
@@ -429,7 +452,7 @@ foldSubtreeLCT lct@LCT {..} v root = do
       return res
 
 -- | \(O(N)\) Collects heavy vertices in a subtree.
-collectHeavyPathLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m [IndexLCT]
+collectHeavyPathLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m [IndexLCT]
 collectHeavyPathLCT LCT {..} v0 = do
   let goUp !acc !v = do
         p <- GM.read pLCT v
