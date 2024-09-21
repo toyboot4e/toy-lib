@@ -233,7 +233,7 @@ sactRSS seq@RawSplaySeq {..} l r act root = do
   splayRSS seq root' True
   return root'
 
--- | Amortised \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
+-- | Amortized \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
 {-# INLINE reverseRSS #-}
 reverseRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m SplayIndex

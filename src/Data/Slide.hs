@@ -50,7 +50,7 @@ pushBackSSF StackSlidingFold {..} !x = do
   GM.unsafeModify bufferFoldSSF (<> x) 0
   pushBack bufferSSF x
 
--- | Amortised \(O(1)\).
+-- | Amortized \(O(1)\).
 {-# INLINE popFrontSSF #-}
 popFrontSSF :: (PrimMonad m, Monoid a, U.Unbox a) => StackSlidingFold (PrimState m) a -> m ()
 popFrontSSF StackSlidingFold {..} = do
@@ -126,7 +126,7 @@ pushBackDSF DequeSlidingFold {..} !x = do
   back <- readBack backScanDSF 0
   pushBack backScanDSF $! back <> x
 
--- | Amortised \(O(1)\).
+-- | Amortized \(O(1)\).
 {-# INLINE popFrontDSF #-}
 popFrontDSF :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => DequeSlidingFold (PrimState m) a -> m ()
 popFrontDSF window@DequeSlidingFold {..} = do
@@ -143,7 +143,7 @@ popFrontDSF window@DequeSlidingFold {..} = do
           popBack_ frontBufferDSF
           popBack_ frontScanDSF
 
--- | Amortised \(O(1)\).
+-- | Amortized \(O(1)\).
 {-# INLINE popBackDSF #-}
 popBackDSF :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => DequeSlidingFold (PrimState m) a -> m ()
 popBackDSF window@DequeSlidingFold {..} = do
