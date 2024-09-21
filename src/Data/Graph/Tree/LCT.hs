@@ -1,7 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- | Link/cut tree.
 --
@@ -45,7 +44,7 @@
 module Data.Graph.Tree.LCT where
 
 import Control.Exception (assert)
-import Control.Monad (unless, when)
+import Control.Monad (forM_, unless, when)
 import Control.Monad.Extra (unlessM)
 import Control.Monad.Fix (fix)
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -57,6 +56,7 @@ import Data.Graph.Alias
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import Debug.Trace
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
@@ -91,7 +91,7 @@ data LCT s a = LCT
   }
 
 -- | \(O(N)\)
-newLCT :: (PrimMonad m, Monoid a, U.Unbox a) => Int -> m (LCT (PrimState m) a)
+newLCT :: (Monoid a, U.Unbox a, PrimMonad m) => Int -> m (LCT (PrimState m) a)
 newLCT n = do
   lLCT <- UM.replicate n undefLCT
   rLCT <- UM.replicate n undefLCT
@@ -150,7 +150,7 @@ rotateNodeLCT lct@LCT {..} v = do
         if ppr == p
           then GM.write rLCT pp v
           else do
-            -- TODO: what?
+            -- overwrite the light (path-parent) pointer:
             changeLightLCT lct p v
 
   -- update parent pointers to `pp`: pp <-- v <-- p <-- c
@@ -213,8 +213,8 @@ splayLCT lct@LCT {..} c = do
 
 -- | \(O(1)\)
 isRootNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m Bool
-isRootNodeLCT LCT {..} v = do
-  (== undefLCT) <$> GM.read pLCT v
+isRootNodeLCT lct v = do
+  (== RootNodeLCT) <$> nodePlaceLCT lct v
 
 -- TODO: return heavy/light notion
 data NodePlaceLCT = RootNodeLCT | LeftNodeLCT | RightNodeLCT
@@ -227,8 +227,12 @@ nodePlaceLCT LCT {..} v = do
   if nullLCT p
     then return RootNodeLCT
     else do
-      pl <- GM.read lLCT v
-      return . bool LeftNodeLCT RightNodeLCT $ nullLCT pl
+      pl <- GM.read lLCT p
+      if pl == v
+        then return LeftNodeLCT
+        else do
+          pr <- GM.read rLCT p
+          return $ bool RootNodeLCT RightNodeLCT $ pr == v
 
 -- * Node operations
 
@@ -290,20 +294,23 @@ eraseLightLCT lct@LCT {..} u v = do
 
 -- * Link/cut operations
 
--- | Amortized \(O(\logN)\). Makes the root and @v0@ to be in the same preferred path (same
--- auxiliary tree).
+-- FIXME: isn't it log^2 N?
+
+-- | Amortized \(O(\log N)\). Makes the root of the underlying tree and @v0@ to be in the same
+-- preferred path (auxiliary tree). @v0@ will be the root of the auxiliary tree. Right child of
+-- @v0@ will be null.
 exposeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m IndexLCT
 exposeLCT lct@LCT {..} v0 = do
   let inner v lastRoot
         | nullLCT v = return lastRoot
         | otherwise = do
-            -- @v@ will be at the top of the auxiliary tree:
+            -- go up to the top of the auxiliary tree:
             splayLCT lct v
 
             -- make @lastRoot@ the right child of @v@:
             --    v               v
             --   /|\        ->   /|\
-            --    | r             | lastRoot  <-- it makes sure @v0@ will be connected to the root
+            --    | r             | lastRoot  <-- @v0@ (in the @lastRoot@) will be connected to the root
             --    lastRoot        r
             r <- GM.read rLCT v
             unless (nullLCT r) $ addLightLCT lct v r
@@ -311,7 +318,7 @@ exposeLCT lct@LCT {..} v0 = do
             GM.write rLCT v lastRoot
             updateNodeLCT lct v
 
-            -- go up to thenext auxiliary tree:
+            -- go up to the next auxiliary tree:
             --    p
             --    |
             --    v
@@ -321,8 +328,19 @@ exposeLCT lct@LCT {..} v0 = do
             inner vp v
 
   res <- inner v0 undefLCT
-  -- TODO: why splaying here?
+
+  do
+    -- FIXME: remove
+    pRes <- GM.read pLCT res
+    unless (nullLCT pRes) $ error $ "xxx must be null!!! " ++ show (res, pRes)
+
   splayLCT lct v0
+
+  do
+    -- FIXME: remove
+    p <- GM.read pLCT v0
+    unless (nullLCT p) $ error $ "must be null!!! " ++ show (res, v0, p)
+
   return res
 
 -- | Amortized \(O(\logN)\). Makes the root and @v0@ to be in the same preferred path (same
@@ -337,7 +355,7 @@ evertLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m
 evertLCT lct v = do
   -- make @v@ be in the same preferred path as root. note that @v@ is at the root of the auxiliary tree.
   exposeLCT_ lct v
-  -- now reverse and @v@ is at the root of the underlying tree.
+  -- reverse all the edges with respect to @v@: make @v@ a new root of the underlying tree.
   reverseNodeLCT lct v
   propNodeLCT lct v
 
@@ -382,30 +400,44 @@ jumpLCT lct@LCT {..} u0 v0 k0 = do
 -- | Amortized \(O(\log N)\).
 writeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> a -> m ()
 writeLCT lct v x = do
+  -- make @v@ the new root of the underlying tree:
   evertLCT lct v
+  -- write to it. FIXME: update the aggregated value?
   GM.write (vLCT lct) v x
 
--- | \(O(1)\)
+-- | Amortized \(O(\log N)\).
 modifyLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> (a -> a) -> Vertex -> m ()
 modifyLCT lct f v = do
+  -- make @v@ the new root of the underlying tree:
   evertLCT lct v
+  -- write to it. FIXME: update the aggregated value?
   GM.modify (vLCT lct) f v
 
--- | Amortized \(O(\log N)\). Creates an edge between @(u, v)@. In the represented tree, parent of
+-- | Amortized \(O(\log N)\). Creates an edge between @(c, p)@. In the represented tree, parent of
 -- @c@ is @p@ after the operation.
 linkLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> Vertex -> Vertex -> m ()
 linkLCT lct@LCT {..} c p = do
   -- make @c@ the new root of the underlying tree
   evertLCT lct c
-  -- make @p@ in the same preferred path as the root
+  -- remove right children of @p@.
   exposeLCT_ lct p
   propNodeLCT lct p
+
   dbgM $ do
     cp <- GM.read pLCT c
-    let !_ = assert (nullLCT cp) "cp"
-    pr <- GM.read pLCT p
-    let !_ = assert (nullLCT pr) "pr"
+    let !_ = assert (nullLCT cp) $ "cp must be null: " ++ show (c, cp)
+    pr <- GM.read rLCT p
+    let !_ = assert (nullLCT pr) $ "pr must be null: " ++ show (p, pr)
     return ()
+
+  do
+    cp <- GM.read pLCT c
+    let !_ = if nullLCT cp then () else error $ "cp must be null: " ++ show (c, cp)
+    pr <- GM.read rLCT p
+    let !_ = if nullLCT pr then () else error $ "pr must be null: " ++ show (p, pr)
+    return ()
+
+  -- connect with a heavy edge:
   GM.write pLCT c p
   GM.write rLCT p c
   updateNodeLCT lct p
@@ -417,13 +449,27 @@ cutLCT lct@LCT {..} u v = do
   evertLCT lct u
   -- make @v@ in the same preferred path as the root
   exposeLCT_ lct v
-  vl <- GM.read lLCT v
+
   dbgM $ do
+    -- @v@ does not have any right children. because @u@ and @v@ are neighbors, @vl@ is @u@.
     vp <- GM.read pLCT v
-    let !_ = assert (nullLCT vp) "vp"
-    let !_ = assert (nullLCT vl) "vl"
+    let !_ = assert (nullLCT vp) "vp must be null"
+    vl <- GM.read lLCT v
+    let !_ = assert (vl == u) "vl must be `u`"
     return ()
-  GM.write pLCT vl undefLCT
+
+  do
+    -- @v@ does not have any right children. because @u@ and @v@ are neighbors, @vl@ is @u@.
+    vp <- GM.read pLCT v
+    vl <- GM.read lLCT v
+    let !_ = if nullLCT vp then () else error "vp must be null"
+    let !_ = if vl == u then () else error "vl must be `u`"
+    return ()
+
+  -- delete the heavy edge.
+  -- vl <- GM.read lLCT v
+  -- GM.write pLCT vl undefLCT
+  GM.write pLCT u undefLCT
   GM.write lLCT v undefLCT
   updateNodeLCT lct v
 
@@ -434,7 +480,7 @@ foldPathLCT lct@LCT {..} u v = do
   evertLCT lct u
   -- make @v@ in the same preferred path as @u@
   exposeLCT_ lct v
-  -- FIXME: what is x, rx and vx?
+  -- now that @v@ is at the root of the auxiliary tree, its aggregation value is the path folding:
   GM.read aggLCT v
 
 -- | \(O(\log N)\)
@@ -451,29 +497,45 @@ foldSubtreeLCT lct@LCT {..} v root = do
       linkLCT lct v root'
       return res
 
--- | \(O(N)\) Collects heavy vertices in a subtree.
+-- | \(O(N)\) Collects the auxiliary tree vertices where @v0@ is contained.
 collectHeavyPathLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m [IndexLCT]
-collectHeavyPathLCT LCT {..} v0 = do
-  let goUp !acc !v = do
-        p <- GM.read pLCT v
-        if nullLCT p
-          then return (v : acc)
-          else goUp (v : acc) p
-  xs <- goUp [] v0
+collectHeavyPathLCT lct@LCT {..} v0 = do
+  let goUp !v = do
+        b <- isRootNodeLCT lct v
+        if b
+          then return v
+          else do
+            p <- GM.read pLCT v
+            goUp p
 
   -- DFS from left to right that corrects the subtree vertices
-  let dfs !c !rev = do
-        cl <- GM.read lLCT c
-        cr <- GM.read rLCT c
-        Bit rev' <- GM.read revLCT c
+  let dfs !v !rev = do
+        vl <- GM.read lLCT v
+        vr <- GM.read rLCT v
+        Bit rev' <- GM.read revLCT v
         if not rev
           then do
-            unless (nullLCT cl) $ dfs cl (rev `xor` rev')
-            modify' (c :)
-            unless (nullLCT cr) $ dfs cl (rev `xor` rev')
+            -- from left to right
+            unless (nullLCT vl) $ dfs vl (rev `xor` rev')
+            modify' (v :)
+            unless (nullLCT vr) $ dfs vr (rev `xor` rev')
           else do
-            unless (nullLCT cr) $ dfs cl (rev `xor` rev')
-            modify' (c :)
-            unless (nullLCT cl) $ dfs cl (rev `xor` rev')
+            -- from right to left
+            unless (nullLCT vr) $ dfs vr (rev `xor` rev')
+            modify' (v :)
+            unless (nullLCT vl) $ dfs vl (rev `xor` rev')
 
-  (`execStateT` xs) $ dfs v0 False
+  !root <- goUp v0
+  (`execStateT` []) $ dfs root False
+
+-- | \(O(N)\) Debug printing.
+dbgLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> m ()
+dbgLCT LCT {..} = {- dbgM $ -} do
+  let !_ = traceShow ("p", "l", "r", "rev", GM.length lLCT) ()
+  forM_ [0 .. GM.length lLCT - 1] $ \i -> do
+    p <- GM.read pLCT i
+    l <- GM.read lLCT i
+    r <- GM.read rLCT i
+    rev <- GM.read revLCT i
+    let !_ = trace ("- " ++ show (p, l, r, rev)) ()
+    return ()

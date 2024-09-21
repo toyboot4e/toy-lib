@@ -27,7 +27,7 @@ solve = do
         2 -> (2,,,-1,-1) <$> int' <*> int'
         _ -> error "unreachable"
 
-  lct <- newLCT n
+  lct <- newLCT @(Sum Int) n
   U.iforM_ xs $ \i x -> do
     writeLCT lct i $ Sum x
   U.forM_ uvs $ \(!u, !v) -> do
