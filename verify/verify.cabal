@@ -138,6 +138,10 @@ executable abc348-e-exe
   import:  verify
   main-is: abc348-e.hs
 
+executable abc372-e-exe
+  import:  verify
+  main-is: abc372-e.hs
+
 executable acl-practice-d-exe
   import:  verify
   main-is: acl-practice-d.hs
@@ -292,7 +296,8 @@ executable yosupo-new-union-find-with-potencial-exe
 
 executable yosupo-new-unionfind-with-potential-non-commutative-group-exe
   import:  verify
-  main-is: yosupo-new-unionfind-with-potential-non-commutative-group.hs
+  main-is:
+    yosupo-new-unionfind-with-potential-non-commutative-group.hs
 
 executable yosupo-tree-tree-diameter-exe
   import:  verify
