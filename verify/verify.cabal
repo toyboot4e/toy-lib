@@ -331,6 +331,10 @@ executable yosupo-tree-dynamic-tree-vertex-set-path-composite-exe
   import:  verify
   main-is: yosupo-tree-dynamic-tree-vertex-set-path-composite.hs
 
+executable yosupo-tree-dynamic-tree-vertex-add-subtree-sum-exe
+  import:  verify
+  main-is: yosupo-tree-dynamic-tree-vertex-add-subtree-sum.hs
+
 executable yosupo-convolution-convolution-exe
   import:  verify
   main-is: yosupo-convolution-convolution.hs

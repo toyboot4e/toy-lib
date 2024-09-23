@@ -124,7 +124,7 @@ buildLCT xs es = stToPrim $ do
     dualAggLCT <- UM.replicate n mempty
     -- midLCT <- UM.replicate n mempty
     return LCT {..}
-  U.forM_  es $ \(!u, !v) -> do
+  U.forM_ es $ \(!u, !v) -> do
     linkLCT lct u v
   return lct
 
@@ -343,8 +343,8 @@ eraseLightLCT lct@LCT {..} u v = do
 -- FIXME: isn't it log^2 N?
 
 -- | Amortized \(O(\log N)\). Makes the root of the underlying tree and @v0@ to be in the same
--- preferred path (auxiliary tree). @v0@ will be the root of the auxiliary tree. Right child of
--- @v0@ will be null.
+-- preferred path (auxiliary tree). @v0@ will be the root of the auxiliary tree. After the
+-- opeartion, all children of @v0@ are detached from the preferred path.
 exposeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m IndexLCT
 exposeLCT lct@LCT {..} v0 = stToPrim $ do
   let inner v lastRoot
@@ -403,7 +403,7 @@ evertLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m
 evertLCT lct v = do
   -- make @v@ be in the same preferred path as root. note that @v@ is at the root of the auxiliary tree.
   exposeLCT_ lct v
-  -- reverse all the edges with respect to @v@: make @v@ a new root of the underlying tree.
+  -- reverse all the edges with respect to @v@: make @v@ a new root of the auxiliary tree.
   reverseNodeLCT lct v
   propNodeLCT lct v
 
@@ -412,7 +412,7 @@ jumpLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m)
 jumpLCT lct@LCT {..} u0 v0 k0 = stToPrim $ do
   -- make @v0@ a new root of the underlying tree
   evertLCT lct v0
-  -- make @u0@ in the same preferred path as the root
+  -- make @u0@ in the same preferred path as the root (@v0)
   exposeLCT_ lct u0
 
   do
@@ -422,20 +422,18 @@ jumpLCT lct@LCT {..} u0 v0 k0 = stToPrim $ do
 
   let inner k u = do
         propNodeLCT lct u
-        -- FIXME: details
+        -- FIXME: what is happening?
         ur <- GM.read rLCT u
         urSize <- if nullLCT ur then return 0 else GM.read sLCT ur
-        if k < urSize
-          then inner k ur
-          else
-            if k == urSize
-              then return u
-              else do
-                ul <- GM.read lLCT u
-                inner (k - (urSize + 1)) ul
+        case compare k urSize of
+          LT -> inner k ur
+          EQ -> return u
+          GT -> do
+            ul <- GM.read lLCT u
+            inner (k - (urSize + 1)) ul
 
   res <- inner k0 u0
-  splayLCT lct u0
+  splayLCT lct res
   return res
 
 -- * API
@@ -532,18 +530,24 @@ foldPathLCT lct@LCT {..} u v = do
   -- now that @v@ is at the root of the auxiliary tree, its aggregation value is the path folding:
   GM.read aggLCT v
 
--- | \(O(\log N)\)
+-- | Amortized \(O(\log N)\). Fold the subtree under @v@. @root@ is a node closer to the underlying
+-- root or the root vertex itself.
 foldSubtreeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m a
-foldSubtreeLCT lct@LCT {..} v root = stToPrim $ do
-  if v == root
+foldSubtreeLCT lct@LCT {..} v rootOrParent = stToPrim $ do
+  if v == rootOrParent
     then do
-      evertLCT lct root
+      -- FIXME: what is this case? if @v@ i the root, do we need to @evert@ again?
+      evertLCT lct rootOrParent
       GM.read aggLCT v
     else do
-      root' <- jumpLCT lct v root 1
-      cutLCT lct v root'
+      -- @rootOrParent@ can be far. retrieve the adjacent vertex:
+      parent <- jumpLCT lct v rootOrParent 1
+      -- detach @v@ from the parent. now that it's the root of the subtree vertices, the aggregation
+      -- value is the aggregation of the subtree.
+      cutLCT lct v parent
       res <- GM.read aggLCT v
-      linkLCT lct v root'
+      -- attach again
+      linkLCT lct v parent
       return res
 
 -- | \(O(N)\) Collects the auxiliary tree vertices where @v0@ is contained.
