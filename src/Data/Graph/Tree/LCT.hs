@@ -300,18 +300,28 @@ updateNodeLCT LCT {..} i = stToPrim $ do
   l <- GM.read lLCT i
   r <- GM.read rLCT i
   v <- GM.read vLCT i
-  -- FIXME: ignore mempty
-  (!sizeL, !aggL, !dualAggL) <-
+
+  (!size', !agg', !dualAgg') <-
     if nullLCT l
-      then return (0, mempty, mempty)
-      else (,,) <$> GM.read sLCT l <*> GM.read aggLCT l <*> GM.read dualAggLCT l
-  (!sizeR, !aggR, !dualAggR) <-
+      then return (1 :: Int, v, v)
+      else do
+        lSize <- GM.read sLCT l
+        lAgg <- GM.read aggLCT l
+        lDualAgg <- GM.read dualAggLCT l
+        return (lSize + 1, lAgg <> v, v <> lDualAgg)
+
+  (!size'', !agg'', !dualAgg'') <-
     if nullLCT r
-      then return (0, mempty, mempty)
-      else (,,) <$> GM.read sLCT r <*> GM.read aggLCT r <*> GM.read dualAggLCT r
-  GM.write sLCT i $! sizeL + 1 + sizeR
-  GM.write aggLCT i $! aggL <> v <> aggR
-  GM.write dualAggLCT i $! dualAggR <> v <> dualAggL
+      then return (size', agg', dualAgg')
+      else do
+        rSize <- GM.read sLCT r
+        rAgg <- GM.read aggLCT r
+        rDualAgg <- GM.read dualAggLCT r
+        return (size' + rSize, agg' <> rAgg, rDualAgg <> dualAgg')
+
+  GM.write sLCT i size''
+  GM.write aggLCT i agg''
+  GM.write dualAggLCT i dualAgg''
 
 -- | \(O(1)\) Adds a path-parent edge.
 addLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
