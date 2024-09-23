@@ -409,6 +409,7 @@ updateNodeRSS RawSplaySeq {..} i = do
   l <- GM.read lRSS $ coerce i
   r <- GM.read rRSS $ coerce i
   v <- GM.read vRSS $ coerce i
+  -- FIXME: ignore mempty
   (!sizeL, !aggL) <-
     if nullSI l
       then return (0, mempty)

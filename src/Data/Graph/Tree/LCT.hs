@@ -86,7 +86,10 @@ data LCT s a = LCT
     -- | Decomposed node data storage: payloads.
     vLCT :: !(UM.MVector s a),
     -- | Decomposed node data storage: aggregation of payloads.
-    aggLCT :: !(UM.MVector s a)
+    aggLCT :: !(UM.MVector s a),
+    -- | Decomposed node data storage: dual aggregation (right fold) of paylods.
+    -- TODO: remove on commutative monoid.
+    dualAggLCT :: !(UM.MVector s a)
     -- TODO: subtree info??
     -- -- | Decomposed node data storage: FIXME: what?
     -- midLCT :: !(UM.MVector s a)
@@ -102,6 +105,7 @@ newLCT n = stToPrim $ do
   revLCT <- UM.replicate n (Bit False)
   vLCT <- UM.replicate n mempty
   aggLCT <- UM.replicate n mempty
+  dualAggLCT <- UM.replicate n mempty
   -- midLCT <- UM.replicate n mempty
   return LCT {..}
 
@@ -117,6 +121,7 @@ buildLCT xs es = stToPrim $ do
     revLCT <- UM.replicate n (Bit False)
     vLCT <- U.thaw xs
     aggLCT <- UM.replicate n mempty
+    dualAggLCT <- UM.replicate n mempty
     -- midLCT <- UM.replicate n mempty
     return LCT {..}
   U.forM_  es $ \(!u, !v) -> do
@@ -258,7 +263,7 @@ nodePlaceLCT LCT {..} v = stToPrim $ do
 -- * Node operations
 
 -- | Amortized \(O(\log N)\). Propgates the lazily propagated values on a node.
-propNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
+propNodeLCT :: (HasCallStack, PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 propNodeLCT lct@LCT {..} v = stToPrim $ do
   Bit b <- GM.exchange revLCT v (Bit False)
   when b $ do
@@ -269,7 +274,7 @@ propNodeLCT lct@LCT {..} v = stToPrim $ do
 
 -- | \(O(1)\)
 {-# INLINE reverseNodeLCT #-}
-reverseNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
+reverseNodeLCT :: (HasCallStack, PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 reverseNodeLCT lct@LCT {..} i = do
   swapLrNodeLCT lct i
   -- lazily propagate new reverse from the children, or cancel:
@@ -277,11 +282,17 @@ reverseNodeLCT lct@LCT {..} i = do
 
 -- | \(O(1)\) Reverses the left and the right children, lazily and recursively.
 {-# INLINE swapLrNodeLCT #-}
-swapLrNodeLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m ()
+swapLrNodeLCT :: (HasCallStack, PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 swapLrNodeLCT LCT {..} i = do
+  -- children
   l <- GM.read lLCT i
   r <- GM.exchange rLCT i l
   GM.write lLCT i r
+
+  -- left/right aggregations (foldings)
+  agg <- GM.read aggLCT i
+  dualAgg <- GM.exchange dualAggLCT i agg
+  GM.write aggLCT i dualAgg
 
 -- | \(O(1)\) Recomputes the node size and the monoid aggregation.
 updateNodeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
@@ -289,16 +300,18 @@ updateNodeLCT LCT {..} i = stToPrim $ do
   l <- GM.read lLCT i
   r <- GM.read rLCT i
   v <- GM.read vLCT i
-  (!sizeL, !aggL) <-
+  -- FIXME: ignore mempty
+  (!sizeL, !aggL, !dualAggL) <-
     if nullLCT l
-      then return (0, mempty)
-      else (,) <$> GM.read sLCT l <*> GM.read aggLCT l
-  (!sizeR, !aggR) <-
+      then return (0, mempty, mempty)
+      else (,,) <$> GM.read sLCT l <*> GM.read aggLCT l <*> GM.read dualAggLCT l
+  (!sizeR, !aggR, !dualAggR) <-
     if nullLCT r
-      then return (0, mempty)
-      else (,) <$> GM.read sLCT r <*> GM.read aggLCT r
+      then return (0, mempty, mempty)
+      else (,,) <$> GM.read sLCT r <*> GM.read aggLCT r <*> GM.read dualAggLCT r
   GM.write sLCT i $! sizeL + 1 + sizeR
   GM.write aggLCT i $! aggL <> v <> aggR
+  GM.write dualAggLCT i $! dualAggR <> v <> dualAggL
 
 -- | \(O(1)\) Adds a path-parent edge.
 addLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
@@ -428,7 +441,6 @@ writeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m
 writeLCT lct v x = do
   -- make @v@ the new root of the underlying tree:
   evertLCT lct v
-  -- write to it. FIXME: update the aggregated value?
   GM.write (vLCT lct) v x
 
 -- | Amortized \(O(\log N)\).
@@ -437,7 +449,6 @@ modifyLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState 
 modifyLCT lct f v = do
   -- make @v@ the new root of the underlying tree:
   evertLCT lct v
-  -- write to it. FIXME: update the aggregated value?
   GM.modify (vLCT lct) f v
 
 -- | Amortized \(O(\log N)\). Creates an edge between @(c, p)@. In the represented tree, parent of

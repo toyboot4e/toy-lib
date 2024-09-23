@@ -42,6 +42,7 @@ solve = do
     (2, !u, !v, !_, !_) -> do
       Sum res <- foldPathLCT lct u v
       return $ Just res
+    _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
 
