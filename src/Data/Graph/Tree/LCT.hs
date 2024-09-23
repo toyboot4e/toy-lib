@@ -51,7 +51,6 @@ import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Control.Monad.Trans.State.Strict (execStateT, modify')
 import Data.Bit
 import Data.Bits
-import Data.Bool (bool)
 import Data.Graph.Alias
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -71,6 +70,8 @@ undefLCT = -1
 nullLCT :: IndexLCT -> Bool
 nullLCT = (== -1)
 
+-- TODO: separate the subtree handling storage
+
 -- | Link/cut tree.
 data LCT s a = LCT
   { -- | Decomposed node data storage: left children.
@@ -87,17 +88,22 @@ data LCT s a = LCT
     vLCT :: !(UM.MVector s a),
     -- | Decomposed node data storage: aggregation of payloads.
     aggLCT :: !(UM.MVector s a),
-    -- | Decomposed node data storage: dual aggregation (right fold) of paylods.
-    -- TODO: remove on commutative monoid.
-    dualAggLCT :: !(UM.MVector s a)
-    -- TODO: subtree info??
-    -- -- | Decomposed node data storage: FIXME: what?
-    -- midLCT :: !(UM.MVector s a)
+    -- | Decomposed node data storage: dual aggregation (right fold) of paylods. This is required
+    -- for non-commutative monoids only.
+    dualAggLCT :: !(UM.MVector s a),
+    -- | Decomposed node data storage: path-parent aggregation value. This is required for subtree
+    -- folding queries over commutative monoids only.
+    midLCT :: !(UM.MVector s a),
+    -- | Decomposed node data storage: aggregation of subtree. This is required for subtree folding
+    -- queries over commutative monoids only.
+    subtreeAggLCT :: !(UM.MVector s a),
+    -- |  This is required for subtree folding queries over commutative monoids only.
+    invOpLCT :: !(a -> a)
   }
 
 -- | \(O(N)\)
-newLCT :: (Monoid a, U.Unbox a, PrimMonad m) => Int -> m (LCT (PrimState m) a)
-newLCT n = stToPrim $ do
+newWithInvOpLCT :: (Monoid a, U.Unbox a, PrimMonad m) => (a -> a) -> Int -> m (LCT (PrimState m) a)
+newWithInvOpLCT !invOpLCT n = stToPrim $ do
   lLCT <- UM.replicate n undefLCT
   rLCT <- UM.replicate n undefLCT
   pLCT <- UM.replicate n undefLCT
@@ -105,13 +111,21 @@ newLCT n = stToPrim $ do
   revLCT <- UM.replicate n (Bit False)
   vLCT <- UM.replicate n mempty
   aggLCT <- UM.replicate n mempty
+  -- non-commutative monoids only
   dualAggLCT <- UM.replicate n mempty
-  -- midLCT <- UM.replicate n mempty
+  -- commutative monoid subtree folding queries only
+  midLCT <- UM.replicate n mempty
+  subtreeAggLCT <- UM.replicate n mempty
   return LCT {..}
 
+-- | \(O(N)\)
+{-# INLINE newLCT #-}
+newLCT :: (Monoid a, U.Unbox a, PrimMonad m) => Int -> m (LCT (PrimState m) a)
+newLCT = newWithInvOpLCT id
+
 -- | \(O(N + E \log E)\)
-buildLCT :: (Monoid a, U.Unbox a, PrimMonad m) => U.Vector a -> U.Vector (Vertex, Vertex) -> m (LCT (PrimState m) a)
-buildLCT xs es = stToPrim $ do
+buildWithInvOpLCT :: (Monoid a, U.Unbox a, PrimMonad m) => (a -> a) -> U.Vector a -> U.Vector (Vertex, Vertex) -> m (LCT (PrimState m) a)
+buildWithInvOpLCT !invOpLCT xs es = stToPrim $ do
   lct <- do
     let !n = U.length xs
     lLCT <- UM.replicate n undefLCT
@@ -122,13 +136,17 @@ buildLCT xs es = stToPrim $ do
     vLCT <- U.thaw xs
     aggLCT <- UM.replicate n mempty
     dualAggLCT <- UM.replicate n mempty
-    -- midLCT <- UM.replicate n mempty
+    midLCT <- UM.replicate n mempty
+    subtreeAggLCT <- UM.replicate n mempty
     return LCT {..}
   U.forM_ es $ \(!u, !v) -> do
     linkLCT lct u v
   return lct
 
--- TODO: build method
+-- | \(O(N + E \log E)\)
+{-# INLINE buildLCT #-}
+buildLCT :: (Monoid a, U.Unbox a, PrimMonad m) => U.Vector a -> U.Vector (Vertex, Vertex) -> m (LCT (PrimState m) a)
+buildLCT = buildWithInvOpLCT id
 
 -- * Balancing
 
@@ -176,7 +194,7 @@ rotateNodeLCT lct@LCT {..} v = stToPrim $ do
           then GM.write rLCT pp v
           else do
             -- overwrite the light (path-parent) pointer:
-            changeLightLCT lct p v
+            changeLightLCT lct pp p v
 
   -- update parent pointers to `pp`: pp <-- v <-- p <-- c
   GM.write pLCT v pp
@@ -258,7 +276,9 @@ nodePlaceLCT LCT {..} v = stToPrim $ do
         then return LeftNodeLCT
         else do
           pr <- GM.read rLCT p
-          return $ bool RootNodeLCT RightNodeLCT $ pr == v
+          if pr == v
+            then return RightNodeLCT
+            else return RootNodeLCT
 
 -- * Node operations
 
@@ -289,6 +309,7 @@ swapLrNodeLCT LCT {..} i = do
   r <- GM.exchange rLCT i l
   GM.write lLCT i r
 
+  -- FIXME: run exhange inside modifyM
   -- left/right aggregations (foldings)
   agg <- GM.read aggLCT i
   dualAgg <- GM.exchange dualAggLCT i agg
@@ -300,43 +321,51 @@ updateNodeLCT LCT {..} i = stToPrim $ do
   l <- GM.read lLCT i
   r <- GM.read rLCT i
   v <- GM.read vLCT i
+  m <- GM.read midLCT i
 
-  (!size', !agg', !dualAgg') <-
+  (!size', !agg', !dualAgg', !subtreeAgg') <-
     if nullLCT l
-      then return (1 :: Int, v, v)
+      then return (1 :: Int, v, v, v <> m)
       else do
         lSize <- GM.read sLCT l
         lAgg <- GM.read aggLCT l
         lDualAgg <- GM.read dualAggLCT l
-        return (lSize + 1, lAgg <> v, v <> lDualAgg)
+        lSubtreeAgg <- GM.read subtreeAggLCT l
+        return (lSize + 1, lAgg <> v, v <> lDualAgg, lSubtreeAgg <> v <> m)
 
-  (!size'', !agg'', !dualAgg'') <-
+  (!size'', !agg'', !dualAgg'', !subtreeAgg'') <-
     if nullLCT r
-      then return (size', agg', dualAgg')
+      then return (size', agg', dualAgg', subtreeAgg')
       else do
         rSize <- GM.read sLCT r
         rAgg <- GM.read aggLCT r
         rDualAgg <- GM.read dualAggLCT r
-        return (size' + rSize, agg' <> rAgg, rDualAgg <> dualAgg')
+        rSubtreeAgg <- GM.read subtreeAggLCT r
+        return (size' + rSize, agg' <> rAgg, rDualAgg <> dualAgg', subtreeAgg' <> rSubtreeAgg)
 
   GM.write sLCT i size''
   GM.write aggLCT i agg''
   GM.write dualAggLCT i dualAgg''
+  GM.write subtreeAggLCT i subtreeAgg''
 
--- | \(O(1)\) Adds a path-parent edge.
-addLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
-addLightLCT lct@LCT {..} u v = do
+-- | \(O(1)\) Called on adding a path-parent edge. This is for subtree folding.
+addLightLCT :: (PrimMonad m, Semigroup a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
+addLightLCT LCT {..} p c = do
+  newChild <- GM.read vLCT c
+  GM.modify midLCT (newChild <>) p
+
+-- | \(O(1)\) Called on changing a path-parent edge. This is for subtree folding.
+changeLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> IndexLCT -> m ()
+changeLightLCT lct@LCT {..} u v p = do
+  -- FIXME: why no operation
   return ()
 
--- | \(O(1)\) TODO: what?
-changeLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
-changeLightLCT lct@LCT {..} u v = do
-  return ()
-
--- | \(O(1)\) Removes a path-parent edge.
-eraseLightLCT :: (PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
-eraseLightLCT lct@LCT {..} u v = do
-  return ()
+-- | \(O(1)\) Called on erasing a path-parent edge. This is for subtree folding.
+eraseLightLCT :: (PrimMonad m, Semigroup a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
+eraseLightLCT LCT {..} p c = do
+  sub <- GM.read subtreeAggLCT c
+  let !sub' = invOpLCT sub
+  GM.modify midLCT (<> sub') p
 
 -- * Link/cut operations
 
@@ -476,13 +505,6 @@ linkLCT lct@LCT {..} c p = stToPrim $ do
     let !_ = assert (nullLCT pr) $ "pr must be null: " ++ show (p, pr)
     return ()
 
-  do
-    cp <- GM.read pLCT c
-    let !_ = if nullLCT cp then () else error $ "cp must be null: " ++ show (c, cp)
-    pr <- GM.read rLCT p
-    let !_ = if nullLCT pr then () else error $ "pr must be null: " ++ show (p, pr)
-    return ()
-
   -- connect with a heavy edge:
   GM.write pLCT c p
   GM.write rLCT p c
@@ -537,18 +559,20 @@ foldSubtreeLCT lct@LCT {..} v rootOrParent = stToPrim $ do
   if v == rootOrParent
     then do
       -- FIXME: what is this case? if @v@ i the root, do we need to @evert@ again?
-      evertLCT lct rootOrParent
-      GM.read aggLCT v
+      evertLCT lct v
+      GM.read subtreeAggLCT v
     else do
       -- @rootOrParent@ can be far. retrieve the adjacent vertex:
       parent <- jumpLCT lct v rootOrParent 1
       -- detach @v@ from the parent. now that it's the root of the subtree vertices, the aggregation
-      -- value is the aggregation of the subtree.
+      -- value is the aggregation of all the subtree vertices.
       cutLCT lct v parent
-      res <- GM.read aggLCT v
+      res <- GM.read subtreeAggLCT v
       -- attach again
       linkLCT lct v parent
       return res
+
+-- * Debug
 
 -- | \(O(N)\) Collects the auxiliary tree vertices where @v0@ is contained.
 collectHeavyPathLCT :: (HasCallStack, PrimMonad m) => LCT (PrimState m) a -> IndexLCT -> m [IndexLCT]
