@@ -351,7 +351,7 @@ updateNodeLCT LCT {..} i = stToPrim $ do
 -- | \(O(1)\) Called on adding a path-parent edge. This is for subtree folding.
 addLightLCT :: (PrimMonad m, Semigroup a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> IndexLCT -> m ()
 addLightLCT LCT {..} p c = do
-  newChild <- GM.read vLCT c
+  newChild <- GM.read subtreeAggLCT c
   GM.modify midLCT (newChild <>) p
 
 -- | \(O(1)\) Called on changing a path-parent edge. This is for subtree folding.
