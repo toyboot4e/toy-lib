@@ -459,9 +459,7 @@ exchangeNodeRSS seq@RawSplaySeq {..} root v = do
 {-# INLINE swapLrNodeRSS #-}
 swapLrNodeRSS :: (HasCallStack, PrimMonad m) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m ()
 swapLrNodeRSS RawSplaySeq {..} i = do
-  l <- GM.read lRSS $ coerce i
-  r <- GM.exchange rRSS (coerce i) l
-  GM.write lRSS (coerce i) r
+  GM.modifyM lRSS (GM.exchange rRSS (coerce i)) (coerce i)
 
 -- | \(O(1)\) Reverses the left and the right children, lazily and recursively.
 {-# INLINE reverseNodeRSS #-}

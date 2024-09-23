@@ -304,16 +304,10 @@ reverseNodeLCT lct@LCT {..} i = do
 {-# INLINE swapLrNodeLCT #-}
 swapLrNodeLCT :: (HasCallStack, PrimMonad m, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
 swapLrNodeLCT LCT {..} i = do
-  -- children
-  l <- GM.read lLCT i
-  r <- GM.exchange rLCT i l
-  GM.write lLCT i r
-
-  -- FIXME: run exhange inside modifyM
-  -- left/right aggregations (foldings)
-  agg <- GM.read aggLCT i
-  dualAgg <- GM.exchange dualAggLCT i agg
-  GM.write aggLCT i dualAgg
+  -- swap chidlren
+  GM.modifyM lLCT (GM.exchange rLCT i) i
+  -- swap aggLCT[i] and dualAggLCT[]
+  GM.modifyM aggLCT (GM.exchange dualAggLCT i) i
 
 -- | \(O(1)\) Recomputes the node size and the monoid aggregation.
 updateNodeLCT :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => LCT (PrimState m) a -> IndexLCT -> m ()
