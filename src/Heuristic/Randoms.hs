@@ -18,3 +18,6 @@ rollsM n rng = U.replicateM n . uniformRM rng
 -- | `uniformR` where the `RandomGen` is given via `MonadState`.
 uniformRSt :: (RandomGen g, UniformRange a, MonadState g m) => (a, a) -> m a
 uniformRSt !rng = state (uniformR rng)
+
+-- TODO: withTimeLimit
+

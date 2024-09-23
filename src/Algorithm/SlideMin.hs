@@ -54,12 +54,12 @@ slideMinIndices = slideCmpIndicesOn Down
 --            [---]       3
 --              [---]     4
 --                [---]   5
+-- @
 --
 -- >>> slideMaxIndices 3 (U.fromList [0 .. 5])
 -- [2,3,4,5]
 -- >>> slideMaxIndices 3 (U.fromList [5, 4 .. 0])
 -- [0,1,2,3]
--- @
 {-# INLINE slideMaxIndices #-}
 slideMaxIndices :: Int -> U.Vector Int -> U.Vector Int
 slideMaxIndices = slideCmpIndicesOn id
@@ -98,7 +98,7 @@ lookBackLowerIndices = lookBackIndicesOn Down
 --                 | <---- |
 --                 |       | <-|
 --                 | <-|   |   |
---           <-|   |   |   |
+--           <-|   |   |   |   |
 -- look back: -1  -1   1   1   3
 -- @
 --
