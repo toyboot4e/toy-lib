@@ -33,10 +33,18 @@ bindex !dict !xref = fromJust $ bsearchL dict (<= xref)
 -- >>> chunksOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
 -- [[1,2,3],[4,5,6],[7]]
 chunksOfG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
-chunksOfG k xs0 = V.unfoldrExactN n step xs0
+chunksOfG len xs0 = V.unfoldrExactN n step xs0
   where
-    n = (G.length xs0 + k - 1) `div` k
-    step xs = (G.take k xs, G.drop k xs)
+    n = (G.length xs0 + len - 1) `div` len
+    step xs = (G.take len xs, G.drop len xs)
+
+-- | \(O(N)\)
+-- = Test
+-- >>> windowsOfG 3 $ U.fromList ([1, 2, 3, 4, 5, 6, 7] :: [Int])
+-- [[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7]]
+windowsOfG :: (G.Vector v a) => Int -> v a -> V.Vector (v a)
+windowsOfG len xs0 = V.generate (G.length xs0 - (len - 1)) $ \i ->
+  G.take len $ G.drop i xs0
 
 -- | \(O(N f)\) @U.constructN@ with monadic actions.
 {-# INLINE constructMN #-}
