@@ -142,6 +142,10 @@ executable abc372-e-exe
   import:  verify
   main-is: abc372-e.hs
 
+executable acl-practice-b-exe
+  import:  verify
+  main-is: acl-practice-b.hs
+
 executable acl-practice-d-exe
   import:  verify
   main-is: acl-practice-d.hs

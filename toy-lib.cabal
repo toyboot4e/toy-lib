@@ -186,6 +186,7 @@ library
     Data.DenseHashMap
     Data.DenseIntMap
     Data.DenseIntSet
+    Data.FenwickTree
     Data.Graph.Alias
     Data.Graph.Generic
     Data.Graph.MaxFlow
