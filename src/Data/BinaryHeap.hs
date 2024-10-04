@@ -53,16 +53,12 @@ data BinaryHeap (f :: Type -> Type) s a = BinaryHeap
   { -- | Newtype of `OrdVia`
     priorityBH :: !(a -> f a),
     -- | Stores the size of the heap.
-    intVarsBH :: !(UM.MVector s Int),
+    sizeBH_ :: !(UM.MVector s Int),
     -- | The storage.
     internalVecBH :: !(UM.MVector s a)
   }
 
 -- TODO: consider using type parameter for the newtype?
-
-_sizeBH :: Int
-_sizeBH = 0
-{-# INLINE _sizeBH #-}
 
 type MinBinaryHeap s a = BinaryHeap Identity s a
 
@@ -81,9 +77,9 @@ newMaxBH :: (U.Unbox a, PrimMonad m) => Int -> m (MaxBinaryHeap (PrimState m) a)
 newMaxBH = _newBH Down
 
 -- TODO: BH
-sizeBN :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
-sizeBN BinaryHeap {..} = UM.unsafeRead intVarsBH _sizeBH
-{-# INLINE sizeBN #-}
+sizeBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m Int
+sizeBH BinaryHeap {..} = UM.unsafeRead sizeBH_ 0
+{-# INLINE sizeBH #-}
 
 -- | \(O(\log N)\) Moves a leaf value upwards order to keep the invariant.
 siftUpBy ::
@@ -179,7 +175,7 @@ buildBHVia ::
   U.Vector a ->
   m (BinaryHeap f (PrimState m) a)
 buildBHVia priorityBH vec = do
-  intVarsBH <- UM.replicate 1 $ U.length vec
+  sizeBH_ <- UM.replicate 1 $ U.length vec
   internalVecBH <- U.thaw vec
   heapifyBy (compareVia priorityBH) internalVecBH
   return $! BinaryHeap {..}
@@ -215,7 +211,7 @@ peekBH ::
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
 peekBH bh = do
-  size <- sizeBN bh
+  size <- sizeBH bh
   if size > 0
     then Just <$!> unsafeViewBH bh
     else return Nothing
@@ -228,8 +224,8 @@ insertBH ::
   a ->
   m ()
 insertBH BinaryHeap {..} x = do
-  size <- UM.unsafeRead intVarsBH _sizeBH
-  UM.unsafeWrite intVarsBH _sizeBH (size + 1)
+  size <- UM.unsafeRead sizeBH_ 0
+  UM.unsafeWrite sizeBH_ 0 (size + 1)
   UM.unsafeWrite internalVecBH size x
   siftUpBy (compareVia priorityBH) size internalVecBH
 {-# INLINE insertBH #-}
@@ -240,8 +236,8 @@ unsafeDeleteBH_ ::
   BinaryHeap f (PrimState m) a ->
   m ()
 unsafeDeleteBH_ BinaryHeap {..} = do
-  size' <- subtract 1 <$!> UM.unsafeRead intVarsBH _sizeBH
-  UM.unsafeWrite intVarsBH _sizeBH size'
+  size' <- subtract 1 <$!> UM.unsafeRead sizeBH_ 0
+  UM.unsafeWrite sizeBH_ 0 size'
   UM.unsafeSwap internalVecBH 0 size'
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size' internalVecBH)
 {-# INLINE unsafeDeleteBH_ #-}
@@ -262,7 +258,7 @@ modifyBH ::
   m ()
 modifyBH BinaryHeap {..} f = do
   UM.unsafeModify internalVecBH f 0
-  size <- UM.unsafeRead intVarsBH _sizeBH
+  size <- UM.unsafeRead sizeBH_ 0
   siftDownBy (compareVia priorityBH) 0 (UM.unsafeTake size internalVecBH)
 {-# INLINE modifyBH #-}
 
@@ -273,7 +269,7 @@ deleteBH ::
   BinaryHeap f (PrimState m) a ->
   m a
 deleteBH bh = do
-  size <- sizeBN bh
+  size <- sizeBH bh
   if size > 0
     then unsafeDeleteBH bh
     else error "tried to remove the top value from an empty binary heap"
@@ -285,14 +281,14 @@ deleteMaybeBH ::
   BinaryHeap f (PrimState m) a ->
   m (Maybe a)
 deleteMaybeBH bh = do
-  size <- sizeBN bh
+  size <- sizeBH bh
   if size > 0
     then Just <$> unsafeDeleteBH bh
     else return Nothing
 
 -- | \(O(1)\) Clears the heap.
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
-clearBH BinaryHeap {..} = UM.unsafeWrite intVarsBH 0 0
+clearBH BinaryHeap {..} = UM.unsafeWrite sizeBH_ 0 0
 
 -- | \(O(1)\)
 unsafeFreezeBH ::
@@ -300,5 +296,5 @@ unsafeFreezeBH ::
   BinaryHeap f (PrimState m) a ->
   m (U.Vector a)
 unsafeFreezeBH BinaryHeap {..} = do
-  size <- UM.unsafeRead intVarsBH _sizeBH
+  size <- UM.unsafeRead sizeBH_ 0
   U.unsafeFreeze (UM.unsafeTake size internalVecBH)
