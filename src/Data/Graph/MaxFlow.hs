@@ -81,6 +81,8 @@ maxFlow' !nVerts !src !sink !edges = do
 -- | \(O(E)\) Handy API for retrieving edge information @(v1, v2, cap, flow)@ from the `maxFlow` results.
 --
 -- Be warned that it contains reverse edges and edge from/to source/sink.
+--
+-- FIXME: Return forward edges only.
 edgesMF :: (PrimMonad m, U.Unbox c, Num c) => MaxFlow (PrimState m) c -> m (U.Vector (Int, Int, c, c))
 edgesMF MaxFlow {..} = do
   !edgeCap <- U.unsafeFreeze edgeCapMF
@@ -125,8 +127,8 @@ buildMaxFlow !nVertsMF !edges = do
     G.forM_ edges $ \(!v1, !v2, !cap) -> do
       -- consume the edge index
       !i1 <- GM.read edgeCounter v1
-      !i2 <- GM.read edgeCounter v2
       GM.modify edgeCounter (+ 1) v1
+      !i2 <- GM.read edgeCounter v2
       GM.modify edgeCounter (+ 1) v2
       -- store the edge
       GM.write edgeRevIndex i1 i2

@@ -203,8 +203,8 @@ buildMinCostFlow !nVertsMCF !edges = do
       let !_ = dbgAssert (v1 /= v2) $ "cannot use self loop edge: " ++ show (v1, v2)
       -- consume the edge index
       !i1 <- GM.read edgeCounter v1
-      !i2 <- GM.read edgeCounter v2
       GM.modify edgeCounter (+ 1) v1
+      !i2 <- GM.read edgeCounter v2
       GM.modify edgeCounter (+ 1) v2
       -- store the edge
       GM.write edgeRevIndex i1 i2
