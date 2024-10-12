@@ -294,7 +294,7 @@ _segmentsHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
       where
         ix, iy :: VertexHLD
         !ix = indexHLD G.! x
-        !iy = indexHLD U.! y
+        !iy = indexHLD G.! y
         hx, hy :: Vertex
         hx = headHLD G.! x
         hy = headHLD G.! y
@@ -386,7 +386,7 @@ ancestorHLD HLD {..} parent k0 = inner parent k0
       -- on this segment
       | k <= iv - ihv = revIndexHLD G.! (iv - k)
       -- next segment
-      | otherwise = inner (parentHLD U.! hv) (k - (iv - ihv + 1))
+      | otherwise = inner (parentHLD G.! hv) (k - (iv - ihv + 1))
       where
         iv = indexHLD G.! v
         hv = headHLD G.! v

@@ -37,7 +37,7 @@ treeDiameterPathSG gr undefW =
       !from = U.maxIndex bfs0
       (!bfs1, !parents) = bfsTreeSG gr from undefW
       !to = U.maxIndex bfs1
-      !w = bfs1 U.! to
+      !w = bfs1 G.! to
    in ((from, to, w), restorePath parents to)
 
 -- TODO: height

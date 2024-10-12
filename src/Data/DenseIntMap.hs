@@ -169,6 +169,6 @@ unsafeKeysDIM im = do
     . U.filter
       ( \i ->
           let (!q, !r) = i `divMod` wordDIS
-           in testBit (bits U.! q) r
+           in testBit (bits G.! q) r
       )
     $ U.generate (wordDIS * U.length vec) id

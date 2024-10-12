@@ -4,6 +4,7 @@ module Data.Vector.CSum where
 import Control.Monad.Primitive
 import Data.Ix
 import Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
@@ -18,7 +19,7 @@ csum1D = U.scanl' (+) 0
 -- | \(O(1)\) Retrieves a range sum from an immutable cumulative sum.
 {-# INLINE (+!) #-}
 (+!) :: (HasCallStack, Num a, U.Unbox a) => U.Vector a -> (Int, Int) -> a
-(+!) csum (!l, !r) = csum U.! (r + 1) - csum U.! l
+(+!) csum (!l, !r) = csum G.! (r + 1) - csum G.! l
   where
     _
       | debug =

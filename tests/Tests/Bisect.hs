@@ -2,6 +2,7 @@ module Tests.Bisect where
 
 import Algorithm.Bisect
 import Data.List qualified as L
+import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -30,7 +31,7 @@ intBisectProps =
         xs <- QC.vectorOf n (QC.chooseInt (-20, 20))
         let xs' = U.fromList $ L.sort xs
         let lrs = [(l, r) | l <- [0 .. n - 1], r <- [l + 1 .. n - 1]]
-        let isYes = (<= p) . (xs' U.!)
+        let isYes = (<= p) . (xs' G.!)
         return $
           all
             ( \(l, r) ->
