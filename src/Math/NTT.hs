@@ -14,6 +14,7 @@ import Data.ModInt
 import Data.Ord (comparing)
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
@@ -163,8 +164,8 @@ butterfly1 xs rotN1 iMaxBit iBit = do
       let !i2 = i1 + interval
       !x1 <- UM.read xs i1
       !x2 <- UM.read xs i2
-      UM.write xs i1 $! x1 + x2 * rotNK
-      UM.write xs i2 $! x1 - x2 * rotNK
+      GM.write xs i1 $! x1 + x2 * rotNK
+      GM.write xs i2 $! x1 - x2 * rotNK
       return $ rotNK * rotN1
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
@@ -194,8 +195,8 @@ invButterfly1 xs rotN1 iMaxBit iBit = do
       let !i2 = i1 + interval
       !x1 <- UM.read xs i1
       !x2 <- UM.read xs i2
-      UM.write xs i1 $! x1 + x2
-      UM.write xs i2 $! (x1 - x2) * rotNK
+      GM.write xs i1 $! x1 + x2
+      GM.write xs i2 $! (x1 - x2) * rotNK
       return $ rotNK * rotN1
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"

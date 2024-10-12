@@ -45,19 +45,19 @@ rootPUF :: (PrimMonad m, Semigroup a, U.Unbox a) => PUnionFind (PrimState m) a -
 rootPUF uf = inner
   where
     inner v =
-      UM.read (nodesPUF uf) v >>= \case
+      GM.read (nodesPUF uf) v >>= \case
         MUFRoot _ -> return v
         MUFChild p -> do
           -- NOTE(perf): Path compression.
           -- Handle the nodes closer to the root first and move them onto just under the root
           !r <- inner p
           when (p /= r) $ do
-            !pp <- UM.read (potencialPUF uf) p
+            !pp <- GM.read (potencialPUF uf) p
             -- Move `v` to just under the root:
-            UM.write (nodesPUF uf) v (MUFChild r)
+            GM.write (nodesPUF uf) v (MUFChild r)
             -- Invariant: new coming operators always comes from the left. And we're performing
             -- reverse folding.
-            UM.modify (potencialPUF uf) (<> pp) v
+            GM.modify (potencialPUF uf) (<> pp) v
           return r
 
 -- | \(O(\alpha(N))\) Unifies two nodes, managing their differencial potencial so that
@@ -75,29 +75,29 @@ unifyPUF !uf !v1 !v2 !dp = do
     else do
       -- NOTE(perf): Union by size (choose smaller one for root).
       -- Another, more proper optimization would be union by rank (depth).
-      !size1 <- UM.read (potencialPUF uf) v1
-      !size2 <- UM.read (potencialPUF uf) v2
+      !size1 <- GM.read (potencialPUF uf) v1
+      !size2 <- GM.read (potencialPUF uf) v2
       if size1 >= size2
         then do
           -- Unify `r1` onto `r2`
 
           -- Update the size of `r1`
-          !sz1 <- _unwrapMUFRoot <$> UM.read (nodesPUF uf) r1
-          !sz2 <- _unwrapMUFRoot <$> UM.read (nodesPUF uf) r2
-          UM.write (nodesPUF uf) r1 (MUFRoot (sz1 + sz2))
+          !sz1 <- _unwrapMUFRoot <$> GM.read (nodesPUF uf) r1
+          !sz2 <- _unwrapMUFRoot <$> GM.read (nodesPUF uf) r2
+          GM.write (nodesPUF uf) r1 (MUFRoot (sz1 + sz2))
 
           -- p(v1) becomes p'(v1) under r2 after unified. p(r1) becomes p'(r1).
           --     p'(v1) = dp <> p(v2)
           --     p'(v1) = p(v1) <> 'p(r1)
           -- Therefore,
           --     p'(r1) = p^{-1}(v1) <> dp <> p(v2)
-          !p1 <- UM.read (potencialPUF uf) v1
-          !p2 <- UM.read (potencialPUF uf) v2
+          !p1 <- GM.read (potencialPUF uf) v1
+          !p2 <- GM.read (potencialPUF uf) v2
           let !pr1' = invert p1 <> dp <> p2
 
           -- Move `r1` to just under `r2`:
-          UM.write (nodesPUF uf) r1 (MUFChild r2)
-          UM.write (potencialPUF uf) r1 pr1'
+          GM.write (nodesPUF uf) r1 (MUFChild r2)
+          GM.write (potencialPUF uf) r1 pr1'
 
           return True
         else do
@@ -113,7 +113,7 @@ unifyPUF_ !uf !v1 !v2 !dp = void $ unifyPUF uf v1 v2 dp
 -- | \(O(1)\) Returns the number of vertices belonging to the same group.
 {-# INLINE sizePUF #-}
 sizePUF :: (PrimMonad m, Semigroup a, U.Unbox a) => PUnionFind (PrimState m) a -> Int -> m Int
-sizePUF !uf !v = fmap _unwrapMUFRoot . UM.read (nodesPUF uf) =<< rootPUF uf v
+sizePUF !uf !v = fmap _unwrapMUFRoot . GM.read (nodesPUF uf) =<< rootPUF uf v
 
 -- | \(O(\alpha(N))\) Has the same root / belongs to the same group.
 {-# INLINE samePUF #-}
@@ -126,8 +126,8 @@ canUnifyPUF :: (PrimMonad m, Semigroup a, Eq a, U.Unbox a) => PUnionFind (PrimSt
 canUnifyPUF !uf !v1 !v2 !dp = do
   !r1 <- rootPUF uf v1
   !r2 <- rootPUF uf v2
-  !p1 <- UM.read (potencialPUF uf) v1
-  !p2 <- UM.read (potencialPUF uf) v2
+  !p1 <- GM.read (potencialPUF uf) v1
+  !p2 <- GM.read (potencialPUF uf) v2
   return $ r1 /= r2 || p1 == dp <> p2
 
 -- | Returns @p(v)@: the potencial of the vertex in their group.
@@ -136,7 +136,7 @@ potPUF :: (PrimMonad m, Semigroup a, U.Unbox a) => PUnionFind (PrimState m) a ->
 potPUF !uf !v1 = do
   -- Perform path compression
   void $ rootPUF uf v1
-  UM.read (potencialPUF uf) v1
+  GM.read (potencialPUF uf) v1
 
 -- | \(O(\alpha(N))\) Returns \(p(v1) <> p^{-1}(v2)\). Returns non-meaning value when the two vertices are
 -- not connected. Or think like @diffPUF uf dst src@.
@@ -161,8 +161,8 @@ diffMayPUF !uf !v1 !v2 = do
 {-# INLINE clearPUF #-}
 clearPUF :: forall m a. (PrimMonad m, Group a, U.Unbox a) => PUnionFind (PrimState m) a -> m ()
 clearPUF !uf = do
-  UM.set (potencialPUF uf) (mempty @a)
-  UM.set (nodesPUF uf) (MUFRoot 1)
+  GM.set (potencialPUF uf) (mempty @a)
+  GM.set (nodesPUF uf) (MUFRoot 1)
 
 -- | \(O(N W)\) Returns vertices by root.
 {-# INLINE groupsPUF #-}

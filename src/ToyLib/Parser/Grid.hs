@@ -5,6 +5,7 @@ import Control.Monad.Primitive (PrimMonad)
 import Control.Monad.State.Class
 import qualified Data.ByteString.Char8 as BS
 import Data.Ix
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -77,8 +78,8 @@ getDiagMat' !n = fmap (IxVector bnd) $ do
     !ws <- intsU'
     U.iforM_ ws $ \i dw -> do
       let !x = y + i + 1
-      UM.write vec (index bnd (y, x)) dw
-      UM.write vec (index bnd (x, y)) dw
+      GM.write vec (index bnd (y, x)) dw
+      GM.write vec (index bnd (x, y)) dw
   U.unsafeFreeze vec
   where
     !bnd = ((0, 0), (n - 1, n - 1))

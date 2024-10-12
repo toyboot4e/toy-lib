@@ -23,6 +23,7 @@ import Data.Ix
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -35,9 +36,9 @@ genericComponentsOf :: (Vertex -> U.Vector Vertex) -> Int -> U.Vector Vertex -> 
 genericComponentsOf gr nVerts sources = runST $ do
   vis <- UM.replicate nVerts False
   let dfs v1 = do
-        UM.write vis v1 True
+        GM.write vis v1 True
         U.forM_ (gr v1) $ \v2 -> do
-          unlessM (UM.read vis v2) $ do
+          unlessM (GM.read vis v2) $ do
             dfs v2
   U.forM_ sources dfs
   U.findIndices id <$> U.unsafeFreeze vis
@@ -51,17 +52,17 @@ genericGrouping gr n = runST $ do
 
   -- TODO: use unfoldrM
   groupVerts <- (\f -> U.foldM' f [] (U.generate n id)) $ \acc v -> do
-    g <- UM.read components v
+    g <- GM.read components v
     if g /= -1
       then return acc
       else do
-        iGroup <- UM.unsafeRead iGroupRef 0
-        UM.unsafeModify iGroupRef (+ 1) 0
+        iGroup <- GM.unsafeRead iGroupRef 0
+        GM.unsafeModify iGroupRef (+ 1) 0
         fmap (: acc) . (`execStateT` []) $ flip fix v $ \loop v1 -> do
-          UM.write components v1 iGroup
+          GM.write components v1 iGroup
           modify' (v1 :)
           U.forM_ (gr v1) $ \v2 -> do
-            whenM ((== -1) <$> UM.read components v2) $ do
+            whenM ((== -1) <$> GM.read components v2) $ do
               loop v2
 
   (,groupVerts) <$> U.unsafeFreeze components
@@ -72,11 +73,11 @@ genericDfs !gr !nVerts !src !undefW = runST $ do
   !dists <- UM.replicate nVerts undefW
   -- !parent <- UM.replicate nVerts undef
   (\f -> fix f 0 src) $ \loop depth v1 -> do
-    UM.write dists v1 depth
+    GM.write dists v1 depth
     U.forM_ (gr v1) $ \(!v2, !dw) -> do
-      !d <- UM.read dists v2
+      !d <- GM.read dists v2
       when (d == undefW) $ do
-        -- UM.write parent v2 v1
+        -- GM.write parent v2 v1
         loop (depth + dw) v2
   -- (,) <$> U.unsafeFreeze dists <*> U.unsafeFreeze parent
   U.unsafeFreeze dists
@@ -88,11 +89,11 @@ genericDfsLongestPath !gr !n !source = runST $ do
 
   flip fix (0 :: w, source) $ \loop (!d1, !v1) -> do
     -- let !_ = dbg (source, v1)
-    UM.write vis v1 True
-    !v2s <- U.filterM (fmap not . UM.read vis . fst) $ gr v1
+    GM.write vis v1 True
+    !v2s <- U.filterM (fmap not . GM.read vis . fst) $ gr v1
     !maxDistance <- fmap (U.foldl' max d1) . U.forM v2s $ \(!v2, !w) -> do
       loop (d1 + w, v2)
-    UM.write vis v1 False
+    GM.write vis v1 False
     return maxDistance
 
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
@@ -102,16 +103,16 @@ genericBfs !gr !nVerts !source !undefW = U.create $ do
   !queue <- newBuffer nVerts
 
   pushBack queue source
-  UM.unsafeWrite dist source 0
+  GM.unsafeWrite dist source 0
 
   -- procedural programming is great
   fix $ \loop -> do
     whenJustM (popFront queue) $ \v1 -> do
-      !d1 <- UM.unsafeRead dist v1
+      !d1 <- GM.unsafeRead dist v1
       U.forM_ (gr v1) $ \(!v2, !dw) -> do
-        !lastD <- UM.unsafeRead dist v2
+        !lastD <- GM.unsafeRead dist v2
         when (lastD == undefW) $ do
-          UM.unsafeWrite dist v2 (d1 + dw)
+          GM.unsafeWrite dist v2 (d1 + dw)
           pushBack queue v2
       loop
 
@@ -178,21 +179,21 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   -- !last <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
-    UM.write dist v 0
+    GM.write dist v 0
     insertBH heap (0, v)
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
-        !newVisit <- (== w1) <$> UM.read dist v1
+        !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
           U.forM_ (gr v1) $ \(!v2, !dw2) -> do
-            !w2 <- UM.read dist v2
+            !w2 <- GM.read dist v2
             let !w2' = merge w1 dw2
             when (w2 == undef || w2' < w2) $ do
-              UM.write dist v2 w2'
-              -- UM.write last v2 v1
+              GM.write dist v2 w2'
+              -- GM.write last v2 v1
               insertBH heap (w2', v2)
         loop
 
@@ -210,21 +211,21 @@ dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
   -- !last <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
-    UM.write dist v mempty
+    GM.write dist v mempty
     insertBH heap (mempty, v)
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
-        !newVisit <- (== w1) <$> UM.read dist v1
+        !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
           U.forM_ (gr v1) $ \(!v2, !dw2) -> do
-            !w2 <- UM.read dist v2
+            !w2 <- GM.read dist v2
             let !w2' = w1 <> dw2
             when (w2 == undef || w2' < w2) $ do
-              UM.write dist v2 w2'
-              -- UM.write last v2 v1
+              GM.write dist v2 w2'
+              -- GM.write last v2 v1
               insertBH heap (w2', v2)
         loop
 
@@ -276,14 +277,14 @@ genericDfsEveryPathL !gr !nVerts !source !targetLen = runST $ do
   !res <- evalContT $ callCC $ \exit -> do
     (\f -> fix f (0 :: Int) source) $ \loop d1 v1 -> do
       -- let !_ = dbg (v1, d1, targetLen)
-      UM.write dist v1 d1
+      GM.write dist v1 d1
       when (d1 == targetLen - 1) $ do
         -- let !_ = dbg ("found!")
         exit True
-      !v2s <- U.filterM (fmap (== undef) . UM.read dist) $ gr v1
+      !v2s <- U.filterM (fmap (== undef) . GM.read dist) $ gr v1
       U.forM_ v2s $ \v2 -> do
         loop (d1 + 1) v2
-      UM.write dist v1 undef
+      GM.write dist v1 undef
       return False
 
   if res then Just <$> U.unsafeFreeze dist else return Nothing
@@ -298,18 +299,18 @@ genericDfsTree !gr !n !source !undefW = runST $ do
   !queue <- newBuffer n
 
   pushBack queue source
-  UM.unsafeWrite dist source 0
+  GM.unsafeWrite dist source 0
   -- be sure to not overwrite the parent of the source vertex (it has to be `-1`!)
 
   fix $ \loop -> do
     whenJustM (popFront queue) $ \v1 -> do
-      !d1 <- UM.unsafeRead dist v1
+      !d1 <- GM.unsafeRead dist v1
       U.forM_ (gr v1) $ \(!v2, !dw) -> do
-        !p <- UM.unsafeRead prev v2
+        !p <- GM.unsafeRead prev v2
         -- REMARK: Be sure to keep the source vertex's parent as `-1`:
         when (p == undef && v2 /= source) $ do
-          UM.unsafeWrite prev v2 v1
-          UM.unsafeWrite dist v2 (d1 + dw)
+          GM.unsafeWrite prev v2 v1
+          GM.unsafeWrite dist v2 (d1 + dw)
           pushBack queue v2
       loop
 
@@ -324,17 +325,17 @@ genericBfsTree !gr !n !source !undefW = runST $ do
   !queue <- newBuffer n
 
   pushBack queue source
-  UM.unsafeWrite dist source 0
+  GM.unsafeWrite dist source 0
   -- be sure to not overwrite the parent of the source vertex (it has to be `-1`!)
 
   fix $ \loop -> do
     whenJustM (popFront queue) $ \v1 -> do
-      !d1 <- UM.read dist v1
+      !d1 <- GM.read dist v1
       U.forM_ (gr v1) $ \(!v2, !dw) -> do
-        !d2 <- UM.read dist v2
+        !d2 <- GM.read dist v2
         when (d2 == undefW) $ do
-          UM.write prev v2 v1
-          UM.write dist v2 (d1 + dw)
+          GM.write prev v2 v1
+          GM.write dist v2 (d1 + dw)
           pushBack queue v2
       loop
 
@@ -348,21 +349,21 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
   !parents <- UM.replicate nVerts (-1 :: Vertex)
 
   U.forM_ vs0 $ \v -> do
-    UM.write dist v 0
+    GM.write dist v 0
     insertBH heap (0, v)
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
       Nothing -> return ()
       Just (!w1, !v1) -> do
-        !newVisit <- (== w1) <$> UM.read dist v1
+        !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
           U.forM_ (gr v1) $ \(!v2, !dw2) -> do
-            !w2 <- UM.read dist v2
+            !w2 <- GM.read dist v2
             let !w2' = merge w1 dw2
             when (w2 == undef || w2' < w2) $ do
-              UM.write dist v2 w2'
-              UM.write parents v2 v1
+              GM.write dist v2 w2'
+              GM.write parents v2 v1
               insertBH heap (w2', v2)
         loop
 
@@ -434,30 +435,30 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
 
   -- diagonals (self to self)
   forM_ [0 .. nVerts - 1] $ \v -> do
-    UM.write vec (index bnd (v, v)) 0
+    GM.write vec (index bnd (v, v)) 0
 
   -- initial walks
   U.forM_ wEdges $ \(!v1, !v2, !w) -> do
     let !i = index bnd (v1, v2)
-    w0 <- UM.exchange vec i w
+    w0 <- GM.exchange vec i w
     -- consider multiple edges
     when (w0 /= undef && w0 < w) $ do
-      UM.write vec (index bnd (v1, v2)) w0
+      GM.write vec (index bnd (v1, v2)) w0
 
   -- multiple walks (O(N^3))
   forM_ [0 .. nVerts - 1] $ \k -> do
     forM_ [0 .. nVerts - 1] $ \i -> do
       forM_ [0 .. nVerts - 1] $ \j -> do
-        !x1 <- UM.read vec (index bnd (i, j))
+        !x1 <- GM.read vec (index bnd (i, j))
         !x2 <- do
-          !tmp1 <- UM.read vec (index bnd (i, k))
-          !tmp2 <- UM.read vec (index bnd (k, j))
+          !tmp1 <- GM.read vec (index bnd (i, k))
+          !tmp2 <- GM.read vec (index bnd (k, j))
           return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
         let !x'
               | x1 == undef = x2
               | x2 == undef = x1
               | otherwise = min x1 x2
-        UM.write vec (index bnd (i, j)) x'
+        GM.write vec (index bnd (i, j)) x'
 
   return vec
   where

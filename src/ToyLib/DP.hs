@@ -247,9 +247,9 @@ lastCharOccurrences s = runST $ do
 
   forM_ (zip [1 :: Int ..] (BS.unpack s)) $ \(!i, !c_) -> do
     V.forM_ vec $ \indices -> do
-      UM.write indices i =<< UM.read indices (i - 1)
+      GM.write indices i =<< UM.read indices (i - 1)
     let !c = ord c_ - ord 'a'
-    UM.write (vec V.! c) i i
+    GM.write (vec V.! c) i i
 
   V.mapM U.unsafeFreeze vec
 

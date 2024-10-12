@@ -39,6 +39,7 @@ import Data.Buffer
 import Data.Graph.Sparse
 import Data.Ix
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import ToyLib.Debug (dbgAssert)
@@ -107,7 +108,7 @@ solveTS !nVars !constraints = do
         !vec <- UM.replicate (2 * nVars) (-1 :: Int)
         forM_ (zip [0 :: Int ..] sccs) $ \(!iScc, !scc) -> do
           forM_ scc $ \v -> do
-            UM.write vec v iScc
+            GM.write vec v iScc
         return vec
 
   let !saturatable = U.all (\x -> groups G.! x /= groups G.! (x + nVars)) (U.generate nVars id)
@@ -121,7 +122,7 @@ solveTS !nVars !constraints = do
           !prev <- UM.read vec (v `mod` nVars)
           when (prev == -1) $ do
             -- NOTE: We're seeing from the downstream vertices!!!!
-            UM.write vec (v `mod` nVars) $ bool 1 0 (v < nVars)
+            GM.write vec (v `mod` nVars) $ bool 1 0 (v < nVars)
       return vec
 
 -- | \(O(V+E)\) The main interface of two-sat solve.

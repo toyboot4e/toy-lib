@@ -23,6 +23,7 @@ import Data.UnionFind.Mutable
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -210,8 +211,8 @@ digraphSG gr = runST $ do
       else do
         -- paint
         flip fix (0 :: Int, i) $ \loop (!c1, !v1) -> do
-          UM.write vertColors v1 c1
-          UM.write vertComps v1 iComp
+          GM.write vertColors v1 c1
+          GM.write vertComps v1 iComp
           if even c1
             then UM.modify compInfo (first3 succ) iComp
             else UM.modify compInfo (second3 succ) iComp
@@ -385,7 +386,7 @@ findCycleImplSG gr revEdgeIsCycle = runST $ do
   -- TODO: better way than `callCC`?
   res <- evalContT $ callCC $ \exit -> do
     let dfs parent v1 = do
-          UM.write visIn v1 True
+          GM.write visIn v1 True
           U.forM_ (gr `adjW` v1) $ \(!v2, !w12) -> do
             when (revEdgeIsCycle || v2 /= parent) $ do
               bIn <- UM.read visIn v2
@@ -398,7 +399,7 @@ findCycleImplSG gr revEdgeIsCycle = runST $ do
                 pushFront history (v1, v2, w12)
                 dfs v1 v2
                 popFront_ history
-          UM.write visOut v1 True
+          GM.write visOut v1 True
 
     U.forM_ (U.generate n id) $ \v -> do
       unlessM (UM.read visIn v) $ do

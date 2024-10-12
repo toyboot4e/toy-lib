@@ -175,7 +175,7 @@ runMaxFlow !src !sink container@MaxFlow {..} = do
     -- run bfs
     runMaxFlowBfs src sink container bufs
 
-    !distSink <- UM.read distsMF sink
+    !distSink <- GM.read distsMF sink
     if distSink == undefMF
       then return flow -- can't increase the flow anymore
       else do
@@ -198,24 +198,24 @@ runMaxFlowBfs ::
   MaxFlowBuffer (PrimState m) c ->
   m ()
 runMaxFlowBfs !src !sink MaxFlow {..} MaxFlowBuffer {..} = do
-  UM.write distsMF src 0
+  GM.write distsMF src 0
   pushBack queueMF src
   fix $ \loop ->
     whenJustM (popFront queueMF) $ \v1 -> do
       -- TODO: rather, stop on filling sink?
-      !notEnd <- (== undefMF) <$> UM.read distsMF sink
+      !notEnd <- (== undefMF) <$> GM.read distsMF sink
       when notEnd $ do
         let !iStart = offsetsMF G.! v1
             !iEnd = offsetsMF G.! (v1 + 1)
 
         -- visit neighbors
-        !dist1 <- UM.read distsMF v1
+        !dist1 <- GM.read distsMF v1
         U.forM_ (U.generate (iEnd - iStart) (+ iStart)) $ \i12 -> do
           let !v2 = edgeDstMF G.! i12
-          !cap12 <- UM.read edgeCapMF i12
-          !notVisited <- (== undefMF) <$> UM.read distsMF v2
+          !cap12 <- GM.read edgeCapMF i12
+          !notVisited <- (== undefMF) <$> GM.read distsMF v2
           when (cap12 > 0 && notVisited) $ do
-            UM.write distsMF v2 (dist1 + 1)
+            GM.write distsMF v2 (dist1 + 1)
             pushBack queueMF v2
 
         loop
@@ -236,19 +236,19 @@ runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
       | v1 == sink = return flow
       | otherwise = fix $ \visitNeighbor -> do
           -- `iterMF` holds neighbor iteration counters
-          !i1 <- UM.read iterMF v1
+          !i1 <- GM.read iterMF v1
           if i1 >= offsetsMF G.! (v1 + 1)
             then do
               -- visited all the neighbors. no flow
               return 0
             else do
               -- increment the counter to remember the neighbor iteration state:
-              UM.write iterMF v1 (i1 + 1)
+              GM.write iterMF v1 (i1 + 1)
 
               -- go if it can flow
               let !v2 = edgeDstMF G.! i1
-              !cap12 <- UM.read edgeCapMF i1
-              !connected <- (<) <$> UM.read distsMF v1 <*> UM.read distsMF v2
+              !cap12 <- GM.read edgeCapMF i1
+              !connected <- (<) <$> GM.read distsMF v1 <*> GM.read distsMF v2
               if cap12 > 0 && connected
                 then do
                   -- get to the final flow

@@ -260,7 +260,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
             -- let !_ = dbg ("let's run DFS")
 
             -- find the shortest path from the source to the sink and flow as far as possible
-            !distSink <- UM.read distsMCF sink
+            !distSink <- GM.read distsMCF sink
             if distSink == mempty
               then do
                 let !_ = dbg "min cost flow: less than the target flow"
@@ -272,10 +272,10 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                   if v2 == src
                     then return flow
                     else do
-                      !v1 <- UM.read prevVertMCF v2
-                      !i12 <- UM.read prevEdgeMCF v2
+                      !v1 <- GM.read prevVertMCF v2
+                      !i12 <- GM.read prevEdgeMCF v2
                       -- let !_ = dbg ("read", v1, v2, i12)
-                      !cap12 <- UM.read edgeCapMCF i12
+                      !cap12 <- GM.read edgeCapMCF i12
                       loop (min flow cap12, v1)
 
                 -- let !_ = dbg (deltaFlow)
@@ -289,8 +289,8 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                   if v2 == src
                     then return ()
                     else do
-                      !v1 <- UM.read prevVertMCF v2
-                      !i12 <- UM.read prevEdgeMCF v2
+                      !v1 <- GM.read prevVertMCF v2
+                      !i12 <- GM.read prevEdgeMCF v2
                       let !i21 = edgeRevIndexMCF G.! i12
                       UM.modify edgeCapMCF (subtract deltaFlow) i12
                       UM.modify edgeCapMCF (+ deltaFlow) i21
@@ -316,12 +316,12 @@ runMinCostFlowShortests ::
   MinCostFlowBuffer (f (CostMCF c)) (PrimState m) c ->
   m ()
 runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = do
-  UM.write distsMCF src (toRelax 0)
+  GM.write distsMCF src (toRelax 0)
   dbgLoop <- UM.replicate 1 (0 :: Int)
 
   fix $ \loop -> do
     !b <- (\f -> U.foldM' f False (U.generate nVertsMCF id)) $ \ !anyUpdate0 v1 -> do
-      !d1 <- UM.read distsMCF v1
+      !d1 <- GM.read distsMCF v1
       if d1 == mempty
         then do
           -- unreachable. skip
@@ -331,9 +331,9 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
               !iEnd = offsetsMCF G.! (v1 + 1)
           (\f -> U.foldM' f anyUpdate0 (U.generate (iEnd - iStart) (+ iStart))) $ \ !anyUpdate i12 -> do
             let !v2 = edgeDstMCF G.! i12
-            !cap12 <- UM.read edgeCapMCF i12
+            !cap12 <- GM.read edgeCapMCF i12
             let !cost12 = edgeCostMCF G.! i12
-            !d2 <- UM.read distsMCF v2
+            !d2 <- GM.read distsMCF v2
             let d2' = d1 + toRelax cost12
             -- let !_ = dbg ((v1, v2), (d1, d2, d2'), d2 /= d2' && (d2 <> d2' == d2'))
             let !_ = dbgAssert (d1 >= 0 && d2 >= 0) "negative distance?" -- ++ show (d1, d2)
@@ -341,9 +341,9 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
             if cap12 > 0 && d2 /= d2' && (d2 <> d2' == d2')
               then do
                 -- let !_ = dbg ("update", (v1, v2), i12, d2, d2')
-                UM.write distsMCF v2 d2'
-                UM.write prevVertMCF v2 v1
-                UM.write prevEdgeMCF v2 i12
+                GM.write distsMCF v2 d2'
+                GM.write prevVertMCF v2 v1
+                GM.write prevEdgeMCF v2 i12
                 return True
               else do
                 return anyUpdate
