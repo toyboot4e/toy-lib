@@ -428,6 +428,13 @@ runPersistentDfs gr start acc0 process = inner start acc0
 --
 -- NOTE: @maxBound .>>. 1@ is the propert value for @undef@, but now it can be any value outside
 -- the weight's domain.
+--
+-- = Dynamically add edges (\(O(N^2)\))
+--
+-- [ABC 375 F - Road Blocked](https://atcoder.jp/contests/abc375/tasks/abc375_f).
+--
+-- - P11 of https://img.atcoder.jp/arc035/editorial.pdf
+-- - Line 92 of https://atcoder.jp/contests/abc375/submissions/58722806
 {-# INLINE distsNN #-}
 distsNN :: (U.Unbox w, Num w, Ord w) => Int -> w -> U.Vector (Int, Int, w) -> IxUVector (Int, Int) w
 distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
