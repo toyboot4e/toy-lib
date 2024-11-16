@@ -2,12 +2,24 @@ module ToyLib.Prelude where
 
 import Control.Monad.Fix
 import Data.Bifunctor
+import qualified Data.ByteString.Char8 as BS
 import Data.Ix
 import Data.Tuple.Extra hiding (first, second)
 import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
+
+-- | \(O(N)\)
+{-# INLINE rleOf #-}
+rleOf :: BS.ByteString -> [(Char, Int)]
+rleOf = map (\s -> (BS.head s, BS.length s)) . BS.group
+
+-- | \(O(N)\)
+{-# INLINE rleOfU #-}
+rleOfU :: BS.ByteString -> U.Vector (Char, Int)
+-- fromList grows double by double though
+rleOfU = U.fromList . rleOf
 
 -- | \(O(1)\)
 {-# INLINE square #-}
