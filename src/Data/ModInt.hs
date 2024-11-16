@@ -32,6 +32,8 @@ instance ShowBSB (ModInt p) where
 
 deriving newtype instance (KnownNat p) => Real (ModInt p)
 
+-- TODO: {-# INLINE #-} makes any sense?
+
 instance (KnownNat p) => Num (ModInt p) where
   (ModInt !x1) + (ModInt !x2) = ModInt $! (x1 + x2) `mod` fromInteger (natVal' (proxy# @p))
   (ModInt !x1) * (ModInt !x2) = ModInt $! (x1 * x2) `mod` fromInteger (natVal' (proxy# @p))

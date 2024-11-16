@@ -134,6 +134,8 @@ partitionsOf = inner [] []
           let !set' = set .|. bit lsb
            in inner res (set' : acc) (rest' .&. complement set')
 
+-- FIXME: write how to use
+
 -- | \(O(N \cdot N!)\) (or faster?) DFS that numerates [partitions](https://en.wikipedia.org/wiki/Partition_of_a_set)
 -- of size @k0@.
 --

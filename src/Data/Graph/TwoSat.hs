@@ -31,6 +31,8 @@
 --   See also: https://drken1215.hatenablog.com/entry/2023/05/07/001800
 module Data.Graph.TwoSat where
 
+-- TODO: use Bit
+
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Monad.ST

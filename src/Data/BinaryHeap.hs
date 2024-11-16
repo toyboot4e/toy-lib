@@ -34,7 +34,9 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
--- | Binary tree backed by a vector.
+-- TODO: separate key/value?
+
+-- | Binary heap backed by a vector.
 --
 -- = 0-based index
 --

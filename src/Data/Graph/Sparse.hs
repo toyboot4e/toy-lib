@@ -335,6 +335,9 @@ buildMST nVerts edges = buildWSG nVerts $ U.concatMap expand $ collectMST nVerts
 
 -- * Cycles
 
+-- Note that the shortest cycle in directed graph can be found with Dijkstra
+-- https://atcoder.jp/contests/abc376/submissions/58952028
+
 -- | \(O(V+E)\) Finds a cycle in a directed graph and collects their vertices. Embed edge
 -- information to the weight if necessary.
 findCycleDirectedSG :: (U.Unbox w) => SparseGraph w -> Maybe (U.Vector (Vertex, Vertex, w))
@@ -373,7 +376,7 @@ findCycleComplexSG gr = selfLoop <|> multiEdge
 -- - @revEdgeIsCycle@: Reports reverse edge as a cycle on @True. It's set to @False@ for undirected
 -- graphs where edges are duplicated.
 --
--- <https://drken1215.hatenablog.com/entry/2023/05/20/200517z.
+-- <https://drken1215.hatenablog.com/entry/2023/05/20/200517>.
 findCycleImplSG :: (U.Unbox w) => SparseGraph w -> Bool -> Maybe (U.Vector (Vertex, Vertex, w))
 findCycleImplSG gr revEdgeIsCycle = runST $ do
   -- visited in-order/out-order

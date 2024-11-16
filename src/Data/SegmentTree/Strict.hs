@@ -139,7 +139,8 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
 foldSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where
-    !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
+    -- !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) r0) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
+    !_ = dbgAssert (0 <= l0 && l0 <= r0 && r0 <= (nValidLeaves - 1)) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
     !nLeaves = GM.length vec .>>. 1
     glitchFold l r lx rx
       | l > r = return $! lx <> rx

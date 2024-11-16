@@ -95,6 +95,8 @@ import ToyLib.Debug
 -- Note that the propagted vertices are pruned to be above the glitch segments only.
 data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s op) {-# UNPACK #-} !Int
 
+-- FIXME: op should have length n, not 2 * n
+
 -- | \(O(N)\) Creates a `LazySegmentTree` with `mempty` as the initial accumulated values.
 newLSTreeImpl ::
   (Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
