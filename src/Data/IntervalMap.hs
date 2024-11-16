@@ -66,6 +66,12 @@ readIM l r rm = case readMayIM l r rm of
   Nothing -> error $ "[readIM] not a member: " ++ show (l, r)
   Just !a -> a
 
+-- | \(O(\min(n, W))\) Shorthand for writing to an interval that contains @[l, r])@.
+writeMIM :: (Monad m, Eq a) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
+writeMIM l r x onAdd onDel map = case lookupIM l r map of
+  Just (!l', !r', !_) -> insertMIM l' r' x onAdd onDel map
+  Nothing -> return map
+
 -- | \(O(\min(n, W))\) Boolean variant of `lookupIM`.
 intersectsIM :: Int -> Int -> IntervalMap a -> Bool
 intersectsIM l r (IntervalMap map)
