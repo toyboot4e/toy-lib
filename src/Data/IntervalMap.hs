@@ -3,10 +3,11 @@
 
 -- | @IntervalMap@ is a sparse map that manages non-overlapping @(l, r, x)@ value pairs.
 --
--- Typically used with @StateT@.
+-- Typically used with @StateT@. Try @gets@, @puts@ and @modifyM@.
 --
 -- = Typical problems
 -- - [PAST 06 M - 等しい数](https://atcoder.jp/contests/past202104-open/tasks/past202104_m)
+-- - [ABC 380 E - 1D Bucket Pool](https://atcoder.jp/contests/abc380/tasks/abc380_e)
 module Data.IntervalMap where
 
 import Control.Monad (foldM)
@@ -210,7 +211,9 @@ deleteMIM l0 r0 onDel (IntervalMap map0) = do
             return map
         | r' > r -> do
             onDel l' r' x'
-            let !map' = IM.insert (r + 1) (r', x') $ IM.insert l' (l - 1, x') $ IM.delete l' map
+            -- REMARK: this deletion is redundant
+            -- IM.delete l' map
+            let !map' = IM.insert (r + 1) (r', x') $ IM.insert l' (l - 1, x') map
             return map'
         | otherwise -> do
             onDel l r' x'
