@@ -27,7 +27,7 @@ data DenseIntMap s a = DenseIntMap
 
 -- | \(O(N \log N)\) Creates a new `DenseIntMap` that covers @[0, n)@.
 {-# INLINE newDIM #-}
-newDIM :: (U.Unbox a, PrimMonad m) => Int -> m (DenseIntMap (PrimState m) a)
+newDIM :: (PrimMonad m, U.Unbox a) => Int -> m (DenseIntMap (PrimState m) a)
 newDIM cap = do
   setDIM <- newDIS cap
   valDIM <- UM.unsafeNew cap
@@ -50,7 +50,7 @@ notMemberDIM = notMemberDIS . setDIM
 
 -- | \(O(\log N)\) Inserts @k@ to the set.
 {-# INLINE insertDIM #-}
-insertDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> a -> m ()
+insertDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> a -> m ()
 insertDIM DenseIntMap {..} k v = do
   insertDIS setDIM k
   GM.write valDIM k v
@@ -65,7 +65,7 @@ deleteDIM DenseIntMap {..} k = do
 
 -- | \(O(\log N)\) Finds the smallest @k'@ s.t. @k' >= k@ in the set.
 {-# INLINE lookupGEDIM #-}
-lookupGEDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
+lookupGEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
 lookupGEDIM DenseIntMap {..} k = do
   lookupGEDIS setDIM k >>= \case
     Just i -> Just . (i,) <$> GM.read valDIM i
@@ -73,26 +73,26 @@ lookupGEDIM DenseIntMap {..} k = do
 
 -- | \(O(\log N)\)
 {-# INLINE findGEDIM #-}
-findGEDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
+findGEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
 findGEDIM is k = fromMaybe err <$> lookupGEDIM is k
   where
     err = error $ "findGEDIM: no element >= " ++ show k
 
 -- | \(O(\log N)\)
 {-# INLINE lookupGTDIM #-}
-lookupGTDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
+lookupGTDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
 lookupGTDIM is k = lookupGEDIM is (k + 1)
 
 -- | \(O(\log N)\)
 {-# INLINE findGTDIM #-}
-findGTDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
+findGTDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
 findGTDIM is k = findGEDIM is (k + 1)
 
 -- * LT / LE
 
 -- | \(O(\log N)\) Finds the biggest @k'@ s.t. @k' <= k@ in the set.
 {-# INLINE lookupLEDIM #-}
-lookupLEDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
+lookupLEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
 lookupLEDIM DenseIntMap {..} k = do
   lookupLEDIS setDIM k >>= \case
     Just i -> Just . (i,) <$> GM.read valDIM i
@@ -100,38 +100,38 @@ lookupLEDIM DenseIntMap {..} k = do
 
 -- | \(O(\log N)\)
 {-# INLINE findLEDIM #-}
-findLEDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
+findLEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
 findLEDIM is k = fromMaybe err <$> lookupLEDIM is k
   where
     err = error $ "findLEDIM: no element <= " ++ show k
 
 -- | \(O(\log N)\)
 {-# INLINE lookupLTDIM #-}
-lookupLTDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
+lookupLTDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Maybe (Int, a))
 lookupLTDIM is k = lookupLEDIM is (k - 1)
 
 -- | \(O(\log N)\)
 {-# INLINE findLTDIM #-}
-findLTDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
+findLTDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int -> m (Int, a)
 findLTDIM is k = findLEDIM is (k - 1)
 
 -- * Min / Max
 
 -- | \(O(\log N)\)
 {-# INLINE lookupMinDIM #-}
-lookupMinDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Maybe (Int, a))
+lookupMinDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Maybe (Int, a))
 lookupMinDIM is = lookupGEDIM is 0
 
 -- | \(O(\log N)\)
 {-# INLINE findMinDIM #-}
-findMinDIM :: (U.Unbox a, HasCallStack, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Int, a)
+findMinDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Int, a)
 findMinDIM is = fromMaybe err <$> lookupMinDIM is
   where
     err = error "findMinDIM: not such a value"
 
 -- | \(O(\log N)\)
 {-# INLINE deleteFindMinDIM #-}
-deleteFindMinDIM :: (U.Unbox a, HasCallStack, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Int, a)
+deleteFindMinDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Int, a)
 deleteFindMinDIM is = do
   (!k, !v) <- findMinDIM is
   deleteDIM is k
@@ -139,19 +139,19 @@ deleteFindMinDIM is = do
 
 -- | \(O(\log N)\)
 {-# INLINE lookupMaxDIM #-}
-lookupMaxDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Maybe (Int, a))
+lookupMaxDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Maybe (Int, a))
 lookupMaxDIM im = lookupLEDIM im (capacityDIS (setDIM im) - 1)
 
 -- | \(O(\log N)\)
 {-# INLINE findMaxDIM #-}
-findMaxDIM :: (U.Unbox a, HasCallStack, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Int, a)
+findMaxDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Int, a)
 findMaxDIM im = fromMaybe err <$> lookupMaxDIM im
   where
     err = error "findMaxDIM: not such a value"
 
 -- | \(O(\log N)\)
 {-# INLINE deleteFindMaxDIM #-}
-deleteFindMaxDIM :: (U.Unbox a, HasCallStack, PrimMonad m) => DenseIntMap (PrimState m) a -> m (Int, a)
+deleteFindMaxDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (Int, a)
 deleteFindMaxDIM im = do
   (!k, !v) <- findMaxDIM im
   deleteDIM im k
@@ -159,7 +159,7 @@ deleteFindMaxDIM im = do
 
 -- | \(O(N)\)
 {-# INLINE unsafeKeysDIM #-}
-unsafeKeysDIM :: (U.Unbox a, PrimMonad m) => DenseIntMap (PrimState m) a -> m (U.Vector (Int, a))
+unsafeKeysDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (U.Vector (Int, a))
 unsafeKeysDIM im = do
   bits <- U.unsafeFreeze (V.head (vecDIS (setDIM im)))
   vec <- U.unsafeFreeze (valDIM im)

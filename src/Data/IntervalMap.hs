@@ -28,7 +28,7 @@ emptyIM :: IntervalMap a
 emptyIM = IntervalMap IM.empty
 
 -- | \(O(NW)\) Creates an interval map combining successive equal values into one.
-fromVecMIM :: (G.Vector v a, Eq a, Monad m) => v a -> (Int -> Int -> a -> m ()) -> m (IntervalMap a)
+fromVecMIM :: (Eq a, Monad m, G.Vector v a) => v a -> (Int -> Int -> a -> m ()) -> m (IntervalMap a)
 fromVecMIM xs onAdd = fmap (IntervalMap . fst) $ foldM step (IM.empty, 0 :: Int) $ G.group xs
   where
     step (!map, !l) !xs' = do
@@ -38,7 +38,7 @@ fromVecMIM xs onAdd = fmap (IntervalMap . fst) $ foldM step (IM.empty, 0 :: Int)
       return (map', l')
 
 -- | \(O(NW)\) Pure variant of `fromVecMIM`
-fromVecIM :: (G.Vector v a, Eq a) => v a -> IntervalMap a
+fromVecIM :: (Eq a, G.Vector v a) => v a -> IntervalMap a
 fromVecIM xs = runIdentity (fromVecMIM xs onAdd)
   where
     onAdd _ _ _ = pure ()
@@ -68,7 +68,7 @@ readIM l r rm = case readMayIM l r rm of
   Just !a -> a
 
 -- | \(O(\min(n, W))\) Shorthand for writing to an interval that contains @[l, r])@.
-writeMIM :: (Monad m, Eq a) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
+writeMIM :: (Eq a, Monad m) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
 writeMIM l r x onAdd onDel map = case lookupIM l r map of
   Just (!l', !r', !_) -> insertMIM l' r' x onAdd onDel map
   Nothing -> return map
@@ -87,7 +87,7 @@ containsIM i = intersectsIM i i
 
 -- | Amortized \(O(\min(\log n, W))\) interval insertion with side effects. Old overlapping
 -- intervals are overwritten.
-insertMIM :: (Monad m, Eq a) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
+insertMIM :: (Eq a, Monad m) => Int -> Int -> a -> (Int -> Int -> a -> m ()) -> (Int -> Int -> a -> m ()) -> IntervalMap a -> m (IntervalMap a)
 insertMIM l0 r0 x onAdd onDel (IntervalMap map0) = do
   (!r, !map) <- handleRight l0 r0 map0
   (!l', !r', !map') <- handleLeft l0 r map
