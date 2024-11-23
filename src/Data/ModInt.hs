@@ -61,6 +61,10 @@ instance (KnownNat p) => Enum (ModInt p) where
   toEnum = ModInt . (`mod` fromInteger (natVal' (proxy# @p)))
   fromEnum = coerce
 
+instance (KnownNat p) => Bounded (ModInt p) where
+  minBound = ModInt 0
+  maxBound = ModInt $ fromInteger (natVal' (proxy# @p)) - 1
+
 instance (KnownNat p) => SemigroupAction (Product (ModInt p)) (ModInt p) where
   sact (Product !x1) !x2 = x1 * x2
 
