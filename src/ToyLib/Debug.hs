@@ -18,8 +18,8 @@ dbgM m
   | debug = do
       !s <- m
       let !_ = traceShow s ()
-      return ()
-  | otherwise = return ()
+      pure ()
+  | otherwise = pure ()
 
 dbgS :: String -> ()
 dbgS s
@@ -31,8 +31,8 @@ dbgSM m
   | debug = do
       !s <- m
       let !_ = trace s ()
-      return ()
-  | otherwise = return ()
+      pure ()
+  | otherwise = pure ()
 
 dbgId :: (Show a) => a -> a
 dbgId x
@@ -67,5 +67,5 @@ dbgVec vec
   | debug = do
       !xs' <- G.unsafeFreeze vec
       let !_ = dbg xs'
-      return ()
-  | otherwise = return ()
+      pure ()
+  | otherwise = pure ()

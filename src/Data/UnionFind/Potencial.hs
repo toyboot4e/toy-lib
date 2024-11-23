@@ -46,7 +46,7 @@ rootPUF uf = inner
   where
     inner v =
       GM.read (nodesPUF uf) v >>= \case
-        MUFRoot _ -> return v
+        MUFRoot _ -> pure v
         MUFChild p -> do
           -- NOTE(perf): Path compression.
           -- Handle the nodes closer to the root first and move them onto just under the root
@@ -58,7 +58,7 @@ rootPUF uf = inner
             -- Invariant: new coming operators always comes from the left. And we're performing
             -- reverse folding.
             GM.modify (potencialPUF uf) (<> pp) v
-          return r
+          pure r
 
 -- | \(O(\alpha(N))\) Unifies two nodes, managing their differencial potencial so that
 -- @p(v1) = dp <> p(v2)@ holds after unification. Or think like @unifyPUF uf dst src@.
@@ -71,7 +71,7 @@ unifyPUF !uf !v1 !v2 !dp = do
   !r1 <- rootPUF uf v1
   !r2 <- rootPUF uf v2
   if r1 == r2
-    then return False
+    then pure False
     else do
       -- NOTE(perf): Union by size (choose smaller one for root).
       -- Another, more proper optimization would be union by rank (depth).
@@ -99,7 +99,7 @@ unifyPUF !uf !v1 !v2 !dp = do
           GM.write (nodesPUF uf) r1 (MUFChild r2)
           GM.write (potencialPUF uf) r1 pr1'
 
-          return True
+          pure True
         else do
           unifyPUF uf v2 v1 $ invert dp
 
@@ -128,7 +128,7 @@ canUnifyPUF !uf !v1 !v2 !dp = do
   !r2 <- rootPUF uf v2
   !p1 <- GM.read (potencialPUF uf) v1
   !p2 <- GM.read (potencialPUF uf) v2
-  return $ r1 /= r2 || p1 == dp <> p2
+  pure $ r1 /= r2 || p1 == dp <> p2
 
 -- | Returns @p(v)@: the potencial of the vertex in their group.
 {-# INLINE potPUF #-}
@@ -145,7 +145,7 @@ diffPUF :: (PrimMonad m, Group a, U.Unbox a) => PUnionFind (PrimState m) a -> In
 diffPUF !uf !v1 !v2 = do
   p1 <- potPUF uf v1
   p2 <- potPUF uf v2
-  return $ p1 <> invert p2
+  pure $ p1 <> invert p2
 
 -- | \(O(\alpha(N))\) Returns \(p(v1) <> p^{-1}(v2)\). Returns @Nothing@ when the two vertices are not
 -- connected. Or think like @diffMayPUF uf dst src@.
@@ -155,7 +155,7 @@ diffMayPUF !uf !v1 !v2 = do
   b <- samePUF uf v1 v2
   if b
     then Just <$> diffPUF uf v1 v2
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\)
 {-# INLINE clearPUF #-}
@@ -169,4 +169,4 @@ clearPUF !uf = do
 groupsPUF :: (PrimMonad m, Semigroup a, U.Unbox a) => PUnionFind (PrimState m) a -> m (IM.IntMap [Int])
 groupsPUF uf@(PUnionFind !vec !_) = do
   rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootPUF uf v)
-  return $ IM.fromListWith (flip (++)) $ V.toList rvs
+  pure $ IM.fromListWith (flip (++)) $ V.toList rvs

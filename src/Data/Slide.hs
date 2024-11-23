@@ -32,7 +32,7 @@ newSSF n = do
   bufferFoldSSF <- UM.replicate 1 mempty
   dualScanrSSF <- newBuffer $ n + 1
   pushBack dualScanrSSF mempty
-  return StackSlidingFold {..}
+  pure StackSlidingFold {..}
 
 -- | \(O(1)\)
 {-# INLINE clearSSF #-}
@@ -76,7 +76,7 @@ foldSSF :: (PrimMonad m, Semigroup a, U.Unbox a) => StackSlidingFold (PrimState 
 foldSSF StackSlidingFold {..} = do
   l <- readBack dualScanrSSF 0
   r <- GM.unsafeRead bufferFoldSSF 0
-  return $! l <> r
+  pure $! l <> r
 
 -- | Dequeue-based sliding window folding. Prefer `StackSlidingFold` for (just a little) speed.
 -- SWAG (sliding window aggregation).
@@ -97,7 +97,7 @@ newDSF n = do
   backScanDSF <- newBuffer $ n + 1
   pushBack frontScanDSF mempty
   pushBack backScanDSF mempty
-  return DequeSlidingFold {..}
+  pure DequeSlidingFold {..}
 
 -- | \(O(1)\)
 {-# INLINE clearDSF #-}
@@ -166,7 +166,7 @@ foldDSF :: (HasCallStack, PrimMonad m, Semigroup a, U.Unbox a) => DequeSlidingFo
 foldDSF DequeSlidingFold {..} = do
   l <- readBack frontScanDSF 0
   r <- readBack backScanDSF 0
-  return $! l <> r
+  pure $! l <> r
 
 -- | \(O(N)\)
 {-# INLINE balanceDSF #-}

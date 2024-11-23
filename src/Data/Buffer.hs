@@ -39,19 +39,19 @@ _bufferBackPos = 1
 -- | \(O(N)\) Creates a buffer of length @n@ with initial value at @zero@. This is mostlly for
 -- queues.
 newBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
-newBuffer n = Buffer <$> UM.replicate 2 0 <*> return 0 <*> UM.unsafeNew n <*> pure n
+newBuffer n = Buffer <$> UM.replicate 2 0 <*> pure 0 <*> UM.unsafeNew n <*> pure n
 
 -- | \(O(N)\) Creates a buffer of length @n@ with initial value at @n - 1@. This is mostly for
 -- stacks.
 newRevBuffer :: (U.Unbox a, PrimMonad m) => Int -> m (Buffer (PrimState m) a)
-newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> return (n - 1) <*> UM.unsafeNew n <*> pure n
+newRevBuffer n = Buffer <$> UM.replicate 2 (n - 1) <*> pure (n - 1) <*> UM.unsafeNew n <*> pure n
 
 -- | \(O(N)\) Wraps a mutable vector with push/pop API.
 {-# INLINE buildBuffer #-}
 buildBuffer :: (U.Unbox a, PrimMonad m) => UM.MVector (PrimState m) a -> m (Buffer (PrimState m) a)
 buildBuffer internalBuffer = do
   let !n = GM.length internalBuffer
-  Buffer <$> UM.generate 2 (* n) <*> return 0 <*> return internalBuffer <*> pure n
+  Buffer <$> UM.generate 2 (* n) <*> pure 0 <*> pure internalBuffer <*> pure n
 
 -- | \(O(N)\) Creates a mutable vector with push/pop API.
 {-# INLINE generateBuffer #-}
@@ -145,7 +145,7 @@ popFront Buffer {bufferVars, internalBuffer} = do
     then do
       GM.unsafeWrite bufferVars _bufferFrontPos (f + 1)
       pure <$> GM.unsafeRead internalBuffer f
-    else return Nothing
+    else pure Nothing
 
 {-# INLINE popFront_ #-}
 popFront_ :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m ()
@@ -162,7 +162,7 @@ popFrontN Buffer {bufferVars, internalBuffer} len = do
       res <- U.freeze (GM.slice f len internalBuffer)
       GM.unsafeWrite bufferVars _bufferFrontPos (f + len)
       pure $ Just res
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(L)\) The popped vector is from left to the right order.
 {-# INLINE popBackN #-}
@@ -211,7 +211,7 @@ popBack Buffer {bufferVars, internalBuffer} = do
     then do
       GM.unsafeWrite bufferVars _bufferBackPos (b - 1)
       pure <$> GM.unsafeRead internalBuffer (b - 1)
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\)
 {-# INLINE popBack_ #-}
@@ -272,7 +272,7 @@ readMaybeFront Buffer {..} i = do
   !b <- GM.unsafeRead bufferVars _bufferBackPos
   if inRange (f, b - 1) (f + i)
     then Just <$> GM.read internalBuffer (f + i)
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\)
 {-# INLINE readMaybeBack #-}
@@ -282,7 +282,7 @@ readMaybeBack Buffer {..} i = do
   !b <- GM.unsafeRead bufferVars _bufferBackPos
   if inRange (f, b - 1) (b - 1 - i)
     then Just <$> GM.read internalBuffer (b - 1 - i)
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\)
 {-# INLINE readFront #-}
@@ -448,4 +448,4 @@ cloneBuffer :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> m (Buffer (
 cloneBuffer Buffer {..} = do
   vars' <- GM.clone bufferVars
   buf' <- GM.clone internalBuffer
-  return $ Buffer vars' initialBufferPos buf' internalBufferSize
+  pure $ Buffer vars' initialBufferPos buf' internalBufferSize

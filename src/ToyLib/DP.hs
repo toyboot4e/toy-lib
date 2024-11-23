@@ -39,7 +39,7 @@ constructFor !x0 !input !f = U.create $ do
     !vec' <- U.take (succ lenS1) <$> U.unsafeFreeze vec
     UM.unsafeWrite vec (succ lenS1) $! f vec' x
 
-  return vec
+  pure vec
 
 -- | `accumulate` variant with `concatMap`-like expander. Be wanrned that *the @input@ is consumed
 -- in-place*. Run like @relaxMany vec0 (U.force vec0) $ \x -> ..@ if it needs to be cloned.
@@ -53,7 +53,7 @@ relaxMany !relax !vec0 !input !expander = G.create $ do
     G.forM_ (expander x) $ \(!i, !x') -> do
       GM.modify vec (`relax` x') i
 
-  return vec
+  pure vec
 
 -- | `relaxMany` with index input. Be wanrned that *the @input@ is consumed in-place*. Run like
 -- @relaxMany vec0 (U.force vec0) $ \x -> ..@ if it needs to be cloned.
@@ -65,7 +65,7 @@ irelaxMany !relax !vec0 !input !expander = G.create $ do
     G.forM_ (expander ix x) $ \(!i, !x') -> do
       GM.modify vec (`relax` x') i
 
-  return vec
+  pure vec
 
 -- | Monoid variant of `relaxMany`
 relaxMany' :: (Monoid m, U.Unbox m, U.Unbox a) => U.Vector m -> U.Vector a -> (a -> U.Vector (Int, m)) -> U.Vector m
@@ -76,7 +76,7 @@ relaxMany' !vec0 !input !expander = U.create $ do
     U.forM_ (expander x) $ \(!i, !x') -> do
       UM.modify vec (<> x') i
 
-  return vec
+  pure vec
 
 -- TODO: Example here or in verify
 {-# INLINE pushBasedConstructN #-}
@@ -90,7 +90,7 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
     G.forM_ (expander iFrom freezed) $ \(!iTo, !x') -> do
       GM.modify vec (`relax` x') iTo
 
-  return vec
+  pure vec
 
 pushBasedConstructIV :: (HasCallStack, Unindex i, U.Unbox a) => (a -> a -> a) -> IxUVector i a -> (IxUVector i a -> i -> U.Vector (i, a)) -> IxUVector i a
 pushBasedConstructIV !relax !vec0 !expander = runST $ do
@@ -211,14 +211,14 @@ lisOf' !xs = runST $ do
           -- update the most recent vertex of length:
           GM.write lenToVertex (len + 1) i
           if len + 1 > maxLen
-            then return (len + 1, i)
-            else return (maxLen, maxVert)
+            then pure (len + 1, i)
+            else pure (maxLen, maxVert)
       )
       (-1 :: Int, -1 :: Int)
       xs
 
   prev' <- U.unsafeFreeze prev
-  return $ restorePath prev' maxVert
+  pure $ restorePath prev' maxVert
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int
@@ -264,8 +264,8 @@ lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
           nextPermutation vec' >>= \case
             True -> do
               vec'' <- G.unsafeFreeze vec'
-              return $ Just (vec, vec'')
-            False -> return $ Just (vec, G.empty)
+              pure $ Just (vec, vec'')
+            False -> pure $ Just (vec, G.empty)
 
 -- -- | \(O(NM)\) Counts unique common subsequences. Duplicates are counted multple times.
 -- --

@@ -24,7 +24,7 @@ invNum xMax xs = runST $ do
     -- count pre-inserted numbers bigger than this:
     !s <- fromMaybe mempty <$> foldMaySTree stree (x + 1) xMax
     modifySTree stree (+ 1) x
-    return $! acc + s
+    pure $! acc + s
 
 -- | \(O(N \log N)\) Calculates the inversion number, but after applying index compression.
 -- It can significantly improve the performance, like in ABC 261 F.
@@ -67,6 +67,6 @@ lexOrderMod xs modulo = runST $ do
     -- mark it as used
     writeSTree stree x (Sum 1)
 
-    return inc
+    pure inc
 
-  return $ (+ 1) $ G.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts
+  pure $ (+ 1) $ G.foldl1' (\ !acc x -> (acc + x) `rem` modulo) counts

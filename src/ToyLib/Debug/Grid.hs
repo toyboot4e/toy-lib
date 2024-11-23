@@ -35,7 +35,7 @@ dbgGridM :: (PrimMonad m, G.Vector v a, Show a, ShowGrid (IxVector (Int, Int) (v
 dbgGridM gr = when debug $ do
   !gr' <- unsafeFreezeIV gr
   let !_ = trace (showGridN 4 gr') ()
-  return ()
+  pure ()
 
 -- | Shows grid in a human-readable spacing.
 dbgGridId :: (ShowGrid a) => a -> a

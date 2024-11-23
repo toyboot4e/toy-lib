@@ -63,7 +63,7 @@ buildWSG !nVertsSG !edges =
         !outDegs <- UM.replicate nVertsSG (0 :: Int)
         U.forM_ edges $ \(!v1, !_, !_) -> do
           UM.modify outDegs (+ 1) v1
-        return outDegs
+        pure outDegs
 
       !_ = dbgAssert (U.last offsetsSG == nEdgesSG)
 
@@ -207,7 +207,7 @@ digraphSG gr = runST $ do
   !nComps <- (\f -> U.foldM' f (0 :: Int) (U.generate n id)) $ \iComp i -> do
     !isPainted <- (/= -1) <$> UM.read vertColors i
     if isPainted
-      then return iComp
+      then pure iComp
       else do
         -- paint
         flip fix (0 :: Int, i) $ \loop (!c1, !v1) -> do
@@ -227,7 +227,7 @@ digraphSG gr = runST $ do
             when (c2 == -1) $ do
               loop ((c1 + 1) `mod` 2, v2)
 
-        return $ iComp + 1
+        pure $ iComp + 1
 
   DigraphInfo <$> UM.unsafeRead allDigraph 0 <*> U.unsafeFreeze vertColors <*> U.unsafeFreeze vertComps <*> U.unsafeFreeze (UM.take nComps compInfo)
 
@@ -246,7 +246,7 @@ topSortSG gr@SparseGraph {..} = runST $ do
 
   let dfsM !acc !v = do
         UM.unsafeRead vis v >>= \case
-          True -> return acc
+          True -> pure acc
           False -> do
             UM.unsafeWrite vis v True
             !vs <- U.filterM (fmap not . UM.unsafeRead vis) $ gr `adj` v
@@ -273,7 +273,7 @@ downScc1SG :: forall w m. (PrimMonad m) => SparseGraph w -> UM.MVector (PrimStat
 downScc1SG !gr' !vis !v0 = do
   flip fix ([], v0) $ \loop (!acc, !v) -> do
     UM.unsafeRead vis v >>= \case
-      True -> return acc
+      True -> pure acc
       False -> do
         UM.unsafeWrite vis v True
         !vs <- U.filterM (fmap not . UM.unsafeRead vis) $ gr' `adj` v
@@ -409,7 +409,7 @@ findCycleImplSG gr revEdgeIsCycle = runST $ do
         clearBuffer history -- needed?
         dfs (-1) v
 
-    return Nothing
+    pure Nothing
 
   -- when there's some cycling point:
   (`mapM` res) $ \v -> do
@@ -417,6 +417,6 @@ findCycleImplSG gr revEdgeIsCycle = runST $ do
     let !i = fromJust $ U.findIndex (\(!v', !_, !_) -> v' == v) his
     -- REMARK: `reverse` is required because we're starting from the back to the front.
     -- REMARK: `force` is required to not refer to the memory owned by the u buffer
-    return . U.force . U.reverse $ U.take (i + 1) his
+    pure . U.force . U.reverse $ U.take (i + 1) his
   where
     !n = nVertsSG gr

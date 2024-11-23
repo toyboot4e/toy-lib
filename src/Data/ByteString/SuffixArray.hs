@@ -89,7 +89,7 @@ sortByCharacter bs = (nClasses, classes, perm)
         GM.modify cnt (subtract 1) c
         i' <- GM.read cnt c
         GM.write vec i' i
-      return vec
+      pure vec
 
     -- Record equal character classes and assign them to the characters.
     (!nClasses, !classes) = runST $ do
@@ -149,7 +149,7 @@ sortCyclicShifts' n len nClasses classes perm
         GM.modify cnt (subtract 1) c
         i' <- GM.read cnt c
         GM.write vec i' i
-      return vec
+      pure vec
 
     -- Record equal substring classes and assign them to the substrings.
     getNextClasses () = runST $ do
@@ -181,17 +181,17 @@ lcpOfSa bs sa = U.create $ do
     ( \len i i' -> do
         if i' == n - 1
           then do
-            return 0
+            pure 0
           else do
             let !j = G.unsafeIndex sa (i' + 1)
             let !len' = until (not . testMatch sa i j) (+ 1) len
             GM.unsafeWrite vec i' len'
             -- Remarkably, we can reuse the last `len'`:
-            return $ max 0 (len' - 1)
+            pure $ max 0 (len' - 1)
     )
     (0 :: Int)
     revSa
-  return vec
+  pure vec
   where
     !n = G.length sa
     -- original index -> sorted index

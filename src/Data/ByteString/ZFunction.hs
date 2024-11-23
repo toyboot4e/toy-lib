@@ -59,7 +59,7 @@ zOf bs = U.create $ do
 
   -- kind of @constructN@ with states.
   let inner l0 r0 i
-        | i >= n = return ()
+        | i >= n = pure ()
         -- starting with no context
         | i >= r0 = do
             let !r = lcpSearch 0 i
@@ -83,4 +83,4 @@ zOf bs = U.create $ do
           c = BSU.unsafeIndex bs i
 
   inner 0 0 1
-  return z
+  pure z

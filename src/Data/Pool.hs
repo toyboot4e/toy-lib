@@ -59,7 +59,7 @@ newPool capacity = do
   dataPool <- UM.unsafeNew capacity
   freePool <- newRevBuffer capacity
   nextPool <- UM.replicate 1 (PoolIndex 0)
-  return Pool {..}
+  pure Pool {..}
 
 -- | \(O(1)\) Returns the maximum number of elements the pool can store.
 {-# INLINE capacityPool #-}
@@ -73,7 +73,7 @@ sizePool Pool {..} = do
   !nFree <- lengthBuffer freePool
   PoolIndex !next <- GM.unsafeRead nextPool 0
   let !cap = GM.length dataPool
-  return $ cap - (next - nFree)
+  pure $ cap - (next - nFree)
 
 -- | \(O(1)\) Resets the pool to the initial state.
 {-# INLINE clearPool #-}
@@ -87,12 +87,12 @@ clearPool Pool {..} = do
 allocPool :: (PrimMonad m, U.Unbox a) => Pool (PrimState m) a -> a -> m PoolIndex
 allocPool Pool {..} !x = do
   popFront freePool >>= \case
-    Just i -> return i
+    Just i -> pure i
     Nothing -> do
       PoolIndex i <- GM.unsafeRead nextPool 0
       GM.unsafeWrite nextPool 0 $ coerce (i + 1)
       GM.write dataPool i x
-      return $ coerce i
+      pure $ coerce i
 
 -- | \(O(1)\) Deallocates an element. Be sure to not deallocate a deleted element.
 -- TODO: consider setting up validation of slots?

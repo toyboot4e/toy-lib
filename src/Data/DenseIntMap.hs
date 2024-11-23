@@ -31,7 +31,7 @@ newDIM :: (PrimMonad m, U.Unbox a) => Int -> m (DenseIntMap (PrimState m) a)
 newDIM cap = do
   setDIM <- newDIS cap
   valDIM <- UM.unsafeNew cap
-  return DenseIntMap {..}
+  pure DenseIntMap {..}
 
 -- | \(O(1)\) Returns the number of elements in the map.
 {-# INLINE sizeDIM #-}
@@ -69,7 +69,7 @@ lookupGEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int ->
 lookupGEDIM DenseIntMap {..} k = do
   lookupGEDIS setDIM k >>= \case
     Just i -> Just . (i,) <$> GM.read valDIM i
-    Nothing -> return Nothing
+    Nothing -> pure Nothing
 
 -- | \(O(\log N)\)
 {-# INLINE findGEDIM #-}
@@ -96,7 +96,7 @@ lookupLEDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> Int ->
 lookupLEDIM DenseIntMap {..} k = do
   lookupLEDIS setDIM k >>= \case
     Just i -> Just . (i,) <$> GM.read valDIM i
-    Nothing -> return Nothing
+    Nothing -> pure Nothing
 
 -- | \(O(\log N)\)
 {-# INLINE findLEDIM #-}
@@ -135,7 +135,7 @@ deleteFindMinDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimS
 deleteFindMinDIM is = do
   (!k, !v) <- findMinDIM is
   deleteDIM is k
-  return (k, v)
+  pure (k, v)
 
 -- | \(O(\log N)\)
 {-# INLINE lookupMaxDIM #-}
@@ -155,7 +155,7 @@ deleteFindMaxDIM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntMap (PrimS
 deleteFindMaxDIM im = do
   (!k, !v) <- findMaxDIM im
   deleteDIM im k
-  return (k, v)
+  pure (k, v)
 
 -- | \(O(N)\)
 {-# INLINE unsafeKeysDIM #-}
@@ -163,7 +163,7 @@ unsafeKeysDIM :: (PrimMonad m, U.Unbox a) => DenseIntMap (PrimState m) a -> m (U
 unsafeKeysDIM im = do
   bits <- U.unsafeFreeze (V.head (vecDIS (setDIM im)))
   vec <- U.unsafeFreeze (valDIM im)
-  return
+  pure
     . U.map
       (\i -> (i, vec G.! i))
     . U.filter

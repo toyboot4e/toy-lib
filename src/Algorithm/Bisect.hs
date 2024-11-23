@@ -56,7 +56,7 @@ bisectImpl getMid l0 r0 lowOut highOut p = done <$> inner lowOut highOut
           p m >>= \case
             True -> inner m n
             False -> inner y m
-      | otherwise = return (y, n)
+      | otherwise = pure (y, n)
 
 -- | @getMid@ parameter of `bisectImpl` for `Int` indices.
 getMidInt :: Int -> Int -> Maybe Int
@@ -95,7 +95,7 @@ bisectMR !l !r !p = snd <$> bisectM l r p
 -- | \(O(f \log N)\) Pure binary search for an `Int` range.
 {-# INLINE bisect #-}
 bisect :: Int -> Int -> (Int -> Bool) -> (Maybe Int, Maybe Int)
-bisect !l !r !p = runIdentity $ bisectM l r (return . p)
+bisect !l !r !p = runIdentity $ bisectM l r (pure . p)
 
 -- | \(O(f \log N)\) Also known as lower bound.
 {-# INLINE bisectL #-}
@@ -133,7 +133,7 @@ bisectMRF64 !eps !l !r !p = snd <$> bisectMF64 eps l r p
 -- | \(O(f \log N)\) Pure binary search for an `Double` range.
 {-# INLINE bisectF64 #-}
 bisectF64 :: Double -> Double -> Double -> (Double -> Bool) -> (Maybe Double, Maybe Double)
-bisectF64 !eps !l !r !p = runIdentity $ bisectMF64 eps l r (return . p)
+bisectF64 !eps !l !r !p = runIdentity $ bisectMF64 eps l r (pure . p)
 
 -- | \(O(f \log N)\) Also known as lower bound.
 {-# INLINE bisectLF64 #-}
@@ -171,9 +171,9 @@ bsearchMExact !vec f !xref =
     Just !i -> do
       !x <- f <$> GM.read vec i
       if x == xref
-        then return $ Just i
-        else return Nothing
-    _ -> return Nothing
+        then pure $ Just i
+        else pure Nothing
+    _ -> pure Nothing
 
 -- | \(O(f \log N)\) `bisect` over a vector.
 {-# INLINE bsearch #-}

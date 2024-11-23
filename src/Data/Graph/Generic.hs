@@ -54,7 +54,7 @@ genericGrouping gr n = runST $ do
   groupVerts <- (\f -> U.foldM' f [] (U.generate n id)) $ \acc v -> do
     g <- GM.read components v
     if g /= -1
-      then return acc
+      then pure acc
       else do
         iGroup <- GM.unsafeRead iGroupRef 0
         GM.unsafeModify iGroupRef (+ 1) 0
@@ -94,7 +94,7 @@ genericDfsLongestPath !gr !n !source = runST $ do
     !maxDistance <- fmap (U.foldl' max d1) . U.forM v2s $ \(!v2, !w) -> do
       loop (d1 + w, v2)
     GM.write vis v1 False
-    return maxDistance
+    pure maxDistance
 
 -- | \(O(V+E)\) Breadth-first search. Unreachable vertices are given distance of @-1@.
 genericBfs :: (U.Unbox w, Num w, Eq w) => (Int -> U.Vector (Vertex, w)) -> Int -> Vertex -> w -> U.Vector w
@@ -116,7 +116,7 @@ genericBfs !gr !nVerts !source !undefW = U.create $ do
           pushBack queue v2
       loop
 
-  return dist
+  pure dist
 
 -- | \(O(V+E)\) 01-BFS. Unreachable vertices are given distance of @-1@.
 --
@@ -129,7 +129,7 @@ genericBfs !gr !nVerts !source !undefW = U.create $ do
 --         grF (!y, !x, !iDir) = flip U.imapMaybe diag4 $ \i (!dy, !dx) -> do
 --           let (!y', !x') = (y + dy, x + dx)
 --           guard $ inRange (zero2 n n) (y', x') && gr @! (y', x') /= '#'
---           return ((y', x', i), bool 1 0 (iDir == i))
+--           pure ((y', x', i), bool 1 0 (iDir == i))
 --         source = U.generate 4 $ (sy, sx,)
 -- @
 --
@@ -165,7 +165,7 @@ genericBfs01 !bndExt !gr !nEdges !sources = IxVector bndExt $ U.create $ do
       step w vExt
       loop
 
-  return $ vecIV vec
+  pure $ vecIV vec
 
 -- | \(O((E+V) \log {V})\) Dijkstra's algorithm.
 --
@@ -184,7 +184,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
-      Nothing -> return ()
+      Nothing -> pure ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
@@ -197,7 +197,7 @@ genericDj !gr !nVerts !nEdges !undef !vs0 = U.create $ do
               insertBH heap (w2', v2)
         loop
 
-  return dist
+  pure dist
   where
     {-# INLINE merge #-}
     merge :: w -> w -> w
@@ -216,7 +216,7 @@ dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
-      Nothing -> return ()
+      Nothing -> pure ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
@@ -229,7 +229,7 @@ dj' !gr !nVerts !nEdges !undef !vs0 = U.create $ do
               insertBH heap (w2', v2)
         loop
 
-  return dist
+  pure dist
 
 -- | \(O((E+V) \log {V})\) Dijkstra's algorithm with sparse heap.
 --
@@ -242,7 +242,7 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
   let !heap0 = H.fromList $ V.toList $ V.map (H.Entry 0) $ U.convert vs0
   flip fix heap0 $ \loop !heap ->
     case H.uncons heap of
-      Nothing -> return ()
+      Nothing -> pure ()
       Just (H.Entry !w1 !v1, !heap') -> do
         !newVisit <- (\case Just w | w == w1 -> True; _ -> False) <$> gets (IM.lookup v1)
         !nextHeap <-
@@ -254,11 +254,11 @@ genericSparseDj !gr !undef !vs0 = (`execState` IM.empty) $ do
                 if w2 == undef || w2' < w2
                   then do
                     modify' $ IM.insert v2 w2'
-                    return $ H.insert (H.Entry w2' v2) h
+                    pure $ H.insert (H.Entry w2' v2) h
                   else do
-                    return h
+                    pure h
             else do
-              return heap'
+              pure heap'
         loop nextHeap
   where
     {-# INLINE merge #-}
@@ -285,9 +285,9 @@ genericDfsEveryPathL !gr !nVerts !source !targetLen = runST $ do
       U.forM_ v2s $ \v2 -> do
         loop (d1 + 1) v2
       GM.write dist v1 undef
-      return False
+      pure False
 
-  if res then Just <$> U.unsafeFreeze dist else return Nothing
+  if res then Just <$> U.unsafeFreeze dist else pure Nothing
 
 -- | \(O(V+E)\) depth-first search. Returns a vector of parents. The source vertex or unrechable
 -- vertices are given `-1` as their parent. Note that it doesn't return the shortest path.
@@ -354,7 +354,7 @@ genericDjTree !gr !nVerts !nEdges !undef !vs0 = runST $ do
 
   fix $ \loop ->
     deleteMaybeBH heap >>= \case
-      Nothing -> return ()
+      Nothing -> pure ()
       Just (!w1, !v1) -> do
         !newVisit <- (== w1) <$> GM.read dist v1
         when newVisit $ do
@@ -460,14 +460,14 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
         !x2 <- do
           !tmp1 <- GM.read vec (index bnd (i, k))
           !tmp2 <- GM.read vec (index bnd (k, j))
-          return $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
+          pure $! bool (tmp1 + tmp2) undef $ tmp1 == undef || tmp2 == undef
         let !x'
               | x1 == undef = x2
               | x2 == undef = x1
               | otherwise = min x1 x2
         GM.write vec (index bnd (i, j)) x'
 
-  return vec
+  pure vec
   where
     bnd :: ((Int, Int), (Int, Int))
     bnd = ((0, 0), (nVerts - 1, nVerts - 1))

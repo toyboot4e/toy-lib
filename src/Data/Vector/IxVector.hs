@@ -160,7 +160,7 @@ constructMIV bnd@(!_, !_) f = do
             GM.unsafeWrite v' i x
             v'' <- G.unsafeFreeze v'
             fill v'' (i + 1)
-    fill v _ = return v
+    fill v _ = pure v
 
 -- | \(O(N)\)
 {-# INLINE thawIV #-}
@@ -197,7 +197,7 @@ readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
 {-# INLINE readMaybeIV #-}
 readMaybeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
 readMaybeIV IxVector {..} i
-  | not (inRange boundsIV i) = return Nothing
+  | not (inRange boundsIV i) = pure Nothing
   | otherwise = Just <$> GM.read vecIV (index boundsIV i)
 
 -- | \(O(1)\)
@@ -260,7 +260,7 @@ unsafeExchangeIV IxVector {..} i = GM.unsafeExchange vecIV (index boundsIV i)
 cloneIV :: (PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> m (IxVector i (v (PrimState m) a))
 cloneIV IxVector {..} = do
   vec' <- GM.clone vecIV
-  return $ IxVector boundsIV vec'
+  pure $ IxVector boundsIV vec'
 
 -- | \(O(HW)\) Calculates two-dimensional cumulative sum.
 --

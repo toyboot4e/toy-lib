@@ -166,7 +166,7 @@ butterfly1 xs rotN1 iMaxBit iBit = do
       !x2 <- UM.read xs i2
       GM.write xs i1 $! x1 + x2 * rotNK
       GM.write xs i2 $! x1 - x2 * rotNK
-      return $ rotNK * rotN1
+      pure $ rotNK * rotN1
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
 
@@ -197,7 +197,7 @@ invButterfly1 xs rotN1 iMaxBit iBit = do
       !x2 <- UM.read xs i2
       GM.write xs i1 $! x1 + x2
       GM.write xs i2 $! (x1 - x2) * rotNK
-      return $ rotNK * rotN1
+      pure $ rotNK * rotN1
   where
     !_ = dbgAssert (popCount (UM.length xs) == 1) "not a power of two"
 

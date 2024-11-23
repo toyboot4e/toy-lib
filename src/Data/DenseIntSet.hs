@@ -61,7 +61,7 @@ newDIS capacityDIS = do
       )
       capacityDIS
   sizeDIS_ <- UM.replicate 1 (0 :: Int)
-  return DenseIntSet {..}
+  pure DenseIntSet {..}
   where
     (!_, !logSize) =
       until
@@ -108,7 +108,7 @@ insertDIS is@DenseIntSet {..} k = do
       ( \i vec -> do
           let (!q, !r) = i `divMod` wordDIS
           GM.unsafeModify vec (`setBit` r) q
-          return q
+          pure q
       )
       k
       vecDIS
@@ -129,7 +129,7 @@ deleteDIS is@DenseIntSet {..} k = do
             GM.unsafeModify vec (`clearBit` r) q
           -- `b` remembers if any other bit was on
           b' <- (/= 0) <$> GM.unsafeRead vec q
-          return (b', q)
+          pure (b', q)
       )
       (False, k)
       vecDIS
@@ -144,9 +144,9 @@ lookupGEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int
 lookupGEDIS DenseIntSet {..} = inner 0
   where
     inner h i
-      | h >= V.length vecDIS = return Nothing
+      | h >= V.length vecDIS = pure Nothing
       -- ?
-      | q == UM.length (G.unsafeIndex vecDIS h) = return Nothing
+      | q == UM.length (G.unsafeIndex vecDIS h) = pure Nothing
       | otherwise = do
           d <- (.>>. r) <$> GM.unsafeRead (G.unsafeIndex vecDIS h) q
           if d == 0
@@ -156,7 +156,7 @@ lookupGEDIS DenseIntSet {..} = inner 0
                 <$> V.foldM'
                   ( \ !acc vec -> do
                       !dx <- lsbOf <$> GM.unsafeRead vec acc
-                      return $ acc * wordDIS + dx
+                      pure $ acc * wordDIS + dx
                   )
                   (i + lsbOf d)
                   (V.unsafeBackpermute vecDIS (V.enumFromStepN (h - 1) (-1) h))
@@ -188,8 +188,8 @@ lookupLEDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> Int -> m (Maybe Int
 lookupLEDIS DenseIntSet {..} = inner 0
   where
     inner h i
-      | h >= V.length vecDIS = return Nothing
-      | i == -1 = return Nothing
+      | h >= V.length vecDIS = pure Nothing
+      | i == -1 = pure Nothing
       | otherwise = do
           d <- (.<<. (63 - r)) <$> GM.unsafeRead (G.unsafeIndex vecDIS h) q
           if d == 0
@@ -199,7 +199,7 @@ lookupLEDIS DenseIntSet {..} = inner 0
                 <$> V.foldM'
                   ( \ !acc vec -> do
                       !dx <- msbOf <$> GM.unsafeRead vec acc
-                      return $ acc * wordDIS + dx
+                      pure $ acc * wordDIS + dx
                   )
                   (i - countLeadingZeros d)
                   (V.unsafeBackpermute vecDIS (V.enumFromStepN (h - 1) (-1) h))
@@ -245,7 +245,7 @@ deleteFindMinMayDIS is = do
     >>= mapM
       ( \key -> do
           deleteDIS is key
-          return key
+          pure key
       )
 
 -- | \(O(\log N)\) Not tested.
@@ -254,7 +254,7 @@ deleteFindMinDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> 
 deleteFindMinDIS is = do
   key <- findMinDIS is
   deleteDIS is key
-  return key
+  pure key
 
 -- | \(O(\log N)\) Not tested.
 {-# INLINE lookupMaxDIS #-}
@@ -276,7 +276,7 @@ deleteFindMaxMayDIS is = do
     >>= mapM
       ( \key -> do
           deleteDIS is key
-          return key
+          pure key
       )
 
 -- | \(O(\log N)\) Not tested.
@@ -285,14 +285,14 @@ deleteFindMaxDIS :: (HasCallStack, PrimMonad m) => DenseIntSet (PrimState m) -> 
 deleteFindMaxDIS is = do
   key <- findMaxDIS is
   deleteDIS is key
-  return key
+  pure key
 
 -- | \(O(N)\) Not tested.
 {-# INLINE unsafeKeysDIS #-}
 unsafeKeysDIS :: (PrimMonad m) => DenseIntSet (PrimState m) -> m (U.Vector Int)
 unsafeKeysDIS is = do
   vec <- U.unsafeFreeze (V.head (vecDIS is))
-  return
+  pure
     . U.filter
       ( \i ->
           let (!q, !r) = i `divMod` wordDIS

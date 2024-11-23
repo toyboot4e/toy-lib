@@ -30,13 +30,13 @@ fromVecMDM :: (PrimMonad m, Eq a, U.Unbox a) => U.Vector a -> (Int -> Int -> a -
 fromVecMDM xs onAdd = do
   dim <- newDIM (G.length xs)
   foldM_ (step dim) (0 :: Int) $ G.group xs
-  return $ DenseIntervalMap dim
+  pure $ DenseIntervalMap dim
   where
     step dim !l !xs' = do
       let !l' = l + G.length xs'
       insertDIM dim l (l' - 1, G.head xs')
       onAdd l (l' - 1) (G.head xs')
-      return l'
+      pure l'
 
 -- | \(O(NW)\) Pure variant of `fromVecMDM`
 fromVecDM :: (PrimMonad m, Eq a, U.Unbox a) => U.Vector a -> m (DenseIntervalMap (PrimState m) a)
@@ -47,10 +47,10 @@ fromVecDM xs = fromVecMDM xs onAdd
 -- | \(O(\min(n, W))\) Looks up an interval that contains @[l, r]@.
 lookupDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> m (Maybe (Int, Int, a))
 lookupDM (DenseIntervalMap dim) l r
-  | r < l = return Nothing
+  | r < l = pure Nothing
   | otherwise = do
       res <- lookupLEDIM dim l
-      return $ case res of
+      pure $ case res of
         Just (!l', (!r', !a))
           | r <= r' -> Just (l', r', a)
         _ -> Nothing
@@ -58,10 +58,10 @@ lookupDM (DenseIntervalMap dim) l r
 -- | \(O(\min(n, W))\) Looks up an interval that contains @[l, r]@ reads out the value.
 readMayDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> m (Maybe a)
 readMayDM (DenseIntervalMap dim) l r
-  | r < l = return Nothing
+  | r < l = pure Nothing
   | otherwise = do
       res <- lookupLEDIM dim l
-      return $ case res of
+      pure $ case res of
         Just (!_, (!r', !a))
           | r <= r' -> Just a
         _ -> Nothing
@@ -70,7 +70,7 @@ readMayDM (DenseIntervalMap dim) l r
 readDM :: (HasCallStack, PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> m a
 readDM dm l r = do
   res <- readMayDM dm l r
-  return $ case res of
+  pure $ case res of
     Just !a -> a
     Nothing -> error $ "[readDM] not a member: " ++ show (l, r)
 
@@ -80,15 +80,15 @@ writeMDM dm l r x onAdd onDel = do
   res <- lookupDM dm l r
   case res of
     Just (!l', !r', !_) -> insertMDM dm l' r' x onAdd onDel
-    Nothing -> return ()
+    Nothing -> pure ()
 
 -- | \(O(\min(n, W))\) Boolean variant of `lookupDM`.
 intersectsDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> m Bool
 intersectsDM (DenseIntervalMap dim) l r
-  | r < l = return False
+  | r < l = pure False
   | otherwise = do
       res <- lookupLEDIM dim l
-      return $ case res of
+      pure $ case res of
         Just (!_, (!r', !_)) -> r <= r'
         _ -> False
 
@@ -104,13 +104,13 @@ insertMDM (DenseIntervalMap dim) l0 r0 x onAdd onDel = do
   (!l', !r') <- handleLeft l0 r
   onAdd l' r' x
   insertDIM dim l' (r', x)
-  return ()
+  pure ()
   where
     handleRight l r = do
       res <- lookupGEDIM dim l
       case res of
         Just interval0@(!_, (!_, !_)) -> run interval0 l r
-        Nothing -> return r
+        Nothing -> pure r
 
     -- Looks into intervals with @l' >= l0@.
     --           [----]
@@ -120,16 +120,16 @@ insertMDM (DenseIntervalMap dim) l0 r0 x onAdd onDel = do
     run (!l', (!r', !x')) l r
       | l' > r + 1 = do
           -- not adjacent: end.
-          return r
+          pure r
       -- (i)
       | l' == r + 1 && x' == x = do
           -- adjacent interval with the same value: merge into one.
           onDel (r + 1) r' x'
           deleteDIM dim l'
-          return r'
+          pure r'
       | l' == r + 1 = do
           -- adjacent interval with different values: nothing to do.
-          return r
+          pure r
       -- (ii)
       | r' <= r = do
           -- inside the interval: delete and continue
@@ -139,43 +139,43 @@ insertMDM (DenseIntervalMap dim) l0 r0 x onAdd onDel = do
           res <- lookupGTDIM dim l'
           case res of
             Just rng -> run rng l r
-            Nothing -> return r
+            Nothing -> pure r
       -- (iii)
       | x' == x = do
           -- intersecting interval with the same value: merge into one.
           onDel l' r' x'
           deleteDIM dim l'
-          return r'
+          pure r'
       | otherwise = do
           -- intersecting interval with a different value: delete the intersection.
           onDel l' r x'
           deleteDIM dim l'
           insertDIM dim (r + 1) (r', x')
-          return r
+          pure r
 
     handleLeft l r = do
       res <- lookupLTDIM dim l
       case res of
-        Nothing -> return (l, r)
+        Nothing -> pure (l, r)
         Just (!l', (!r', !x'))
           -- (i): adjacent interval
           | r' + 1 == l0 && x' == x -> do
               -- adjacent interval with the same value: merge into one.
               onDel l' r' x'
               deleteDIM dim l'
-              return (l', r)
+              pure (l', r)
           | r' + 1 == l -> do
               -- adjacent interval with different values: nothing to do.
-              return (l, r)
+              pure (l, r)
           -- (ii): not intersecting
           | r' < l -> do
-              return (l, r)
+              pure (l, r)
           -- (iii): intersecting
           | x' == x -> do
               -- insersecting interval with the same value: merge into one.
               onDel l' r' x'
               deleteDIM dim l'
-              return (min l l', max r r')
+              pure (min l l', max r r')
           | r' > r -> do
               -- intersecting interval with a different value: split into three.
               onDel l' r' x'
@@ -184,13 +184,13 @@ insertMDM (DenseIntervalMap dim) l0 r0 x onAdd onDel = do
               deleteDIM dim l'
               insertDIM dim l' (l - 1, x')
               insertDIM dim (r + 1) (r', x')
-              return (l, r)
+              pure (l, r)
           | otherwise -> do
               -- insersecting interval with a different value: delete.
               onDel l r' x'
               deleteDIM dim l'
               insertDIM dim l' (l - 1, x')
-              return (l, r)
+              pure (l, r)
 
 -- | Amortized \(O(\min(\log n, W))\) interval insertion. Old overlapping intervals are overwritten.
 insertDM :: (PrimMonad m, Eq a, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> a -> m ()
@@ -204,50 +204,50 @@ deleteMDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int
 deleteMDM (DenseIntervalMap dim) l0 r0 onDel = do
   r <- handleRight l0 r0
   handleLeft l0 r
-  return ()
+  pure ()
   where
     handleRight l r = do
       res <- lookupGEDIM dim l
       case res of
         Just interval0@(!_, (!_, !_)) -> run interval0 l r
-        Nothing -> return r
+        Nothing -> pure r
 
     run (!l', (!r', !x')) l r
       | l' >= r + 1 = do
-          return r
+          pure r
       | r' <= r = do
           onDel l' r' x'
           deleteDIM dim l'
           res <- lookupGTDIM dim l'
           case res of
             Just rng -> run rng l r
-            Nothing -> return r
+            Nothing -> pure r
       | otherwise = do
           onDel l' r x'
           deleteDIM dim l'
           insertDIM dim (r + 1) (r', x')
-          return r
+          pure r
 
     handleLeft l r = do
       res <- lookupLTDIM dim l
       case res of
-        Nothing -> return ()
+        Nothing -> pure ()
         Just (!l', (!r', !x'))
           | r' < l -> do
-              return ()
+              pure ()
           | r' > r -> do
               onDel l' r' x'
             -- REMARK: this deletion is redundant
               -- deleteDIM dim l'
               insertDIM dim l' (l - 1, x')
               insertDIM dim (r + 1) (r', x')
-              return ()
+              pure ()
           | otherwise -> do
               onDel l r' x'
               -- TODO: delete is redundant?
               deleteDIM dim l'
               insertDIM dim l' (l - 1, x')
-              return ()
+              pure ()
 
 -- | Amortized \(O(\min(\log n, W))\) interval deletion.
 deleteDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> Int -> Int -> m ()
@@ -260,7 +260,7 @@ deleteDM dm l r = deleteMDM dm l r onDel
 mexDM :: (PrimMonad m, U.Unbox a) => DenseIntervalMap (PrimState m) a -> m Int
 mexDM (DenseIntervalMap dim) = do
   res <- lookupLEDIM dim 0
-  return $ case res of
+  pure $ case res of
     Just (!l', (!r', !_))
       | l' == 0 -> r' + 1
     Nothing -> 0

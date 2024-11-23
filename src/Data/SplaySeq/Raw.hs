@@ -78,7 +78,7 @@ newRSS n = do
   aggRSS <- UM.unsafeNew n
   revRSS <- UM.unsafeNew n
   actRSS <- UM.unsafeNew n
-  return $ RawSplaySeq {capacityRSS = n, ..}
+  pure $ RawSplaySeq {capacityRSS = n, ..}
 
 -- | \(O(1)\) Returns the number of elements stored. Requires monad for tracking the state.
 {-# INLINE sizeRSS #-}
@@ -89,7 +89,7 @@ sizeRSS = sizePool . freeRSS
 {-# INLINE seqSizeRSS #-}
 seqSizeRSS :: (HasCallStack, PrimMonad m) => RawSplaySeq (PrimState m) v a -> SplayIndex -> m Int
 seqSizeRSS seq root
-  | nullSI root = return 0
+  | nullSI root = pure 0
   | otherwise = GM.read (sRSS seq) $ coerce root
 
 -- * Allocation
@@ -107,14 +107,14 @@ allocNodeRSS RawSplaySeq {..} !v = do
   GM.write aggRSS i v
   GM.write revRSS i $ Bit False
   GM.write actRSS i mempty
-  return $ coerce i
+  pure $ coerce i
 
 -- | \(O(N)\) Allocates a new sequence, internally as a binary tree from the bottom to the top.
 allocSeqRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a) => RawSplaySeq (PrimState m) v a -> U.Vector v -> m SplayIndex
 allocSeqRSS seq@RawSplaySeq {..} !xs = do
   -- [l, r)
   let inner l r
-        | l >= r = return undefSI
+        | l >= r = pure undefSI
         | l + 1 == r = allocNodeRSS seq $ xs G.! l
         | otherwise = do
             let !m = (l + r) `div` 2
@@ -128,7 +128,7 @@ allocSeqRSS seq@RawSplaySeq {..} !xs = do
               GM.write rRSS (coerce root) rootR
               GM.write pRSS (coerce rootR) root
             updateNodeRSS seq root
-            return root
+            pure root
   inner 0 (G.length xs)
 
 -- | \(O(1)\) Frees a node.
@@ -155,7 +155,7 @@ assertRootRSS RawSplaySeq {..} root = dbgM $ do
   let !_ = assert (not (nullSI root)) "null as a root"
   p <- GM.read pRSS $ coerce root
   let !_ = assert (nullSI p) "not a root"
-  return ()
+  pure ()
 
 -- * API
 
@@ -179,7 +179,7 @@ writeRSS seq k v root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
   writeNodeRSS seq root' v
-  return root'
+  pure root'
 
 -- | Amortized \(O(\log N)\). Modifies a kth node's value.
 {-# INLINE modifyRSS #-}
@@ -188,7 +188,7 @@ modifyRSS seq f k root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
   modifyNodeRSS seq f root'
-  return root'
+  pure root'
 
 -- | Amortized \(O(\log N)\). Exchanges a kth node's value.
 {-# INLINE exchangeRSS #-}
@@ -197,13 +197,13 @@ exchangeRSS seq k v root = do
   assertRootRSS seq root
   root' <- splayKthRSS seq root k
   res <- exchangeNodeRSS seq root' v
-  return (res, root')
+  pure (res, root')
 
 -- | Amortized \(O(\log N)\). Folds an interval @[l, r]@.
 {-# INLINE foldRSS #-}
 foldRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m (v, SplayIndex)
 foldRSS seq@RawSplaySeq {..} l r root
-  | l > r = return (mempty, root)
+  | l > r = pure (mempty, root)
   | otherwise = do
       size <- GM.read sRSS $ coerce root
       -- TODO: foldMayRSS
@@ -212,7 +212,7 @@ foldRSS seq@RawSplaySeq {..} l r root
       target <- captureRSS seq root l (r + 1)
       res <- GM.read aggRSS $ coerce target
       splayRSS seq target True
-      return (res, target)
+      pure (res, target)
 
 -- | Amortized \(O(\log N)\). Folds the whole sequence.
 {-# INLINE foldAllRSS #-}
@@ -231,19 +231,19 @@ sactRSS seq@RawSplaySeq {..} l r act root = do
   root' <- captureRSS seq root l (r + 1)
   sactNodeRSS seq root' act
   splayRSS seq root' True
-  return root'
+  pure root'
 
 -- | Amortized \(O(\log N)\). Reverses the order of nodes in given range @[l, r]@. Requires the
 -- monoid and the action to be commutative.
 {-# INLINE reverseRSS #-}
 reverseRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> Int -> Int -> SplayIndex -> m SplayIndex
 reverseRSS seq l r root0
-  | l > r = return root0
+  | l > r = pure root0
   | otherwise = do
       root' <- captureRSS seq root0 l (r + 1)
       reverseNodeRSS seq root'
       splayRSS seq root' True
-      return root'
+      pure root'
 
 -- | Amortized \(O(\log N)\). Inserts a node at @k@.
 {-# INLINE insertRSS #-}
@@ -260,7 +260,7 @@ deleteRSS seq i root = do
   (!l, !m, !r) <- split3RSS seq root i (i + 1)
   freeNodeRSS seq m
   root' <- mergeRSS seq l r
-  return root'
+  pure root'
 
 -- | Amortized \(O(\log N)\). Bisection method over the sequence. Partition point. Note that The
 -- user function is run over each node, not fold of an interval.
@@ -268,8 +268,8 @@ deleteRSS seq i root = do
 bisectLRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> (v -> Bool) -> SplayIndex -> m (Maybe SplayIndex, SplayIndex)
 bisectLRSS seq@RawSplaySeq {..} check root0 = do
   let inner root parent lastYes
-        | nullSI root && nullSI lastYes = return (Nothing, parent)
-        | nullSI root = return (Just lastYes, parent)
+        | nullSI root && nullSI lastYes = pure (Nothing, parent)
+        | nullSI root = pure (Just lastYes, parent)
         | otherwise = do
             propNodeRSS seq root
             v <- GM.read vRSS $ coerce root
@@ -283,7 +283,7 @@ bisectLRSS seq@RawSplaySeq {..} check root0 = do
 
   (!found, root') <- inner root0 undefSI undefSI
   splayRSS seq root' True
-  return (found, root')
+  pure (found, root')
 
 -- * Self-balancing methods (internals)
 
@@ -307,7 +307,7 @@ rotateRSS RawSplaySeq {..} !i = do
         --   r       r
         r <- GM.exchange rRSS (coerce i) p
         GM.write lRSS (coerce p) r
-        return r
+        pure r
       else do
         -- p          i
         --  \        /
@@ -316,7 +316,7 @@ rotateRSS RawSplaySeq {..} !i = do
         -- l          l
         l <- GM.exchange lRSS (coerce i) p
         GM.write rRSS (coerce p) l
-        return l
+        pure l
 
   pp <- GM.read pRSS $ coerce p
   unless (nullSI pp) $ do
@@ -357,7 +357,7 @@ splayRSS seq@RawSplaySeq {..} i doneParentProp = do
         then do
           rotateRSS seq i
           updateNodeRSS seq p
-          return ()
+          pure ()
         else do
           pl <- GM.read lRSS $ coerce p
           pr <- GM.read rRSS $ coerce p
@@ -388,9 +388,9 @@ splayKthRSS seq@RawSplaySeq {..} root0 k0 = do
         propNodeRSS seq root
         l <- GM.read lRSS $ coerce root
         -- The number of left children = the node's index counting from the leftmost.
-        sizeL <- if nullSI l then return 0 else GM.read sRSS $ coerce l
+        sizeL <- if nullSI l then pure 0 else GM.read sRSS $ coerce l
         case compare k sizeL of
-          EQ -> return root
+          EQ -> pure root
           LT -> inner l k
           GT -> do
             r <- GM.read rRSS $ coerce root
@@ -398,7 +398,7 @@ splayKthRSS seq@RawSplaySeq {..} root0 k0 = do
 
   target <- inner root0 k0
   splayRSS seq target True
-  return target
+  pure target
 
 -- * Node operations (internals)
 
@@ -412,11 +412,11 @@ updateNodeRSS RawSplaySeq {..} i = do
   -- FIXME: ignore mempty
   (!sizeL, !aggL) <-
     if nullSI l
-      then return (0, mempty)
+      then pure (0, mempty)
       else (,) <$> GM.read sRSS (coerce l) <*> GM.read aggRSS (coerce l)
   (!sizeR, !aggR) <-
     if nullSI r
-      then return (0, mempty)
+      then pure (0, mempty)
       else (,) <$> GM.read sRSS (coerce r) <*> GM.read aggRSS (coerce r)
   GM.write sRSS (coerce i) $! sizeL + 1 + sizeR
   GM.write aggRSS (coerce i) $! aggL <> v <> aggR
@@ -453,7 +453,7 @@ exchangeNodeRSS seq@RawSplaySeq {..} root v = do
   assertRootRSS seq root
   res <- GM.exchange vRSS (coerce root) v
   updateNodeRSS seq root
-  return res
+  pure res
 
 -- | \(O(1)\) Swaps the left and the right children.
 {-# INLINE swapLrNodeRSS #-}
@@ -522,8 +522,8 @@ sactNodeRSS RawSplaySeq {..} i act = do
 -- | Amortized \(O(\log N)\). Merges two nodes. It's implemented a reverse operation of `splitRSS`.
 mergeRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> m SplayIndex
 mergeRSS seq@RawSplaySeq {..} l r
-  | nullSI l = return r
-  | nullSI r = return l
+  | nullSI l = pure r
+  | nullSI r = pure l
   | otherwise = do
       assertRootRSS seq l
       assertRootRSS seq r
@@ -532,7 +532,7 @@ mergeRSS seq@RawSplaySeq {..} l r
       GM.write lRSS (coerce r') l
       GM.write pRSS (coerce l) r'
       updateNodeRSS seq r'
-      return r'
+      pure r'
 
 -- | Amortized \(O(\log N)\). Folds three nodes from left to right.
 merge3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> SplayIndex -> SplayIndex -> m SplayIndex
@@ -544,25 +544,25 @@ merge3RSS seq l m r = do
 -- operation of `splitRSS`.
 splitAtRSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> m (SplayIndex, SplayIndex)
 splitAtRSS seq@RawSplaySeq {..} root k
-  | k == 0 = return (undefSI, root)
+  | k == 0 = pure (undefSI, root)
   | otherwise = do
       assertRootRSS seq root
       size <- GM.read sRSS $ coerce root
       if k == size
-        then return (root, undefSI)
+        then pure (root, undefSI)
         else do
           root' <- splayKthRSS seq root (k - 1)
           r <- GM.exchange rRSS (coerce root') undefSI
           GM.write pRSS (coerce r) undefSI
           updateNodeRSS seq root'
-          return (root', r)
+          pure (root', r)
 
 -- | Amortized \(O(\log N)\). Splits into three sequences from right to left.
 split3RSS :: (HasCallStack, PrimMonad m, Monoid v, U.Unbox v, Monoid a, U.Unbox a, SegmentAction a v, Eq a) => RawSplaySeq (PrimState m) v a -> SplayIndex -> Int -> Int -> m (SplayIndex, SplayIndex, SplayIndex)
 split3RSS seq root l r = do
   (!root', !nodeR) <- splitAtRSS seq root r
   (!nodeL, !nodeM) <- splitAtRSS seq root' l
-  return (nodeL, nodeM, nodeR)
+  pure (nodeL, nodeM, nodeR)
 
 -- | Amortized \(O(\log N)\). Captures a subtree of [l, r). Be sure that it's half-open interval!
 -- Splay the new root after call.
@@ -571,7 +571,7 @@ captureRSS seq@RawSplaySeq {..} root l r
   | l == 0 = do
       size <- GM.read sRSS $ coerce root
       if r == size
-        then return root
+        then pure root
         else do
           root' <- splayKthRSS seq root r
           GM.read lRSS $ coerce root'

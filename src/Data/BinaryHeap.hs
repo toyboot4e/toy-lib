@@ -180,7 +180,7 @@ buildBHVia priorityBH vec = do
   sizeBH_ <- UM.replicate 1 $ U.length vec
   internalVecBH <- U.thaw vec
   heapifyBy (compareVia priorityBH) internalVecBH
-  return $! BinaryHeap {..}
+  pure $! BinaryHeap {..}
 {-# INLINE buildBHVia #-}
 
 -- | \(O(N \log N)\) Creates a `BinaryHeap` from a vector.
@@ -216,7 +216,7 @@ peekBH bh = do
   size <- sizeBH bh
   if size > 0
     then Just <$!> unsafeViewBH bh
-    else return Nothing
+    else pure Nothing
 {-# INLINE peekBH #-}
 
 -- | \(O(\log N)\) Inserts a value as a leaf and sorts upwards.
@@ -286,7 +286,7 @@ deleteMaybeBH bh = do
   size <- sizeBH bh
   if size > 0
     then Just <$> unsafeDeleteBH bh
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\) Clears the heap.
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()

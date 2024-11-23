@@ -23,7 +23,7 @@ data FenwickTree s a = FenwickTree
 newFT :: (Monoid a, U.Unbox a, PrimMonad m) => Int -> m (FenwickTree (PrimState m) a)
 newFT nFT = do
   dataFT <- UM.replicate nFT mempty
-  return FenwickTree {..}
+  pure FenwickTree {..}
 
 -- | \(O(N \log N)\) Creates `FenwickTree`.
 buildFT :: (Monoid a, U.Unbox a, PrimMonad m) => U.Vector a -> m (FenwickTree (PrimState m) a)
@@ -31,7 +31,7 @@ buildFT xs = do
   ft <- newFT $ U.length xs
   U.iforM_ xs $ \i x -> do
     addFT ft i x
-  return ft
+  pure ft
 
 -- | \(O(\log N)\) Calculates the sum in half-open range @[l, r)@.
 addFT :: (PrimMonad m, Monoid a, U.Unbox a) => FenwickTree (PrimState m) a -> Int -> a -> m ()
@@ -49,7 +49,7 @@ prefixSumFT :: (PrimMonad m, Monoid a, U.Unbox a) => FenwickTree (PrimState m) a
 prefixSumFT FenwickTree {..} = inner mempty
   where
     inner !acc !r
-      | r <= 0 = return acc
+      | r <= 0 = pure acc
       | otherwise = do
           dx <- GM.read dataFT (r - 1)
           inner (acc <> dx) (r - r .&. (-r))
@@ -60,4 +60,4 @@ sumFT ft@FenwickTree {..} l r = do
   let !_ = assert (0 <= l && l <= r && r < nFT) ()
   xr <- prefixSumFT ft $! r + 1
   xl <- prefixSumFT ft l
-  return $! xr <> invert xl
+  pure $! xr <> invert xl

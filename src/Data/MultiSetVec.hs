@@ -20,7 +20,7 @@ showMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m String
 showMSV (MultiSetVec !nRef !mVec) = do
   !n <- UM.unsafeRead nRef 0
   !vec <- G.unsafeFreeze mVec
-  return $ show (n, vec)
+  pure $ show (n, vec)
 
 -- | \(O(N)\)
 newMSV :: (PrimMonad m) => Int -> m (MultiSetVec (PrimState m))
@@ -40,7 +40,7 @@ fromVecMSV :: (PrimMonad m) => Int -> U.Vector Int -> m (MultiSetVec (PrimState 
 fromVecMSV !capacity !xs = do
   !msv <- newMSV capacity
   U.forM_ xs (incMSV msv)
-  return msv
+  pure msv
 
 -- | \(O(1)\) Returns the number of keys in the multiset.
 countMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m Int
@@ -68,7 +68,7 @@ incMSV (MultiSetVec !nRef !mVec) k =
 decMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> Int -> m ()
 decMSV (MultiSetVec !nRef !mVec) k =
   GM.read mVec k >>= \case
-    0 -> return ()
+    0 -> pure ()
     1 -> do
       UM.unsafeModify nRef (subtract 1) 0
       GM.write mVec k 0
@@ -79,19 +79,19 @@ decMSV (MultiSetVec !nRef !mVec) k =
 minMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 minMSV (MultiSetVec !nRef !mVec) =
   UM.unsafeRead nRef 0 >>= \case
-    0 -> return Nothing
+    0 -> pure Nothing
     _ -> do
       !vec <- G.unsafeFreeze mVec
-      return . fmap (\i -> (i, vec G.! i)) $ G.findIndex (> 0) vec
+      pure . fmap (\i -> (i, vec G.! i)) $ G.findIndex (> 0) vec
 
 -- | \(O(N)\) Finds the maximum key element
 maxMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Maybe (Int, Int))
 maxMSV (MultiSetVec !nRef !mVec) =
   UM.unsafeRead nRef 0 >>= \case
-    0 -> return Nothing
+    0 -> pure Nothing
     _ -> do
       !vec <- G.unsafeFreeze mVec
-      return . fmap (\i -> (i, vec G.! i)) $ G.findIndexR (> 0) vec
+      pure . fmap (\i -> (i, vec G.! i)) $ G.findIndexR (> 0) vec
 
 -- | \(O(N)\)
 unsafeFreezeMSV :: (PrimMonad m) => MultiSetVec (PrimState m) -> m (Int, U.Vector Int)

@@ -71,12 +71,12 @@ rootMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> Int -> m I
 rootMUF uf@(MUnionFind !vec) i = do
   !node <- UM.unsafeRead vec i
   case node of
-    MUFRoot _ -> return i
+    MUFRoot _ -> pure i
     MUFChild p -> do
       !r <- rootMUF uf p
       -- NOTE(perf): path compression (move the queried node to just under the root, recursivelly)
       UM.unsafeWrite vec i (MUFChild r)
-      return r
+      pure r
 
 -- | \(O(\alpha(N))\) Checks if the two nodes are under the same root.
 {-# INLINE sameMUF #-}
@@ -102,7 +102,7 @@ unifyMUF uf@(MUnionFind !vec) !x !y = do
     let (!par, !chld) = if sx < sy then (px, py) else (py, px)
     UM.unsafeWrite vec chld (MUFChild par)
     UM.unsafeWrite vec par (MUFRoot $! sx + sy)
-  return $ px /= py
+  pure $ px /= py
 
 -- | \(O(1)\)
 {-# INLINE unifyMUF_ #-}
@@ -131,5 +131,5 @@ groupRootsMUF uf@(MUnionFind !vec) = U.filterM (\x -> (== x) <$> rootMUF uf x) (
 groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])
 groupsMUF uf@(MUnionFind !vec) = do
   rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootMUF uf v)
-  return $ IM.fromListWith (flip (++)) $ V.toList rvs
+  pure $ IM.fromListWith (flip (++)) $ V.toList rvs
 

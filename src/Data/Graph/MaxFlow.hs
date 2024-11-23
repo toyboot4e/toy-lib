@@ -96,7 +96,7 @@ edgesMF MaxFlow {..} = do
           flow = edgeCap G.! i21
           cap = edgeCap G.! i12 + edgeCap G.! i21
 
-  return $ U.unfoldrExactN nEdgesMF next (0 :: Vertex, 0 :: Int)
+  pure $ U.unfoldrExactN nEdgesMF next (0 :: Vertex, 0 :: Int)
 
 undefMF :: Int
 undefMF = -1
@@ -114,7 +114,7 @@ buildMaxFlow !nVertsMF !edges = do
         G.forM_ edges $ \(!v1, !v2, !_) -> do
           GM.modify degs (+ 1) v1
           GM.modify degs (+ 1) v2
-        return degs
+        pure degs
 
   (!edgeDstMF, !edgeRevIndexMF, !edgeCapMF) <- do
     !edgeDst <- UM.unsafeNew nEdgesMF
@@ -140,7 +140,7 @@ buildMaxFlow !nVertsMF !edges = do
 
     (,,edgeCap) <$> G.unsafeFreeze edgeDst <*> G.unsafeFreeze edgeRevIndex
 
-  return MaxFlow {..}
+  pure MaxFlow {..}
   where
     -- be sure to consider reverse edges
     !nEdgesMF = G.length edges * 2
@@ -177,7 +177,7 @@ runMaxFlow !src !sink container@MaxFlow {..} = do
 
     !distSink <- GM.read distsMF sink
     if distSink == undefMF
-      then return flow -- can't increase the flow anymore
+      then pure flow -- can't increase the flow anymore
       else do
         -- clear dfs buffers
         U.unsafeCopy iterMF offsetsMF
@@ -233,14 +233,14 @@ runMaxFlowDfs ::
 runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
   where
     runDfs !v1 !flow
-      | v1 == sink = return flow
+      | v1 == sink = pure flow
       | otherwise = fix $ \visitNeighbor -> do
           -- `iterMF` holds neighbor iteration counters
           !i1 <- GM.read iterMF v1
           if i1 >= offsetsMF G.! (v1 + 1)
             then do
               -- visited all the neighbors. no flow
-              return 0
+              pure 0
             else do
               -- increment the counter to remember the neighbor iteration state:
               GM.write iterMF v1 (i1 + 1)
@@ -257,7 +257,7 @@ runMaxFlowDfs !v0 !sink !flow0 MaxFlow {..} MaxFlowBuffer {..} = runDfs v0 flow0
                     then do
                       -- found the sink
                       modifyFlow i1 flow'
-                      return flow'
+                      pure flow'
                     else visitNeighbor
                 else visitNeighbor
 

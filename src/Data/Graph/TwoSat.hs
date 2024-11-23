@@ -66,7 +66,7 @@ data TwoSatBuilder s = TwoSatBuilder
 newTSB :: (PrimMonad m) => Int -> Int -> m (TwoSatBuilder (PrimState m))
 newTSB !nVarsTSB !nMaxClauses = do
   !bufTSB <- newBuffer (2 * nMaxClauses)
-  return TwoSatBuilder {..}
+  pure TwoSatBuilder {..}
 
 -- | \(O(1)\) Adds an or clause: \(x1 = b1 || x2 = b2\).
 addOrTSB :: (PrimMonad m) => TwoSatBuilder (PrimState m) -> TF Int -> TF Int -> m ()
@@ -111,7 +111,7 @@ solveTS !nVars !constraints = do
         forM_ (zip [0 :: Int ..] sccs) $ \(!iScc, !scc) -> do
           forM_ scc $ \v -> do
             GM.write vec v iScc
-        return vec
+        pure vec
 
   let !saturatable = U.all (\x -> groups G.! x /= groups G.! (x + nVars)) (U.generate nVars id)
   if not saturatable
@@ -125,7 +125,7 @@ solveTS !nVars !constraints = do
           when (prev == -1) $ do
             -- NOTE: We're seeing from the downstream vertices!!!!
             GM.write vec (v `mod` nVars) $ bool 1 0 (v < nVars)
-      return vec
+      pure vec
 
 -- | \(O(V+E)\) The main interface of two-sat solve.
 twoSat :: Int -> Int -> (forall s. TwoSatBuilder s -> ST s ()) -> Maybe (U.Vector Bool)
@@ -133,4 +133,4 @@ twoSat !nVars !nEdges f = runST $ do
   !tsb <- newTSB nVars nEdges
   f tsb
   !constraints <- unsafeFreezeBuffer (bufTSB tsb)
-  return $ solveTS nVars constraints
+  pure $ solveTS nVars constraints

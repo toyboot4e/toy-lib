@@ -86,7 +86,7 @@ newSM :: (U.Unbox k, U.Unbox v, PrimMonad m) => Int -> m (SplayMap k v (PrimStat
 newSM n = do
   rootSM <- UM.replicate 1 undefSI
   dataSM <- newBuffer n
-  return $ SplayMap {capacitySM = n, ..}
+  pure $ SplayMap {capacitySM = n, ..}
 
 -- | \(O(N)\) Creates a new `SplayMap` of capacity @n@ with initial values @xs@.
 --
@@ -97,7 +97,7 @@ buildSM n xs = do
   sm <- newSM n
   U.forM_ xs $ \(!k, !v) -> do
     insertSM sm k v
-  return sm
+  pure sm
 
 -- | \(O(1)\) Resets the splay tree to the initial state.
 {-# INLINE clearSM #-}
@@ -115,7 +115,7 @@ lookupSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap
 lookupSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSI root
-    then return Nothing
+    then pure Nothing
     else do
       -- splay and lift up the closest node to the root
       (!root', !ordering) <- splayBySM sm (compare k) root
@@ -124,8 +124,8 @@ lookupSM sm@SplayMap {..} k = do
         then do
           k' <- readKSM dataSM root'
           v' <- readVSM dataSM root'
-          return $ Just (k', v')
-        else return Nothing
+          pure $ Just (k', v')
+        else pure Nothing
 
 -- | Amortized \(O(\log N)\). Returns old value with the same key if there is.
 --
@@ -137,7 +137,7 @@ insertSM sm@SplayMap {..} k v = do
   if nullSI root
     then do
       pushRootSM sm $ SplayNode undefSI undefSI k v
-      return Nothing
+      pure Nothing
     else do
       -- splay and lift up the closest node to the root
       (!root', !ordering) <- splayBySM sm (compare k) root
@@ -148,21 +148,21 @@ insertSM sm@SplayMap {..} k v = do
           old <- readVSM dataSM root'
           writeVSM dataSM root' v
           GM.write rootSM 0 root'
-          return $ Just old
+          pure $ Just old
         LT -> do
           -- insert
           l <- readLSM dataSM root'
           let !r = root'
           writeLSM dataSM root' undefSI
           pushRootSM sm $ SplayNode l r k v
-          return Nothing
+          pure Nothing
         GT -> do
           -- insert
           let !l = root'
           r <- readRSM dataSM root'
           writeRSM dataSM root' undefSI
           pushRootSM sm $ SplayNode l r k v
-          return Nothing
+          pure Nothing
 
 {-# INLINE insertSM_ #-}
 insertSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> v -> m ()
@@ -174,14 +174,14 @@ deleteSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap
 deleteSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSI root
-    then return Nothing
+    then pure Nothing
     else do
       -- splay and lift up the closest node to the root
       (!newRoot, !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 newRoot
       if ordering == EQ
         then Just <$> popRootSM sm
-        else return Nothing
+        else pure Nothing
 
 {-# INLINE deleteSM_ #-}
 deleteSM_ :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap k v (PrimState m) -> k -> m ()
@@ -192,11 +192,11 @@ memberSM :: (HasCallStack, Ord k, U.Unbox k, U.Unbox v, PrimMonad m) => SplayMap
 memberSM sm@SplayMap {..} k = do
   root <- GM.read rootSM 0
   if nullSI root
-    then return False
+    then pure False
     else do
       (!newRoot, !ordering) <- splayBySM sm (compare k) root
       GM.write rootSM 0 newRoot
-      return $ ordering == EQ
+      pure $ ordering == EQ
 
 -- | Reads the left most child without splaying.
 {-# INLINE _readLMostSM #-}
@@ -207,7 +207,7 @@ _readLMostSM SplayMap {dataSM} = inner
     inner i = do
       l <- readLSM dataSM i
       if nullSI l
-        then return i
+        then pure i
         else inner l
 
 -- | Reads the right most child without splaying.
@@ -219,7 +219,7 @@ _readRMostSM SplayMap {dataSM} = inner
     inner i = do
       r <- readRSM dataSM i
       if nullSI r
-        then return i
+        then pure i
         else inner r
 
 -- | Amortized \(O(\log N)\). Internal use only.
@@ -229,7 +229,7 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
   -- TODO: consider using MaybeT?
   root <- GM.read rootSM 0
   if nullSI root
-    then return Nothing
+    then pure Nothing
     else do
       -- splay finds the nearest node?
       (!root', !order) <- splayBySM sm cmpF root
@@ -239,13 +239,13 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
         True -> do
           k <- readKSM dataSM root'
           v <- readVSM dataSM root'
-          return $ Just (k, v)
+          pure $ Just (k, v)
 
         -- it was next to the target node (GE/GT)
         False | isGE -> do
           l <- readLSM dataSM root'
           if nullSI l
-            then return Nothing
+            then pure Nothing
             else do
               --    root'
               --    /  \
@@ -261,13 +261,13 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
               k <- readKSM dataSM i
               v <- readVSM dataSM i
               -- when (k' > k) $ error "unreachable"
-              return $ Just (k, v)
+              pure $ Just (k, v)
 
         -- it was next to the target node (LE/LT)
         False -> do
           r <- readRSM dataSM root'
           if nullSI r
-            then return Nothing
+            then pure Nothing
             else do
               --    root'
               --    /  \
@@ -283,7 +283,7 @@ _lookupWithSM sm@SplayMap {..} cmpF isGE = do
               k <- readKSM dataSM i
               v <- readVSM dataSM i
               -- when (k' < k) error "unreachable"
-              return $ Just (k, v)
+              pure $ Just (k, v)
 
 -- | Amortized \(O(\log N)\).
 {-# INLINE lookupLESM #-}
@@ -345,7 +345,7 @@ rotateRSM SplayMap {..} i = do
   ilr <- readRSM dataSM il
   writeLSM dataSM i ilr
   writeRSM dataSM il i
-  return il
+  pure il
 
 -- | \(O(1)\) Right child rotation.
 --
@@ -369,7 +369,7 @@ rotateLSM SplayMap {..} i = do
   irl <- readLSM dataSM ir
   writeRSM dataSM i irl
   writeLSM dataSM ir i
-  return ir
+  pure ir
 
 -- | Amortized \(O(\log N)\) Splay @v@ so that it is under @r@ (or to the root if s is null).
 --
@@ -398,7 +398,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
               nodeML <- readFront dataSM (lSN nodeM)
               if not (nullSI (lSN nodeML)) && cmpF (keySN nodeML) == LT
                 then rotateRSM sm iM
-                else return iM
+                else pure iM
             -- link right:
             if nullSI iR
               then GM.write lrs 1 iM'
@@ -410,7 +410,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
               nodeMR <- readFront dataSM (rSN nodeM)
               if not (nullSI (rSN nodeMR)) && cmpF (keySN nodeMR) == GT
                 then rotateLSM sm iM
-                else return iM
+                else pure iM
             -- link left:
             if nullSI iL
               then GM.write lrs 0 iM'
@@ -424,7 +424,7 @@ splayBySM sm@SplayMap {..} !cmpF !i0 = do
             done iM nodeM iRootL iRootR iL iR
             -- return
             let !comparison = cmpF (keySN nodeM)
-            return (iM, comparison)
+            pure (iM, comparison)
 
   inner i0 undefSI undefSI
   where
@@ -474,9 +474,9 @@ popRootSM sm@SplayMap {..} = do
 
   -- merge the children into one.
   root' <- case (nodeL, nodeR) of
-    (-1, -1) -> return undefSI
-    (!l, -1) -> return l
-    (-1, !r) -> return r
+    (-1, -1) -> pure undefSI
+    (!l, -1) -> pure l
+    (-1, !r) -> pure r
     (!l, !r) -> do
       rl <- readLSM dataSM r
       if nullSI rl
@@ -490,7 +490,7 @@ popRootSM sm@SplayMap {..} = do
           --    XX          l   ..
           writeLSM dataSM r l
           -- @r@ is the new root:
-          return r
+          pure r
         else do
           lr <- readRSM dataSM l
           if nullSI lr
@@ -520,7 +520,7 @@ popRootSM sm@SplayMap {..} = do
               writeLSM dataSM rLMost lr
               writeRSM dataSM l rLMost
           -- @root' = l@
-          return l
+          pure l
 
   -- now the tree looks like this:
   --

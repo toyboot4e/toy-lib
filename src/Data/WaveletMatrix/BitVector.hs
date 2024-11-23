@@ -50,7 +50,7 @@ csumInPlaceBV csum bits = do
     ( \ !acc i wordSum -> do
         let !acc' = acc + wordSum
         GM.unsafeWrite csum (i + 1) acc'
-        return acc'
+        pure acc'
     )
     (0 :: Int)
     $ U.unfoldrExactN
@@ -64,7 +64,7 @@ newCSumBV bits = U.create $ do
   let !lenCSum = (G.length bits + wordWM - 1) `div` wordWM + 1
   vec <- UM.replicate lenCSum (0 :: Int)
   _ <- csumInPlaceBV vec bits
-  return vec
+  pure vec
 
 -- | \(O(1)\) Counts the number of 0 bits in interval [0, i). The input is a cumulative sum of bit
 -- vector by word. Rank 0.

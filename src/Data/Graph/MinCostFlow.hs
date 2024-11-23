@@ -89,7 +89,7 @@ bestFlow' ::
 bestFlow' toRelax !nVerts !src !sink !targetFlow !edges = do
   !container <- buildMinCostFlow nVerts edges
   !minCost <- runMinCostFlow toRelax src sink targetFlow container
-  return (minCost, container)
+  pure (minCost, container)
 
 bestFlow ::
   (Monoid (f (CostMCF c)), U.Unbox (f (CostMCF c)), Ord (f (CostMCF c)), Num (f (CostMCF c)), U.Unbox c, Integral c) =>
@@ -169,7 +169,7 @@ edgesMCF MinCostFlow {..} = do
           cap = edgeCap G.! i12 + edgeCap G.! i21
           cost = edgeCostMCF G.! i12
 
-  return $ U.unfoldrExactN nEdgesMCF next (0 :: EdgeId, 0 :: Vertex)
+  pure $ U.unfoldrExactN nEdgesMCF next (0 :: EdgeId, 0 :: Vertex)
 
 -- | For vertices and edge indices?
 undefMCF :: Int
@@ -188,7 +188,7 @@ buildMinCostFlow !nVertsMCF !edges = do
         G.forM_ edges $ \(!v1, !v2, !_, !_) -> do
           GM.modify degs (+ 1) v1
           GM.modify degs (+ 1) v2
-        return degs
+        pure degs
 
   (!edgeDstMCF, !edgeRevIndexMCF, !edgeCostMCF, !edgeCapMCF) <- do
     !edgeDst <- UM.unsafeNew nEdgesMCF
@@ -218,7 +218,7 @@ buildMinCostFlow !nVertsMCF !edges = do
 
     (,,,edgeCap) <$> G.unsafeFreeze edgeDst <*> G.unsafeFreeze edgeRevIndex <*> G.unsafeFreeze edgeCost
 
-  return MinCostFlow {..}
+  pure MinCostFlow {..}
   where
     -- be sure to consider reverse edges
     !nEdgesMCF = G.length edges * 2
@@ -247,7 +247,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
         -- TODO: Is it ok to flow too much?
         | restFlow <= 0 =
             let !_ = dbgAssert (restFlow == 0) "minCostFlow: flew too much?"
-             in return (accCost, targetFlow - restFlow)
+             in pure (accCost, targetFlow - restFlow)
         | otherwise = do
             -- clear buffers
             GM.set distsMCF mempty
@@ -264,13 +264,13 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
             if distSink == mempty
               then do
                 let !_ = dbg "min cost flow: less than the target flow"
-                return (accCost, targetFlow - restFlow)
+                pure (accCost, targetFlow - restFlow)
               else do
                 -- let !_ = dbg ("flow", distSink)
                 -- go back to the source from the sink, collection the shortest capacity
                 !deltaFlow <- flip fix (restFlow, sink) $ \loop (!flow, !v2) -> do
                   if v2 == src
-                    then return flow
+                    then pure flow
                     else do
                       !v1 <- GM.read prevVertMCF v2
                       !i12 <- GM.read prevEdgeMCF v2
@@ -287,7 +287,7 @@ runMinCostFlow !toRelax !src !sink !targetFlow container@MinCostFlow {..} = do
                 -- go back to the source from the sink, modifying the capacities
                 flip fix sink $ \loop v2 -> do
                   if v2 == src
-                    then return ()
+                    then pure ()
                     else do
                       !v1 <- GM.read prevVertMCF v2
                       !i12 <- GM.read prevEdgeMCF v2
@@ -325,7 +325,7 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
       if d1 == mempty
         then do
           -- unreachable. skip
-          return anyUpdate0
+          pure anyUpdate0
         else do
           let !iStart = offsetsMCF G.! v1
               !iEnd = offsetsMCF G.! (v1 + 1)
@@ -344,9 +344,9 @@ runMinCostFlowShortests !toRelax !src MinCostFlow {..} MinCostFlowBuffer {..} = 
                 GM.write distsMCF v2 d2'
                 GM.write prevVertMCF v2 v1
                 GM.write prevEdgeMCF v2 i12
-                return True
+                pure True
               else do
-                return anyUpdate
+                pure anyUpdate
 
     when b $ do
       nDidLoop <- UM.unsafeRead dbgLoop 0

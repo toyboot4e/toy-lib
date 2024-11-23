@@ -49,7 +49,7 @@ buildWMST xys = do
   let !rawWmWMST = buildRWM (n + 1) $ U.map (\(!_, !y) -> bindex ysWMST y) xysWMST
   -- modifycations are delayed so that the user can follow the change over time.
   segTreesWMST <- V.replicateM (heightRWM rawWmWMST) (newSTree n)
-  return WaveletMatrixSegTree {..}
+  pure WaveletMatrixSegTree {..}
 
 -- | \(O(N (\log N + \log A)\) Modifies a point. Access to unknown points are undefined.
 {-# INLINE modifyWMST #-}
@@ -64,7 +64,7 @@ modifyWMST WaveletMatrixSegTree {..} f (!x, !y) = stToPrim $ do
                   i + nZerosRWM rawWmWMST G.! iRow - i0
               | otherwise = i0
         modifySTree stree f i'
-        return i'
+        pure i'
     )
     i_
     $ V.zip (bitsRWM rawWmWMST) segTreesWMST
@@ -85,24 +85,24 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
               acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
               let !l' = l + nZerosRWM rawWmWMST G.! iRow - l0
               let !r' = r + nZerosRWM rawWmWMST G.! iRow - r0
-              return (acc', l', r')
+              pure (acc', l', r')
             else do
-              return (acc, l0, r0)
+              pure (acc, l0, r0)
       )
       (mempty, l_, r_ + 1)
       $ V.zip (bitsRWM rawWmWMST) segTreesWMST
-  return res
+  pure res
 
 -- | \(O(\log^2 N)\) Folding.
 {-# INLINE foldMayWMST #-}
 foldMayWMST :: (Group a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> Int -> m (Maybe a)
 foldMayWMST wm@WaveletMatrixSegTree {..} !xl !xr !yl !yr
-  | not $ 0 <= xl' && xl' <= xr' && xr' < G.length xysWMST = return Nothing
-  | not $ 0 <= yl' && yl' <= yr' && yr' < G.length ysWMST = return Nothing
+  | not $ 0 <= xl' && xl' <= xr' && xr' < G.length xysWMST = pure Nothing
+  | not $ 0 <= yl' && yl' <= yr' && yr' < G.length ysWMST = pure Nothing
   | otherwise = do
       s1 <- _foldLTWMST wm xl' xr' (yr' + 1)
       s2 <- _foldLTWMST wm xl' xr' yl'
-      return . Just $ s1 <> invert s2
+      pure . Just $ s1 <> invert s2
   where
     !n = lengthRWM rawWmWMST
     !xl' = fromMaybe n $ bisectR 0 (G.length xysWMST - 1) $ \i -> (< xl) . fst $ xysWMST G.! i

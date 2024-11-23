@@ -26,8 +26,8 @@ dbgSTree (SegmentTree mVec nValidLeaves)
       -- TODO: drop non used slots?
       let !leaves = G.take nValidLeaves $ G.drop (G.length vec `div` 2) vec
       let !_ = dbg leaves
-      return ()
-  | otherwise = return ()
+      pure ()
+  | otherwise = pure ()
 
 -- | Shows the nodes and the leaves of a strict segment tree,
 --
@@ -42,7 +42,7 @@ dbgSTreeAll (SegmentTree mVec _)
           let !vec' = G.take len . G.drop (len - 1) $ vec
           let !_ = dbgS $ "> " ++ show vec'
           loop (n + 1, 2 * len)
-  | otherwise = return ()
+  | otherwise = pure ()
 
 -- | Shows the leaves of a lazily propagated segment tree.
 dbgLSTree :: (Show a, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) => LazySegmentTree a op (PrimState m) -> m ()
@@ -50,5 +50,5 @@ dbgLSTree stree@(LazySegmentTree !vec _ _) = dbgSM $ do
   let !nLeaves = GM.length vec `div` 2
   ss <- forM [0 .. nLeaves - 1] $ \i -> do
     !x <- readLSTree stree i
-    return $ show x
-  return $ unwords ss
+    pure $ show x
+  pure $ unwords ss

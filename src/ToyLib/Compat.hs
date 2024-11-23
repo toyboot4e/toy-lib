@@ -10,7 +10,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 modifyM :: (Monad m) => (s -> m s) -> StateT s m ()
 modifyM f = StateT $ \s -> do
   s' <- f s
-  return ((), s')
+  pure ((), s')
 {-# INLINE modifyM #-}
 
 -- Modifying vectors
@@ -83,7 +83,7 @@ time complexity of O(n) on the best case.
 nextPermutationByLt :: (PrimMonad m, GM.MVector v e) => (e -> e -> Bool) -> v (PrimState m) e -> m Bool
 {-# INLINE nextPermutationByLt #-}
 nextPermutationByLt lt v
-  | dim < 2 = return False
+  | dim < 2 = pure False
   | otherwise = stToPrim $ do
       !vlast <- GM.unsafeRead v (dim - 1)
       decrLoop (dim - 2) vlast
@@ -93,7 +93,7 @@ nextPermutationByLt lt v
     decrLoop !i !vi1 | i >= 0 = do
       !vi <- GM.unsafeRead v i
       if vi `lt` vi1 then swapLoop i vi (i + 1) vi1 dim else decrLoop (i - 1) vi
-    decrLoop _ !_ = return False
+    decrLoop _ !_ = pure False
     -- find the largest index l greater than k such that a[k] < a[l], and do the rest.
     swapLoop !k !vk = go
       where
@@ -103,7 +103,7 @@ nextPermutationByLt lt v
           GM.unsafeWrite v k vl
           GM.unsafeWrite v l vk
           GM.reverse $ GM.unsafeSlice (k + 1) (dim - k - 1) v
-          return True
+          pure True
         go !l !vl !r = do
           !vmid <- GM.unsafeRead v mid
           if vk `lt` vmid

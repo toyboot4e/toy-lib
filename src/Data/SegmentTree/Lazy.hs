@@ -105,7 +105,7 @@ newLSTreeImpl ::
 newLSTreeImpl !n = do
   !as <- GM.replicate n2 mempty
   !ops <- UM.replicate n2 mempty
-  return $ LazySegmentTree as ops h
+  pure $ LazySegmentTree as ops h
   where
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
@@ -136,7 +136,7 @@ generateLSTreeImpl !n !f = do
     GM.write as i $! l <> r
 
   !ops <- UM.replicate n2 mempty
-  return $ LazySegmentTree as ops h
+  pure $ LazySegmentTree as ops h
   where
     -- TODO: use bit operations
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
@@ -164,7 +164,7 @@ buildLSTree xs = do
     GM.write as i $! l <> r
 
   !ops <- UM.replicate n2 mempty
-  return $ LazySegmentTree as ops h
+  pure $ LazySegmentTree as ops h
   where
     !n = U.length xs
     (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
@@ -200,18 +200,18 @@ foldLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
     -- \(O(\log N)\)
     -- glitchFold :: Int -> Int -> a -> a -> m a
     glitchFold !l !r !lAcc !rAcc
-      | l > r = return $! lAcc <> rAcc
+      | l > r = pure $! lAcc <> rAcc
       | otherwise = do
           -- Note that the operator at @i@ is already performed for @i@ (it' for their children).
           !lAcc' <-
             if _isRChild l
               then (lAcc <>) <$> GM.read as l
-              else return lAcc
+              else pure lAcc
 
           !rAcc' <-
             if _isLChild r
               then (<> rAcc) <$> GM.read as r
-              else return rAcc
+              else pure rAcc
 
           -- go up to the parent segment, but optionally out of the bounds (like a glitch):
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
@@ -227,7 +227,7 @@ foldMayLSTree ::
 foldMayLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf
   | 0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1) =
       Just <$> foldLSTree stree iLLeaf iRLeaf
-  | otherwise = return Nothing
+  | otherwise = pure Nothing
   where
     !nLeaves = GM.length as .>>. 1
 
@@ -280,7 +280,7 @@ sactLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPr
     -- \(O(\log N)\)
     -- glitchSAct :: Int -> Int -> m ()
     glitchSAct !l !r
-      | l > r = return ()
+      | l > r = pure ()
       | otherwise = do
           when (_isRChild l) $ _sactAt stree l op
           when (_isLChild r) $ _sactAt stree r op
@@ -392,7 +392,7 @@ bisectLSTree ::
 bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
   bisectM l r $ \r' -> do
     !acc <- foldLSTree stree l r'
-    return $! f acc
+    pure $! f acc
   where
     !_ = dbgAssert (0 <= l && l <= r && r <= nLeaves - 1) $ "bisectLSTree: giveninvalid range " ++ show (l, r)
       where

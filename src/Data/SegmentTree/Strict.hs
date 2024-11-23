@@ -59,7 +59,7 @@ data SegmentTree s a = SegmentTree
 newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree (PrimState m) a)
 newSTree nValidLeaves = do
   vec <- GM.replicate nVerts mempty
-  return $ SegmentTree vec nValidLeaves
+  pure $ SegmentTree vec nValidLeaves
   where
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
 
@@ -78,7 +78,7 @@ buildSTree leaves = do
     !x' <- (<>) <$> GM.unsafeRead verts (i .<<. 1) <*> GM.unsafeRead verts ((i .<<. 1) .|. 1)
     GM.unsafeWrite verts i x'
 
-  return $ SegmentTree verts nValidLeaves
+  pure $ SegmentTree verts nValidLeaves
   where
     !nValidLeaves = G.length leaves
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
@@ -118,7 +118,7 @@ exchangeSTree (SegmentTree vec nValidLeaves) i x = do
   let v0 = nLeaves + i
   !ret <- GM.unsafeExchange vec v0 x
   _unsafeUpdateParentNodes vec v0
-  return ret
+  pure ret
   where
     !_ = dbgAssert (inRange (0, nValidLeaves - 1) i) $ "exchangeSTree: given invalid index: " ++ show i ++ " is out of " ++ show nValidLeaves
     nLeaves = GM.length vec .>>. 1
@@ -143,16 +143,16 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLe
     !_ = dbgAssert (0 <= l0 && l0 <= r0 && r0 <= (nValidLeaves - 1)) $ "foldSTree: given invalid range: " ++ show (l0, r0) ++ " is out of " ++ show nValidLeaves
     !nLeaves = GM.length vec .>>. 1
     glitchFold l r lx rx
-      | l > r = return $! lx <> rx
+      | l > r = pure $! lx <> rx
       | otherwise = do
           !lx' <-
             if testBit l 0
               then (lx <>) <$> GM.unsafeRead vec l
-              else return lx
+              else pure lx
           !rx' <-
             if not (testBit r 0)
               then (<> rx) <$> GM.unsafeRead vec r
-              else return rx
+              else pure rx
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lx' rx'
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns `Nothing` when given invalid range.
@@ -160,7 +160,7 @@ foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLe
 foldMaySTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> m (Maybe a)
 foldMaySTree stree@(SegmentTree vec _) l0 r0
   -- FIXME: check with the number of valid leaves
-  | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = return Nothing
+  | l0 > r0 || not (inRange (0, nLeaves - 1) l0) || not (inRange (0, nLeaves - 1) r0) = pure Nothing
   | otherwise = Just <$> foldSTree stree l0 r0
   where
     nLeaves = GM.length vec .>>. 1
@@ -183,7 +183,7 @@ bsearchSTree stree@(SegmentTree _ nValidLeaves) l0 r0 f = do
   let !_ = dbgAssert (l0 <= r0 && inRange (0, nValidLeaves - 1) l0 && inRange (0, nValidLeaves - 1) l0) $ "bsearhSTree: wrong range " ++ show (l0, r0) ++ " for " ++ show nValidLeaves
   bisectM l0 r0 $ \r -> do
     x <- foldSTree stree l0 r
-    return $ f x
+    pure $ f x
 
 -- | \(O(\log^2 N)\)
 {-# INLINE bsearchSTreeL #-}

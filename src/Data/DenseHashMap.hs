@@ -45,14 +45,14 @@ newHM n = do
   keyHM <- UM.unsafeNew k
   valHM <- UM.unsafeNew k
   usedHM <- UM.replicate k False
-  return DenseHashMap {..}
+  pure DenseHashMap {..}
 
 -- | \(O(1)\) Returns the number of stored elements. Not tested
 {-# INLINE sizeHM #-}
 sizeHM :: (PrimMonad m) => DenseHashMap (PrimState m) a -> m Int
 sizeHM DenseHashMap{..}= do
   !rest <- UM.unsafeRead restCapHM 0
-  return $ maxCapHM - rest
+  pure $ maxCapHM - rest
 
 -- | \(O(1)\) Clears the buffer. Not tested
 {-# INLINE clearHM #-}
@@ -85,7 +85,7 @@ indexHM hm@DenseHashMap {..} k = inner (hashHM hm k)
       if b && k' /= k
         then -- TODO: powerset enumeration technique?
           inner $ (h + 1) .&. maskHM
-        else return h
+        else pure h
 
 -- | \(O(1)\)
 {-# INLINE memberHM #-}
@@ -94,7 +94,7 @@ memberHM hm@DenseHashMap {..} k = do
   i <- indexHM hm k
   b <- GM.read usedHM i
   k' <- GM.read keyHM i
-  return $ b && k' == k
+  pure $ b && k' == k
 
 -- | \(O(1)\)
 {-# INLINE readHM #-}
@@ -111,7 +111,7 @@ readMayHM hm@DenseHashMap {..} k = do
   b <- GM.read usedHM i
   if b
     then Just <$> GM.read valHM i
-    else return Nothing
+    else pure Nothing
 
 -- | \(O(1)\)
 {-# INLINE writeHM #-}
@@ -130,7 +130,7 @@ exchangeHM hm@DenseHashMap {..} k v = do
     then do
       -- already stored
       GM.write valHM i v
-      return Nothing
+      pure Nothing
     else do
       -- newly inserted value
       GM.unsafeModify restCapHM (subtract 1) 0
@@ -161,7 +161,7 @@ deleteHM hm@DenseHashMap {..} k = do
       GM.write usedHM i False
       Just <$> GM.read valHM i
     else do
-      return Nothing
+      pure Nothing
 
 -- | \(O(1)\) Deletes a value. Not tested
 {-# INLINE deleteHM_ #-}

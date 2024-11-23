@@ -52,7 +52,7 @@ twoPtrM acc0 p onNext onPop xs0 = inner acc0 xs0 xs0 (0 :: Int) (0 :: Int)
   where
     inner :: acc -> v a -> v a -> Int -> Int -> m [(Int, Int)]
     inner acc pops nexts l r = case G.uncons pops of
-      Nothing -> return []
+      Nothing -> pure []
       Just (!y, !pops') -> case G.uncons nexts of
         Just (!x, !nexts') -> do
           b <- (r - l == 0 ||) <$> p acc x

@@ -77,7 +77,7 @@ buildRWM nx xs = runST $ do
   bits' <- V.unfoldrExactN heightRWM (U.splitAt lengthRWM) <$> U.unsafeFreeze orgBits
   csums' <- V.unfoldrExactN heightRWM (U.splitAt lenCSum) <$> U.unsafeFreeze orgCsum
   let !bitsRWM = V.zipWith BitVector bits' csums'
-  return $ RawWaveletMatrix {..}
+  pure $ RawWaveletMatrix {..}
   where
     !lengthRWM = G.length xs
     !lenCSum = (lengthRWM + wordWM - 1) `div` wordWM + 1 -- +1 for the zero

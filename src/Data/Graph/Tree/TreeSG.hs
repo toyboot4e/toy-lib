@@ -77,12 +77,12 @@ foldTreeImplSG !tree !root !onEdge !sact_ !acc0At !toOp !memo = inner (-1) root
       let !v2s = U.filter ((/= parent) . fst) $ tree `adjW` v1
       !res <- U.foldM' (\acc (!v2, !w) -> (`sact_` acc) . (`onEdge` (v1, w)) . toOp <$> inner v1 v2) acc0 v2s
       memo v1 res
-      return res
+      pure res
 
 -- | \(O(N)\) Folds a tree from one root vertex using postorder DFS.
 foldTreeSG :: (U.Unbox w) => SparseGraph w -> Vertex -> (op -> (Vertex, w) -> op) -> (op -> a -> a) -> (Vertex -> a) -> (a -> op) -> a
 foldTreeSG !tree !root !onEdge !sact_ !acc0At !toOp = runIdentity $ do
-  foldTreeImplSG tree root onEdge sact_ acc0At toOp (\_ _ -> return ())
+  foldTreeImplSG tree root onEdge sact_ acc0At toOp (\_ _ -> pure ())
 
 -- | \(O(N)\) Folds a tree from one root vertex using postorder DFS, recording all the accumulation values
 -- on every vertex.
@@ -91,7 +91,7 @@ scanTreeSG !tree !root !onEdge !sact_ !acc0At !toOp = G.create $ do
   dp <- GM.unsafeNew (nVertsSG tree)
   !_ <- foldTreeImplSG tree root onEdge sact_ acc0At toOp $ \v a -> do
     GM.unsafeWrite dp v a
-  return dp
+  pure dp
 
 -- | \(O(N)\) Folds a not-weighted tree for every vertex as a root using the rerooting technique.
 --
@@ -132,7 +132,7 @@ foldTreeAllSG' !tree !onEdge !acc0At !toOp =
 
         reroot (-1 :: Vertex) op0 root0
 
-        return dp
+        pure dp
    in rootDp
   where
     !root0 = 0 :: Int

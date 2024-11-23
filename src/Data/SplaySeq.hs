@@ -32,7 +32,7 @@ newLazySS n = do
   rawSS <- newRSS n
   rootSS <- newPrimArray 1
   writePrimArray rootSS 0 $ PoolIndex (-1)
-  return SplaySeq {..}
+  pure SplaySeq {..}
 
 -- | \(O(N)\) Allocates a `SplaySeq` without lazily propagated values. It still allocates needless
 -- vector, but I failed to fix it.
@@ -81,7 +81,7 @@ readSS SplaySeq {..} k = do
   root <- readPrimArray rootSS 0
   (!x, !root') <- readRSS rawSS k root
   writePrimArray rootSS 0 root'
-  return x
+  pure x
 
 -- | Amortized \(O(\log N)\). Writes a kth node's value.
 {-# INLINE writeSS #-}
@@ -106,7 +106,7 @@ exchangeSS SplaySeq {..} k v = do
   root <- readPrimArray rootSS 0
   (!x, !root') <- exchangeRSS rawSS k v root
   writePrimArray rootSS 0 root'
-  return x
+  pure x
 
 -- | Amortized \(O(\log N)\). Folds an interval @[l, r]@.
 {-# INLINE foldSS #-}
@@ -115,7 +115,7 @@ foldSS SplaySeq {..} l r = do
   root <- readPrimArray rootSS 0
   (!x, !root') <- foldRSS rawSS l r root
   writePrimArray rootSS 0 root'
-  return x
+  pure x
 
 -- | Amortized \(O(\log N)\). Folds the whole sequence.
 {-# INLINE foldAllSS #-}
@@ -165,4 +165,4 @@ bisectLSS SplaySeq {..} check = do
   root <- readPrimArray rootSS 0
   (!res, !root') <- bisectLRSS rawSS check root
   writePrimArray rootSS 0 root'
-  return res
+  pure res

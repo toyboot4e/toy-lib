@@ -53,15 +53,15 @@ runMoG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = do
         !s2 <- U.foldM' onInsR s1 (slice (r0 + 1) r xs)
         !s3 <- U.foldM' onRemL s2 (slice l0 (l - 1) xs)
         !s4 <- U.foldM' onRemR s3 (slice (r + 1) r0 xs)
-        return s4
+        pure s4
 
       GM.unsafeWrite result iLrs $! extract s'
-      return ((l, r), s')
+      pure ((l, r), s')
 
 -- | \(O(N (\log N + \sqrt Q))\). Pure variant of @runMoG@.
 runMoPureG :: (U.Unbox x, G.Vector v b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> x -> a) -> (a -> b) -> a -> v b
 runMoPureG !xs !lrs !onInsL !onInsR !onRemL !onRemR !extract !state0 = runST $ do
-  runMoG xs lrs (return .: onInsL) (return .: onInsR) (return .: onRemL) (return .: onRemR) extract state0
+  runMoG xs lrs (pure .: onInsL) (pure .: onInsR) (pure .: onRemL) (pure .: onRemR) extract state0
 
 -- | \(O(N (\log N + \sqrt Q))\). Type-restricted `runMo`
 runMo :: (PrimMonad m, U.Unbox x, U.Unbox b) => U.Vector x -> U.Vector (Int, Int) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> x -> m a) -> (a -> b) -> a -> m (U.Vector b)
@@ -108,6 +108,6 @@ simpleRunMoPure !xs !lrs !onIns !onRem !state0 = runMoPure xs lrs onIns onIns on
 -- 			std::swap(x, y);
 -- 		}
 -- 	}
--- 	return d;
+-- 	pure d;
 -- }
 

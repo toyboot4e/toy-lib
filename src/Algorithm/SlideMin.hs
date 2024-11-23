@@ -80,7 +80,7 @@ lookBackIndicesOn wrap xs = runST $ do
 
     res <- fromMaybe (-1) <$> readMaybeBack buf 0
     pushBack buf i
-    return res
+    pure res
 
 -- | \(O(N)\) Solution to the histogram problem. Find the nearest lower building for each @i@..
 {-# INLINE lookBackLowerIndices #-}

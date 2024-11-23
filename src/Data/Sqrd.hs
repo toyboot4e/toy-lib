@@ -42,7 +42,7 @@ foldSqrd Sqrd {..} l r = do
       !mx <- U.foldM' (\ !acc -> mergeSqrd acc <=< readFullSqrd) lx $ U.generate (ir - 1 - il) (+ (il + 1))
       !rx <- readPartSqrd ir 0 remR
       !ret <- mergeSqrd mx rx
-      return ret
+      pure ret
 
 -- | \(O(\sqrt N f)\)
 actSqrd :: (PrimMonad m) => Sqrd b ret act m -> act -> Int -> Int -> m ()
@@ -72,24 +72,24 @@ actSqrd Sqrd {..} act l r = do
 --         !x <- get
 --         let !csum = blocks V.! iBlock :: U.Vector Int
 --         let !i = maybe 0 (+ 1) $ bsearchL dict (<= x)
---         return $ csum G.! i
+--         pure $ csum G.! i
 --
 --   let {-# INLINE readPartSqrd #-}
 --       -- @l@ and @r@ are in global coordinates
 --       readPartSqrd !iBlock !l !r = do
 --         let !xs' = xss V.! iBlock
 --         !x <- get
---         return $ U.sum $ U.filter (<= x) $ U.take (r + 1 - l) $ U.drop l xs'
+--         pure $ U.sum $ U.filter (<= x) $ U.take (r + 1 - l) $ U.drop l xs'
 --
 --   let {-# INLINE mergeSqrd #-}
---       mergeSqrd x y = return $ x + y
+--       mergeSqrd x y = pure $ x + y
 --
 --   let {-# INLINE actFullSqrd #-}
---       actFullSqrd _iBlock (_ :: Int) = return ()
+--       actFullSqrd _iBlock (_ :: Int) = pure ()
 --
 --   let {-# INLINE actPartSqrd #-}
 --       -- @l@ and @r@ are in local coordinates in the block
 --       readPartSqrd !iBlock !l !r = do
---       actPartSqrd _iBlock (_ :: Int) _lLocal _rLocal = return ()
+--       actPartSqrd _iBlock (_ :: Int) _lLocal _rLocal = pure ()
 --
---   return Sqrd {..}
+--   pure Sqrd {..}

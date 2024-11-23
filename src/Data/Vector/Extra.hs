@@ -63,7 +63,7 @@ constructMN !n f = do
             GM.unsafeWrite v' i x
             v'' <- G.unsafeFreeze v'
             fill v'' (i + 1)
-    fill v _ = return v
+    fill v _ = pure v
 
 -- | \(O(N f)\) @U.constructrN@ with monadic actions.
 {-# INLINE constructrMN #-}
@@ -81,7 +81,7 @@ constructrMN !n f = do
         GM.unsafeWrite v' (n - i - 1) x
         v'' <- G.unsafeFreeze v'
         fill v'' (i + 1)
-    fill v _ = return v
+    fill v _ = pure v
 
 -- | Wraps a boxed type as an `Unbox` instance, dispatching the boxed vector as the backing array
 -- instance. <https://github.com/haskell/vector/issues/503>
