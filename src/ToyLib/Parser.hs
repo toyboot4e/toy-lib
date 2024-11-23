@@ -73,6 +73,12 @@ ints6' = (,,,,,) <$> int' <*> int' <*> int' <*> int' <*> int' <*> int'
 line' :: (MonadState BS.ByteString m) => m BS.ByteString
 line' = state $ BS.span (/= '\n') . BS.dropSpace
 
+-- | Reads one line from the state.
+lineU' :: (MonadState BS.ByteString m) => m (U.Vector Char)
+lineU' = do
+  s <- line'
+  pure $ U.fromListN (BS.length s) $ BS.unpack s
+
 -- | Reads one line from the state and runs a pure parser for it.
 withLine' :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
 withLine' f = evalState f <$> line'
