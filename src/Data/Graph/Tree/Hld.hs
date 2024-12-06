@@ -170,12 +170,12 @@ hldOf' tree root = runST $ do
             U.foldM'
               ( \(!size1, !eBig) (!e2, !v2) -> do
                   if v2 == p
-                    then return (size1, eBig)
+                    then pure (size1, eBig)
                     else do
                       size2 <- loop (depth + 1) v1 v2
                       -- NOTE: It's `>` because we should swap at least once if there's some vertex other
                       -- that the parent.
-                      return (size1 + size2, if size1 > size2 then eBig else e2)
+                      pure (size1 + size2, if size1 > size2 then eBig else e2)
               )
               (1 :: Int, -1)
               (tree `eAdj` v1)
@@ -188,7 +188,7 @@ hldOf' tree root = runST $ do
           -- record subtree size
           GM.write subtreeSize v1 size1
 
-          return size1
+          pure size1
 
         !vec <- U.unsafeFreeze adjVec
         (tree {adjacentsSG = vec},,,)
@@ -224,9 +224,9 @@ hldOf' tree root = runST $ do
 
   HLD root parent indices'
     <$> U.unsafeFreeze heads
-    <*> return revIndex
-    <*> return depths
-    <*> return subtreeSize
+    <*> pure revIndex
+    <*> pure depths
+    <*> pure subtreeSize
   where
     !n = nVertsSG tree
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
@@ -322,7 +322,7 @@ foldHLD isEdge hld foldF foldB v1 v2 = do
           if u <= v
             then foldF u v
             else foldB v u
-        return $! acc <> x
+        pure $! acc <> x
     )
     mempty
     (_segmentsHLD isEdge hld v1 v2)
@@ -445,7 +445,7 @@ _buildRawTM hldTM isCommuteTM isEdgeTM xsRaw = do
     if isCommuteTM
       then buildSTree U.empty
       else buildSTree $ U.map Dual xsRaw
-  return $ TreeMonoid {..}
+  pure $ TreeMonoid {..}
 
 -- | \(O(V)\) Builds a `TreeMonoid` on vertices.
 buildVertTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector a -> m (TreeMonoid a (PrimState m))
@@ -488,7 +488,7 @@ foldSubtreeVertsTM TreeMonoid {..} subtreeRoot = foldSTree streeFTM l r
 -- | \(O(\log V)\) Folds commute monoids on edges of a subtree. TODO: test
 foldSubtreeEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> m a
 foldSubtreeEdgeTM TreeMonoid {..} subtreeRoot
-  | l == r = return mempty
+  | l == r = pure mempty
   | otherwise = foldSTree streeFTM (l + 1) r
   where
     (!l, !r) = subtreeSegmentsHLD hldTM subtreeRoot
@@ -516,7 +516,7 @@ exchangeTM TreeMonoid {..} i_ x = do
   -- TODO: resolve statically
   unless isCommuteTM $ do
     writeSTree streeBTM i $ Dual x
-  return res
+  pure res
 
 -- | \(O(\log V)\) Modifies a `TreeMonoid` value on a `Vertex`.
 modifyTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> (a -> a) -> Int -> m ()
