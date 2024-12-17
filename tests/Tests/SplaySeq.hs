@@ -6,7 +6,7 @@ import Control.Monad.ST
 import Control.Monad.Trans.Class
 import Data.Coerce (coerce)
 import Data.Core.SegmentAction
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.Pool (PoolIndex (..))
 import Data.Semigroup
 import Data.Sequence qualified as Seq
@@ -21,7 +21,7 @@ import Tests.Util
 
 type Seq s = SplaySeq s (Sum Int) (Sum Int)
 
-type AffineSeq s = SplaySeq s (Sum Int) (Affine2d Int)
+type AffineSeq s = SplaySeq s (Sum Int) (Affine1 Int)
 
 newSeq :: (PrimMonad m) => Int -> m (Seq (PrimState m))
 newSeq = newSS
@@ -216,9 +216,9 @@ randomTests =
                 let !acc' =
                       let (!mid, !right) = Seq.splitAt (r + 1) acc
                           (!left, !mid') = Seq.splitAt l mid
-                          !mid'' = (Affine2d (b, c) `segAct`) <$> mid'
+                          !mid'' = (Affine1 (b, c) `segAct`) <$> mid'
                        in left Seq.>< mid'' Seq.>< right
-                lift $ sactSS seq l r $ Affine2d (b, c)
+                lift $ sactSS seq l r $ Affine1 (b, c)
 
                 return acc'
               (4, !l_, !r_, !_, !_) -> do

@@ -26,7 +26,7 @@ solve = do
     2 -> (0 :: Int,,,-1 :: Int, -1) <$> int' <*> int'
     3 -> (0 :: Int,,,-1 :: Int, -1) <$> int' <*> int'
 
-  let !xs = U.map (\(!p, !a, !b) -> (p, Dual (Affine2d (a, b)))) pabs
+  let !xs = U.map (\(!p, !a, !b) -> (p, Dual (Affine1 (a, b)))) pabs
   vec <- U.thaw xs
 
   printBSB $ unlinesBSB res

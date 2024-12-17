@@ -4,7 +4,7 @@
 
 import Data.Core.SemigroupAction
 import Data.Core.SegmentAction
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Lazy
 import Math.Stimes
@@ -27,16 +27,18 @@ type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @
 {- ORMOLU_ENABLE -}
 
 -- | Add
-type OpRepr = Affine2d MyModInt
+type OpRepr = Affine1 MyModInt
 
 instance Semigroup Op where
   {-# INLINE (<>) #-}
-  new <> _old = new
+  new <> old
+    | new == mempty = old
+    | otherwise = new
 
 instance Monoid Op where
   -- REMARK: be sure to implement identity operator
   {-# INLINE mempty #-}
-  mempty = Op (Affine2d (ModInt (-1), ModInt (-1)))
+  mempty = Op (Affine1 (ModInt (-1), ModInt (-1)))
 
 instance SemigroupAction Op Acc where
   {-# INLINE sact #-}
@@ -49,7 +51,7 @@ instance SegmentAction Op Acc where
     | len == 1 = Dual f
     | otherwise = Dual $ stimes' len f
 
-type Acc = Dual (Affine2d MyModInt)
+type Acc = Dual (Affine1 MyModInt)
 
 {- ORMOLU_DISABLE -}
 newtype Op = Op OpRepr deriving newtype (Eq, Ord, Show) ; unOp :: Op -> OpRepr ; unOp (Op x) = x; newtype instance U.MVector s Op = MV_Op (U.MVector s OpRepr) ; newtype instance U.Vector Op = V_Op (U.Vector OpRepr) ; deriving instance GM.MVector UM.MVector Op ; deriving instance G.Vector U.Vector Op ; instance U.Unbox Op ;
@@ -66,15 +68,15 @@ solve = do
       _ -> error "unreachable"
 
   -- Be sure to use `Dual`, as we want to foldr [f_l, ..., f_r].
-  stree <- buildLSTree $ U.map (\(!a, !b) -> Dual (Affine2d (modInt a, modInt b))) abs
+  stree <- buildLSTree $ U.map (\(!a, !b) -> Dual (Affine1 (modInt a, modInt b))) abs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, !r, !c, !d) -> do
-      sactLSTree stree l r $ Op (Affine2d (modInt c, modInt d))
+      sactLSTree stree l r $ Op (Affine1 (modInt c, modInt d))
       return Nothing
     (1, !l, !r, !x, -1) -> do
       Dual f <- foldLSTree stree l r
-      return . Just . unV2 $ f `sact` toV2 (modInt x)
+      return . Just $ f `sact` modInt x
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res

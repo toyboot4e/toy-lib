@@ -3,14 +3,16 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | `Affine2d`, `Mat2x2` and `V2` as a `SemigroupAction` instance.
+-- | `Affine1`, `Mat2x2` and `V2` as a `SemigroupAction` instance.
 --
--- `Affine2d` or `Mat2x2` represents \(f: x \rightarrow a x + b\). `V2` is the target vector type
+-- `Affine1` or `Mat2x2` represents \(f: x \rightarrow a x + b\). `V2` is the target vector type
 -- with scaling information.
 --
 -- REMARK: It is super important to have @1@ as the second element in `V2`. Or else it fails to
 -- calculate comopsitional affine transformation.
-module Data.Instances.Affine2d where
+--
+-- FIXME: It's Affine1, not Affine1
+module Data.Instances.Affine1 where
 
 import Data.Core.Group
 import Data.Core.SegmentAction
@@ -30,67 +32,67 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 -- = Composition and dual
 --
 -- \((f_1 \diamond f_2) v := (f_1 . f_2) v\). If yo need foldr [f_l, .., f_r] on segment tree, be
--- sure to wrap `Affine2d` with `Dual`.
-newtype Affine2d a = Affine2d (Affine2dRepr a)
+-- sure to wrap `Affine1` with `Dual`.
+newtype Affine1 a = Affine1 (Affine1Repr a)
   deriving newtype (Eq, Ord, Show)
 
-identAffine2d :: (Num a) => Affine2d a
-identAffine2d = Affine2d (1, 0)
+identAffine1 :: (Num a) => Affine1 a
+identAffine1 = Affine1 (1, 0)
 
--- | `Affine2d` represents @x -> a x + b@.
-type Affine2dRepr a = (a, a)
+-- | `Affine1` represents @x -> a x + b@.
+type Affine1Repr a = (a, a)
 
-instance (Num a) => Semigroup (Affine2d a) where
+instance (Num a) => Semigroup (Affine1 a) where
   {-# INLINE (<>) #-}
-  (Affine2d (!a1, !b1)) <> (Affine2d (!a2, !b2)) = Affine2d (a', b')
+  (Affine1 (!a1, !b1)) <> (Affine1 (!a2, !b2)) = Affine1 (a', b')
     where
       !a' = a1 * a2
       !b' = a1 * b2 + b1
 
-instance (Num a) => Monoid (Affine2d a) where
+instance (Num a) => Monoid (Affine1 a) where
   {-# INLINE mempty #-}
-  mempty = identAffine2d
+  mempty = identAffine1
 
 -- * SegmentAction implementations
 
-instance (Integral a) => SegmentAction (Affine2d a) a where
+instance (Integral a) => SegmentAction (Affine1 a) a where
   {-# INLINE segActWithLength #-}
-  segActWithLength !len (Affine2d (!a, !b)) !x = a'
+  segActWithLength !len (Affine1 (!a, !b)) !x = a'
     where
       !a' = a * x + b * fromIntegral len
 
-instance (Integral a) => SegmentAction (Affine2d a) (Sum a) where
+instance (Integral a) => SegmentAction (Affine1 a) (Sum a) where
   {-# INLINE segActWithLength #-}
-  segActWithLength !len (Affine2d (!a, !b)) (Sum !x) = Sum a'
+  segActWithLength !len (Affine1 (!a, !b)) (Sum !x) = Sum a'
     where
       !a' = a * x + b * fromIntegral len
 
-instance (Integral a) => SegmentAction (Affine2d a) (Product a) where
+instance (Integral a) => SegmentAction (Affine1 a) (Product a) where
   {-# INLINE segActWithLength #-}
-  segActWithLength !len (Affine2d (!a, !b)) (Product !x) = Product a'
+  segActWithLength !len (Affine1 (!a, !b)) (Product !x) = Product a'
     where
       !a' = a * x + b * fromIntegral len
 
 -- * SemigroupAction implementations
 
 -- | Limited to length 1
-instance (Num a) => SemigroupAction (Affine2d a) a where
+instance (Num a) => SemigroupAction (Affine1 a) a where
   {-# INLINE sact #-}
-  sact (Affine2d (!a, !b)) !x = x'
+  sact (Affine1 (!a, !b)) !x = x'
     where
       !x' = a * x + b
 
-instance (Num a) => SemigroupAction (Affine2d a) (V2 a) where
+instance (Num a) => SemigroupAction (Affine1 a) (V2 a) where
   {-# INLINE sact #-}
-  sact (Affine2d (!a, !b)) (V2 (!x, !len)) = V2 (a', len)
+  sact (Affine1 (!a, !b)) (V2 (!x, !len)) = V2 (a', len)
     where
       !a' = a * x + b * len
 
-instance (Num a) => SegmentAction (Affine2d a) (V2 a) where
+instance (Num a) => SegmentAction (Affine1 a) (V2 a) where
   {-# INLINE segActWithLength #-}
   segActWithLength _ = sact
 
--- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine2d` for
+-- | 2x2 unboxed matrix that works as a 2D affine transformation to `V2`. Prefer `Affine1` for
 -- efficiency.
 newtype Mat2x2 a = Mat2x2 (Mat2x2Repr a)
   deriving newtype (Eq, Ord, Show)
@@ -193,11 +195,11 @@ instance (Num a) => Monoid (V2 a) where
   mempty = V2 (0, 0)
 
 {- ORMOLU_DISABLE -}
-newtype instance U.MVector s (Affine2d a) = MV_Affine2d (U.MVector s (Affine2dRepr a))
-newtype instance U.Vector (Affine2d a) = V_Affine2d (U.Vector (Affine2dRepr a))
-deriving instance (U.Unbox a) => GM.MVector UM.MVector (Affine2d a)
-deriving instance (U.Unbox a) => G.Vector U.Vector (Affine2d a)
-instance (U.Unbox a) => U.Unbox (Affine2d a)
+newtype instance U.MVector s (Affine1 a) = MV_Affine1 (U.MVector s (Affine1Repr a))
+newtype instance U.Vector (Affine1 a) = V_Affine1 (U.Vector (Affine1Repr a))
+deriving instance (U.Unbox a) => GM.MVector UM.MVector (Affine1 a)
+deriving instance (U.Unbox a) => G.Vector U.Vector (Affine1 a)
+instance (U.Unbox a) => U.Unbox (Affine1 a)
 
 newtype instance U.MVector s (V2 a) = MV_V2 (U.MVector s (V2Repr a))
 newtype instance U.Vector (V2 a) = V_V2 (U.Vector (V2Repr a))

@@ -2,7 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SplaySeq
 import ToyLib.Parser
@@ -52,7 +52,7 @@ solve = do
       return Nothing
     (3, !l, pred -> !r, !b, !c) -> do
       -- apply affine transformation
-      sactSS seq l r $ Affine2d (ModInt @MyModulo b, ModInt @MyModulo c)
+      sactSS seq l r $ Affine1 (ModInt @MyModulo b, ModInt @MyModulo c)
       return Nothing
     (4, !l, pred -> !r, !_, !_) -> do
       -- fold

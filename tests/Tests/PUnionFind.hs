@@ -4,7 +4,7 @@
 
 module Tests.PUnionFind where
 
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.Semigroup
 import Data.UnionFind.Potencial

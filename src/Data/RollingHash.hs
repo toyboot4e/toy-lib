@@ -47,7 +47,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Exts (proxy#)
 import GHC.TypeLits
 
--- | Rolling hash monoid. Essensially a (@Dual@) @Affine2d ModInt@.
+-- | Rolling hash monoid. Essensially a (@Dual@) @Affine1 ModInt@.
 --
 -- = Typical prolbems
 --

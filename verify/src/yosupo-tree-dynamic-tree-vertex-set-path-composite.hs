@@ -5,7 +5,7 @@
 import Data.Core.SemigroupAction
 import Data.Graph.Tree.LCT
 import Data.ModInt
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -35,7 +35,7 @@ solve = do
         2 -> (2,,,,-1) <$> int' <*> int' <*> int'
         _ -> error "unreachable"
 
-  lct <- buildLCT (U.map (Affine2d . both modInt) abs) uvs
+  lct <- buildLCT (U.map (Affine1 . both modInt) abs) uvs
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !u, !v, !w, !x) -> do
       -- delete edge (u, v)
@@ -45,7 +45,7 @@ solve = do
       return Nothing
     (1, !p, !c, !d, !_) -> do
       -- set f(x) := cx + d
-      writeLCT lct p $ Affine2d (modInt c, modInt d)
+      writeLCT lct p $ Affine1 (modInt c, modInt d)
       return Nothing
     (2, !u, !v, !x, !_) -> do
       -- Be sure to composite from @v@ to @u@ so that @f(u)@ is applied first:

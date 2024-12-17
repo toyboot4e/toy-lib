@@ -4,7 +4,7 @@
 
 import Data.Core.SegmentAction
 import Data.Core.SemigroupAction
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Lazy
 import Math.Stimes
@@ -27,7 +27,7 @@ type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @
 {- ORMOLU_ENABLE -}
 
 -- | Add
-type OpRepr = Affine2d MyModInt
+type OpRepr = Affine1 MyModInt
 
 instance Semigroup Op where
   {-# INLINE (<>) #-}
@@ -36,7 +36,7 @@ instance Semigroup Op where
 instance Monoid Op where
   -- REMARK: be sure to implement identity operator
   {-# INLINE mempty #-}
-  mempty = Op (Affine2d (ModInt (-1), ModInt (-1)))
+  mempty = Op (Affine1 (ModInt (-1), ModInt (-1)))
 
 instance SemigroupAction Op Acc where
   {-# INLINE sact #-}
@@ -48,7 +48,7 @@ instance SegmentAction Op Acc where
   {-# INLINE segActWithLength #-}
   segActWithLength _ = sact
 
-type Acc = (Sum Int, Dual (Affine2d MyModInt))
+type Acc = (Sum Int, Dual (Affine1 MyModInt))
 
 {- ORMOLU_DISABLE -}
 newtype Op = Op OpRepr deriving newtype (Eq, Ord, Show) ; unOp :: Op -> OpRepr ; unOp (Op x) = x; newtype instance U.MVector s Op = MV_Op (U.MVector s OpRepr) ; newtype instance U.Vector Op = V_Op (U.Vector OpRepr) ; deriving instance GM.MVector UM.MVector Op ; deriving instance G.Vector U.Vector Op ; instance U.Unbox Op ;
@@ -65,11 +65,11 @@ solve = do
       _ -> error "unreachable"
 
   -- Be sure to use `Dual`, as we want to foldr [f_l, ..., f_r].
-  stree <- buildLSTree $ U.map (\(!a, !b) -> (Sum (1 :: Int), Dual $ Affine2d (modInt a, modInt b))) abs
+  stree <- buildLSTree $ U.map (\(!a, !b) -> (Sum (1 :: Int), Dual $ Affine1 (modInt a, modInt b))) abs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, !r, !c, !d) -> do
-      sactLSTree stree l r $ Op (Affine2d (modInt c, modInt d))
+      sactLSTree stree l r $ Op (Affine1 (modInt c, modInt d))
       return Nothing
     (1, !l, !r, !x, -1) -> do
       (!_, !f) <- foldLSTree stree l r

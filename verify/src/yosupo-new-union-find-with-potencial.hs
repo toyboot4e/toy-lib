@@ -4,7 +4,7 @@
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.UnionFind.Potencial
 import Data.Vector.IxVector

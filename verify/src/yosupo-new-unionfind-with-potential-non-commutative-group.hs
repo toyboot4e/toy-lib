@@ -2,7 +2,7 @@
 #include "./__import"
 -- {{{ toy-lib import
 
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.UnionFind.Potencial
 import Data.Vector.IxVector

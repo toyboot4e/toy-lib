@@ -3,7 +3,7 @@
 
 -- {{{ toy-lib import
 
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Lazy
 import ToyLib.Parser
@@ -31,11 +31,11 @@ solve = do
       1 -> (1,,,-1,-1) <$> int' <*> int'
       _ -> error "unreachable"
 
-  -- Affine2d
+  -- Affine1
   !stree <- buildLSTree $ U.map (toV2 . modInt) xs
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, pred -> !r, !a, !b) -> do
-      sactLSTree stree l r $ Affine2d (modInt a, modInt b)
+      sactLSTree stree l r $ Affine1 (modInt a, modInt b)
       return Nothing
     (1, !l, pred -> !r, !_, !_) -> do
       x <- unV2 <$> foldLSTree stree l r

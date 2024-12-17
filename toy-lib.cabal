@@ -200,7 +200,7 @@ library
     Data.Graph.TwoSat
     Data.Instances.A2
     Data.Instances.A3
-    Data.Instances.Affine2d
+    Data.Instances.Affine1
     Data.Instances.T2
     Data.IntervalMap
     Data.IntervalSet

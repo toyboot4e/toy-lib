@@ -9,7 +9,7 @@ import ToyLib.ShowBSB
 import Data.Core.SemigroupAction
 import Data.Graph.Sparse
 import Data.Graph.Tree.Hld
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Strict
 
@@ -33,11 +33,11 @@ solve = do
 
   let !gr = buildSG_ n $ swapDupeU uvs
   let !hld = hldOf gr
-  !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Dual (Affine2d (modInt a, modInt b))) abs
+  !tm <- buildVertTM hld False $ U.map (\(!a, !b) -> Dual (Affine1 (modInt a, modInt b))) abs
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !p, !c, !d) -> do
-      writeTM tm p . Dual $ Affine2d (modInt c, modInt d)
+      writeTM tm p . Dual $ Affine1 (modInt c, modInt d)
       return Nothing
     (1, !u, !v, !x) -> do
       Dual !m <- foldTM tm u v

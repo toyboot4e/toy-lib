@@ -6,7 +6,7 @@
 import Data.Core.SemigroupAction
 import Data.Graph.Sparse
 import Data.Graph.Tree.TreeSG
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import ToyLib.Parser
 import ToyLib.Prelude
@@ -28,11 +28,11 @@ solve = do
   n <- int'
   xs <- U.map (toV2 . modInt) <$> intsU'
   es <- U.replicateM (n - 1) $ do
-    (\(!u, !v, !a, !b) -> (u, v, Affine2d (modInt a, modInt b))) <$> ints4'
+    (\(!u, !v, !a, !b) -> (u, v, Affine1 (modInt a, modInt b))) <$> ints4'
 
   let !gr = buildWSG n $ swapDupeW es
 
-  -- both `Acc` and `Op` are `V2`. only the edge weights are `Affine2d`.
+  -- both `Acc` and `Op` are `V2`. only the edge weights are `Affine1`.
   let res = foldTreeAllSG' gr onEdge acc0At toOp
         where
           onEdge !op (!_, !affine) = affine `sact` op

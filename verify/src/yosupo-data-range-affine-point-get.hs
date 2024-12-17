@@ -3,7 +3,7 @@
 
 -- {{{ toy-lib import
 
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Lazy
 import ToyLib.Parser
@@ -34,7 +34,7 @@ solve = do
 
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !l, pred -> !r, !a, !b) -> do
-      sactLSTree stree l r $ Affine2d (modInt a, modInt b)
+      sactLSTree stree l r $ Affine1 (modInt a, modInt b)
       return Nothing
     (1, !i, !_, !_, !_) -> do
       x <- unV2 <$> readLSTree stree i

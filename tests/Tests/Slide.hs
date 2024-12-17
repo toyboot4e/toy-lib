@@ -5,7 +5,7 @@ module Tests.Slide where
 import Control.Monad (when)
 import Data.Buffer
 import Data.Core.SemigroupAction
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.Semigroup
 import Data.Slide
 import Data.Vector.Unboxed qualified as U
@@ -67,8 +67,8 @@ props =
         U.forM_ qs $ \case
           (0, !a, !b) -> do
             -- push back
-            QCM.run $ pushBack buf . Dual $ Affine2d (a, b)
-            QCM.run $ pushBackSSF window . Dual $ Affine2d (a, b)
+            QCM.run $ pushBack buf . Dual $ Affine1 (a, b)
+            QCM.run $ pushBackSSF window . Dual $ Affine1 (a, b)
           (1, !_, !_) -> do
             -- pop froot
             len <- QCM.run $ lengthBuffer buf
@@ -90,12 +90,12 @@ props =
         U.forM_ qs $ \case
           (0, !a, !b) -> do
             -- push front
-            QCM.run $ pushFront buf . Dual $ Affine2d (a, b)
-            QCM.run $ pushFrontDSF window . Dual $ Affine2d (a, b)
+            QCM.run $ pushFront buf . Dual $ Affine1 (a, b)
+            QCM.run $ pushFrontDSF window . Dual $ Affine1 (a, b)
           (1, !a, !b) -> do
             -- push back
-            QCM.run $ pushBack buf . Dual $ Affine2d (a, b)
-            QCM.run $ pushBackDSF window . Dual $ Affine2d (a, b)
+            QCM.run $ pushBack buf . Dual $ Affine1 (a, b)
+            QCM.run $ pushBackDSF window . Dual $ Affine1 (a, b)
           (2, !_, !_) -> do
             -- pop froot
             len <- QCM.run $ lengthBuffer buf

@@ -4,7 +4,7 @@
 -- {{{ toy-lib import
 
 import Data.Core.SemigroupAction
-import Data.Instances.Affine2d
+import Data.Instances.Affine1
 import Data.ModInt
 import Data.Slide
 import ToyLib.Parser
@@ -37,7 +37,7 @@ solve = do
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !a, !b) -> do
       -- push back
-      pushBackSSF window . Dual $ Affine2d (modInt a, modInt b)
+      pushBackSSF window . Dual $ Affine1 (modInt a, modInt b)
       return Nothing
     (1, !_, !_) -> do
       -- pop froot
