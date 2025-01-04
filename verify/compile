@@ -3,3 +3,6 @@
 dir="$(basename "$1" .hs)"
 cabal build "$dir-exe"
 
+cp "$(cabal list-bin "$dir-exe")" ./main
+chmod +x ./main
+
