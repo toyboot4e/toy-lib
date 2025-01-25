@@ -172,7 +172,7 @@ tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `d
 -- | Powerset with the lsb on, mainly for partitioning DP.
 ordPowerset :: Int -> U.Vector Int
 ordPowerset 0 = U.empty
-ordPowerset set0 = U.map (.|. lsb) . U.init $ powersetU set'
+ordPowerset set0 = U.map (.|. bit lsb) $ powersetU set'
   where
     lsb = countTrailingZeros set0
     set' = clearBit set0 lsb
