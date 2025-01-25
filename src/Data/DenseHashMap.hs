@@ -14,7 +14,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
--- TODO: no way to invalidate entry?
+-- DONE: no way to invalidate entry?: yes.
 -- TODO: track the number of entries
 
 -- | Dense int map that holds up up @n@ values.
@@ -147,26 +147,6 @@ modifyHM hm@DenseHashMap {..} f k = do
   if b
     then GM.modify valHM f i
     else error $ "modifyHM: not a member " ++ show k
-
--- | \(O(1)\) Deletes a value. Not tested
-{-# INLINE deleteHM #-}
-deleteHM :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> m (Maybe a)
-deleteHM hm@DenseHashMap {..} k = do
-  i <- indexHM hm k
-  b <- GM.read usedHM i
-  if b
-    then do
-      -- stored
-      GM.unsafeModify restCapHM (+ 1) 0
-      GM.write usedHM i False
-      Just <$> GM.read valHM i
-    else do
-      pure Nothing
-
--- | \(O(1)\) Deletes a value. Not tested
-{-# INLINE deleteHM_ #-}
-deleteHM_ :: (HasCallStack, U.Unbox a, PrimMonad m) => DenseHashMap (PrimState m) a -> Int -> m ()
-deleteHM_ hm k = void $ deleteHM hm k
 
 -- | \(O(N)\) Enumerates the stored key-value pairs.
 {-# INLINE unsafeAssocsHM #-}
