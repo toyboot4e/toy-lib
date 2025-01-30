@@ -23,7 +23,7 @@ solve = do
     U.replicateM q $
       int' >>= \case
         0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
-        1 -> (1,,,,-1) <$> int' <*> int' <*> int'
+        1 -> (1,,,-1,-1) <$> int' <*> int'
         2 -> (2,,,-1,-1) <$> int' <*> int'
         _ -> error "unreachable"
 
@@ -35,7 +35,7 @@ solve = do
       -- add edge (w, x)
       linkLCT lct w x
       return Nothing
-    (1, !v, !p, !x, !_) -> do
+    (1, !v, !x, !_, !_) -> do
       -- add to subtree vertices
       modifyLCT lct (<> Sum x) v
       return Nothing
