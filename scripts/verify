@@ -7,11 +7,6 @@
 file="$(basename "$(ls verify/src/*.hs | fzf --history ~/.fzf-history)")"
 cd verify
 
-# assuming `verifycation-helper` package is installed via `venv`
-# (see `:/verify/README.org`)
-# $ python -m venv .venv
-# (.venv) $ # source .venv/bin/activate # activate (on bash)
-# (.venv) $ pip3 install online-judge-verify-helper
-
+touch "src/$file"
 ./.venv/bin/oj-verify run "src/$file" # -j 8
 
