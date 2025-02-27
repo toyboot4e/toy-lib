@@ -151,82 +151,85 @@ hldOf tree = hldOf' tree 0
 
 -- | \(O(V)\) Constructs HLD with root vertex specified.
 hldOf' :: forall w. SparseGraph w -> Vertex -> HLD
-hldOf' tree root = runST $ do
-  -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
-  --
-  -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
-  -- DFS would be harder.
-  let (!tree', !parent, !depths, !subtreeSize) = runST $ do
-        adjVec <- U.thaw (adjacentsSG tree)
-        parent <- UM.unsafeNew n
-        depths <- UM.unsafeNew n
-        subtreeSize <- UM.unsafeNew n
+hldOf' tree root
+  | n <= 1 = HLD 0 (U.singleton (-1)) (U.singleton 0) (U.singleton (-1)) (U.singleton 0) (U.singleton 0) (U.singleton 1)
+  | otherwise = runST $ do
+      -- Re-create adjacent vertices so that the biggest subtree's head vertex comes first.
+      --
+      -- We /could/ instead record the biggest adjacent subtree vertex for each vertex, but the other
+      -- DFS would be harder.
+      let (!tree', !parent, !depths, !subtreeSize) = runST $ do
+            adjVec <- U.thaw (adjacentsSG tree)
+            parent <- UM.unsafeNew n
+            depths <- UM.unsafeNew n
+            subtreeSize <- UM.unsafeNew n
 
-        _ <- (\f -> fix f 0 (-1) root) $ \loop depth p v1 -> do
-          GM.write parent v1 p
-          GM.write depths v1 depth
+            _ <- (\f -> fix f 0 (-1) root) $ \loop depth p v1 -> do
+              GM.write parent v1 p
+              GM.write depths v1 depth
 
-          (!size1, !eBig) <-
-            U.foldM'
-              ( \(!size1, !eBig) (!e2, !v2) -> do
-                  if v2 == p
-                    then pure (size1, eBig)
-                    else do
-                      size2 <- loop (depth + 1) v1 v2
-                      -- NOTE: It's `>` because we should swap at least once if there's some vertex other
-                      -- that the parent.
-                      pure (size1 + size2, if size1 > size2 then eBig else e2)
-              )
-              (1 :: Int, -1)
-              (tree `eAdj` v1)
+              (!size1, !eBig) <-
+                U.foldM'
+                  ( \(!size1, !eBig) (!e2, !v2) -> do
+                      if v2 == p
+                        then pure (size1, eBig)
+                        else do
+                          size2 <- loop (depth + 1) v1 v2
+                          -- NOTE: It's `>` because we should swap at least once if there's some vertex other
+                          -- that the parent.
+                          pure (size1 + size2, if size1 > size2 then eBig else e2)
+                  )
+                  (1 :: Int, -1)
+                  (tree `eAdj` v1)
 
-          -- move the biggest subtree's head to the first adjacent vertex.
-          -- it means the "heavy edge" or the longest segment.
-          when (eBig /= -1) $ do
-            GM.swap adjVec eBig $ fst (G.head (tree `eAdj` v1))
+              -- move the biggest subtree's head to the first adjacent vertex.
+              -- it means the "heavy edge" or the longest segment.
+              when (eBig /= -1) $ do
+                GM.swap adjVec eBig $ fst (G.head (tree `eAdj` v1))
 
-          -- record subtree size
-          GM.write subtreeSize v1 size1
+              -- record subtree size
+              GM.write subtreeSize v1 size1
 
-          pure size1
+              pure size1
 
-        !vec <- U.unsafeFreeze adjVec
-        (tree {adjacentsSG = vec},,,)
-          <$> U.unsafeFreeze parent
-          <*> U.unsafeFreeze depths
-          <*> U.unsafeFreeze subtreeSize
+            !vec <- U.unsafeFreeze adjVec
+            (tree {adjacentsSG = vec},,,)
+              <$> U.unsafeFreeze parent
+              <*> U.unsafeFreeze depths
+              <*> U.unsafeFreeze subtreeSize
 
-  -- vertex -> reindexed vertex index
-  indices <- UM.replicate n (-1 :: Int)
+      -- vertex -> reindexed vertex index
+      indices <- UM.replicate n (-1 :: Int)
 
-  -- vertex -> head vertex of the line
-  heads <- UM.replicate n (-1 :: Int)
+      -- vertex -> head vertex of the line
+      heads <- UM.replicate n (-1 :: Int)
 
-  _ <- (`execStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
-    -- reindex:
-    GM.write indices v1 =<< get
-    modify' (+ 1)
+      _ <- (`execStateT` (0 :: Int)) $ (\f -> fix f root (-1) root) $ \loop h p v1 -> do
+        -- reindex:
+        GM.write indices v1 =<< get
+        modify' (+ 1)
 
-    GM.write heads v1 h
+        GM.write heads v1 h
 
-    -- when the first vertex is within the same line:
-    let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
-    when (adj1 /= p) $ do
-      loop h v1 adj1
+        -- when the first vertex is within the same line:
+        -- REMARK: we're requiring there are more than one vertex:
+        let (!adj1, !rest) = fromJust $ U.uncons (tree' `adj` v1)
+        when (adj1 /= p) $ do
+          loop h v1 adj1
 
-    -- the others are in other lines:
-    U.forM_ rest $ \v2 -> do
-      when (v2 /= p) $ do
-        loop v2 v1 v2
+        -- the others are in other lines:
+        U.forM_ rest $ \v2 -> do
+          when (v2 /= p) $ do
+            loop v2 v1 v2
 
-  !indices' <- U.unsafeFreeze indices
-  let !revIndex = U.update (U.replicate n (-1)) $ U.imap (flip (,)) indices'
+      !indices' <- U.unsafeFreeze indices
+      let !revIndex = U.update (U.replicate n (-1)) $ U.imap (flip (,)) indices'
 
-  HLD root parent indices'
-    <$> U.unsafeFreeze heads
-    <*> pure revIndex
-    <*> pure depths
-    <*> pure subtreeSize
+      HLD root parent indices'
+        <$> U.unsafeFreeze heads
+        <*> pure revIndex
+        <*> pure depths
+        <*> pure subtreeSize
   where
     !n = nVertsSG tree
     !_ = dbgAssert (2 * (nVertsSG tree - 1) == nEdgesSG tree) "hldOf: not a non-directed tree"
