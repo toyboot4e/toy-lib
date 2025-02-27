@@ -16,6 +16,7 @@ import Control.Monad.Trans.State.Strict (execState, execStateT)
 import Data.BinaryHeap
 import Data.Bool (bool)
 import Data.Buffer
+import Data.Foldable (for_)
 import Data.Graph.Alias (Vertex)
 import qualified Data.Heap as H
 import qualified Data.IntMap as IM
@@ -72,7 +73,7 @@ genericDfs :: (U.Unbox w, Num w, Eq w) => (Vertex -> U.Vector (Vertex, w)) -> In
 genericDfs !gr !nVerts !src !undefW = runST $ do
   !dists <- UM.replicate nVerts undefW
   -- !parent <- UM.replicate nVerts undef
-  (\f -> fix f 0 src) $ \loop depth v1 -> do
+  (\f -> fix f 0 src) $ \loop !depth v1 -> do
     GM.write dists v1 depth
     U.forM_ (gr v1) $ \(!v2, !dw) -> do
       !d <- GM.read dists v2
@@ -112,7 +113,84 @@ genericBfs !gr !nVerts !source !undefW = U.create $ do
       U.forM_ (gr v1) $ \(!v2, !dw) -> do
         !lastD <- GM.unsafeRead dist v2
         when (lastD == undefW) $ do
-          GM.unsafeWrite dist v2 (d1 + dw)
+          GM.unsafeWrite dist v2 $! d1 + dw
+          pushBack queue v2
+      loop
+
+  pure dist
+
+-- | \(O(V+E)\) Breadth-first search with multiple starting points.
+genericBfs' :: (U.Unbox w, Num w, Eq w) => (Vertex -> w -> U.Vector Vertex) -> Int -> w -> U.Vector Vertex -> U.Vector w
+genericBfs' !gr !nVerts !undefW !sources = U.create $ do
+  !dist <- UM.replicate nVerts undefW
+  !queue <- newBuffer nVerts
+
+  U.forM_ sources $ \src -> do
+    pushBack queue src
+    GM.unsafeWrite dist src 0
+
+  -- procedural programming is great
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      !d1 <- GM.unsafeRead dist v1
+      U.forM_ (gr v1 d1) $ \v2 -> do
+        let !dw = 1
+        !lastD <- GM.unsafeRead dist v2
+        when (lastD == undefW) $ do
+          GM.unsafeWrite dist v2 $! d1 + dw
+          pushBack queue v2
+      loop
+
+  pure dist
+
+-- | \(O(V+E)\) Breadth-first search. We don't need the edge weights in most cases, however, there
+-- are some cases that requires it.
+--
+-- TODO: remove other generic BFS
+genericBfs'' :: forall w. (U.Unbox w, Num w, Eq w) => (Vertex -> w -> U.Vector (Vertex, w)) -> Int -> w -> U.Vector (Vertex, w) -> U.Vector w
+genericBfs'' !gr !nVerts !undefW !sources = U.create $ do
+  dist <- UM.replicate @_ @w nVerts undefW
+  queue <- newBuffer nVerts
+
+  U.forM_ sources $ \(!src, !w0) -> do
+    -- Duplicate inputs are removed here:
+    lastD <- GM.unsafeRead dist src
+    when (lastD == undefW) $ do
+      GM.unsafeWrite dist src w0
+      pushBack queue src
+
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      d1 <- GM.unsafeRead dist v1
+      U.forM_ (gr v1 d1) $ \(!v2, !dw) -> do
+        lastD <- GM.unsafeRead dist v2
+        when (lastD == undefW) $ do
+          GM.unsafeWrite dist v2 $! d1 + dw
+          pushBack queue v2
+      loop
+
+  pure dist
+
+-- | \(O(V+E)\) Breadth-first search. The graph function returns a list.
+genericBfsWithList :: forall w. (U.Unbox w, Num w, Eq w) => (Vertex -> w -> [(Vertex, w)]) -> Int -> w -> U.Vector (Vertex, w) -> U.Vector w
+genericBfsWithList !gr !nVerts !undefW !sources = U.create $ do
+  dist <- UM.replicate @_ @w nVerts undefW
+  queue <- newBuffer nVerts
+
+  U.forM_ sources $ \(!src, !w0) -> do
+    -- Duplicate inputs are removed here:
+    lastD <- GM.unsafeRead dist src
+    when (lastD == undefW) $ do
+      GM.unsafeWrite dist src w0
+      pushBack queue src
+
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      d1 <- GM.unsafeRead dist v1
+      for_ (gr v1 d1) $ \(!v2, !dw) -> do
+        lastD <- GM.unsafeRead dist v2
+        when (lastD == undefW) $ do
+          GM.unsafeWrite dist v2 $! d1 + dw
           pushBack queue v2
       loop
 
@@ -310,7 +388,7 @@ genericDfsTree !gr !n !source !undefW = runST $ do
         -- REMARK: Be sure to keep the source vertex's parent as `-1`:
         when (p == undef && v2 /= source) $ do
           GM.unsafeWrite prev v2 v1
-          GM.unsafeWrite dist v2 (d1 + dw)
+          GM.unsafeWrite dist v2 $! d1 + dw
           pushBack queue v2
       loop
 
@@ -335,7 +413,7 @@ genericBfsTree !gr !n !source !undefW = runST $ do
         !d2 <- GM.read dist v2
         when (d2 == undefW) $ do
           GM.write prev v2 v1
-          GM.write dist v2 (d1 + dw)
+          GM.write dist v2 $! d1 + dw
           pushBack queue v2
       loop
 
