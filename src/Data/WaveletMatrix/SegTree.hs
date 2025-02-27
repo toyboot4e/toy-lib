@@ -82,7 +82,7 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
           -- how it's handled and note that l_ and r_ are compressed indices.
           if testBit yUpper (heightRWM rawWmWMST - 1 - iRow)
             then do
-              acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
+              !acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
               let !l' = l + nZerosRWM rawWmWMST G.! iRow - l0
               let !r' = r + nZerosRWM rawWmWMST G.! iRow - r0
               pure (acc', l', r')

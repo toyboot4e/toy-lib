@@ -296,14 +296,14 @@ downSccSG gr = collectSccPreorderSG $ topSortSG gr
       !vis <- UM.replicate (nVertsSG gr) False
       filter (not . null) <$> mapM (downScc1SG gr' vis) topVerts
 
--- | \(O(V+E)\) Collectes strongly connected components, reverse topologically sorted
--- (not referenced SCCs come first).
+-- | \(O(V+E)\) Collectes strongly connected components topologically sorted
+-- (non-referenced SCCs come first).
 topSccSG :: (U.Unbox w) => SparseGraph w -> [[Int]]
 topSccSG = map reverse . downSccSG
 
 -- * MST (Minimum Spanning Tree)
 
--- | \(O(E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
+-- | \(O(E \log E)\) Kruscal's algorithm. Returns edges for building a minimum spanning tree.
 --
 -- NOTE: User ia assumed to not duplicate the edges.
 --
@@ -323,7 +323,7 @@ collectMST nVerts edges = runST $ do
   where
     edges' = U.modify (VAI.sortBy (comparing thd3)) edges
 
--- | \(O(E)\) Kruscal's algorithm. Returns a minimum spanning tree.
+-- | \(O(E \log E)\) Kruscal's algorithm. Returns a minimum spanning tree.
 --
 -- NOTE: User ia assumed to not duplicate the edges.
 {-# INLINE buildMST #-}

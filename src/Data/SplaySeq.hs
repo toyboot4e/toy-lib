@@ -8,11 +8,14 @@
 module Data.SplaySeq where
 
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Data.Coerce
 import Data.Core.SegmentAction
-import Data.Pool (PoolIndex(..))
+import Data.Pool (PoolIndex (..))
 import Data.Primitive
 import Data.SplaySeq.Raw
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 
 -- | Mutable, splay tree-based sequences.
@@ -166,3 +169,25 @@ bisectLSS SplaySeq {..} check = do
   (!res, !root') <- bisectLRSS rawSS check root
   writePrimArray rootSS 0 root'
   pure res
+
+-- | Amortized \(O(n)\). Returns the sequence of monoid values.
+--
+-- @since 1.2.0.0
+{-# INLINE freezeSS #-}
+freezeSS :: (HasCallStack, PrimMonad m, SegmentAction f a, Eq f, Monoid f, U.Unbox f, U.Unbox a) => SplaySeq (PrimState m) a f -> m (U.Vector a)
+freezeSS SplaySeq {..} = do
+  let RawSplaySeq {..} = rawSS
+  root0 <- readPrimArray rootSS 0
+  size <- GM.read sRSS $ coerce root0
+  res <- UM.unsafeNew size
+  let inner i root
+        | nullSI root = pure i
+        | otherwise = do
+            -- visit from left to right
+            propNodeRSS rawSS root
+            i' <- inner i =<< GM.read lRSS (coerce root)
+            vx <- GM.read vRSS (coerce root)
+            GM.write res i' vx
+            inner (i' + 1) =<< GM.read rRSS (coerce root)
+  _ <- inner 0 root0
+  U.unsafeFreeze res

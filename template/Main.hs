@@ -43,6 +43,7 @@ import Data.Kind
 import Data.List.Extra hiding (nubOn)
 import Data.Maybe
 import Data.Ord
+import Data.Primitive
 import Data.Primitive.MutVar
 import Data.Proxy
 import Data.STRef

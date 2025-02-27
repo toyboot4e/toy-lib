@@ -503,7 +503,7 @@ propNodeFromRootRSS seq@RawSplaySeq {..} i0 = inner i0
       p <- GM.read pRSS $ coerce i
       unless (nullSI p) $ do
         inner p
-      propNodeRSS seq i
+      inner i
 
 -- | Amortized \(O(\log N)\). Propgates at a node.
 {-# INLINE sactNodeRSS #-}

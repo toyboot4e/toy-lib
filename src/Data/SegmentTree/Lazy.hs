@@ -16,7 +16,7 @@ module Data.SegmentTree.Lazy where
 
 import Algorithm.Bisect (bisectM)
 import Control.Monad
-import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Bifunctor
 import Data.Bits
 import Data.Core.SegmentAction
@@ -98,6 +98,7 @@ data LazySegmentTree a op s = LazySegmentTree !(UM.MVector s a) !(UM.MVector s o
 -- FIXME: op should have length n, not 2 * n
 
 -- | \(O(N)\) Creates a `LazySegmentTree` with `mempty` as the initial accumulated values.
+{-# INLINE newLSTreeImpl #-}
 newLSTreeImpl ::
   (Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
@@ -111,10 +112,12 @@ newLSTreeImpl !n = do
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
 -- | \(O(N)\)
+{-# INLINE newLSTree #-}
 newLSTree :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (LazySegmentTree a op (PrimState m))
 newLSTree = newLSTreeImpl
 
 -- | \(O(N)\) Creates `LazySegmentTree` with initial leaf values.
+{-# INLINE generateLSTreeImpl #-}
 generateLSTreeImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
@@ -143,6 +146,7 @@ generateLSTreeImpl !n !f = do
     !nLeaves = n2 .>>. 1
 
 -- | \(O(N)\)
+{-# INLINE generateLSTree #-}
 generateLSTree :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (LazySegmentTree a op (PrimState m))
 generateLSTree = generateLSTreeImpl
 
@@ -170,12 +174,10 @@ buildLSTree xs = do
     (!h, !n2) = until ((>= (n .<<. 1)) . snd) (bimap succ (.<<. 1)) (0 :: Int, 1 :: Int)
     !nLeaves = n2 .>>. 1
 
--- TODO: writeLSTree
--- TODO: modifyLSTree
-
 -- * Action with length given by the segment tree
 
 -- | \(O(\log N)\)
+{-# INLINE foldLSTree #-}
 foldLSTree ::
   forall a op m.
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -183,7 +185,7 @@ foldLSTree ::
   Int ->
   Int ->
   m a
-foldLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
+foldLSTree stree@(LazySegmentTree !as !_ !_) !iLLeaf !iRLeaf = do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "foldLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
@@ -251,6 +253,7 @@ foldAllLSTree ::
 foldAllLSTree stree@(LazySegmentTree !as !_ !_) = foldLSTree stree 0 (GM.length as .>>. 1 - 1)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
+{-# INLINE sactLSTree #-}
 sactLSTree ::
   forall a op m.
   (Semigroup a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
@@ -259,7 +262,7 @@ sactLSTree ::
   Int ->
   op ->
   m ()
-sactLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
+sactLSTree stree@(LazySegmentTree !as !ops !height) !iLLeaf !iRLeaf !op = do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
           "sactLSTree: wrong range " ++ show (iLLeaf, iRLeaf)
@@ -319,6 +322,7 @@ sactAtLSTree stree i = sactLSTree stree i i
 -- The propagation is performed from the root to just before the folded vertices. In other words,
 -- propagation is performed just before performing the first glitch. That's enough for both folding
 -- and acting.
+{-# INLINE _propDownFromRoot #-}
 _propDownFromRoot ::
   (HasCallStack, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -382,6 +386,7 @@ _propAt stree@(LazySegmentTree !_ !ops !_) !vertex = do
 -- TODO: faster implelemtaion
 
 -- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
+{-# INLINE bisectLSTree #-}
 bisectLSTree ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -399,6 +404,7 @@ bisectLSTree stree@(LazySegmentTree !as !_ !_) l r f = do
         nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log^2 N)\)
+{-# INLINE bisectLSTreeL #-}
 bisectLSTreeL ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -409,6 +415,7 @@ bisectLSTreeL ::
 bisectLSTreeL stree l r f = fst <$> bisectLSTree stree l r f
 
 -- | \(O(\log^2 N)\)
+{-# INLINE bisectLSTreeR #-}
 bisectLSTreeR ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
   LazySegmentTree a op (PrimState m) ->
@@ -417,3 +424,17 @@ bisectLSTreeR ::
   (a -> Bool) ->
   m (Maybe Int)
 bisectLSTreeR stree l r f = snd <$> bisectLSTree stree l r f
+
+-- | \(\Theta(n)\) Freezes the leaf values without making a copy.
+{-# INLINE unsafeFreezeLeavesLSTree #-}
+unsafeFreezeLeavesLSTree ::
+  forall a op m.
+  (HasCallStack, U.Unbox a, Monoid op, Eq op, SegmentAction op a, U.Unbox op, PrimMonad m) =>
+  LazySegmentTree a op (PrimState m) ->
+  m (U.Vector a)
+unsafeFreezeLeavesLSTree stree@(LazySegmentTree !vec !_ !validLeaves) = do
+  let !nLeaves = GM.length vec .>>. 1
+  forM_ [1 .. nLeaves] $ \i -> do
+    _propAt stree i
+  -- FIXME: return valid leaves only
+  U.take nLeaves . U.drop nLeaves <$> U.unsafeFreeze vec

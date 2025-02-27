@@ -87,6 +87,7 @@ buildRWM nx xs = runST $ do
 -- | \(O(\log a)\) Returns @a[k]@.
 --
 -- TODO: Return `Maybe`?
+{-# INLINE accessRWM #-}
 accessRWM :: RawWaveletMatrix -> Int -> Int
 accessRWM RawWaveletMatrix {..} i0 = res
   where
@@ -107,7 +108,8 @@ accessRWM RawWaveletMatrix {..} i0 = res
 
 -- * kth min (safe)
 
--- | \(O(\log a)\) Goes down the wavelet matrix for collecting kth minimum value.
+-- | \(O(\log a)\) Goes down the wavelet matrix for collecting the kth minimum value.
+{-# INLINE _goDownRWM #-}
 _goDownRWM :: RawWaveletMatrix -> Int -> Int -> Int -> (Int, Int, Int, Int)
 _goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1, k_) bitsRWM
   where
@@ -131,6 +133,7 @@ _goDownRWM RawWaveletMatrix {..} l_ r_ k_ = V.ifoldl' step (0 :: Int, l_, r_ + 1
         !r0 = freq0BV bits r
 
 -- | \(O(\log a)\) Goes up the wavelet matrix for collecting the value @x@.
+{-# INLINE _goUpRWM #-}
 _goUpRWM :: RawWaveletMatrix -> Int -> Int -> Maybe Int
 _goUpRWM RawWaveletMatrix {..} i0 x =
   V.ifoldM'
@@ -204,6 +207,7 @@ unsafeIKthMaxRWM wm l_ r_ k_ = unsafeIKthMinRWM wm l_ r_ (r_ - l_ - k_)
 -- * Freq
 
 -- | \(O(\log a)\) Returns the number of \(x s.t. x < \mathcal{upper} in [l .. r]\).
+{-# INLINE freqLTRWM #-}
 freqLTRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int
 freqLTRWM RawWaveletMatrix {..} l_ r_ upper
   -- REMARK: This is required. The function below cannot handle the case N = 2^i and upper = N.
@@ -234,18 +238,22 @@ freqRWM wm l_ r_ x = freqInRWM wm l_ r_ x x
 -- * Find index
 
 -- | \(O(\log a)\) Finds index of @x@. Select.
+{-# INLINE findIndexRWM #-}
 findIndexRWM :: RawWaveletMatrix -> Int -> Maybe Int
 findIndexRWM wm = findKthIndexRWM wm 0
 
 -- | \(O(\log a)\) Finds kth index of @x@. Select.
+{-# INLINE findKthIndexRWM #-}
 findKthIndexRWM :: RawWaveletMatrix -> Int -> Int -> Maybe Int
 findKthIndexRWM wm k x = lrFindKthIndexRWM wm k x 0 (lengthRWM wm - 1)
 
 -- | \(O(\log a)\) Finds index of @x@. Select.
+{-# INLINE lrFindIndexRWM #-}
 lrFindIndexRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Maybe Int
 lrFindIndexRWM wm = lrFindKthIndexRWM wm 0
 
 -- | \(O(\log a)\) Finds kth index of @x@. Select.
+{-# INLINE lrFindKthIndexRWM #-}
 lrFindKthIndexRWM :: RawWaveletMatrix -> Int -> Int -> Int -> Int -> Maybe Int
 lrFindKthIndexRWM wm@RawWaveletMatrix {..} k x l_ r_
   | not (0 <= x && x <= n - 1 && 0 <= k && k <= n - 1) = Nothing

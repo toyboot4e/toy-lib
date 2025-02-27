@@ -56,6 +56,7 @@ data SegmentTree s a = SegmentTree
   }
 
 -- | \(O(\log N)\) Creates a segment tree for `n` leaves.
+{-# INLINE newSTree #-}
 newSTree :: (U.Unbox a, Monoid a, PrimMonad m) => Int -> m (SegmentTree (PrimState m) a)
 newSTree nValidLeaves = do
   vec <- GM.replicate nVerts mempty
@@ -64,6 +65,7 @@ newSTree nValidLeaves = do
     !nVerts = until (>= (nValidLeaves .<<. 1)) (.<<. 1) (1 :: Int)
 
 -- | \(\Theta(N)\) Creates a segment tree from the given leaf values.
+{-# INLINE buildSTree #-}
 buildSTree :: (U.Unbox a, Monoid a, PrimMonad m) => U.Vector a -> m (SegmentTree (PrimState m) a)
 buildSTree leaves = do
   verts <- GM.unsafeNew nVerts
@@ -136,6 +138,7 @@ modifySTree (SegmentTree vec nValidLeaves) f i = do
 
 -- | \(O(\log N)\) Folds a non-empty @[l, r]@ span. Returns a broken avlue when given invalid range
 -- (so this is actually @unsafeFoldSTree@).
+{-# INLINE foldSTree #-}
 foldSTree :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => SegmentTree (PrimState m) a -> Int -> Int -> m a
 foldSTree (SegmentTree vec nValidLeaves) l0 r0 = stToPrim $ glitchFold (l0 + nLeaves) (r0 + nLeaves) mempty mempty
   where

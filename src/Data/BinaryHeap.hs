@@ -292,7 +292,7 @@ deleteMaybeBH bh = do
 clearBH :: (PrimMonad m) => BinaryHeap f (PrimState m) a -> m ()
 clearBH BinaryHeap {..} = UM.unsafeWrite sizeBH_ 0 0
 
--- | \(O(1)\)
+-- | \(O(1)\) TODO: It is not sorted, right?
 unsafeFreezeBH ::
   (U.Unbox a, PrimMonad m) =>
   BinaryHeap f (PrimState m) a ->

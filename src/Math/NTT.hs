@@ -226,6 +226,7 @@ grow2 xs
 -- | Primitive root.
 primRoot :: Int -> Int
 primRoot 998244353 = 3 -- on wolfarm alpha, PrimitiveRoot[p].
+primRoot 1000000007 = 5 -- on wolfarm alpha, PrimitiveRoot[p].
 primRoot 754974721 = 11
 primRoot 469762049 = 3
 primRoot 167772161 = 3

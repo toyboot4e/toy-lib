@@ -41,6 +41,7 @@ data BitVector = BitVector
   deriving (Eq, Show)
 
 -- | \(O(N)\) Calculates the cumulative sum by word for the bit vector in-place.
+{-# INLINE csumInPlaceBV #-}
 csumInPlaceBV :: (PrimMonad m) => UM.MVector (PrimState m) Int -> U.Vector Bit -> m Int
 csumInPlaceBV csum bits = do
   GM.unsafeWrite csum 0 (0 :: Int)
@@ -59,6 +60,7 @@ csumInPlaceBV csum bits = do
       bits
 
 -- | \(O(N)\) Calculates the cumulative sum by word for the bit vector.
+{-# INLINE newCSumBV #-}
 newCSumBV :: U.Vector Bit -> U.Vector Int
 newCSumBV bits = U.create $ do
   let !lenCSum = (G.length bits + wordWM - 1) `div` wordWM + 1
@@ -76,7 +78,7 @@ freq0BV bv i = i - freq1BV bv i
 -- vector by word. Rank 1.
 {-# INLINE freq1BV #-}
 freq1BV :: BitVector -> Int -> Int
-freq1BV BitVector{..} i = fromCSum + fromRest
+freq1BV BitVector {..} i = fromCSum + fromRest
   where
     -- TODO: check bounds for i?
     (!nWords, !nRest) = i `divMod` wordWM
@@ -85,16 +87,17 @@ freq1BV BitVector{..} i = fromCSum + fromRest
 
 -- | \(O(\log N)\) Finds the index of kth @0@. Select 0.
 {-# INLINE findKthIndex0BV #-}
-findKthIndex0BV ::  BitVector -> Int -> Maybe Int
+findKthIndex0BV :: BitVector -> Int -> Maybe Int
 findKthIndex0BV bv k = lrFindKthIndex0BV bv k 0 (G.length (bitsBV bv) - 1)
 
 -- | \(O(\log N)\) Finds the index of kth @1@. Select 1.
 {-# INLINE findKthIndex1BV #-}
-findKthIndex1BV ::  BitVector -> Int -> Maybe Int
-findKthIndex1BV bv k = lrFindKthIndex1BV bv k 0 (G.length (bitsBV bv) -1)
+findKthIndex1BV :: BitVector -> Int -> Maybe Int
+findKthIndex1BV bv k = lrFindKthIndex1BV bv k 0 (G.length (bitsBV bv) - 1)
 
 -- | \(O(\log N)\) Finds the index of kth @0@ in [l, r]. Select 0.
-lrFindKthIndex0BV ::  BitVector -> Int -> Int -> Int -> Maybe Int
+{-# INLINE lrFindKthIndex0BV #-}
+lrFindKthIndex0BV :: BitVector -> Int -> Int -> Int -> Maybe Int
 lrFindKthIndex0BV bv k l r
   -- TODO: use nZeros for filtering?
   | k < 0 = Nothing
@@ -105,7 +108,8 @@ lrFindKthIndex0BV bv k l r
     l0 = freq0BV bv l
 
 -- | \(O(\log N)\) Finds the index of kth @1@ in [l, r]. Select 1.
-lrFindKthIndex1BV ::  BitVector -> Int -> Int -> Int -> Maybe Int
+{-# INLINE lrFindKthIndex1BV #-}
+lrFindKthIndex1BV :: BitVector -> Int -> Int -> Int -> Maybe Int
 lrFindKthIndex1BV bv k l r
   -- TODO: use nOnes for filtering?
   | k < 0 = Nothing

@@ -24,6 +24,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import GHC.Stack (HasCallStack)
 import ToyLib.Debug
 
 -- | Vertex reindexed by `indexHLD`.
@@ -274,13 +275,13 @@ lengthHLD hld@HLD {..} u v = du - dLca + dv - dLca
 -- - Note that each @(l, r)@ pair can be @l > r@.
 -- - LCA is omitted when @isEdge@ parameter is set to @True@ (the trick to put edge weights to
 --   vertices).
-_segmentsHLD :: Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+_segmentsHLD :: (HasCallStack) => Bool -> HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 _segmentsHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
   where
     done (!up, !down) = reverse up ++ down
     -- @up@: bottom to top. [(max, min)]
     -- @down@: top to bottom. [(min, max)]
-    inner :: Vertex -> [(VertexHLD, VertexHLD)] -> Vertex -> [(VertexHLD, VertexHLD)] -> ([(VertexHLD, VertexHLD)], [(VertexHLD, VertexHLD)])
+    inner :: (HasCallStack) => Vertex -> [(VertexHLD, VertexHLD)] -> Vertex -> [(VertexHLD, VertexHLD)] -> ([(VertexHLD, VertexHLD)], [(VertexHLD, VertexHLD)])
     inner x up y down
       | hx == hy && isEdge = case compare ix iy of
           -- skip LCA on edge vertices
@@ -309,15 +310,15 @@ _segmentsHLD isEdge HLD {..} x0 y0 = done $ inner x0 [] y0 []
         phy = parentHLD G.! hy
 
 -- | \(O(\log V)\) Returns inclusive edge vertex pairs.
-edgeSegmentsHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+edgeSegmentsHLD :: (HasCallStack) => HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 edgeSegmentsHLD = _segmentsHLD True
 
 -- | \(O(\log V)\) Returns inclusive vertex pairs per.
-vertSegmentsHLD :: HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
+vertSegmentsHLD :: (HasCallStack) => HLD -> Vertex -> Vertex -> [(VertexHLD, VertexHLD)]
 vertSegmentsHLD = _segmentsHLD False
 
 -- | \(O(\log^2 V)\) Folds path between @v1@ and @v2@. Use specialized methods for simplisity.
-foldHLD :: (Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
+foldHLD :: (HasCallStack, Monoid mono, Monad m) => Bool -> HLD -> (VertexHLD -> VertexHLD -> m mono) -> (VertexHLD -> VertexHLD -> m mono) -> Vertex -> Vertex -> m mono
 foldHLD isEdge hld foldF foldB v1 v2 = do
   foldM
     ( \ !acc (!u, !v) -> do
@@ -420,7 +421,7 @@ pathHLD hld@HLD {..} u v = concatMap expand $ _segmentsHLD False hld u v
   where
     expand (!l, !r)
       | l <= r = map (revIndexHLD G.!) [l .. r]
-      | otherwise = map (revIndexHLD G.!) [r, r - 1 .. l]
+      | otherwise = map (revIndexHLD G.!) [l, l - 1 .. r]
 
 -- * `TreeMonoid` for path folding
 
@@ -468,7 +469,7 @@ edgeVertsHLD HLD {indexHLD} =
     )
 
 -- | \(O(V)\) Builds a `TreeMonoid` on edges. **The input must be the output of `edgeVertsHLD`**.
-buildEdgeTM :: (PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector (Vertex, a) -> m (TreeMonoid a (PrimState m))
+buildEdgeTM :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => HLD -> Bool -> U.Vector (Vertex, a) -> m (TreeMonoid a (PrimState m))
 buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
   let !n = U.length indexHLD
   let !xs = U.update (U.replicate n mempty) $ U.map (\(!v, !x) -> (indexHLD G.! v, x)) ixs
@@ -477,7 +478,7 @@ buildEdgeTM hld@HLD {indexHLD} isCommuteTM ixs = do
 -- ** Segment tree methods
 
 -- | \(O(\log^2 V)\) Folds a path between two vertices.
-foldTM :: (PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
+foldTM :: (HasCallStack, PrimMonad m, Monoid a, U.Unbox a) => TreeMonoid a (PrimState m) -> Vertex -> Vertex -> m a
 foldTM TreeMonoid {..} v1 v2
   | isCommuteTM = foldHLD isEdgeTM hldTM (foldSTree streeFTM) (foldSTree streeFTM) v1 v2
   | otherwise = foldHLD isEdgeTM hldTM (foldSTree streeFTM) ((fmap getDual .) . foldSTree streeBTM) v1 v2
