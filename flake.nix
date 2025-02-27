@@ -42,7 +42,7 @@
               pkg-config
               stack
               cabal-install
-              llvmPackages_15.bintools
+              llvmPackages_14.bintools
             ];
 
             packages = [
@@ -53,14 +53,15 @@
               python312Packages.pyaml
               python312Packages.importlab
 
-              haskell.compiler.ghc946.override { useLLVM = true; }
-              (haskell-language-server.override { supportedGhcVersions = [ "946" ]; })
-              # haskellPackages.doctest
-              # TODO: fix doctest version
-              haskell.packages.ghc946.cabal-fmt
-              haskell.packages.ghc946.cabal-plan
-              haskell.packages.ghc946.doctest
-              haskell.packages.ghc946.implicit-hie
+              # haskell.compiler.ghc947.override { useLLVM = true; }
+              haskell.compiler.ghc947
+              (haskell-language-server.override { supportedGhcVersions = [ "947" ]; })
+              # # haskellPackages.doctest
+              # # TODO: fix doctest version
+              haskell.packages.ghc947.cabal-fmt
+              haskell.packages.ghc947.cabal-plan
+              haskell.packages.ghc947.doctest
+              haskell.packages.ghc947.implicit-hie
 
               hlint
               haskellPackages.hoogle
