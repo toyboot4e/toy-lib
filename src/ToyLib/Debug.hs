@@ -5,6 +5,7 @@ import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Vector.Generic as G
 import Debug.Trace
 import ToyLib.Macro
+import GHC.Stack (HasCallStack)
 
 -- When run as script, `dbg` expands to `traceShow`.
 -- Otherwise it's an empty function.
@@ -44,10 +45,15 @@ note s x
   | debug = let !_ = trace (show s ++ ": " ++ show x) () in x
   | otherwise = x
 
-dbgAssert :: Bool -> String -> ()
+dbgAssert :: (HasCallStack) => Bool -> String -> ()
 dbgAssert b s
   | debug && not b = error $ "assertion failed!: " ++ s
   | otherwise = ()
+
+asserted :: (HasCallStack) => Bool -> a -> a
+asserted b x
+  | debug && not b = error "assertion failed!"
+  | otherwise = x
 
 -- | `$` with `dbgId`
 ($$) :: (Show a) => (a -> b) -> a -> b

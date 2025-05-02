@@ -222,6 +222,7 @@ library
     Data.SplaySeq
     Data.SplaySeq.Raw
     Data.Sqrd
+    Data.Trie
     Data.UnionFind.Mutable
     Data.UnionFind.Potencial
     Data.UnionFind.Sparse

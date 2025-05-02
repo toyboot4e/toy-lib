@@ -19,7 +19,13 @@
 -- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)
 module Math.Divisors where
 
+import Control.Monad.Primitive
+import Data.Foldable (for_)
 import Data.List
+import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
+import Math.Primes (primes)
 
 -- \(O(N \log N)\) Divisor enumeration (sorted). Too slow, never use it.
 divisorsOf :: Int -> [Int]
@@ -38,3 +44,35 @@ divisorsOf n = sort $ inner 1
         -- This strict evaluation and unboxing takes some effect, even though they're not always
         -- used.
         (!d, !r) = n `divMod` k
+
+-- | For instance, [6], i.e., [0, 0, 0, 0, 0, 0, 1] becomes [0, 1, 1, 1, 0, 0, 1].
+countDivisorsInPlace :: (PrimMonad m, GM.MVector v a, Num a) => U.Vector Int -> v (PrimState m) a -> m ()
+countDivisorsInPlace ps cnt = do
+  let maxX = GM.length cnt - 1
+  -- For example, for 6, we get [0, 1, 1, 1, 0, 0, 1] from [0, 0, 0, 0, 0, 0, 1] with the following steps:
+  -- - p = 2: cnt[3] += cnt[6], cnt[2] += cnt[4], cnt[1] += cnt[2]
+  -- - p = 3: cnt[2] += cnt[6]
+  U.forM_ ps $ \p -> do
+    let np = maxX `div` p
+    for_ [np, np - 1 .. 1] $ \i -> do
+      GM.modifyM
+        cnt
+        ( \acc -> do
+            dx <- GM.read cnt (i * p)
+            pure $! acc + dx
+        )
+        i
+
+-- | For instance, [6], i.e., [0, 0, 0, 0, 0, 0, 1] becomes [0, 1, 1, 1, 0, 0, 1].
+--
+-- ==== Typical problems
+-- - [ABC 393 - E: GCD of Subset](https://atcoder.jp/contests/abc393/tasks/abc393_e)
+countDivisors :: U.Vector Int -> U.Vector Int
+countDivisors xs = U.create $ do
+  let maxX = U.maximum xs
+  cnt <- UM.replicate (maxX + 1) (0 :: Int)
+  U.forM_ xs $ \x -> do
+    GM.modify cnt (+ 1) x
+  let ps = U.fromList $ takeWhile (<= maxX) primes
+  countDivisorsInPlace ps cnt
+  pure cnt

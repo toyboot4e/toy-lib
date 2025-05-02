@@ -127,9 +127,25 @@ clearMUF (MUnionFind !vec) = do
 groupRootsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (U.Vector Int)
 groupRootsMUF uf@(MUnionFind !vec) = U.filterM (\x -> (== x) <$> rootMUF uf x) (U.generate (GM.length vec) id)
 
--- | \(O(N W)\) Collects groups. Returns a list of @(root, component)@. Too slow?
+-- | \(O(N W)\) FIXME: too slow
 groupsMUF :: (HasCallStack, PrimMonad m) => MUnionFind (PrimState m) -> m (IM.IntMap [Int])
 groupsMUF uf@(MUnionFind !vec) = do
   rvs <- V.generateM (GM.length vec) (\v -> (,[v]) <$> rootMUF uf v)
   pure $ IM.fromListWith (flip (++)) $ V.toList rvs
 
+groupsMUF2 :: (PrimMonad m) => MUnionFind (PrimState m) -> m (V.Vector (U.Vector Int))
+groupsMUF2 dsu@(MUnionFind vec) = do
+  let nDsu = UM.length vec
+  groupSize <- UM.replicate nDsu (0 :: Int)
+  leaders <- U.generateM nDsu $ \i -> do
+    li <- rootMUF dsu i
+    GM.modify groupSize (+ 1) li
+    pure li
+  result <- do
+    groupSize' <- U.unsafeFreeze groupSize
+    V.mapM UM.unsafeNew $ U.convert groupSize'
+  U.iforM_ leaders $ \i li -> do
+    i' <- subtract 1 <$> GM.read groupSize li
+    GM.write (result G.! li) i' i
+    GM.write groupSize li i'
+  V.filter (not . U.null) <$> V.mapM U.unsafeFreeze result

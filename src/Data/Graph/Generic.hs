@@ -531,8 +531,8 @@ distsNN !nVerts !undef !wEdges = IxVector bnd $ U.create $ do
       GM.write vec (index bnd (v1, v2)) w0
 
   -- multiple walks (O(N^3))
-  forM_ [0 .. nVerts - 1] $ \k -> do
-    forM_ [0 .. nVerts - 1] $ \i -> do
+  for_ [0 .. nVerts - 1] $ \k -> do
+    for_ [0 .. nVerts - 1] $ \i -> do
       forM_ [0 .. nVerts - 1] $ \j -> do
         !x1 <- GM.read vec (index bnd (i, j))
         !x2 <- do

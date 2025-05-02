@@ -5,7 +5,6 @@
 module Data.Buffer where
 
 import Control.Applicative
-import Control.Exception (assert)
 import Control.Monad (void, when)
 import Control.Monad.Primitive
 import Control.Monad.ST
@@ -15,6 +14,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
+import ToyLib.Debug (asserted)
 
 -- | A fixed-sized mutable vector with push/pop API.
 data Buffer s a = Buffer
@@ -220,26 +220,26 @@ popBack_ = void . popBack
 
 -- | \(O(1)\)
 {-# INLINE pushFront #-}
-pushFront :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushFront :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushFront Buffer {bufferVars, internalBuffer} x = do
   f <- GM.unsafeRead bufferVars _bufferFrontPos
   GM.unsafeWrite bufferVars _bufferFrontPos (f - 1)
-  assert (f > 0) $ do
+  asserted (f > 0) $ do
     GM.unsafeWrite internalBuffer (f - 1) x
 
 -- | \(O(1)\)
 {-# INLINE pushBack #-}
-pushBack :: (U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
+pushBack :: (HasCallStack, U.Unbox a, PrimMonad m) => Buffer (PrimState m) a -> a -> m ()
 pushBack Buffer {bufferVars, internalBuffer, internalBufferSize} x = do
   b <- GM.unsafeRead bufferVars _bufferBackPos
   GM.unsafeWrite bufferVars _bufferBackPos (b + 1)
-  assert (b < internalBufferSize) $ do
+  asserted (b < internalBufferSize) $ do
     GM.unsafeWrite internalBuffer b x
 
 -- | \(O(K)\)
 {-# INLINE pushFronts #-}
 pushFronts ::
-  (U.Unbox a, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
   U.Vector a ->
   m ()
@@ -247,13 +247,13 @@ pushFronts Buffer {bufferVars, internalBuffer} vec = do
   let n = U.length vec
   f <- GM.unsafeRead bufferVars _bufferFrontPos
   GM.unsafeWrite bufferVars _bufferFrontPos (f - n)
-  assert (n <= f) $ do
+  asserted (n <= f) $ do
     U.unsafeCopy (GM.unsafeSlice (f - n) n internalBuffer) vec
 
 -- | \(O(K)\)
 {-# INLINE pushBacks #-}
 pushBacks ::
-  (U.Unbox a, PrimMonad m) =>
+  (HasCallStack, U.Unbox a, PrimMonad m) =>
   Buffer (PrimState m) a ->
   U.Vector a ->
   m ()
@@ -261,7 +261,7 @@ pushBacks Buffer {bufferVars, internalBuffer, internalBufferSize} vec = do
   let n = U.length vec
   b <- GM.unsafeRead bufferVars _bufferBackPos
   GM.unsafeWrite bufferVars _bufferBackPos (b + n)
-  assert (b + n - 1 < internalBufferSize) $ do
+  asserted (b + n - 1 < internalBufferSize) $ do
     U.unsafeCopy (GM.unsafeSlice b n internalBuffer) vec
 
 -- | \(O(1)\)
