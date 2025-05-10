@@ -11,6 +11,8 @@
 -- FIXME: My wavelet matrix is somehow slow.
 module Data.WaveletMatrix.SegTree where
 
+-- FIXME: inv 無しで prod を計算する
+
 import Algorithm.Bisect
 import Control.Monad.Primitive
 import Data.Bit
@@ -25,6 +27,7 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import Data.WaveletMatrix.BitVector
 import Data.WaveletMatrix.Raw
+import GHC.Stack (HasCallStack)
 
 -- | Segment Tree on Wavelet Matrix: points on a 2D plane and rectangle folding.
 data WaveletMatrixSegTree s a = WaveletMatrixSegTree
@@ -71,7 +74,7 @@ modifyWMST WaveletMatrixSegTree {..} f (!x, !y) = stToPrim $ do
 
 -- | \(O(\log^2 N)\) Folding.
 {-# INLINE _foldLTWMST #-}
-_foldLTWMST :: (Monoid a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> m a
+_foldLTWMST :: (HasCallStack, Monoid a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> m a
 _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
   (!res, !_, !_) <- do
     V.ifoldM'
@@ -82,7 +85,7 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
           -- how it's handled and note that l_ and r_ are compressed indices.
           if testBit yUpper (heightRWM rawWmWMST - 1 - iRow)
             then do
-              !acc' <- (acc <>) <$> foldSTree stree l0 (r0 - 1)
+              !acc' <- if l0 >= r0 then pure acc else (acc <>) <$> foldSTree stree l0 (r0 - 1)
               let !l' = l + nZerosRWM rawWmWMST G.! iRow - l0
               let !r' = r + nZerosRWM rawWmWMST G.! iRow - r0
               pure (acc', l', r')
@@ -95,16 +98,17 @@ _foldLTWMST WaveletMatrixSegTree {..} !l_ !r_ yUpper = stToPrim $ do
 
 -- | \(O(\log^2 N)\) Folding.
 {-# INLINE foldMayWMST #-}
-foldMayWMST :: (Group a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> Int -> m (Maybe a)
+foldMayWMST :: (HasCallStack, Group a, U.Unbox a, PrimMonad m) => WaveletMatrixSegTree (PrimState m) a -> Int -> Int -> Int -> Int -> m (Maybe a)
 foldMayWMST wm@WaveletMatrixSegTree {..} !xl !xr !yl !yr
   | not $ 0 <= xl' && xl' <= xr' && xr' < G.length xysWMST = pure Nothing
   | not $ 0 <= yl' && yl' <= yr' && yr' < G.length ysWMST = pure Nothing
   | otherwise = do
-      s1 <- _foldLTWMST wm xl' xr' (yr' + 1)
-      s2 <- _foldLTWMST wm xl' xr' yl'
+      !s1 <- _foldLTWMST wm xl' xr' (yr' + 1)
+      !s2 <- _foldLTWMST wm xl' xr' yl'
       pure . Just $ s1 <> invert s2
   where
     !n = lengthRWM rawWmWMST
+    -- TODO: x doesn't have to be re-indexed?
     !xl' = fromMaybe n $ bisectR 0 (G.length xysWMST - 1) $ \i -> (< xl) . fst $ xysWMST G.! i
     !xr' = fromMaybe (-1) $ bisectL 0 (G.length xysWMST - 1) $ \i -> (<= xr) . fst $ xysWMST G.! i
     !yl' = fromMaybe n $ bisectR 0 (G.length ysWMST - 1) $ \i -> (< yl) $ ysWMST G.! i
