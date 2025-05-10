@@ -384,7 +384,7 @@ findCycleImplSG gr revEdgeIsCycle = runST $ do
   visOut <- UM.replicate n False
 
   -- (v, w) visited in-order
-  history <- newRevBuffer n
+  history <- newRevBuffer (2 * n)
 
   -- TODO: better way than `callCC`?
   res <- evalContT $ callCC $ \exit -> do
