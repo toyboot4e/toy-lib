@@ -1,10 +1,20 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+
 -- | Compatibilities.
 module ToyLib.Compat where
 
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Control.Monad.Trans.State.Strict (StateT (..))
 import Data.Bits ((.>>.))
+import Data.Coerce
+import qualified Data.Vector as V
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Mutable as VM
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as UM
 
 -- | Original: https://hackage.haskell.org/package/transformers-0.6.1.1/docs/src/Control.Monad.Trans.State.Strict.html#modifyM
 modifyM :: (Monad m) => (s -> m s) -> StateT s m ()
@@ -111,3 +121,54 @@ nextPermutationByLt lt v
             else go l vl mid
           where
             !mid = l + (r - l) .>>. 1
+
+newtype DoNotUnboxStrict a = DoNotUnboxStrict a
+  deriving newtype (Show, Eq, Ord, Semigroup, Monoid)
+
+newtype instance UM.MVector s (DoNotUnboxStrict a) = MV_DoNotUnboxStrict (VM.MVector s a)
+
+newtype instance U.Vector (DoNotUnboxStrict a) = V_DoNotUnboxStrict (V.Vector a)
+
+instance GM.MVector UM.MVector (DoNotUnboxStrict a) where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicSet #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength = coerce $ GM.basicLength @V.MVector @a
+  basicUnsafeSlice = coerce $ GM.basicUnsafeSlice @V.MVector @a
+  basicOverlaps = coerce $ GM.basicOverlaps @V.MVector @a
+  basicUnsafeNew = coerce $ GM.basicUnsafeNew @V.MVector @a
+  basicInitialize = coerce $ GM.basicInitialize @V.MVector @a
+  basicUnsafeReplicate = coerce $ GM.basicUnsafeReplicate @V.MVector @a
+  basicUnsafeRead = coerce $ GM.basicUnsafeRead @V.MVector @a
+  basicUnsafeWrite = coerce $ GM.basicUnsafeWrite @V.MVector @a
+  basicClear = coerce $ GM.basicClear @V.MVector @a
+  basicSet = coerce $ GM.basicSet @V.MVector @a
+  basicUnsafeCopy = coerce $ GM.basicUnsafeCopy @V.MVector @a
+  basicUnsafeMove = coerce $ GM.basicUnsafeMove @V.MVector @a
+  basicUnsafeGrow = coerce $ GM.basicUnsafeGrow @V.MVector @a
+
+instance G.Vector U.Vector (DoNotUnboxStrict a) where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeIndexM #-}
+  {-# INLINE elemseq #-}
+  basicUnsafeFreeze = coerce $ G.basicUnsafeFreeze @V.Vector @a
+  basicUnsafeThaw = coerce $ G.basicUnsafeThaw @V.Vector @a
+  basicLength = coerce $ G.basicLength @V.Vector @a
+  basicUnsafeSlice = coerce $ G.basicUnsafeSlice @V.Vector @a
+  basicUnsafeIndexM = coerce $ G.basicUnsafeIndexM @V.Vector @a
+  basicUnsafeCopy = coerce $ G.basicUnsafeCopy @V.Vector @a
+  elemseq _ = seq
+
+instance U.Unbox (DoNotUnboxStrict a)

@@ -83,6 +83,22 @@ constructrMN !n f = do
         fill v'' (i + 1)
     fill v _ = pure v
 
+-- | \(O(n)\) Returns @maximum [csum VG.! r - csum VG.! l | l <- [0 .. n - 1], r <- [l .. n - 1]]@
+{-# INLINE maxRangeSum #-}
+maxRangeSum :: forall a. (U.Unbox a, Ord a, Num a) => U.Vector a -> a
+maxRangeSum xs = fst $ U.foldl' f (0 :: a, 0 :: a) csum
+  where
+    csum = U.postscanl' (+) (0 :: a) xs
+    f (!acc, !minL) x = (max acc (x - minL), min minL x)
+
+-- | \(O(n)\) Returns @minimum [csum VG.! r - csum VG.! l | l <- [0 .. n - 1], r <- [l .. n - 1]]@
+{-# INLINE minRangeSum #-}
+minRangeSum :: forall a. (U.Unbox a, Ord a, Num a) => U.Vector a -> a
+minRangeSum xs = fst $ U.foldl' f (0 :: a, 0 :: a) csum
+  where
+    csum = U.postscanl' (+) (0 :: a) xs
+    f (!acc, !maxL) x = (min acc (x - maxL), max maxL x)
+
 -- | Wraps a boxed type as an `Unbox` instance, dispatching the boxed vector as the backing array
 -- instance. <https://github.com/haskell/vector/issues/503>
 newtype Boxed a = Boxed a

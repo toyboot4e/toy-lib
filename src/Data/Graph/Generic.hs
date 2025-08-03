@@ -171,6 +171,30 @@ genericBfs'' !gr !nVerts !undefW !sources = U.create $ do
 
   pure dist
 
+genericBfs''' :: forall w. (U.Unbox w, Eq w) => (w -> w -> w) -> (Vertex -> w -> U.Vector (Vertex, w)) -> Int -> w -> U.Vector (Vertex, w) -> U.Vector w
+genericBfs''' catW !gr !nVerts !undefW !sources = U.create $ do
+  dist <- UM.replicate @_ @w nVerts undefW
+  queue <- newBuffer nVerts
+
+  U.forM_ sources $ \(!src, !w0) -> do
+    -- Duplicate inputs are removed here:
+    lastD <- GM.read dist src
+    when (lastD == undefW) $ do
+      GM.write dist src w0
+      pushBack queue src
+
+  fix $ \loop -> do
+    whenJustM (popFront queue) $ \v1 -> do
+      d1 <- GM.read dist v1
+      U.forM_ (gr v1 d1) $ \(!v2, !dw) -> do
+        lastD <- GM.read dist v2
+        when (lastD == undefW) $ do
+          GM.write dist v2 $! catW d1 dw
+          pushBack queue v2
+      loop
+
+  pure dist
+
 -- | \(O(V+E)\) Breadth-first search. The graph function returns a list.
 genericBfsWithList :: forall w. (U.Unbox w, Num w, Eq w) => (Vertex -> w -> [(Vertex, w)]) -> Int -> w -> U.Vector (Vertex, w) -> U.Vector w
 genericBfsWithList !gr !nVerts !undefW !sources = U.create $ do
