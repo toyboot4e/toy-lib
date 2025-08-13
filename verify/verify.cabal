@@ -238,6 +238,10 @@ executable yosupo-data-queue-operate-all-composite-exe
   import:  verify
   main-is: yosupo-data-queue-operate-all-composite.hs
 
+executable yosupo-data-deque-exe
+  import:  verify
+  main-is: yosupo-data-deque.hs
+
 executable yosupo-data-deque-operate-all-composite-exe
   import:  verify
   main-is: yosupo-data-deque-operate-all-composite.hs
