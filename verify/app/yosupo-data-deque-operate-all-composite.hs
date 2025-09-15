@@ -1,11 +1,11 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
 
+import AtCoder.ModInt qualified as MI
 -- {{{ toy-lib import
 
 import Data.Core.SemigroupAction
 import Data.Instances.Affine1
-import Data.ModInt
 import Data.Slide
 import ToyLib.Parser
 import ToyLib.Prelude
@@ -13,15 +13,13 @@ import ToyLib.ShowBSB
 
 -- }}} toy-lib import
 
+modInt :: Int -> MI.ModInt 998244353
+modInt = MI.new
+
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug :: Bool
 debug = False
-
-{- ORMOLU_DISABLE -}
-type MyModulo = (998244353 :: Nat) -- (1_000_000_007 :: Nat)
-type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @MyModulo proxy# ; {-# INLINE modInt #-} ; modInt :: Int -> MyModInt ; modInt = ModInt . (`rem` myMod) ;
-{- ORMOLU_ENABLE -}
 
 solve :: StateT BS.ByteString IO ()
 solve = do
@@ -39,11 +37,11 @@ solve = do
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !a, !b) -> do
       -- push front
-      pushFrontDSF window . Dual $ Affine1 (modInt a, modInt b)
+      pushFrontDSF window . Dual $ Affine1 (MI.modInt a, MI.modInt b)
       return Nothing
     (1, !a, !b) -> do
       -- push back
-      pushBackDSF window . Dual $ Affine1 (modInt a, modInt b)
+      pushBackDSF window . Dual $ Affine1 (MI.modInt a, MI.modInt b)
       return Nothing
     (2, !_, !_) -> do
       -- pop froot

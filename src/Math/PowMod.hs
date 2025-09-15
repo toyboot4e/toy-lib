@@ -3,10 +3,10 @@
 -- TODO: Test all the functions.
 module Math.PowMod where
 
+import qualified AtCoder.Extra.Math as EM
 import Data.List (foldl')
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
-import Math.Stimes (power)
 
 -- | \(O(1)\)
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int
@@ -26,7 +26,7 @@ factMod !n !m = n * factMod (n - 1) m `rem` m
 -- | \(O(W)\) \(\mathit{base} ^ \mathit{power} \bmod \mathit{modulo}\) using binary lifting.
 {-# INLINE powModConst #-}
 powModConst :: Int -> Int -> Int -> Int
-powModConst !modulo !base !p = power p (mulMod modulo) base
+powModConst !modulo !base !p = EM.power (mulMod modulo) p base
 
 -- | \(O(W)\) \(x / d \bmod p\) using Fermat's little theorem and binary lifting.
 {-# INLINE invModConst #-}

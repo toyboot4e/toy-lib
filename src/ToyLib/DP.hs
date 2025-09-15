@@ -5,17 +5,17 @@
 -- TODO: Refactor `relaxMany` variants.
 module ToyLib.DP where
 
+import qualified AtCoder.Extra.Graph as AG
+import qualified AtCoder.SegTree as Seg
 import Control.Monad (forM_)
 import Control.Monad.ST
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (ord)
-import Data.Graph.Generic (restorePath)
+import Data.Core.Unindex
 import Data.Ix
-import Data.SegmentTree.Strict
 import Data.Semigroup
-import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
@@ -25,7 +25,6 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (powersetU)
-import ToyLib.Compat (nextPermutation)
 import ToyLib.Debug
 import ToyLib.Prelude (rangeU)
 
@@ -178,21 +177,25 @@ ordPowerset set0 = U.map (.|. bit lsb) $ powersetU set'
     set' = clearBit set0 lsb
 
 -- | Longest increasing subsequence. **The input must be compressed**.
+--
+-- FIXME: NOT TESTED
 lisOf :: (HasCallStack) => U.Vector Int -> Int
 lisOf !xs = runST $ do
-  !stree <- buildSTree (U.replicate (G.length xs) (Max (0 :: Int)))
+  !seg <- Seg.build (U.replicate (G.length xs) (Max (0 :: Int)))
 
   U.forM_ xs $ \x -> do
-    !len <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
-    writeSTree stree x (Max (len + 1))
+    Max !len <- if x == 0 then pure (Max 0) else Seg.prod seg 0 x
+    Seg.write seg x (Max (len + 1))
 
-  getMax <$> foldAllSTree stree
+  getMax <$> Seg.allProd seg
 
 -- | Longest increasing subsequence with path restoration. **The input must be compressed**.
+--
+-- FIXME: NOT TESTED
 lisOf' :: (HasCallStack) => U.Vector Int -> U.Vector Int
 lisOf' !xs = runST $ do
   -- value -> maximum length
-  stree <- buildSTree (U.replicate (G.length xs) (Max (0 :: Int)))
+  seg <- Seg.build (U.replicate (G.length xs) (Max (0 :: Int)))
 
   -- length -> most recent vertex
   lenToVertex <- UM.replicate (G.length xs + 1) (-1 :: Int)
@@ -203,8 +206,8 @@ lisOf' !xs = runST $ do
   (!_, !maxVert) <-
     U.ifoldM'
       ( \(!maxLen, !maxVert) i x -> do
-          !len <- maybe 0 getMax <$> foldMaySTree stree 0 (x - 1)
-          writeSTree stree x (Max (len + 1))
+          Max !len <- if x == 0 then pure (Max 0) else Seg.prod seg 0 x
+          Seg.write seg x (Max (len + 1))
           -- record the previous vertex
           iFrom <- GM.read lenToVertex len
           GM.write prev i iFrom
@@ -218,7 +221,7 @@ lisOf' !xs = runST $ do
       xs
 
   prev' <- U.unsafeFreeze prev
-  pure $ restorePath prev' maxVert
+  pure $ AG.constructPathFromRoot prev' maxVert
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int
@@ -261,7 +264,7 @@ lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
       | G.null vec = Nothing
       | otherwise = runST $ do
           vec' <- G.thaw vec
-          nextPermutation vec' >>= \case
+          GM.nextPermutation vec' >>= \case
             True -> do
               vec'' <- G.unsafeFreeze vec'
               pure $ Just (vec, vec'')

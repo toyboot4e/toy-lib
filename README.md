@@ -1,6 +1,6 @@
 # ToyLib
 
-ToyLib is my Haskell library for solving AtCoder problems.
+ToyLib is my Haskell library for solving AtCoder problems. Note that most of the content has been ported into the `Extra` module of [`ac-library-hs`](https://github.com/toyboot4e/ac-library-hs).
 
 [Documentation](https://toyboot4e.github.io/toy-lib/)
 

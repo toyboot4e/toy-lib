@@ -14,8 +14,8 @@
 -- FIXME: It's Affine1, not Affine1
 module Data.Instances.Affine1 where
 
+import AtCoder.LazySegTree (SegAct (..))
 import Data.Core.Group
-import Data.Core.SegmentAction
 import Data.Core.SemigroupAction
 import Data.Semigroup
 import qualified Data.Vector.Generic as G
@@ -53,21 +53,21 @@ instance (Num a) => Monoid (Affine1 a) where
   {-# INLINE mempty #-}
   mempty = identAffine1
 
--- * SegmentAction implementations
+-- * SegAct implementations
 
-instance (Integral a) => SegmentAction (Affine1 a) a where
+instance (Integral a) => SegAct (Affine1 a) a where
   {-# INLINE segActWithLength #-}
   segActWithLength !len (Affine1 (!a, !b)) !x = a'
     where
       !a' = a * x + b * fromIntegral len
 
-instance (Integral a) => SegmentAction (Affine1 a) (Sum a) where
+instance (Integral a) => SegAct (Affine1 a) (Sum a) where
   {-# INLINE segActWithLength #-}
   segActWithLength !len (Affine1 (!a, !b)) (Sum !x) = Sum a'
     where
       !a' = a * x + b * fromIntegral len
 
-instance (Integral a) => SegmentAction (Affine1 a) (Product a) where
+instance (Integral a) => SegAct (Affine1 a) (Product a) where
   {-# INLINE segActWithLength #-}
   segActWithLength !len (Affine1 (!a, !b)) (Product !x) = Product a'
     where
@@ -88,7 +88,7 @@ instance (Num a) => SemigroupAction (Affine1 a) (V2 a) where
     where
       !a' = a * x + b * len
 
-instance (Num a) => SegmentAction (Affine1 a) (V2 a) where
+instance (Num a) => SegAct (Affine1 a) (V2 a) where
   {-# INLINE segActWithLength #-}
   segActWithLength _ = sact
 

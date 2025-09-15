@@ -159,4 +159,3 @@ executable yosupo-other-longest-increasing-sequence
 executable yosupo-string-number-of-substrings
   import: verify
   main-is: yosupo-string-number-of-substrings.hs
-

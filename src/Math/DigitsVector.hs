@@ -1,4 +1,4 @@
--- | Digits by `Vector`
+-- | Digits by `Vector`.
 module Math.DigitsVector where
 
 import Data.Tuple.Extra hiding (first, second)

@@ -7,13 +7,12 @@
 -- Segment tree beats can also handle gcd queries, but it's not considered in this module.
 module Data.SegmentTree.Beats where
 
-import Algorithm.Bisect (bisectM)
+import AtCoder.LazySegTree (SegAct (..))
 import Control.Monad
 import Control.Monad.Extra (whenM)
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Data.Bifunctor
 import Data.Bits
-import Data.Core.SegmentAction
 import Data.SegmentTree.Util
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -106,7 +105,7 @@ buildSTB xs = do
 -- | \(O(\log N)\)
 foldSTB ::
   forall a op m.
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
@@ -147,7 +146,7 @@ foldSTB stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
 -- | \(O(\log N)\)
 {-# INLINE foldMaySTB #-}
 foldMaySTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
@@ -162,7 +161,7 @@ foldMaySTB stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
 {-# INLINE readSTB #-}
 readSTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   m a
@@ -171,7 +170,7 @@ readSTB stree i = foldSTB stree i i
 -- | \(O(\log N)\)
 {-# INLINE foldAllSTB #-}
 foldAllSTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Eq a, Monoid a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Eq a, Monoid a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   m a
 -- TODO: faster implementation
@@ -181,7 +180,7 @@ foldAllSTB stree@(SegmentTreeBeats !as !_ !_) = foldSTB stree 0 (GM.length as .>
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
 sactSTB ::
   forall a op m.
-  (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
@@ -228,7 +227,7 @@ sactSTB stree@(SegmentTreeBeats !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
 {-# INLINE sactAtSTB #-}
 sactAtSTB ::
-  (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   op ->
@@ -248,7 +247,7 @@ sactAtSTB stree i = sactSTB stree i i
 -- propagation is performed just before performing the first glitch. That's enough for both folding
 -- and acting.
 _propDownFromRootSTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
@@ -274,7 +273,7 @@ _propDownFromRootSTB stree@(SegmentTreeBeats !as !_ !height) !iLeaf !lrAdjuster 
 -- - The new coming operator operator always comes from the left.
 {-# INLINE _sactAtSTB #-}
 _sactAtSTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Semigroup a, Eq a, U.Unbox a, Monoid op, Eq op, SegmentAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Semigroup a, Eq a, U.Unbox a, Monoid op, Eq op, SegAct op a, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   op ->
@@ -298,7 +297,7 @@ _sactAtSTB stree@(SegmentTreeBeats !as !ops !height) !vertex !op = do
 -- | Propagates the operator onto the children. Push.
 {-# INLINE _propAt #-}
 _propAt ::
-  (HasCallStack, FailableSemigroupActionTarget a, Semigroup a, Eq a, U.Unbox a, Monoid op, Eq op, SegmentAction op a, U.Unbox op, PrimMonad m) =>
+  (HasCallStack, FailableSemigroupActionTarget a, Semigroup a, Eq a, U.Unbox a, Monoid op, Eq op, SegAct op a, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   m ()
@@ -313,41 +312,41 @@ _propAt stree@(SegmentTreeBeats !_ !ops !_) !vertex = do
 
 -- * Bisection methods
 
--- TODO: faster implelemtaion
+-- TODO: lower bound
 
--- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
-bisectSTB ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
-  SegmentTreeBeats a op (PrimState m) ->
-  Int ->
-  Int ->
-  (a -> Bool) ->
-  m (Maybe Int, Maybe Int)
-bisectSTB stree@(SegmentTreeBeats !as !_ !_) l r f = do
-  bisectM l r $ \r' -> do
-    !acc <- foldSTB stree l r'
-    pure $! f acc
-  where
-    !_ = dbgAssert (0 <= l && l <= r && r <= nLeaves - 1) $ "bisectSTB: giveninvalid range " ++ show (l, r)
-      where
-        nLeaves = GM.length as .>>. 1
+-- -- | \(O(\log^2 N)\) The @l@, @r@ indices are the zero-based leaf indices.
+-- bisectSTB ::
+--   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
+--   SegmentTreeBeats a op (PrimState m) ->
+--   Int ->
+--   Int ->
+--   (a -> Bool) ->
+--   m (Maybe Int, Maybe Int)
+-- bisectSTB stree@(SegmentTreeBeats !as !_ !_) l r f = do
+--   bisectM l r $ \r' -> do
+--     !acc <- foldSTB stree l r'
+--     pure $! f acc
+--   where
+--     !_ = dbgAssert (0 <= l && l <= r && r <= nLeaves - 1) $ "bisectSTB: giveninvalid range " ++ show (l, r)
+--       where
+--         nLeaves = GM.length as .>>. 1
 
--- | \(O(\log^2 N)\)
-bisectSTBL ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
-  SegmentTreeBeats a op (PrimState m) ->
-  Int ->
-  Int ->
-  (a -> Bool) ->
-  m (Maybe Int)
-bisectSTBL stree l r f = fst <$> bisectSTB stree l r f
+-- -- | \(O(\log^2 N)\)
+-- bisectSTBL ::
+--   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
+--   SegmentTreeBeats a op (PrimState m) ->
+--   Int ->
+--   Int ->
+--   (a -> Bool) ->
+--   m (Maybe Int)
+-- bisectSTBL stree l r f = fst <$> bisectSTB stree l r f
 
--- | \(O(\log^2 N)\)
-bisectSTBR ::
-  (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegmentAction op a, Eq op, U.Unbox op, PrimMonad m) =>
-  SegmentTreeBeats a op (PrimState m) ->
-  Int ->
-  Int ->
-  (a -> Bool) ->
-  m (Maybe Int)
-bisectSTBR stree l r f = snd <$> bisectSTB stree l r f
+-- -- | \(O(\log^2 N)\)
+-- bisectSTBR ::
+--   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
+--   SegmentTreeBeats a op (PrimState m) ->
+--   Int ->
+--   Int ->
+--   (a -> Bool) ->
+--   m (Maybe Int)
+-- bisectSTBR stree l r f = snd <$> bisectSTB stree l r f

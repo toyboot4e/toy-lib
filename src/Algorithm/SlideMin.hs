@@ -1,10 +1,10 @@
 -- | Sliding minimum window.
 module Algorithm.SlideMin where
 
+import qualified AtCoder.Internal.Queue as Q
 import Control.Monad.Extra (whenM)
 import Control.Monad.Fix
 import Control.Monad.ST
-import Data.Buffer
 import Data.Maybe
 import Data.Ord (Down (..))
 import qualified Data.Vector.Generic as G
@@ -15,23 +15,23 @@ import qualified Data.Vector.Unboxed as U
 slideCmpIndicesOn :: (G.Vector v a, Ord b) => (a -> b) -> Int -> v a -> U.Vector Int
 slideCmpIndicesOn wrap len xs = runST $ do
   -- dequeue of maximum number indices.
-  !buf <- newBuffer (G.length xs)
+  !buf <- Q.new (G.length xs)
 
   fmap (U.drop (len - 1)) $ G.generateM (G.length xs) $ \i -> do
     -- remove the front indices that are no longer in the span
     fix $ \loop -> do
-      whenM (maybe False (<= i - len) <$> readMaybeFront buf 0) $ do
-        popFront_ buf
+      whenM (maybe False (<= i - len) <$> Q.readMaybeFront buf 0) $ do
+        Q.popFront_ buf
         loop
 
     -- remove the last indices that are less attractive to the new coming value
     fix $ \loop -> do
-      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> readMaybeBack buf 0) $ do
-        popBack_ buf
+      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> Q.readMaybeBack buf 0) $ do
+        Q.popBack_ buf
         loop
 
-    pushBack buf i
-    readFront buf 0
+    Q.pushBack buf i
+    Q.readFront buf 0
 
 -- | \(O(N)\) Returns indices of minimum values in the windows with the specified length.
 --
@@ -69,17 +69,17 @@ slideMaxIndices = slideCmpIndicesOn id
 lookBackIndicesOn :: (G.Vector v a, Ord b) => (a -> b) -> v a -> U.Vector Int
 lookBackIndicesOn wrap xs = runST $ do
   -- dequeue of maximum number indices. actually a stack is enough though.
-  !buf <- newBuffer (G.length xs)
+  !buf <- Q.new (G.length xs)
 
   G.generateM (G.length xs) $ \i -> do
     -- remove the last indices that are less than or equal to  attractive to the new coming value:
     fix $ \loop -> do
-      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> readMaybeBack buf 0) $ do
-        popBack_ buf
+      whenM (maybe False ((< wrap (xs G.! i)) . wrap . (xs G.!)) <$> Q.readMaybeBack buf 0) $ do
+        Q.popBack_ buf
         loop
 
-    res <- fromMaybe (-1) <$> readMaybeBack buf 0
-    pushBack buf i
+    res <- fromMaybe (-1) <$> Q.readMaybeBack buf 0
+    Q.pushBack buf i
     pure res
 
 -- | \(O(N)\) Solution to the histogram problem. Find the nearest lower building for each @i@..

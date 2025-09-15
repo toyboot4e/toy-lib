@@ -1,4 +1,4 @@
--- | Obsolute. TODO: Delete.
+-- | Obsolute: use @DigitsVector@. TODO: Delete.
 module Math.Digits where
 
 import Data.List (foldl', genericTake)
