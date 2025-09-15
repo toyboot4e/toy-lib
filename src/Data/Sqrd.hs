@@ -57,39 +57,3 @@ actSqrd Sqrd {..} act l r = do
       actPartSqrd il act remL (blockLenSqrd - 1)
       U.mapM_ (`actFullSqrd` act) $ U.generate (ir - 1 - il) (+ (il + 1))
       actPartSqrd ir act 0 remR
-
--- -- O(N \log N)
--- let !xss = V.unfoldrExactN nBlocks (U.splitAt blockLenSqrd) xs
--- !blocks <- V.forM xss $ \xs' -> do
---   !vec <- UM.replicate (G.length dict) (0 :: Int)
---   U.forM_ xs' $ \x -> do
---     UM.modify vec (+ x) (bindex dict x)
---   csum1D <$> U.unsafeFreeze vec
---
--- !srd <- do
---   let {-# INLINE readFullSqrd #-}
---       readFullSqrd !iBlock = do
---         !x <- get
---         let !csum = blocks V.! iBlock :: U.Vector Int
---         let !i = maybe 0 (+ 1) $ bsearchL dict (<= x)
---         pure $ csum G.! i
---
---   let {-# INLINE readPartSqrd #-}
---       -- @l@ and @r@ are in global coordinates
---       readPartSqrd !iBlock !l !r = do
---         let !xs' = xss V.! iBlock
---         !x <- get
---         pure $ U.sum $ U.filter (<= x) $ U.take (r + 1 - l) $ U.drop l xs'
---
---   let {-# INLINE mergeSqrd #-}
---       mergeSqrd x y = pure $ x + y
---
---   let {-# INLINE actFullSqrd #-}
---       actFullSqrd _iBlock (_ :: Int) = pure ()
---
---   let {-# INLINE actPartSqrd #-}
---       -- @l@ and @r@ are in local coordinates in the block
---       readPartSqrd !iBlock !l !r = do
---       actPartSqrd _iBlock (_ :: Int) _lLocal _rLocal = pure ()
---
---   pure Sqrd {..}

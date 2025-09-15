@@ -1,4 +1,6 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
+#include "./__import"
 
 import Data.Vector.Unboxed qualified as U
 
@@ -7,6 +9,8 @@ import Data.Buffer
 import ToyLib.Parser
 import ToyLib.ShowBSB
 -- }}} toy-lib import
+
+debug = False
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/deque
 main :: IO ()
