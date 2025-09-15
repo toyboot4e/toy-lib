@@ -34,19 +34,20 @@ pphsMode = H.defaultMode {H.layout = H.PPNoLayout}
 
 generateTemplate :: [H.Extension] -> H.Module H.SrcSpanInfo -> String -> String -> String -> String
 generateTemplate extensions (H.Module _ _ _ imports _) toylib macros body =
-  init $ unlines
-    [ "-- toy-lib: https://github.com/toyboot4e/toy-lib",
-      "{- ORMOLU_DISABLE -}",
-      "{-# OPTIONS_GHC -Wno-unused-imports -Wno-unused-top-binds -Wno-orphans #-}",
-      exts,
-      imports',
-      init toylib, -- embedded library or imports of toy-lib
-      "{-# RULES \"Force inline VAI.sort\" VAI.sort = VAI.sortBy compare #-}",
-      init macros, -- `init` removes newline character
-      "{- ORMOLU_ENABLE -}",
-      "",
-      body
-    ]
+  init $
+    unlines
+      [ "-- toy-lib: https://github.com/toyboot4e/toy-lib",
+        "{- ORMOLU_DISABLE -}",
+        "{-# OPTIONS_GHC -Wno-unused-imports -Wno-unused-top-binds -Wno-orphans #-}",
+        exts,
+        imports',
+        init toylib, -- embedded library or imports of toy-lib
+        "{-# RULES \"Force inline VAI.sort\" VAI.sort = VAI.sortBy compare #-}",
+        init macros, -- `init` removes newline character
+        "{- ORMOLU_ENABLE -}",
+        "",
+        body
+      ]
   where
     exts :: String
     exts = "{-# LANGUAGE " ++ es ++ " #-}"

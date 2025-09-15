@@ -2,17 +2,20 @@
 #include "./__import"
 
 -- {{{ toy-lib
+
+import Data.Graph.Sparse
+import Data.Graph.Tree.Hld
+import Data.SegmentTree.Strict
 import ToyLib.Debug
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.Graph.Sparse
-import Data.Graph.Tree.Hld
-import Data.SegmentTree.Strict
+
 -- }}} toy-lib
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()
@@ -39,4 +42,3 @@ solve = do
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/vertex_add_path_sum
 main :: IO ()
 main = runIO solve
-

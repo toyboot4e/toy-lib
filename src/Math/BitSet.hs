@@ -164,4 +164,3 @@ partitionsOfK set0 k0 = inner [] k0 [] set0
         step !res !set =
           let !set' = set .|. bit lsb
            in inner res (k - 1) (set' : acc) (rest' .&. complement set')
-

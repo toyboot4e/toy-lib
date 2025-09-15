@@ -5,12 +5,12 @@
 import Data.ModInt
 import Data.Vector.IxVector
 import Math.Matrix
+import Math.Stimes
 import ToyLib.Parser
 import ToyLib.Parser.Grid
 import ToyLib.Prelude
 import ToyLib.ShowBSB
 import ToyLib.ShowBSB.Grid
-import Math.Stimes
 
 -- }}} toy-lib import
 

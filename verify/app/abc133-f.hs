@@ -3,12 +3,12 @@
 
 -- {{{ toy-lib import
 import Algorithm.Bisect
+import Data.Graph.Sparse
+import Data.Graph.Tree.Hld
 import ToyLib.Debug
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.Graph.Sparse
-import Data.Graph.Tree.Hld
 
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}

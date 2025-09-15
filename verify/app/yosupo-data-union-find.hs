@@ -37,4 +37,3 @@ solve = do
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind
 main :: IO ()
 main = runIO solve
-

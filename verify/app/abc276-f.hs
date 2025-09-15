@@ -12,6 +12,7 @@ import ToyLib.ShowBSB
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()

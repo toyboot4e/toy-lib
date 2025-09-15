@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
 
--- {{{ toy-lib import 
+-- {{{ toy-lib import
 import Data.Graph.MinCostFlow
 import Data.Vector.IxVector
 import ToyLib.Debug
@@ -10,10 +10,11 @@ import ToyLib.Parser.Grid
 import ToyLib.Prelude
 import ToyLib.ShowBSB
 
--- }}} toy-lib import 
+-- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 -- Bipassing answer
@@ -39,8 +40,8 @@ solve = do
   let es3 = (`U.imapMaybe` vecIV mat) $ \i acc ->
         let (!y, !x) = i `divMod` w
             !dw = dys U.! y + dxs U.! x
-            -- REMARK: remove negative edges
-         in if acc == '0' || dw <= 0
+         in -- REMARK: remove negative edges
+            if acc == '0' || dw <= 0
               then Nothing
               else Just (y0 + y, x0 + x, 1, dw)
 

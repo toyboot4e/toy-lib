@@ -3,8 +3,8 @@ module Data.Vector.CSum where
 
 import Control.Monad.Primitive
 import Data.Ix
-import Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Generic as G
+import Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)

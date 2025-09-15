@@ -6,6 +6,7 @@ import Data.ByteString.ZFunction
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}

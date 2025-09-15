@@ -50,7 +50,7 @@ newHM n = do
 -- | \(O(1)\) Returns the number of stored elements. Not tested
 {-# INLINE sizeHM #-}
 sizeHM :: (PrimMonad m) => DenseHashMap (PrimState m) a -> m Int
-sizeHM DenseHashMap{..}= do
+sizeHM DenseHashMap {..} = do
   !rest <- UM.unsafeRead restCapHM 0
   pure $ maxCapHM - rest
 

@@ -1,13 +1,12 @@
 -- | `IntervalMap` tests.
-
 module Tests.IntervalMap where
 
 -- `groupBy`, but with adjacent elements
 
 import Data.IntMap qualified as IM
+import Data.IntervalMap
 import Data.List qualified as L
 import Data.List.HT qualified as HT
-import Data.IntervalMap
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
 

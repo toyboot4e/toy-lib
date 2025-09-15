@@ -11,5 +11,5 @@ where
 import Data.Graph.Alias
 import Data.Graph.Generic
 import Data.Graph.Sparse
-import Data.Graph.Tree.TreeSG
 import Data.Graph.Tree.Hld
+import Data.Graph.Tree.TreeSG

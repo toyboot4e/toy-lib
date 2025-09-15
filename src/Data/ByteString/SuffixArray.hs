@@ -207,4 +207,3 @@ countUniqueSubstrings bs = (n * (n + 1)) `div` 2 - U.sum lcp
     !n = BS.length bs
     !sa = saOf bs
     !lcp = lcpOfSa bs sa
-

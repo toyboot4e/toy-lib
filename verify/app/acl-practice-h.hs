@@ -3,8 +3,8 @@
 
 -- {{{ toy-lib import
 
-import Data.ModInt
 import Data.Graph.TwoSat
+import Data.ModInt
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB

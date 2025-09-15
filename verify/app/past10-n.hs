@@ -23,8 +23,8 @@ solve = do
   n <- int'
   let !m = 200000 :: Int
   xs <- intsU'
-  let !ps = U.accumulate (+) (U.replicate m (0 :: Int)) $ U.map ((, 1) . pred) xs
-  let !qs = U.accumulate (+) (U.replicate m (0 :: Int)) $ U.map ((, 1) . (m -)) xs
+  let !ps = U.accumulate (+) (U.replicate m (0 :: Int)) $ U.map ((,1) . pred) xs
+  let !qs = U.accumulate (+) (U.replicate m (0 :: Int)) $ U.map ((,1) . (m -)) xs
   let !res = convolute64 ps qs
   printBSB $ U.length $ U.filter (/= 0) res
 
@@ -32,4 +32,3 @@ solve = do
 -- #FFT
 main :: IO ()
 main = runIO solve
-

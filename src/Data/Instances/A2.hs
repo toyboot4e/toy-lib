@@ -5,8 +5,8 @@
 -- The `Unbox` implementation is from @Affine@ type in @cojna/iota@.
 module Data.Instances.A2 where
 
-import Data.Bits
 import Control.Monad
+import Data.Bits
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U

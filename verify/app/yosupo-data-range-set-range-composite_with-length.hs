@@ -2,8 +2,8 @@
 #include "./__import"
 -- {{{ toy-lib import
 
-import Data.Core.SemigroupAction
 import Data.Core.SegmentAction
+import Data.Core.SemigroupAction
 import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Lazy
@@ -85,4 +85,3 @@ solve = do
 -- #lazy-segment-tree
 main :: IO ()
 main = runIO solve
-

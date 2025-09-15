@@ -70,7 +70,7 @@ rh1 :: forall b p. (KnownNat b) => Int -> RH b p
 rh1 = RH (fromInteger (natVal' (proxy# @b)))
 
 instance (KnownNat b, KnownNat p) => Semigroup (RH b p) where
-  -- | \(O(1)\)
+  -- \| \(O(1)\)
   {-# INLINE (<>) #-}
   (RH !digit1 !hash1) <> (RH !digit2 !hash2) = RH digit' hash'
     where

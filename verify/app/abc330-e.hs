@@ -2,13 +2,15 @@
 #include "./__import"
 
 -- {{{ toy-lib import
-import Data.MultiSet
+
 import Data.IntervalSet
+import Data.MultiSet
 import Data.Vector.Extra
 import ToyLib.Compat
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}

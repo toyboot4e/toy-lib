@@ -27,4 +27,3 @@ sactTimes n0 s0 a0 = case compare n0 0 of
 instance (Semigroup a) => SemigroupAction a a where
   {-# INLINE sact #-}
   sact = (<>)
-

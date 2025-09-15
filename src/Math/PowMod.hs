@@ -4,8 +4,8 @@
 module Math.PowMod where
 
 import Data.List (foldl')
-import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Unboxed as U
 import Math.Stimes (power)
 
 -- | \(O(1)\)

@@ -46,4 +46,3 @@ unDigits !base = foldl' (\ !a !b -> a * base + b) 0
 -- REMARK: It returns `[]` when given `[0]`. Be sure to convert `[]` to `[0]` if necessary.
 convertBase :: (Integral a) => a -> a -> [a] -> [a]
 convertBase !from !to = digits to . unDigits from
-

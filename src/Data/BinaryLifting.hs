@@ -165,4 +165,3 @@ instance (U.Unbox a, SemigroupAction a b) => SemigroupAction (IndexMapWithAction
 {-# INLINE idIndexMapWithAction #-}
 idIndexMapWithAction :: (U.Unbox a) => Int -> a -> IndexMapWithAction a
 idIndexMapWithAction !n !ident = IndexMapWithAction $ U.generate n (,ident)
-

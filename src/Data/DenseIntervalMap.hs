@@ -237,7 +237,7 @@ deleteMDM (DenseIntervalMap dim) l0 r0 onDel = do
               pure ()
           | r' > r -> do
               onDel l' r' x'
-            -- REMARK: this deletion is redundant
+              -- REMARK: this deletion is redundant
               -- deleteDIM dim l'
               insertDIM dim l' (l - 1, x')
               insertDIM dim (r + 1) (r', x')

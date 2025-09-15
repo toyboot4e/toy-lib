@@ -1,10 +1,12 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
 -- {{{ toy-lib import
+
+import Data.Graph.TwoSat
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.Graph.TwoSat
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}

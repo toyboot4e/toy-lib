@@ -2,10 +2,10 @@
 #include "./__import"
 -- {{{ toy-lib import
 
+import Data.SplaySeq
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.SplaySeq
 
 -- }}} toy-lib import
 
@@ -48,4 +48,3 @@ solve = do
 -- #splay-seq
 main :: IO ()
 main = runIO solve
-

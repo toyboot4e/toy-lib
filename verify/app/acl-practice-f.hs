@@ -2,16 +2,19 @@
 #include "./__import"
 
 -- {{{ toy-lib import
+
+import Data.ModInt
+import Math.NTT
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Math.NTT
-import Data.ModInt
+
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug :: Bool
 debug = False
+
 -- }}}
 
 {- ORMOLU_DISABLE -}
@@ -30,4 +33,3 @@ solve = do
 -- #FFT
 main :: IO ()
 main = runIO solve
-

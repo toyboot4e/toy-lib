@@ -27,18 +27,17 @@ and2 x y = do
 -- | Pruning.
 anyMG :: (Monad m, G.Vector v a) => (a -> m Bool) -> v a -> m Bool
 anyMG !f = fix $ \loop acc -> case G.uncons acc of
-    Nothing -> pure False
-    Just (!x, !acc') -> do
-      f x >>= \case
-        True -> pure True
-        False -> loop acc'
+  Nothing -> pure False
+  Just (!x, !acc') -> do
+    f x >>= \case
+      True -> pure True
+      False -> loop acc'
 
 -- | Pruning.
 allMG :: (Monad m, G.Vector v a) => (a -> m Bool) -> v a -> m Bool
 allMG !f = fix $ \loop acc -> case G.uncons acc of
-    Nothing -> pure True
-    Just (!x, !acc') -> do
-      f x >>= \case
-        False -> pure False
-        True -> loop acc'
-
+  Nothing -> pure True
+  Just (!x, !acc') -> do
+    f x >>= \case
+      False -> pure False
+      True -> loop acc'

@@ -2,12 +2,12 @@
 {-# LANGUAGE LambdaCase #-}
 #include "./__import"
 
-import Data.Vector.Unboxed qualified as U
-
 -- {{{ toy-lib import
 import Data.Buffer
+import Data.Vector.Unboxed qualified as U
 import ToyLib.Parser
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 debug = False
@@ -18,10 +18,10 @@ main = runIO $ do
   q <- int'
   qs <-
     U.replicateM q $ do
-        int' >>= \case
-          2 -> pure (2, -1)
-          3 -> pure (3, -1)
-          a -> (a,) <$> int'
+      int' >>= \case
+        2 -> pure (2, -1)
+        3 -> pure (3, -1)
+        a -> (a,) <$> int'
 
   deq <- newBufferAsDeque q
   res <- (`U.mapMaybeM` qs) $ \case

@@ -14,7 +14,7 @@ class SegmentAction op a where
   -- | Right semigroup aciton with the segment length.
   {-# INLINE segActWithLength #-}
   segActWithLength :: Int -> op -> a -> a
-  segActWithLength _  = segAct
+  segActWithLength _ = segAct
 
 -- TODO: consider making it failsible for beats.
 
@@ -22,4 +22,3 @@ class SegmentAction op a where
 instance (Semigroup a) => SegmentAction a a where
   {-# INLINE segActWithLength #-}
   segActWithLength _ = (<>)
-

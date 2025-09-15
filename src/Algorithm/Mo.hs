@@ -11,8 +11,8 @@ module Algorithm.Mo where
 
 import Control.Monad.Primitive (PrimMonad)
 import Control.Monad.ST (runST)
-import qualified Data.Vector.Algorithms.Intro as VAI
 import Data.Bool (bool)
+import qualified Data.Vector.Algorithms.Intro as VAI
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
@@ -110,4 +110,3 @@ simpleRunMoPure !xs !lrs !onIns !onRem !state0 = runMoPure xs lrs onIns onIns on
 -- 	}
 -- 	pure d;
 -- }
-

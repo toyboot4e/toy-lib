@@ -2,17 +2,19 @@
 #include "./__import"
 
 -- {{{ toy-lib import
+
+import Data.Graph.Sparse
+import Data.Graph.Tree.Hld
 import ToyLib.Debug
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
-import Data.Graph.Sparse
-import Data.Graph.Tree.Hld
 
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()

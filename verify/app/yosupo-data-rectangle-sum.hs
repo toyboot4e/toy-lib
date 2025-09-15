@@ -23,7 +23,7 @@ solve = do
   wm <- buildWMST $ U.map (\(!x, !y, !_) -> (x, y)) xyws
   U.forM_ xyws $ \(!x, !y, !w) -> do
     modifyWMST wm (<> Sum w) (x, y)
-  
+
   res <-
     U.mapM
       ( \(!xl, yl, pred -> !xr, pred -> !yr) -> do

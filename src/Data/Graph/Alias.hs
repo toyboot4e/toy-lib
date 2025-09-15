@@ -6,4 +6,3 @@ type Vertex = Int
 
 -- | Reprensents an edge in a CSR (compressed sparse row) representation.
 type EdgeId = Int
-

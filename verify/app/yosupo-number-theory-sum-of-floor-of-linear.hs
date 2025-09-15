@@ -3,8 +3,8 @@
 
 -- {{{ toy-lib import
 import Data.ModInt
-import Math.NTT
 import Math.FloorSum
+import Math.NTT
 import ToyLib.Debug
 import ToyLib.Parser
 import ToyLib.Prelude
@@ -14,6 +14,7 @@ import ToyLib.ShowBSB
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 solve :: StateT BS.ByteString IO ()

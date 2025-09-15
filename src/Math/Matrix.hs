@@ -81,4 +81,3 @@ instance (Num a, U.Unbox a) => Semigroup (Mat a) where
 instance (Num a, U.Unbox a) => SemigroupAction (Mat a) (Col a) where
   {-# INLINE sact #-}
   sact = mulMatToCol
-

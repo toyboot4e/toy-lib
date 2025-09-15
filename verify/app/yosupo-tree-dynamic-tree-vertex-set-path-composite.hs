@@ -4,8 +4,8 @@
 
 import Data.Core.SemigroupAction
 import Data.Graph.Tree.LCT
-import Data.ModInt
 import Data.Instances.Affine1
+import Data.ModInt
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB

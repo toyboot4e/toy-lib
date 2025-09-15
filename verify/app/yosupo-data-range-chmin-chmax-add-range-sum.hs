@@ -6,6 +6,7 @@ import Data.SegmentTree.Beats.SumMinMax
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
@@ -17,12 +18,14 @@ solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
   xs <- intsU'
-  qs <- U.replicateM q $ int' >>= \case
-    0 -> (0 :: Int,,,) <$> int' <*> int1' <*> int'
-    1 -> (1 :: Int,,,) <$> int' <*> int1' <*> int'
-    2 -> (2 :: Int,,,) <$> int' <*> int1' <*> int'
-    3 -> (3 :: Int,,,-1) <$> int' <*> int1'
-    _ -> error "unreachable"
+  qs <-
+    U.replicateM q $
+      int' >>= \case
+        0 -> (0 :: Int,,,) <$> int' <*> int1' <*> int'
+        1 -> (1 :: Int,,,) <$> int' <*> int1' <*> int'
+        2 -> (2 :: Int,,,) <$> int' <*> int1' <*> int'
+        3 -> (3 :: Int,,,-1) <$> int' <*> int1'
+        _ -> error "unreachable"
 
   stree <- buildSTB $ U.map singletonSMM xs
   res <- (`U.mapMaybeM` qs) $ \(c, !l, !r, !x) -> case c of

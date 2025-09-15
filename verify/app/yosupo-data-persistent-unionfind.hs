@@ -3,8 +3,8 @@
 
 -- {{{ toy-lib import
 
-import Data.Graph.Sparse
 import Data.Graph.Generic
+import Data.Graph.Sparse
 import Data.UnionFind.Sparse
 import ToyLib.Parser
 import ToyLib.Prelude
@@ -29,7 +29,7 @@ solve = do
     let (!t, !_, !u, !v) = U.unsafeIndex qs (q1' - 1)
     case t of
       0 -> do
-          return $ unifySUF u v uf
+        return $ unifySUF u v uf
       1 -> do
         GM.unsafeWrite res (q1' - 1) . bool 0 1 $ sameSUF u v uf
         return uf

@@ -7,6 +7,7 @@ import qualified Data.Vector.Unboxed as U
 class (Ix i, U.Unbox i) => Unindex i where
   -- TODO: Fusing
   -- https://wiki.haskell.org/GHC/Using_rules
+
   -- | \(O(D)\)
   unindex :: (i, i) -> Int -> i
 

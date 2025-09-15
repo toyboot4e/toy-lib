@@ -4,6 +4,7 @@
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
@@ -20,11 +21,13 @@ solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
   pabs <- U.replicateM n ints3'
-  qs <- U.replicateM q $ int' >>= \case
-    0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
-    1 -> (0 :: Int,,,, -1) <$> int' <*> int' <*> int'
-    2 -> (0 :: Int,,,-1 :: Int, -1) <$> int' <*> int'
-    3 -> (0 :: Int,,,-1 :: Int, -1) <$> int' <*> int'
+  qs <-
+    U.replicateM q $
+      int' >>= \case
+        0 -> (0 :: Int,,,,) <$> int' <*> int' <*> int' <*> int'
+        1 -> (0 :: Int,,,,-1) <$> int' <*> int' <*> int'
+        2 -> (0 :: Int,,,-1 :: Int,-1) <$> int' <*> int'
+        3 -> (0 :: Int,,,-1 :: Int,-1) <$> int' <*> int'
 
   let !xs = U.map (\(!p, !a, !b) -> (p, Dual (Affine1 (a, b)))) pabs
   vec <- U.thaw xs
@@ -35,4 +38,3 @@ solve = do
 -- #sqrt-decomposition
 main :: IO ()
 main = runIO solve
-

@@ -10,8 +10,8 @@ import Data.BinaryLifting
 import Data.Core.SemigroupAction
 import Data.Functor.Identity
 import Data.Graph.Alias (Vertex)
-import Data.Graph.Sparse
 import Data.Graph.Generic (restorePath)
+import Data.Graph.Sparse
 import Data.Graph.Tree.Lca
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM

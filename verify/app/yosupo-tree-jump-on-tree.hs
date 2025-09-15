@@ -1,12 +1,11 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
 
-import Debug.Trace
-
 -- {{{ toy-lib import
 
 import Data.Graph.Sparse
 import Data.Graph.Tree.Hld
+import Debug.Trace
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -27,7 +26,7 @@ solve = do
   -- let !_ = traceShow ("depth", depthHLD hld) ()
   let !res = (`U.map` qs) $ \(!u, !v, !i) ->
         -- let !_ = traceShow ("query", u, v, i) ()
-         fromMaybe (-1) $ jumpHLD hld u v i
+        fromMaybe (-1) $ jumpHLD hld u v i
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/jump_on_tree

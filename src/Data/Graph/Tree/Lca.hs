@@ -66,4 +66,3 @@ foldPathViaLca cache@(!depths, !_, !toParentBL) (!v1, !a1) (!v2, !a2) = a'
     (!_, !a1') = sactBL toParentBL (d1 - d) (v1, a1)
     (!_, !a2') = sactBL toParentBL (d2 - d) (v2, a2)
     !a' = a1' <> a2'
-

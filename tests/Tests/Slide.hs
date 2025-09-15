@@ -9,10 +9,10 @@ import Data.Instances.Affine1
 import Data.Semigroup
 import Data.Slide
 import Data.Vector.Unboxed qualified as U
+import Debug.Trace
 import Test.QuickCheck.Monadic qualified as QCM
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Debug.Trace
 
 gen1 :: Int -> Gen (Int, Int, Int)
 gen1 q = do

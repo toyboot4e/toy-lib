@@ -1,13 +1,15 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
 -- {{{ toy-lib import
-import ToyLib.Parser
-import ToyLib.Prelude
-import ToyLib.ShowBSB
+
 import Data.Instances.Affine1
 import Data.ModInt
 import Data.UnionFind.Potencial
 import Data.Vector.IxVector
+import ToyLib.Parser
+import ToyLib.Prelude
+import ToyLib.ShowBSB
+
 -- }}} toy-lib import
 
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
@@ -23,10 +25,12 @@ type MyModInt = ModInt MyModulo ; myMod :: Int ; myMod = fromInteger $ natVal' @
 solve :: StateT BS.ByteString IO ()
 solve = do
   (!n, !q) <- ints2'
-  qs <- U.replicateM q $ int' >>= \case
-    0 -> (0 :: Int,,,) <$> int' <*> int' <*> int'
-    1 -> (1 :: Int,,, -1 :: Int) <$> int' <*> int'
-    _ -> error "unreachable"
+  qs <-
+    U.replicateM q $
+      int' >>= \case
+        0 -> (0 :: Int,,,) <$> int' <*> int' <*> int'
+        1 -> (1 :: Int,,,-1 :: Int) <$> int' <*> int'
+        _ -> error "unreachable"
   uf <- newPUF n
   res <- (`U.mapM` qs) $ \case
     (0, !u, !v, Sum . modInt -> !dx) -> do

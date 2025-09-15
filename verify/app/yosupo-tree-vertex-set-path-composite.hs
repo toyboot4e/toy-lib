@@ -2,21 +2,23 @@
 #include "./__import"
 
 -- {{{ toy-lib import
-import ToyLib.Debug
-import ToyLib.Parser
-import ToyLib.Prelude
-import ToyLib.ShowBSB
+
 import Data.Core.SemigroupAction
 import Data.Graph.Sparse
 import Data.Graph.Tree.Hld
 import Data.Instances.Affine1
 import Data.ModInt
 import Data.SegmentTree.Strict
+import ToyLib.Debug
+import ToyLib.Parser
+import ToyLib.Prelude
+import ToyLib.ShowBSB
 
 -- }}} toy-lib import
 {-# RULES "Force inline VAI.sort" VAI.sort = VAI.sortBy compare #-}
 
 debug = False
+
 -- }}}
 
 {- ORMOLU_DISABLE -}
@@ -50,4 +52,3 @@ solve = do
 -- #hld #affine
 main :: IO ()
 main = runIO solve
-

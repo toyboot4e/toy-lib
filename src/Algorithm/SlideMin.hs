@@ -6,7 +6,7 @@ import Control.Monad.Fix
 import Control.Monad.ST
 import Data.Buffer
 import Data.Maybe
-import Data.Ord (Down(..))
+import Data.Ord (Down (..))
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 

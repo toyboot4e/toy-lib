@@ -39,7 +39,7 @@ solve = do
       unifyPUF_ uf u v dx
       return . showBSB $ bool '0' '1' b
     (1, !u, !v, (!_, !_, !_, !_)) -> do
-      maybe (showBSB "-1" ) (showBSB . unMat2x2 . getDual) <$> diffMayPUF uf u v
+      maybe (showBSB "-1") (showBSB . unMat2x2 . getDual) <$> diffMayPUF uf u v
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res
