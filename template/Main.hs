@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiWayIf, NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies, ViewPatterns #-}
 
--- TODO: overloaded lists (not working for the union-find module?)
 -- {-# LANGUAGE OverloadedLists, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 
 {-# LANGUAGE CPP #-}
