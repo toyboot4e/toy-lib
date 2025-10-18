@@ -19,13 +19,13 @@
 -- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)
 module Math.Divisors where
 
+import qualified AtCoder.Extra.Math as EM
 import Control.Monad.Primitive
 import Data.Foldable (for_)
 import Data.List
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Math.Primes (primes)
 
 -- \(O(N \log N)\) Divisor enumeration (sorted). Too slow, never use it.
 divisorsOf :: Int -> [Int]
@@ -73,6 +73,6 @@ countDivisors xs = U.create $ do
   cnt <- UM.replicate (maxX + 1) (0 :: Int)
   U.forM_ xs $ \x -> do
     GM.modify cnt (+ 1) x
-  let ps = U.fromList $ takeWhile (<= maxX) primes
+  let ps = EM.primes maxX
   countDivisorsInPlace ps cnt
   pure cnt

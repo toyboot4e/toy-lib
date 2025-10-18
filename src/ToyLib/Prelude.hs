@@ -3,9 +3,9 @@ module ToyLib.Prelude where
 import Control.Monad.Fix
 import Data.Bifunctor
 import qualified Data.ByteString.Char8 as BS
+import Data.Core.Unindex
 import Data.Ix
 import Data.Tuple.Extra hiding (first, second)
-import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U

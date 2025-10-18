@@ -20,4 +20,3 @@ uniformRSt :: (RandomGen g, UniformRange a, MonadState g m) => (a, a) -> m a
 uniformRSt !rng = state (uniformR rng)
 
 -- TODO: withTimeLimit
-

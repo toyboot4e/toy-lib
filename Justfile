@@ -13,8 +13,8 @@ bench:
 alias be := bench
 
 # builds the library
-build:
-    cabal build
+build *args:
+    cabal build {{args}}
 
 [private]
 alias b := build
@@ -26,9 +26,13 @@ check:
 [private]
 alias c := check
 
+# builds the library with Core output
+core *args:
+    cabal build --ghc-options='-ddump-to-file -ddump-prep' {{args}}
+
 # generates Haddock document
-doc:
-    cabal haddock
+doc *args:
+    cabal haddock {{args}}
 
 [private]
 alias d := doc
@@ -44,6 +48,14 @@ alias dt := doctest
 eg:
     cabal run example-lazy-segtree
 
+# runs treefmt
+format:
+    nix fmt .
+    # treefmt .
+
+[private]
+alias fmt := format
+
 # rebuilds the project and measures the compile time (nix flakes required)
 measure:
     cabal clean && cabal build ac-library-hs --ghc-options "-ddump-to-file -ddump-timings" && nix run nixpkgs#time-ghc-modules
@@ -58,22 +70,56 @@ test opts='':
 [private]
 alias t := test
 
+# runs local test a large number of QuickCheck tests
+many-test opts='':
+    cabal test --enable-tests --test-options '--quickcheck-tests 1000 {{opts}}'
+
+[private]
+alias mt := many-test
+
+# runs local test a large number of QuickCheck tests
+many-many-test opts='':
+    cabal test --enable-tests --test-options '--quickcheck-tests 10000 {{opts}}'
+
+[private]
+alias mmt := many-many-test
+
+# runs local test a large number of QuickCheck tests
+mmmt opts='':
+    cabal test --enable-tests --test-options '--quickcheck-tests 100000 {{opts}}'
+
+# touches all the verification source files
 touch:
-    touch verify/src/*
+    touch verify/app/*
 
 [private]
 alias to := touch
 
 # runs local test for a online judge problem
 verify:
-    ./scripts/verify
+    #!/usr/bin/env bash
+    cd verify
+    file="$(basename "$(ls app/*.hs | fzf --history .fzf-history)")"
+    touch "app/$file"
+    oj-verify run "app/$file" -j $(nproc)
 
 [private]
 alias v := verify
 
 # runs local test for all of the online judge problems
 verify-all:
-    cd verify && touch app/* && ./script/verify-all
+    cd verify && touch app/* && oj-verify run app/*.hs -j $(nproc)
 
 [private]
 alias va := verify-all
+
+# runs all of the local tests
+test-all:
+    cabal build && just test && just doctest && just verify-all
+
+[private]
+alias ta := test-all
+
+# runs tests and outputs hpc test coverage
+coverage *args:
+    cabal test ---enable-coverage {{args}}

@@ -6,9 +6,9 @@ module Data.Vector.IxVector where
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Bifunctor (first, second)
+import Data.Core.Unindex
 import Data.Ix
 import Data.Tuple.Extra (both)
-import Data.Utils.Unindex
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM

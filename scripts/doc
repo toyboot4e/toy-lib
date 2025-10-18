@@ -1,5 +1,0 @@
-#!/usr/bin/env -S bash -euE
-
-# stack haddock toy-lib:lib --fast "$@"
-cabal haddock toy-lib "$@"
-

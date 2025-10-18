@@ -4,8 +4,8 @@ module ToyLib.Debug where
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Vector.Generic as G
 import Debug.Trace
-import ToyLib.Macro
 import GHC.Stack (HasCallStack)
+import ToyLib.Macro
 
 -- When run as script, `dbg` expands to `traceShow`.
 -- Otherwise it's an empty function.

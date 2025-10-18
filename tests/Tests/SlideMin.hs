@@ -1,8 +1,8 @@
 module Tests.SlideMin where
 
 import Algorithm.SlideMin
+import AtCoder.SegTree qualified as Seg
 import Control.Monad.ST (runST)
-import Data.SegmentTree.Strict
 import Data.Semigroup
 import Data.Vector.Unboxed qualified as U
 import Test.Tasty
@@ -17,9 +17,9 @@ props =
         len <- QC.chooseInt (1, n)
         xs <- U.fromList <$> QC.vectorOf n (QC.chooseInt (-16, 16))
         let expected = runST $ do
-              stree <- buildSTree $ U.map Min xs
+              stree <- Seg.build $ U.map Min xs
               U.generateM (n - (len - 1)) $ \i -> do
-                Min x <- foldSTree stree i (i + len - 1)
+                Min x <- Seg.prod stree i (i + len)
                 return x
         let result = U.backpermute xs $ slideMinIndices len xs
         return $ result QC.=== expected

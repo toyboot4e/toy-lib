@@ -33,4 +33,3 @@ moduleName name = do
   name1 <- L.stripPrefix (installPath ++ "/src/") name
   name2 <- stripSuffix ".hs" name1
   return $ map (\c -> if c == '/' then '.' else c) name2
-

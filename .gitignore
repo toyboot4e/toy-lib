@@ -1,4 +1,4 @@
-.stack-work/
 *~
 gh-pages
 dist-newstyle
+.direnv

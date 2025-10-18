@@ -24,4 +24,3 @@ instance (Fractional a) => Group (Product a) where
 instance (Group a) => Group (Dual a) where
   {-# INLINE invert #-}
   invert (Dual x) = Dual (invert x)
-

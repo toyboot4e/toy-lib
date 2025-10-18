@@ -1,10 +1,9 @@
 -- | Inversion numbers.
 module Data.Vector.InvNum where
 
+import qualified AtCoder.SegTree as Seg
 import Control.Monad.ST
-import Data.Maybe
 import Data.Monoid
-import Data.SegmentTree.Strict
 import Data.Vector.Extra (compressU)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
@@ -18,12 +17,12 @@ import Math.PowMod (factModsN)
 -- - ABC 261 - F
 invNum :: (HasCallStack) => Int -> (G.Vector v Int) => v Int -> Int
 invNum xMax xs = runST $ do
-  !stree <- newSTree @(Sum Int) (xMax + 1)
+  !stree <- Seg.new @_ @(Sum Int) (xMax + 1)
 
   fmap getSum . (\f -> G.foldM' f mempty xs) $ \acc x -> do
     -- count pre-inserted numbers bigger than this:
-    !s <- fromMaybe mempty <$> foldMaySTree stree (x + 1) xMax
-    modifySTree stree (+ 1) x
+    !s <- Seg.prod stree (x + 1) (xMax + 1)
+    Seg.modify stree (+ 1) x
     pure $! acc + s
 
 -- | \(O(N \log N)\) Calculates the inversion number, but after applying index compression.
@@ -42,7 +41,7 @@ compressInvNumG xs = invNum (U.length xs' - 1) xs'
 -- TODO
 lexOrderMod :: (HasCallStack, G.Vector v Int) => v Int -> Int -> Int
 lexOrderMod xs modulo = runST $ do
-  !stree <- newSTree @(Sum Int) (G.length xs + 1)
+  !stree <- Seg.new @_ @(Sum Int) (G.length xs + 1)
 
   -- Pre-calculated factorial numbers:
   let !facts = factModsN modulo (G.length xs)
@@ -59,13 +58,13 @@ lexOrderMod xs modulo = runST $ do
   -- @
   -- So each expression is given as `(the number of unused numbers smaller than this) * factMod`.
   !counts <- G.iforM xs $ \i x -> do
-    Sum !nUsed <- foldSTree stree 0 x
+    Sum !nUsed <- Seg.prod stree 0 $ x + 1
     let !nUnused = x - nUsed
     let !factMod = facts G.! (G.length xs - (i + 1))
     let !inc = nUnused * factMod `rem` modulo
 
     -- mark it as used
-    writeSTree stree x (Sum 1)
+    Seg.write stree x (Sum 1)
 
     pure inc
 

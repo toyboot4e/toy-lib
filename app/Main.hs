@@ -2,8 +2,9 @@
 
 module Main (main) where
 
+import AtCoder.Extra.Graph qualified as Gr
 import Control.Monad
-import Data.Graph.Sparse
+import Data.Graph.Generic
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.Maybe
@@ -57,7 +58,7 @@ mainGenTemplate = do
 mainGenTemplateStandAlone :: IO ()
 mainGenTemplateStandAlone = do
   (!parsedFiles, !gr) <- getSourceFileGraph
-  let sortedParsedFiles = map (parsedFiles !!) $ topSortSG gr
+  let sortedParsedFiles = map (parsedFiles !!) . U.toList $ Gr.topSort (Gr.nCsr gr) (Gr.adj gr)
   writeOutTemplate $ Just sortedParsedFiles
 
 -- | Sub command for embedding toy-lib.
@@ -82,17 +83,18 @@ mainMinifyLibrary moduleNames = do
           )
           moduleNames
 
-  -- TODO: faster
   let targetSourceFiles =
-        let reachables = componentsSG (revSG gr) $ U.fromList sourceVerts
-            topSortVerts = topSortSG gr
-            sortedReachables = filter (`U.elem` reachables) topSortVerts
-         in map (parsedFiles !!) sortedReachables
+        let revGr = Gr.rev gr
+            reachables = genericComponentsOf (Gr.nCsr gr) (Gr.adj revGr) $ U.fromList sourceVerts
+            topSortVerts = Gr.topSort (Gr.nCsr gr) (Gr.adj gr)
+            sortedReachables = U.filter (`U.elem` reachables) topSortVerts
+         in -- TODO: use backpermute
+            map (parsedFiles !!) $ U.toList sortedReachables
 
   ghc2021Extensions <- Lib.Parse.getGhc2021Extensions
   return (Lib.Write.minifyLibrary ghc2021Extensions targetSourceFiles, map fst3 targetSourceFiles)
 
-getSourceFileGraph :: (HasCallStack) => IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], SparseGraph Int)
+getSourceFileGraph :: (HasCallStack) => IO ([(FilePath, [H.Extension], H.Module H.SrcSpanInfo)], Gr.Csr ())
 getSourceFileGraph = do
   parsedFiles <- getAllTheSourceFiles
   let gr = Lib.Parse.buildDepGraph parsedFiles

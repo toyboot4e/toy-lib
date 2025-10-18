@@ -2,7 +2,7 @@
 
 module Data.Vector.Extra where
 
-import Algorithm.Bisect
+import AtCoder.Extra.Bisect
 import Control.Monad.Primitive (PrimMonad)
 import Data.Maybe
 import Data.Ord (comparing)
@@ -17,16 +17,11 @@ import GHC.Stack (HasCallStack)
 -- | \(O(N \log N)\) One dimensional index compression: xs -> (nubSortXs, xs')
 {-# INLINE compressU #-}
 compressU :: (HasCallStack) => U.Vector Int -> (U.Vector Int, U.Vector Int)
-compressU xs = (dict, U.map (bindex dict) xs)
+compressU xs = (dict, U.map (lowerBound dict) xs)
   where
     -- TODO: use radix sort
     -- NOTE: `U.modify VAI.sort` is super slow on GHC 9.4.5
     !dict = U.uniq $ U.modify (VAI.sortBy (comparing id)) xs
-
--- | \(O(\log N)\) Binary search-based indexing.
-{-# INLINE bindex #-}
-bindex :: (HasCallStack, G.Vector v a, Ord a) => v a -> a -> Int
-bindex !dict !xref = fromJust $ bsearchL dict (<= xref)
 
 -- | \(O(N)\)
 -- = Test
@@ -82,69 +77,3 @@ constructrMN !n f = do
         v'' <- G.unsafeFreeze v'
         fill v'' (i + 1)
     fill v _ = pure v
-
--- | \(O(n)\) Returns @maximum [csum VG.! r - csum VG.! l | l <- [0 .. n - 1], r <- [l .. n - 1]]@
-{-# INLINE maxRangeSum #-}
-maxRangeSum :: forall a. (U.Unbox a, Ord a, Num a) => U.Vector a -> a
-maxRangeSum xs = fst $ U.foldl' f (0 :: a, 0 :: a) csum
-  where
-    csum = U.postscanl' (+) (0 :: a) xs
-    f (!acc, !minL) x = (max acc (x - minL), min minL x)
-
--- | \(O(n)\) Returns @minimum [csum VG.! r - csum VG.! l | l <- [0 .. n - 1], r <- [l .. n - 1]]@
-{-# INLINE minRangeSum #-}
-minRangeSum :: forall a. (U.Unbox a, Ord a, Num a) => U.Vector a -> a
-minRangeSum xs = fst $ U.foldl' f (0 :: a, 0 :: a) csum
-  where
-    csum = U.postscanl' (+) (0 :: a) xs
-    f (!acc, !maxL) x = (min acc (x - maxL), max maxL x)
-
--- | Wraps a boxed type as an `Unbox` instance, dispatching the boxed vector as the backing array
--- instance. <https://github.com/haskell/vector/issues/503>
-newtype Boxed a = Boxed a
-
-newtype instance U.MVector s (Boxed a) = MV_Boxed (V.MVector s a)
-
-newtype instance U.Vector (Boxed a) = V_Boxed (V.Vector a)
-
-instance GM.MVector UM.MVector (Boxed a) where
-  {-# INLINE basicLength #-}
-  basicLength = GM.basicLength
-  {-# INLINE basicUnsafeSlice #-}
-  basicUnsafeSlice = GM.basicUnsafeSlice
-  {-# INLINE basicOverlaps #-}
-  basicOverlaps = GM.basicOverlaps
-  {-# INLINE basicUnsafeNew #-}
-  basicUnsafeNew = GM.basicUnsafeNew
-  {-# INLINE basicInitialize #-}
-  basicInitialize = GM.basicInitialize
-  {-# INLINE basicUnsafeRead #-}
-  basicUnsafeRead = GM.basicUnsafeRead
-  {-# INLINE basicUnsafeWrite #-}
-  basicUnsafeWrite = GM.basicUnsafeWrite
-  {-# INLINE basicClear #-}
-  basicClear = GM.basicClear
-  {-# INLINE basicUnsafeCopy #-}
-  basicUnsafeCopy = GM.basicUnsafeCopy
-  {-# INLINE basicUnsafeMove #-}
-  basicUnsafeMove = GM.basicUnsafeMove
-  {-# INLINE basicUnsafeGrow #-}
-  basicUnsafeGrow = GM.basicUnsafeGrow
-
-instance G.Vector U.Vector (Boxed a) where
-  {-# INLINE basicUnsafeFreeze #-}
-  basicUnsafeFreeze = G.basicUnsafeFreeze
-  {-# INLINE basicUnsafeThaw #-}
-  basicUnsafeThaw = G.basicUnsafeThaw
-  {-# INLINE basicLength #-}
-  basicLength = G.basicLength
-  {-# INLINE basicUnsafeSlice #-}
-  basicUnsafeSlice = G.basicUnsafeSlice
-  {-# INLINE basicUnsafeIndexM #-}
-  basicUnsafeIndexM = G.basicUnsafeIndexM
-  {-# INLINE basicUnsafeCopy #-}
-  basicUnsafeCopy = G.basicUnsafeCopy
-  {-# INLINE elemseq #-}
-  elemseq = G.elemseq
-
-instance U.Unbox (Boxed a)

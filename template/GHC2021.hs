@@ -1,10 +1,4 @@
--- | Langauge extensions enabled by `GHC2021`.
---
--- This file is for `haskell-src-exts` to parse `GHC2021` Haskell files where the parser do not
--- understand `GHC2021`, thus manually giving the enabled language extensions.
-
 -- <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/control.html#extension-GHC2021>
-
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE BinaryLiterals #-}
 {-# LANGUAGE ConstrainedClassMethods #-}
@@ -28,7 +22,6 @@
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE HexFloatLiterals #-}
-{-# LANGUAGE ImplicitPrelude #-}
 -- `haskell-src-exts` seems not to understand it though:
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -52,4 +45,9 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ImplicitPrelude #-}
 
+-- | Langauge extensions enabled by `GHC2021`.
+--
+-- This file is for `haskell-src-exts` to parse `GHC2021` Haskell files where the parser do not
+-- understand `GHC2021`, thus manually giving the enabled language extensions.

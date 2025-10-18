@@ -1,4 +1,3 @@
-.env
-.venv
+.fzf-history
 .verify-helper
-main
+.main

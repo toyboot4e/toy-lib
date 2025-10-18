@@ -1,106 +1,117 @@
 cabal-version: 3.4
-name:          verify
-version:       0.1.0.0
-description:   toy-lib verification sources
-homepage:      https://github.com/toyboot4e/toy-lib#readme
-bug-reports:   https://github.com/toyboot4e/toy-lib/issues
-author:        toyboot4e
-maintainer:    toyboot4e@gmail.com
-copyright:     2023 toyboot4e
-license:       MIT
-build-type:    Simple
+name: verify
+version: 0.1.0.0
+description: toy-lib verification sources
+homepage: https://github.com/toyboot4e/toy-lib#readme
+bug-reports: https://github.com/toyboot4e/toy-lib/issues
+author: toyboot4e
+maintainer: toyboot4e@gmail.com
+copyright: 2023 toyboot4e
+license: CC0-1.0
+build-type: Simple
 
 flag atcoder
   description: Indicates this is on the AtCoder judge server
-  default:     False
-  manual:      True
+  default: False
+  manual: True
 
 flag debug
   description: Indicates if this is run with debug output
-  default:     False
-  manual:      True
+  default: False
+  manual: True
 
 common deps
   build-depends:
-    , adjunctions                    ^>=4.4.2
-    , array                          ==0.5.4.0
-    , attoparsec                     ^>=0.14.4
-    , base                           ^>=4.17.2.0
-    , bifunctors                     ^>=5.6.1
-    , binary                         ^>=0.8.9.1
-    , bitvec                         ^>=1.1.4.0
-    , bytestring                     ^>=0.11.4.0
-    , Cabal                          ^>=3.10.1.0
-    , Cabal-syntax                   ^>=3.10.1.0
-    , comonad                        ^>=5.0.8
-    , containers                     ^>=0.6.7
-    , contravariant                  ^>=1.5.5
-    , deepseq                        ==1.4.8.0
-    , directory                      >=1.3.7.1     && <1.3.8.0
-    , distributive                   ^>=0.6.2.1
-    , exceptions                     ^>=0.10.5
-    , extra                          ^>=1.7.13
-    , fgl                            ^>=5.8.1.1
-    , filepath                       >=1.4.2.2     && <1.4.99
-    , free                           ^>=5.2
-    , ghc-bignum                     ==1.3
-    , ghc-boot-th                    ^>=9.4.5
-    , ghc-prim                       ^>=0.9.0
-    , hashable                       ^>=1.4.2.0
-    , heaps                          ^>=0.4
-    , indexed-traversable            ^>=0.1.2.1
-    , indexed-traversable-instances  ^>=0.1.1.2
-    , integer-gmp                    ^>=1.1
-    , integer-logarithms             ^>=1.0.3.1
-    , kan-extensions                 ^>=5.2.5
-    , lens                           ^>=5.2.2
-    , linear-base                    ^>=0.3.1
-    , list-t                         ^>=1.0.5.6
-    , massiv                         ^>=1.0.4.0
-    , megaparsec                     ^>=9.4.1
-    , mono-traversable               ^>=1.0.15.3
-    , mtl                            ^>=2.3.1
-    , mutable-containers             ^>=0.3.4.1
-    , mwc-random                     ^>=0.15.0.2
-    , parallel                       ^>=3.2.2.0
-    , parsec                         ^>=3.1.16.1
-    , parser-combinators             ^>=1.3.0
-    , pretty                         ^>=1.1.3.6
-    , primitive                      ^>=0.8.0.0
-    , process                        ^>=1.6.17.0
-    , profunctors                    ^>=5.6.2
-    , psqueues                       ^>=0.2.7.3
-    , QuickCheck                     ^>=2.14.3
-    , random                         ^>=1.2.1.1
-    , reflection                     ^>=2.1.7
-    , regex-tdfa                     ^>=1.3.2.1
-    , safe-exceptions                ^>=0.1.7.3
-    , scientific                     ^>=0.3.7.0
-    , semialign                      ^>=1.3
-    , semigroupoids                  ^>=6.0.0.1
-    , split                          ^>=0.2.3.5
-    , stm                            ^>=2.5.1.0
-    , strict                         ^>=0.5
-    , strict-lens                    ^>=0.4.0.3
-    , tagged                         ^>=0.8.7
-    , template-haskell               ^>=2.19.0.0
-    , text                           ^>=2.0.2
-    , tf-random                      ^>=0.5
-    , these                          ^>=1.2
-    , these-lens                     ^>=1.0.1.3
-    , time                           ^>=1.12.2
-    , toy-lib
-    , transformers                   ^>=0.6.1.0
-    , trifecta                       ^>=2.1.2
-    , unboxing-vector                ^>=0.2.0.0
-    , unix                           ==2.7.3
-    , unordered-containers           ^>=0.2.19.1
-    , utility-ht                     ^>=0.0.17
-    , vector                         ^>=0.13.0.0
-    , vector-algorithms              ^>=0.9.0.1
-    , vector-stream                  ^>=0.1.0.0
-    , vector-th-unbox                ^>=0.2.2
-    , xhtml                          ^>=3000.2.2.1
+    -- hmatrix ^>=0.20.2,
+    -- hmatrix-glpk ^>=0.19.0.0,
+    -- hmatrix-gsl ^>=0.19.0.1,
+    -- hmatrix-special ^>=0.19.0.0,
+    Cabal ^>=3.16.0.0,
+    Cabal-syntax ^>=3.16.0.0,
+    QuickCheck ^>=2.16.0.0,
+    ac-library-hs ^>=1.5.3.0,
+    adjunctions ^>=4.4.3,
+    array ==0.5.8.0,
+    attoparsec ^>=0.14.4,
+    base ==4.19.2.0,
+    bifunctors ^>=5.6.2,
+    binary ^>=0.8.9.3,
+    bitvec ^>=1.1.5.0,
+    bytestring ^>=0.12.2.0,
+    comonad ^>=5.0.9,
+    containers ^>=0.8,
+    contravariant ^>=1.5.5,
+    deepseq ==1.5.1.0,
+    directory ^>=1.3.9.0,
+    distributive ^>=0.6.2.1,
+    exceptions ^>=0.10.7,
+    extra ^>=1.8,
+    fgl ^>=5.8.3.0,
+    filepath ^>=1.4.301.0,
+    flow ^>=2.0.0.9,
+    free ^>=5.2,
+    ghc-bignum ==1.3,
+    ghc-boot-th ==9.8.4,
+    ghc-prim ==0.11.0,
+    hashable ^>=1.5.0.0,
+    heaps ^>=0.4.1,
+    ilist ^>=0.4.0.1,
+    indexed-traversable ^>=0.1.4,
+    indexed-traversable-instances ^>=0.1.2,
+    integer-gmp ^>=1.1,
+    integer-logarithms ^>=1.0.4,
+    kan-extensions ^>=5.2.7,
+    lens ^>=5.3.5,
+    linear-base ^>=0.5.0,
+    list-t ^>=1.0.5.7,
+    massiv ^>=1.0.5.0,
+    megaparsec ^>=9.7.0,
+    monad-memo ^>=0.5.4,
+    mono-traversable ^>=1.0.21.0,
+    mtl ^>=2.3.1,
+    mutable-containers ^>=0.3.4.1,
+    mwc-random ^>=0.15.2.0,
+    parallel ^>=3.2.2.0,
+    parsec ^>=3.1.18.0,
+    parser-combinators ^>=1.3.0,
+    pretty ^>=1.1.3.6,
+    primitive ^>=0.9.1.0,
+    process ^>=1.6.26.1,
+    profunctors ^>=5.6.3,
+    psqueues ^>=0.2.8.2,
+    random ^>=1.3.1,
+    reflection ^>=2.1.9,
+    regex-tdfa ^>=1.3.2.4,
+    safe-exceptions ^>=0.1.7.4,
+    scientific ^>=0.3.8.0,
+    semialign ^>=1.3.1,
+    semigroupoids ^>=6.0.1,
+    split ^>=0.2.5,
+    stm ^>=2.5.3.1,
+    strict ^>=0.5.1,
+    strict-lens ^>=0.4.1,
+    tagged ^>=0.8.9,
+    template-haskell ==2.21.0.0,
+    text ^>=2.1.3,
+    tf-random ^>=0.5,
+    these ^>=1.2.1,
+    these-lens ^>=1.0.2,
+    time ^>=1.12.2,
+    toy-lib,
+    transformers ^>=0.6.1.0,
+    trifecta ^>=2.1.4,
+    unboxing-vector ^>=0.2.0.0,
+    unix ==2.8.6.0,
+    unordered-containers ^>=0.2.20,
+    utility-ht ^>=0.0.17.2,
+    vector ^>=0.13.2.0,
+    vector-algorithms ^>=0.9.1.0,
+    vector-split ^>=1.0.0.4,
+    vector-stream ^>=0.1.0.1,
+    vector-th-unbox ^>=0.2.2,
+    wide-word ^>=0.1.7.1,
+    witherable ^>=0.5,
+    xhtml ^>=3000.2.2.1,
 
   if flag(atcoder)
     cpp-options: -DATCODER
@@ -109,277 +120,42 @@ common deps
     cpp-options: -DDEBUG
 
 common verify
-  import:           deps
+  import: deps
   default-language: GHC2021
-  hs-source-dirs:   src
+  hs-source-dirs: app
   ghc-options:
     -O2
-    -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wmissing-export-lists
-    -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-export-lists
+    -Wmissing-home-modules
+    -Wpartial-fields
+    -Wredundant-constraints
     -Wno-missing-export-lists
 
-executable abc133-f-exe
-  import:  verify
-  main-is: abc133-f.hs
-
-executable abc276-f-exe
-  import:  verify
-  main-is: abc276-f.hs
-
-executable abc294-g-exe
-  import:  verify
-  main-is: abc294-g.hs
-
-executable abc330-e-exe
-  import:  verify
-  main-is: abc330-e.hs
-
-executable abc348-e-exe
-  import:  verify
-  main-is: abc348-e.hs
-
-executable abc372-e-exe
-  import:  verify
-  main-is: abc372-e.hs
-
-executable acl-practice-b-exe
-  import:  verify
-  main-is: acl-practice-b.hs
-
-executable acl-practice-d-exe
-  import:  verify
-  main-is: acl-practice-d.hs
-
-executable acl-practice-f-exe
-  import:  verify
-  main-is: acl-practice-f.hs
-
-executable acl-practice-h-exe
-  import:  verify
-  main-is: acl-practice-h.hs
-
-executable acl-practice-i-exe
-  import:  verify
-  main-is: acl-practice-i.hs
-
-executable acl-practice-k-exe
-  import:  verify
-  main-is: acl-practice-k.hs
-
-executable past06-o-exe
-  import:  verify
-  main-is: past06-o.hs
-
-executable past06-m-exe
-  import:  verify
-  main-is: past06-m.hs
-
-executable past06-m-dense-exe
-  import:  verify
-  main-is: past06-m-dense.hs
-
-executable past08-k-exe
-  import:  verify
-  main-is: past08-k.hs
-
-executable past10-n-exe
-  import:  verify
-  main-is: past10-n.hs
-
-executable yosupo-data-associative-array-exe
-  import:  verify
-  main-is: yosupo-data-associative-array.hs
-
-executable yosupo-data-predecessor-problem-exe
-  import:  verify
-  main-is: yosupo-data-predecessor-problem.hs
-
-executable yosupo-data-predecessor-problem_splay-set-exe
-  import:  verify
-  main-is: yosupo-data-predecessor-problem_splay-set.hs
-
-executable yosupo-data-union-find-exe
-  import:  verify
-  main-is: yosupo-data-union-find.hs
-
-executable yosupo-data-point-add-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-point-add-range-sum.hs
-
-executable yosupo-data-range-affine-point-get-exe
-  import:  verify
-  main-is: yosupo-data-range-affine-point-get.hs
-
-executable yosupo-data-range-affine-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-range-affine-range-sum.hs
-
-executable yosupo-data-range-chmin-chmax-add-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-range-chmin-chmax-add-range-sum.hs
-
-executable yosupo-data-range-set-range-composite-exe
-  import:  verify
-  main-is: yosupo-data-range-set-range-composite.hs
-
-executable yosupo-data-range-kth-smallest-exe
-  import:  verify
-  main-is: yosupo-data-range-kth-smallest.hs
-
-executable yosupo-data-range-reverse-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-range-reverse-range-sum.hs
-
-executable yosupo-data-dynamic-sequence-range-affine-range-sum-exe
-  import:  verify
-  main-is: yosupo-data-dynamic-sequence-range-affine-range-sum.hs
-
-executable yosupo-data-queue-operate-all-composite-exe
-  import:  verify
-  main-is: yosupo-data-queue-operate-all-composite.hs
-
-executable yosupo-data-deque-exe
-  import:  verify
-  main-is: yosupo-data-deque.hs
-
-executable yosupo-data-deque-operate-all-composite-exe
-  import:  verify
+executable yosupo-data-deque-operate-all-composite
+  import: verify
   main-is: yosupo-data-deque-operate-all-composite.hs
 
-executable yosupo-data-static-range-frequency-exe
-  import:  verify
-  main-is: yosupo-data-static-range-frequency.hs
+executable yosupo-data-range-chmin-chmax-add-range-sum
+  import: verify
+  main-is: yosupo-data-range-chmin-chmax-add-range-sum.hs
 
-executable yosupo-data-static-range-count-distinct-exe
-  import:  verify
-  main-is: yosupo-data-static-range-count-distinct.hs
-
-executable yosupo-data-rectangle-sum-exe
-  import:  verify
-  main-is: yosupo-data-rectangle-sum.hs
-
-executable yosupo-data-point-add-rectangle-sum-exe
-  import:  verify
-  main-is: yosupo-data-point-add-rectangle-sum.hs
-
-executable yosupo-data-area-of-union-of-rectangles-exe
-  import:  verify
-  main-is: yosupo-data-area-of-union-of-rectangles.hs
-
-executable yosupo-data-persistent-queue-exe
-  import:  verify
+executable yosupo-data-persistent-queue
+  import: verify
   main-is: yosupo-data-persistent-queue.hs
 
-executable yosupo-data-persistent-unionfind-exe
-  import:  verify
+executable yosupo-data-persistent-unionfind
+  import: verify
   main-is: yosupo-data-persistent-unionfind.hs
 
-executable yosupo-graph-lca-HLD-exe
-  import:  verify
-  main-is: yosupo-graph-lca-HLD.hs
-
-executable yosupo-graph-lca-BL-exe
-  import:  verify
-  main-is: yosupo-graph-lca-BL.hs
-
-executable yosupo-graph-scc-exe
-  import:  verify
-  main-is: yosupo-graph-scc.hs
-
-executable yosupo-graph-minimum-spanning-tree-exe
-  import:  verify
-  main-is: yosupo-graph-minimum-spanning-tree.hs
-
-executable yosupo-graph-shortest-path-exe
-  import:  verify
-  main-is: yosupo-graph-shortest-path.hs
-
-executable yosupo-graph-cycle-detection-exe
-  import:  verify
-  main-is: yosupo-graph-cycle-detection.hs
-
-executable yosupo-graph-cycle-detection-undirected-exe
-  import:  verify
-  main-is: yosupo-graph-cycle-detection-undirected.hs
-
-executable yosupo-new-union-find-with-potencial-exe
-  import:  verify
-  main-is: yosupo-new-union-find-with-potencial.hs
-
-executable yosupo-new-unionfind-with-potential-non-commutative-group-exe
-  import:  verify
-  main-is:
-    yosupo-new-unionfind-with-potential-non-commutative-group.hs
-
-executable yosupo-tree-tree-diameter-exe
-  import:  verify
-  main-is: yosupo-tree-tree-diameter.hs
-
-executable yosupo-tree-tree-path-composite-sum-exe
-  import:  verify
-  main-is: yosupo-tree-tree-path-composite-sum.hs
-
-executable yosupo-tree-jump-on-tree-exe
-  import:  verify
-  main-is: yosupo-tree-jump-on-tree.hs
-
-executable yosupo-tree-vertex-add-path-sum-exe
-  import:  verify
-  main-is: yosupo-tree-vertex-add-path-sum.hs
-
-executable yosupo-tree-vertex-set-path-composite-exe
-  import:  verify
-  main-is: yosupo-tree-vertex-set-path-composite.hs
-
-executable yosupo-tree-vertex-add-subtree-sum-exe
-  import:  verify
-  main-is: yosupo-tree-vertex-add-subtree-sum.hs
-
-executable yosupo-tree-dynamic-tree-vertex-add-path-sum-exe
-  import:  verify
-  main-is: yosupo-tree-dynamic-tree-vertex-add-path-sum.hs
-
-executable yosupo-tree-dynamic-tree-vertex-set-path-composite-exe
-  import:  verify
-  main-is: yosupo-tree-dynamic-tree-vertex-set-path-composite.hs
-
-executable yosupo-tree-dynamic-tree-vertex-add-subtree-sum-exe
-  import:  verify
-  main-is: yosupo-tree-dynamic-tree-vertex-add-subtree-sum.hs
-
-executable yosupo-convolution-convolution-exe
-  import:  verify
-  main-is: yosupo-convolution-convolution.hs
-
-executable yosupo-number-theory-sum-of-floor-of-linear-exe
-  import:  verify
-  main-is: yosupo-number-theory-sum-of-floor-of-linear.hs
-
-executable yosupo-la-matrix-product-exe
-  import:  verify
-  main-is: yosupo-la-matrix-product.hs
-
-executable yosupo-la-pow-of-matrix-exe
-  import:  verify
-  main-is: yosupo-la-pow-of-matrix.hs
-
-executable yosupo-string-zalgorithm-exe
-  import:  verify
-  main-is: yosupo-string-zalgorithm.hs
-
-executable yosupo-string-suffixarray-exe
-  import:  verify
-  main-is: yosupo-string-suffixarray.hs
-
-executable yosupo-string-number-of-substrings-exe
-  import:  verify
-  main-is: yosupo-string-number-of-substrings.hs
-
-executable yosupo-other-two-sat-exe
-  import:  verify
-  main-is: yosupo-other-two-sat.hs
-
-executable yosupo-other-longest-increasing-sequence-exe
-  import:  verify
+executable yosupo-other-longest-increasing-sequence
+  import: verify
   main-is: yosupo-other-longest-increasing-sequence.hs
+
+executable yosupo-string-number-of-substrings
+  import: verify
+  main-is: yosupo-string-number-of-substrings.hs

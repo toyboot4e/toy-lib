@@ -1,7 +1,7 @@
 module Lib.Parse where
 
+import AtCoder.Extra.Graph qualified as Gr
 import Control.Monad
-import Data.Graph.Sparse
 import Data.List.Extra (nubSort)
 import Data.Map.Strict qualified as M
 import Data.Maybe
@@ -47,8 +47,8 @@ partitionParseResults = foldr step ([], [])
     step (!f, (!exts, H.ParseFailed loc s)) (!accL, !accR) = ((f, exts, (loc, s)) : accL, accR)
     step (!f, (!exts, H.ParseOk l)) (!accL, !accR) = (accL, (f, exts, l) : accR)
 
-buildDepGraph :: (HasCallStack) => [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> SparseGraph Int
-buildDepGraph input = buildSG (length input) edges
+buildDepGraph :: (HasCallStack) => [(FilePath, [H.Extension], H.Module H.SrcSpanInfo)] -> Gr.Csr ()
+buildDepGraph input = Gr.build' (length input) edges
   where
     edges :: U.Vector (Int, Int)
     edges = U.fromList $ concatMap (\(!path, _, module_) -> edgesOf path module_) input

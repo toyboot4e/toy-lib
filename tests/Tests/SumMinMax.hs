@@ -2,9 +2,9 @@
 
 module Tests.SumMinMax where
 
+import AtCoder.LazySegTree (SegAct (..))
 import Control.Monad
 import Control.Monad.ST
-import Data.Core.SegmentAction
 import Data.List (foldl')
 import Data.SegmentTree.Beats
 import Data.SegmentTree.Beats.SumMinMax

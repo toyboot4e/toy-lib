@@ -2,7 +2,7 @@
 module ToyLib.Parser where
 
 import Control.Monad.State.Class
-import Control.Monad.Trans.State.Strict (State, evalState, StateT, evalStateT)
+import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT)
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char (digitToInt, isSpace)
@@ -122,4 +122,3 @@ intsN' n = U.replicateM n int'
 {-# INLINE digitsU' #-}
 digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
 digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> line'
-
