@@ -3,10 +3,12 @@
 -- | `Ix`-based API over `vector`.
 module Data.Vector.IxVector where
 
+import Control.Monad (when)
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Bifunctor (first, second)
 import Data.Core.Unindex
+import Data.Foldable (for_)
 import Data.Ix
 import Data.Tuple.Extra (both)
 import qualified Data.Vector as V
@@ -18,6 +20,14 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug
+import ToyLib.Prelude
+
+-- | \(O(1)\) Safer `index`
+{-# INLINE index' #-}
+index' :: (HasCallStack, Ix i, Show i) => (i, i) -> i -> Int
+index' !bnd !i
+  | inRange bnd i = index bnd i
+  | otherwise = error $ "index out ouf bounds: " ++ show i ++ " in " ++ show bnd
 
 -- | N-dimensional @Vector@ or @MVector@ with `Data.Ix`.
 data IxVector i v = IxVector {boundsIV :: !(i, i), vecIV :: !v}
@@ -37,8 +47,8 @@ type IxMBVector s i a = IxVector i (VM.MVector s a)
 
 -- | Partial `IxVector` accessor
 {-# INLINE (@!) #-}
-(@!) :: (HasCallStack, Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
-(@!) IxVector {..} i = vecIV G.! index boundsIV i
+(@!) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> a
+(@!) IxVector {..} i = vecIV G.! index' boundsIV i
 
 -- | Partial unsafe `IxVector` accessor
 {-# INLINE (@!!) #-}
@@ -47,10 +57,10 @@ type IxMBVector s i a = IxVector i (VM.MVector s a)
 
 -- | \(O(1)\) Total `IxVector` accessor
 {-# INLINE (@!?) #-}
-(@!?) :: (HasCallStack, Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(@!?) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
 (@!?) IxVector {..} i
   -- NOTE: `index` panics on out of range
-  | inRange boundsIV i = Just (vecIV G.! index boundsIV i)
+  | inRange boundsIV i = Just (vecIV G.! index' boundsIV i)
   | otherwise = Nothing
 
 -- | Total unsafe `IxVector` accessor
@@ -115,9 +125,9 @@ zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
 
 -- | \(O(f X)\) Altertnative to `accumulate` for `IxVector` that share the same bounds.
 {-# INLINE accumulateIV #-}
-accumulateIV :: (Ix i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
+accumulateIV :: (Ix i, Show i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
 accumulateIV !f !vec0 !commands =
-  let !input1d = U.map (first (index bnd)) (vecIV commands)
+  let !input1d = U.map (first (index' bnd)) (vecIV commands)
       !vec1d = U.accumulate f (vecIV vec0) input1d
    in IxVector bnd vec1d
   where
@@ -144,7 +154,7 @@ constructIV bnd f = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar ->
 
 -- | \(O(f N)\)
 {-# INLINE constructMIV #-}
-constructMIV :: forall i a m. (Unindex i, PrimMonad m, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> m a) -> m (U.Vector a)
+constructMIV :: forall i a m. (HasCallStack, Unindex i, PrimMonad m, U.Unbox a) => (i, i) -> (IxUVector i a -> i -> m a) -> m (U.Vector a)
 constructMIV bnd@(!_, !_) f = do
   v <- GM.new n
   v' <- G.unsafeFreeze v
@@ -190,15 +200,15 @@ newIV bnd e0 = IxVector bnd <$> UM.replicate (rangeSize bnd) e0
 
 -- | \(O(1)\) Reads a value from `IxVector`.
 {-# INLINE readIV #-}
-readIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
-readIV IxVector {..} i = GM.read vecIV (index boundsIV i)
+readIV :: (HasCallStack, Ix i, Show i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m a
+readIV IxVector {..} i = GM.read vecIV (index' boundsIV i)
 
 -- | \(O(1)\) Reads a value from `IxVector`.
 {-# INLINE readMaybeIV #-}
-readMaybeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
+readMaybeIV :: (HasCallStack, Ix i, Show i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> m (Maybe a)
 readMaybeIV IxVector {..} i
   | not (inRange boundsIV i) = pure Nothing
-  | otherwise = Just <$> GM.read vecIV (index boundsIV i)
+  | otherwise = Just <$> GM.read vecIV (index' boundsIV i)
 
 -- | \(O(1)\)
 {-# INLINE unsafeReadIV #-}
@@ -208,8 +218,8 @@ unsafeReadIV IxVector {..} i = GM.unsafeRead vecIV (unsafeIndex boundsIV i)
 -- | \(O(1)\)
 -- | Writes a value to `IxVector`.
 {-# INLINE writeIV #-}
-writeIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
-writeIV IxVector {..} i = GM.write vecIV (index boundsIV i)
+writeIV :: (HasCallStack, Ix i, Show i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> i -> a -> m ()
+writeIV IxVector {..} i = GM.write vecIV (index' boundsIV i)
 
 -- | \(O(1)\)
 {-# INLINE unsafeWriteIV #-}
@@ -220,6 +230,8 @@ unsafeWriteIV IxVector {..} i = GM.unsafeWrite vecIV (unsafeIndex boundsIV i)
 {-# INLINE modifyIV #-}
 modifyIV :: (HasCallStack, Ix i, PrimMonad m, GM.MVector v a) => IxVector i (v (PrimState m) a) -> (a -> a) -> i -> m ()
 modifyIV IxVector {..} !alter i = GM.modify vecIV alter (index boundsIV i)
+
+-- FIXME: index' or something
 
 -- | \(O(1)\)
 {-# INLINE unsafeModifyIV #-}
@@ -262,6 +274,48 @@ cloneIV IxVector {..} = do
   vec' <- GM.clone vecIV
   pure $ IxVector boundsIV vec'
 
+-- | Extracts imos 2D seeds from rectangle add queries
+{-# INLINE extractImos2d #-}
+extractImos2d :: forall a. (HasCallStack, Num a, U.Unbox a) => Int -> Int -> U.Vector (Int, Int, Int, Int, a) -> IxUVector (Int, Int) a
+extractImos2d h w rangeAdds = IxVector (zero2 h w) $ U.create $ do
+  rect <- IxVector (zero2 h w) <$> UM.replicate (h * w) (0 :: a)
+  U.forM_ rangeAdds $ \(!y1, !y2, !x1, !x2, !d) -> do
+    -- TODO: run boundary check for the rect
+    modifyIV rect (+ d) (y1, x1)
+    let !by = y2 < h - 1
+    when by $ do
+      modifyIV rect (subtract d) (y2 + 1, x1)
+    let !bx = x2 < w - 1
+    when bx $ do
+      modifyIV rect (subtract d) (y1, x2 + 1)
+    when (by && bx) $ do
+      modifyIV rect (+ d) (y2 + 1, x2 + 1)
+  pure $ vecIV rect
+
+-- | Creates a rectangle from rectangle queries
+{-# INLINE imos2d #-}
+imos2d :: forall a. (HasCallStack, Num a, U.Unbox a) => Int -> Int -> U.Vector (Int, Int, Int, Int, a) -> IxUVector (Int, Int) a
+imos2d h w rangeAdds = IxVector (zero2 h w) $ U.create $ do
+  rect <- thawIV seeds
+
+  -- row scan
+  for_ [0 .. h - 1] $ \y -> do
+    for_ [1 .. w - 1] $ \x -> do
+      dx <- readIV rect (y, x - 1)
+      modifyIV rect (+ dx) (y, x)
+
+  -- column scan
+  for_ [0 .. w - 1] $ \x -> do
+    for_ [1 .. h - 1] $ \y -> do
+      dy <- readIV rect (y - 1, x)
+      modifyIV rect (+ dy) (y, x)
+
+  pure $ vecIV rect
+  where
+    seeds = extractImos2d h w rangeAdds
+
+-- REMARK: imos functions take (y1, y2, x1, x2, d), while `@+!` take ((y1, x1), (y2, x2))
+
 -- | \(O(HW)\) Calculates two-dimensional cumulative sum.
 --
 -- WARNING: Can you really allocate/run \(O(HW)\) algorithm?
@@ -283,7 +337,7 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
       fromX = IxVector bnd sofar @! (y, x - 1)
       fromD = IxVector bnd sofar @! (y - 1, x - 1)
   where
-    -- Insert the zero row and the column:
+    -- Insert the zero row and the zero column:
     !bnd = second (both (+ 1)) (boundsIV gr)
 
 -- | \(O(1)\) Returns cumulative sum in the given 2D range.

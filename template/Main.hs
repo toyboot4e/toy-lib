@@ -77,30 +77,33 @@ import Data.Array.Unsafe
 import qualified Data.Array as A
 
 -- ac-library-hs
-import AtCoder.Extra.Bisect
+import qualified AtCoder.Extra.Bisect as B
+import qualified AtCoder.Extra.DsuMonoid as DsuM
 import qualified AtCoder.Extra.Graph as Gr
+import qualified AtCoder.Extra.Vector as EV
+import qualified AtCoder.Extra.Vector.Prim as EVP
+import qualified AtCoder.Extra.Bisect as B
+import qualified AtCoder.Extra.Math as EM
 import qualified AtCoder.Extra.HashMap as EHM
 import qualified AtCoder.Extra.IntMap as EIM
 import qualified AtCoder.Extra.IntSet as EIS
-import qualified AtCoder.Extra.IntervalMap as ItM
+import qualified AtCoder.Extra.IntervalMap as EIT
 import AtCoder.Extra.Ix0
-import qualified AtCoder.Extra.Math as EM
+import qualified AtCoder.Extra.Monoid.RangeAdd as RangeAdd
+import qualified AtCoder.Extra.Monoid.RangeSet as RangeSet
+import qualified AtCoder.Extra.Monoid.RollingHash as RH
 import qualified AtCoder.Extra.Semigroup.Matrix as Mat
-import qualified AtCoder.Extra.Semigroup.Permutation as Perm
+import qualified AtCoder.Extra.Semigroup.Permutation as Permutation
 import qualified AtCoder.Extra.Tree as Tr
 import qualified AtCoder.Extra.Tree.Hld as Hld
 import qualified AtCoder.Extra.Tree.Lct as Lct
 import qualified AtCoder.Extra.Tree.TreeMonoid as Tm
-import qualified AtCoder.Extra.Vector as EV
-import qualified AtCoder.Extra.Vector.Prim as EVP
+import qualified AtCoder.FenwickTree as Ft
 import qualified AtCoder.Internal.MinHeap as MH
 import qualified AtCoder.Internal.Queue as Q
-import AtCoder.LazySegTree (SegAct (..))
-import qualified AtCoder.LazySegTree as Lst
-import qualified AtCoder.Dsu as Dsu
+import qualified AtCoder.LazySegTree as LSeg
 import qualified AtCoder.ModInt as MI
 import qualified AtCoder.SegTree as Seg
-import qualified AtCoder.String as AS
 
 -- bitvec
 import Data.Bit

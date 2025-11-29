@@ -47,6 +47,8 @@ appendCSum vec len dx = do
   x <- GM.read vec len
   GM.write vec (len + 1) $! x + dx
 
+-- NOTE: 2D cumulative sums are in Data.Vector.IxVector
+
 -- | 3D cumulative sum (cubic only)
 {-# INLINE csum3D #-}
 csum3D :: (HasCallStack, Num a, U.Unbox a) => Int -> IxUVector (Int, Int, Int) a -> IxUVector (Int, Int, Int) a
