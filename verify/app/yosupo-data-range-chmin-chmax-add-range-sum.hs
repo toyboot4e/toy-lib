@@ -16,15 +16,15 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  (!n, !q) <- ints2'
-  xs <- intsU'
+  (!n, !q) <- ints2P
+  xs <- intsP
   qs <-
     U.replicateM q $
-      int' >>= \case
-        0 -> (0 :: Int,,,) <$> int' <*> int1' <*> int'
-        1 -> (1 :: Int,,,) <$> int' <*> int1' <*> int'
-        2 -> (2 :: Int,,,) <$> int' <*> int1' <*> int'
-        3 -> (3 :: Int,,,-1) <$> int' <*> int1'
+      intP >>= \case
+        0 -> (0 :: Int,,,) <$> intP <*> int1P <*> intP
+        1 -> (1 :: Int,,,) <$> intP <*> int1P <*> intP
+        2 -> (2 :: Int,,,) <$> intP <*> int1P <*> intP
+        3 -> (3 :: Int,,,-1) <$> intP <*> int1P
         _ -> error "unreachable"
 
   stree <- buildSTB $ U.map singletonSMM xs

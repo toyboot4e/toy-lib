@@ -28,8 +28,8 @@ import ToyLib.Parser
 -- 1 2 3
 -- 4 5 6
 -- @
-getMat' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
-getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
+matP :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
+matP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) intP
 
 -- | \(O(HW)\) Reads next @h * w@ elements as a char-based grid.
 --
@@ -48,8 +48,8 @@ getMat' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) int'
 -- a b c
 -- d e f
 -- @
-getGrid' :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
-getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) char'
+gridP :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
+gridP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) charP
 
 -- | \(O(HW)\) Gets diagnoal matrix input.
 --
@@ -71,11 +71,11 @@ getGrid' !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) char
 -- 8 6 0 3
 -- 5 8 3 0
 -- @
-getDiagMat' :: (PrimMonad m, MonadState BS.ByteString m) => Int -> m (IxUVector (Int, Int) Int)
-getDiagMat' !n = fmap (IxVector bnd) $ do
+diagMatP :: (PrimMonad m, MonadState BS.ByteString m) => Int -> m (IxUVector (Int, Int) Int)
+diagMatP !n = fmap (IxVector bnd) $ do
   !vec <- UM.replicate (n * n) (0 :: Int)
   U.forM_ (U.generate (n - 1) id) $ \y -> do
-    !ws <- intsU'
+    !ws <- intsP
     U.iforM_ ws $ \i dw -> do
       let !x = y + i + 1
       GM.write vec (index bnd (y, x)) dw

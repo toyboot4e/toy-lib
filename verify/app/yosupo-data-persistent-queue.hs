@@ -17,12 +17,12 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  q <- int'
+  q <- intP
   qs <- U.replicateM q $ do
-    int' >>= \case
+    intP >>= \case
       -- Vertex 0 is treated as the entry point
-      0 -> (0 :: Int,,) <$> (succ <$> int') <*> int'
-      1 -> (1 :: Int,,-1 :: Int) <$> (succ <$> int')
+      0 -> (0 :: Int,,) <$> (succ <$> intP) <*> intP
+      1 -> (1 :: Int,,-1 :: Int) <$> (succ <$> intP)
       _ -> error "unreachable"
 
   let !gr = buildSG_ (q + 1) $ U.imap (\v (!_, !u1, !_) -> (u1, v + 1)) qs

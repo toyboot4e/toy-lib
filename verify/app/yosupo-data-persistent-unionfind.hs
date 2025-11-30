@@ -18,10 +18,10 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  (!n, !q) <- ints2'
+  (!n, !q) <- ints2P
 
   -- type, from, u, v
-  qs <- U.replicateM q ints4'
+  qs <- U.replicateM q ints4P
   let !gr = buildSG_ (q + 1) $ G.imap (\i0 (!_, !from0, !_, !_) -> (from0 + 1, i0 + 1)) qs
 
   res <- UM.replicate q (-2 :: Int)

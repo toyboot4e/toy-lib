@@ -23,14 +23,14 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  q <- int'
+  q <- intP
   qs <- U.replicateM q $ do
-    int' >>= \case
-      0 -> (0 :: Int,,) <$> int' <*> int'
-      1 -> (1 :: Int,,) <$> int' <*> int'
+    intP >>= \case
+      0 -> (0 :: Int,,) <$> intP <*> intP
+      1 -> (1 :: Int,,) <$> intP <*> intP
       2 -> return (2 :: Int, -1, -1)
       3 -> return (3 :: Int, -1, -1)
-      4 -> (4 :: Int,,-1) <$> int'
+      4 -> (4 :: Int,,-1) <$> intP
       _ -> error "unreachable"
 
   window <- newDSF q

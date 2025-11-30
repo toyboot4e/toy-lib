@@ -1,7 +1,7 @@
 solve :: StateT BS.ByteString IO ()
 solve = do
-  !n <- int'
-  !xs <- intsU'
+  !n <- intP
+  !xs <- intsP
 
   printBSB "TODO"
 

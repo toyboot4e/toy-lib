@@ -23,102 +23,102 @@ runFileIO f path = evalStateT f =<< BS.readFile path
 -- * Primitives
 
 -- | Parses an `Int`.
-{-# INLINE int' #-}
-int' :: (MonadState BS.ByteString m) => m Int
-int' = state $ fromJust . BS.readInt . BS.dropSpace
+{-# INLINE intP #-}
+intP :: (MonadState BS.ByteString m) => m Int
+intP = state $ fromJust . BS.readInt . BS.dropSpace
 
 -- | Parses an `Int` and substracts one.
-{-# INLINE int1' #-}
-int1' :: (MonadState BS.ByteString m) => m Int
-int1' = subtract 1 <$> int'
+{-# INLINE int1P #-}
+int1P :: (MonadState BS.ByteString m) => m Int
+int1P = subtract 1 <$> intP
 
-{-# INLINE char' #-}
-char' :: (MonadState BS.ByteString m) => m Char
-char' = state $ fromJust . BS.uncons . BS.dropSpace
+{-# INLINE charP #-}
+charP :: (MonadState BS.ByteString m) => m Char
+charP = state $ fromJust . BS.uncons . BS.dropSpace
 
-{-# INLINE word' #-}
-word' :: (MonadState BS.ByteString m) => m BS.ByteString
-word' = state $ BS.break isSpace . BS.dropSpace
+{-# INLINE wordP #-}
+wordP :: (MonadState BS.ByteString m) => m BS.ByteString
+wordP = state $ BS.break isSpace . BS.dropSpace
 
 -- | Parsers an `Int` and converts it into a `Double`.
-double' :: (MonadState BS.ByteString m) => m Double
-double' = read . BS.unpack <$> word'
+doubleP :: (MonadState BS.ByteString m) => m Double
+doubleP = read . BS.unpack <$> wordP
 
 -- * Tuples
 
-{-# INLINE ints2' #-}
-ints2' :: (MonadState BS.ByteString m) => m (Int, Int)
-ints2' = (,) <$> int' <*> int'
+{-# INLINE ints2P #-}
+ints2P :: (MonadState BS.ByteString m) => m (Int, Int)
+ints2P = (,) <$> intP <*> intP
 
-{-# INLINE ints11' #-}
-ints11' :: (MonadState BS.ByteString m) => m (Int, Int)
-ints11' = (,) <$> int1' <*> int1'
+{-# INLINE ints11P #-}
+ints11P :: (MonadState BS.ByteString m) => m (Int, Int)
+ints11P = (,) <$> int1P <*> int1P
 
-{-# INLINE ints3' #-}
-ints3' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
-ints3' = (,,) <$> int' <*> int' <*> int'
+{-# INLINE ints3P #-}
+ints3P :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints3P = (,,) <$> intP <*> intP <*> intP
 
-{-# INLINE ints110' #-}
-ints110' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
-ints110' = (,,) <$> int1' <*> int1' <*> int'
+{-# INLINE ints110P #-}
+ints110P :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints110P = (,,) <$> int1P <*> int1P <*> intP
 
-{-# INLINE ints011' #-}
-ints011' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
-ints011' = (,,) <$> int' <*> int1' <*> int1'
+{-# INLINE ints011 #-}
+ints011 :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints011 = (,,) <$> intP <*> int1P <*> int1P
 
-{-# INLINE ints111' #-}
-ints111' :: (MonadState BS.ByteString m) => m (Int, Int, Int)
-ints111' = (,,) <$> int1' <*> int1' <*> int1'
+{-# INLINE ints111 #-}
+ints111 :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints111 = (,,) <$> int1P <*> int1P <*> int1P
 
-{-# INLINE ints4' #-}
-ints4' :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int)
-ints4' = (,,,) <$> int' <*> int' <*> int' <*> int'
+{-# INLINE ints4P #-}
+ints4P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int)
+ints4P = (,,,) <$> intP <*> intP <*> intP <*> intP
 
-{-# INLINE ints5' #-}
-ints5' :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int)
-ints5' = (,,,,) <$> int' <*> int' <*> int' <*> int' <*> int'
+{-# INLINE ints5P #-}
+ints5P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int)
+ints5P = (,,,,) <$> intP <*> intP <*> intP <*> intP <*> intP
 
-{-# INLINE ints6' #-}
-ints6' :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int, Int)
-ints6' = (,,,,,) <$> int' <*> int' <*> int' <*> int' <*> int' <*> int'
+{-# INLINE ints6P #-}
+ints6P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int, Int)
+ints6P = (,,,,,) <$> intP <*> intP <*> intP <*> intP <*> intP <*> intP
 
 -- * Readers
 
 -- | Reads one line from the state. FIXME: It ignores empty lines.
-{-# INLINE line' #-}
-line' :: (MonadState BS.ByteString m) => m BS.ByteString
-line' = state $ BS.span (/= '\n') . BS.dropSpace
+{-# INLINE lineP #-}
+lineP :: (MonadState BS.ByteString m) => m BS.ByteString
+lineP = state $ BS.span (/= '\n') . BS.dropSpace
 
 -- | Reads one line from the state.
-{-# INLINE lineU' #-}
-lineU' :: (MonadState BS.ByteString m) => m (U.Vector Char)
-lineU' = do
-  s <- line'
+{-# INLINE lineUP #-}
+lineUP :: (MonadState BS.ByteString m) => m (U.Vector Char)
+lineUP = do
+  s <- lineP
   pure $ U.fromListN (BS.length s) $ BS.unpack s
 
 -- | Reads one line from the state and runs a pure parser for it.
-{-# INLINE withLine' #-}
-withLine' :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
-withLine' f = evalState f <$> line'
+{-# INLINE withLine #-}
+withLine :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
+withLine f = evalState f <$> lineP
 
 -- * More
 
 -- | Reads one line an unboxed vector.
-{-# INLINE ints' #-}
-ints' :: (MonadState BS.ByteString m) => m [Int]
-ints' = unfoldr (BS.readInt . BS.dropSpace) <$> line'
+{-# INLINE intListP #-}
+intListP :: (MonadState BS.ByteString m) => m [Int]
+intListP = unfoldr (BS.readInt . BS.dropSpace) <$> lineP
 
 -- | Reads one line an unboxed vector.
-{-# INLINE intsU' #-}
-intsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
-intsU' = U.unfoldr (BS.readInt . BS.dropSpace) <$> line'
+{-# INLINE intsP #-}
+intsP :: (MonadState BS.ByteString m) => m (U.Vector Int)
+intsP = U.unfoldr (BS.readInt . BS.dropSpace) <$> lineP
 
 -- | Reads n values as an unboxed vector.
-{-# INLINE intsN' #-}
-intsN' :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
-intsN' n = U.replicateM n int'
+{-# INLINE intsNP #-}
+intsNP :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
+intsNP n = U.replicateM n intP
 
 -- | Reads one line as digits. TODO: one word might be better
-{-# INLINE digitsU' #-}
-digitsU' :: (MonadState BS.ByteString m) => m (U.Vector Int)
-digitsU' = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> line'
+{-# INLINE digitsP #-}
+digitsP :: (MonadState BS.ByteString m) => m (U.Vector Int)
+digitsP = U.unfoldr (fmap (first digitToInt) . BS.uncons) <$> lineP

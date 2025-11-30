@@ -13,7 +13,7 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  (!n, !q) <- ints2'
+  (!n, !q) <- ints2P
   printBSB $ unlinesBSB res
 
 -- verification-helper: PROBLEM 

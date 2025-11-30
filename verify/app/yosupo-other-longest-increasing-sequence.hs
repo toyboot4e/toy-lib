@@ -17,8 +17,8 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  n <- int'
-  xs <- intsU'
+  n <- intP
+  xs <- intsP
   let !dict = U.uniq $ U.modify VAI.sort xs
   let !res = lisOf' $ U.map (bindex dict) xs
   printBSB $ G.length res

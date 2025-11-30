@@ -15,7 +15,7 @@ debug = False
 
 solve :: StateT BS.ByteString IO ()
 solve = do
-  s <- line'
+  s <- lineP
   printBSB $ countUniqueSubstrings s
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/number_of_substrings
