@@ -1,6 +1,7 @@
 -- | `StateT` -based parser.
 module ToyLib.Parser where
 
+import Control.Monad.IO.Class
 import Control.Monad.State.Class
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT)
 import Data.Bifunctor (first)
@@ -9,6 +10,7 @@ import Data.Char (digitToInt, isSpace)
 import Data.List (unfoldr)
 import Data.Maybe
 import qualified Data.Vector.Unboxed as U
+import GHC.Stack (HasCallStack)
 
 -- | Reads the whole stdin and runs the user program.
 {-# INLINE runIO #-}
@@ -24,16 +26,16 @@ runFileIO f path = evalStateT f =<< BS.readFile path
 
 -- | Parses an `Int`.
 {-# INLINE intP #-}
-intP :: (MonadState BS.ByteString m) => m Int
+intP :: (HasCallStack, MonadState BS.ByteString m) => m Int
 intP = state $ fromJust . BS.readInt . BS.dropSpace
 
 -- | Parses an `Int` and substracts one.
 {-# INLINE int1P #-}
-int1P :: (MonadState BS.ByteString m) => m Int
+int1P :: (HasCallStack, MonadState BS.ByteString m) => m Int
 int1P = subtract 1 <$> intP
 
 {-# INLINE charP #-}
-charP :: (MonadState BS.ByteString m) => m Char
+charP :: (HasCallStack, MonadState BS.ByteString m) => m Char
 charP = state $ fromJust . BS.uncons . BS.dropSpace
 
 {-# INLINE wordP #-}
@@ -47,39 +49,39 @@ doubleP = read . BS.unpack <$> wordP
 -- * Tuples
 
 {-# INLINE ints2P #-}
-ints2P :: (MonadState BS.ByteString m) => m (Int, Int)
+ints2P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int)
 ints2P = (,) <$> intP <*> intP
 
 {-# INLINE ints11P #-}
-ints11P :: (MonadState BS.ByteString m) => m (Int, Int)
+ints11P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int)
 ints11P = (,) <$> int1P <*> int1P
 
 {-# INLINE ints3P #-}
-ints3P :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints3P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int)
 ints3P = (,,) <$> intP <*> intP <*> intP
 
 {-# INLINE ints110P #-}
-ints110P :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints110P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int)
 ints110P = (,,) <$> int1P <*> int1P <*> intP
 
 {-# INLINE ints011 #-}
-ints011 :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints011 :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int)
 ints011 = (,,) <$> intP <*> int1P <*> int1P
 
 {-# INLINE ints111 #-}
-ints111 :: (MonadState BS.ByteString m) => m (Int, Int, Int)
+ints111 :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int)
 ints111 = (,,) <$> int1P <*> int1P <*> int1P
 
 {-# INLINE ints4P #-}
-ints4P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int)
+ints4P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int, Int)
 ints4P = (,,,) <$> intP <*> intP <*> intP <*> intP
 
 {-# INLINE ints5P #-}
-ints5P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int)
+ints5P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int)
 ints5P = (,,,,) <$> intP <*> intP <*> intP <*> intP <*> intP
 
 {-# INLINE ints6P #-}
-ints6P :: (MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int, Int)
+ints6P :: (HasCallStack, MonadState BS.ByteString m) => m (Int, Int, Int, Int, Int, Int)
 ints6P = (,,,,,) <$> intP <*> intP <*> intP <*> intP <*> intP <*> intP
 
 -- * Readers
@@ -98,8 +100,8 @@ lineUP = do
 
 -- | Reads one line from the state and runs a pure parser for it.
 {-# INLINE withLine #-}
-withLine :: (MonadState BS.ByteString m) => State BS.ByteString a -> m a
-withLine f = evalState f <$> lineP
+withLine :: (MonadIO m) => State BS.ByteString a -> m a
+withLine f = evalState f <$> liftIO BS.getLine
 
 -- * More
 
@@ -115,7 +117,7 @@ intsP = U.unfoldr (BS.readInt . BS.dropSpace) <$> lineP
 
 -- | Reads n values as an unboxed vector.
 {-# INLINE intsNP #-}
-intsNP :: (MonadState BS.ByteString m) => Int -> m (U.Vector Int)
+intsNP :: (HasCallStack, MonadState BS.ByteString m) => Int -> m (U.Vector Int)
 intsNP n = U.replicateM n intP
 
 -- | Reads one line as digits. TODO: one word might be better
