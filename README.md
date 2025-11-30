@@ -1,8 +1,8 @@
 # ToyLib
 
-ToyLib is my Haskell library for solving AtCoder problems. Note that most of the content has been ported into the `Extra` module of [`ac-library-hs`](https://github.com/toyboot4e/ac-library-hs).
+ToyLib is my Haskell library for solving AtCoder problems. Note that most of the contents has been ported into the `Extra` module of [`ac-library-hs`](https://github.com/toyboot4e/ac-library-hs).
 
-[Documentation](https://toyboot4e.github.io/toy-lib/)
+[API documentation](https://toyboot4e.github.io/toy-lib/)
 
 ## CLI
 
@@ -38,20 +38,20 @@ rot45 :: (Int, Int) -> (Int, Int);rot45 (!x, !y) = (x - y, x + y)
 
 ### Installation
 
-As of 2024, AtCoder is using GHC 9.4.5 (Source: [AtCoder judge environment 2023](https://img.atcoder.jp/file/language-update/language-list.html), [the spreadsheet](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=F38)), which roughly corresponds to [lts-21.7](https://www.stackage.org/lts-21.7)).
+As of 2025, AtCoder is using GHC 9.8.4 (Source: [使用できる言語とライブラリの一覧](https://img.atcoder.jp/file/language-update/2025-10/language-list.html)). Install GHC 9.8.4 and the corresponding tools with `ghcup`.
 
-I'm using GHC 9.4.6 in this repository for using recent version of HLS. See also: [GHC version support](https://haskell-language-server.readthedocs.io/en/latest/support/ghc-version-support.html).
+If you're a Nix Flakes user, run `direnv allow` to enable [`nix-direnv`]([https://github.com/nix-community/nix-direnv][=nix-direnv=]).
 
 ### `toy-lib.cabal`
 
-No exports are assumed, as they're bundled into one file (`Main.hs`):
+No explicit exports are assumed, as they're bundled into one file (`Main.hs`):
 
 ```yaml
 ghc-options:
 - -Wno-missing-export-lists
 ```
 
-We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand `GHC2021`, but all the extensions enabled by it are enabled as `default-extensisons`:
+We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand `GHC2021`, but all the extensions enabled by `GHC20210` are enabled via `default-extensisons`:
 
 ```yaml
 default-language: Haskell2010
@@ -60,6 +60,20 @@ default-extensions:
 - BangPatterns
 # and lots more
 ```
+
+### Limitations
+
+We have limitations coming from [haskell-src-exts](https://github.com/haskell-suite/haskell-src-exts):
+
+- Can't use `MultiWayIf`  
+  `haskell-src-exts` does not understand it well.
+
+- Can't use `GHC2021` syntax  
+  For example `import X qualified as Y` is not available.
+
+## Useful commands
+
+See the [`Justfile`](./Justfile) for details. Otherwise, you could run the following commands manually.
 
 ### `doctest`
 
@@ -79,16 +93,6 @@ Run [`haddock`] from command line:
 $ cabal haddock
 $ cabal haddock --open
 ```
-
-### Limitations
-
-We have limitations coming from [haskell-src-exts](https://github.com/haskell-suite/haskell-src-exts):
-
-- Can't use `MultiWayIf`  
-  `haskell-src-exts` does not understand it well.
-
-- Can't use `GHC2021` syntax  
-  For example `import X qualified as Y` is not available.
 
 ## Similar repositories
 
