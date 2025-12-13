@@ -78,6 +78,7 @@ import qualified Data.Array as A
 
 -- ac-library-hs
 import qualified AtCoder.Extra.Bisect as B
+import qualified AtCoder.Extra.Dsu as Dsu
 import qualified AtCoder.Extra.DsuMonoid as DsuM
 import qualified AtCoder.Extra.Graph as Gr
 import qualified AtCoder.Extra.Vector as EV

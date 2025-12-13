@@ -9,11 +9,11 @@ import Data.Vector.IxVector
 import qualified Data.Vector.Unboxed as U
 import ToyLib.ShowBSB
 
-printGrid :: (MonadIO m) => IxUVector (Int, Int) Char -> m ()
+printGrid :: (MonadIO m, ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> m ()
 printGrid = putBSB . showGridBSB
 
-showGridBSB :: IxUVector (Int, Int) Char -> BSB.Builder
-showGridBSB mat = G.foldMap ((<> endlBSB) . concatBSB) rows
+showGridBSB :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> BSB.Builder
+showGridBSB mat = G.foldMap ((<> endlBSB) . unwordsBSB) rows
   where
     ((!y1, !x1), (!y2, !x2)) = boundsIV mat
     !h = y2 + 1 - y1

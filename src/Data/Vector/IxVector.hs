@@ -125,14 +125,14 @@ zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
 
 -- | \(O(f X)\) Altertnative to `accumulate` for `IxVector` that share the same bounds.
 {-# INLINE accumulateIV #-}
-accumulateIV :: (Ix i, Show i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> IxVector i (U.Vector (i, b)) -> IxVector i (U.Vector a)
+accumulateIV :: (Ix i, Show i, U.Unbox i, U.Unbox a, U.Unbox b) => (a -> b -> a) -> IxVector i (U.Vector a) -> U.Vector (i, b) -> IxVector i (U.Vector a)
 accumulateIV !f !vec0 !commands =
-  let !input1d = U.map (first (index' bnd)) (vecIV commands)
+  let input1d = U.map (first (index' bnd)) commands
+      -- TODO: boundary check?
       !vec1d = U.accumulate f (vecIV vec0) input1d
    in IxVector bnd vec1d
   where
     !bnd = boundsIV vec0
-    !_ = dbgAssert (boundsIV vec0 == boundsIV commands)
 
 {-# INLINE createIV #-}
 createIV :: (G.Vector v a) => (forall s. ST s (IxVector i (G.Mutable v s a))) -> IxVector i (v a)
