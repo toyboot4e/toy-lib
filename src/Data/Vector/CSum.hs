@@ -30,6 +30,16 @@ csum1D = U.scanl' (+) 0
            in ()
       | otherwise = ()
 
+-- | Cumulative sum over a looping vector.
+{-# INLINE (+!@) #-}
+(+!@) :: (Num a, U.Unbox a) => U.Vector a -> (Int, Int) -> a
+(+!@) csum (!l, !r)
+  | l < 0 = csum +! (0, r) + csum +! (n + l, n - 1)
+  | r > n = csum +! (l, n - 1) + csum +! (0, r - n)
+  | otherwise = csum +! (l, r)
+  where
+    n = G.length csum - 1
+
 -- | \(O(N)\) Initialization of a mutable cumulative sum.
 {-# INLINE newCSumU #-}
 newCSumU :: (PrimMonad m, Num a, U.Unbox a) => Int -> m (UM.MVector (PrimState m) a)

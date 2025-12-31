@@ -77,8 +77,8 @@ import Data.Array.Unsafe
 import qualified Data.Array as A
 
 -- ac-library-hs
+import qualified AtCoder.Dsu as Dsu
 import qualified AtCoder.Extra.Bisect as B
-import qualified AtCoder.Extra.Dsu as Dsu
 import qualified AtCoder.Extra.DsuMonoid as DsuM
 import qualified AtCoder.Extra.Graph as Gr
 import qualified AtCoder.Extra.Vector as EV
@@ -100,6 +100,7 @@ import qualified AtCoder.Extra.Tree.Hld as Hld
 import qualified AtCoder.Extra.Tree.Lct as Lct
 import qualified AtCoder.Extra.Tree.TreeMonoid as Tm
 import qualified AtCoder.FenwickTree as Ft
+import qualified AtCoder.Internal.Assert as ACIA
 import qualified AtCoder.Internal.MinHeap as MH
 import qualified AtCoder.Internal.Queue as Q
 import qualified AtCoder.LazySegTree as LSeg

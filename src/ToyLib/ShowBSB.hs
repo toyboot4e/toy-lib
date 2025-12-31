@@ -5,12 +5,15 @@
 -- It's good for both performance and monad transformers.
 module ToyLib.ShowBSB where
 
+import qualified AtCoder.ModInt as MI
 import Control.Monad.IO.Class
 import Data.Bool (bool)
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
+import Data.Coerce (coerce)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
+import Data.Word (Word32, Word64)
 import System.IO (stdout)
 
 {-# INLINE endlBSB #-}
@@ -38,9 +41,13 @@ class ShowBSB a where
 
 -- TODO: deriving?
 
-instance ShowBSB Int where
+instance ShowBSB Word32 where
   {-# INLINE showBSB #-}
-  showBSB = BSB.intDec
+  showBSB = BSB.word32Dec
+
+instance ShowBSB Word64 where
+  {-# INLINE showBSB #-}
+  showBSB = BSB.word64Dec
 
 instance ShowBSB Integer where
   {-# INLINE showBSB #-}
@@ -70,6 +77,14 @@ instance ShowBSB BS.ByteString where
 instance ShowBSB BSB.Builder where
   {-# INLINE showBSB #-}
   showBSB = id
+
+instance ShowBSB Int where
+  {-# INLINE showBSB #-}
+  showBSB = BSB.intDec
+
+instance ShowBSB (MI.ModInt p) where
+  {-# INLINE showBSB #-}
+  showBSB = coerce BSB.word32Dec
 
 instance (ShowBSB a, ShowBSB b) => ShowBSB (a, b) where
   {-# INLINE showBSB #-}

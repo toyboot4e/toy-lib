@@ -5,7 +5,33 @@
 -- | \(O(\log N)\) bisection method for sorted items in an inclusive range (from left to right only).
 module Algorithm.Bisect where
 
+import qualified AtCoder.Internal.Assert as ACIA
 import Data.Functor.Identity
+import GHC.Stack (HasCallStack)
+
+{-# INLINE maxRight #-}
+maxRight :: (HasCallStack) => Int -> Int -> (Int -> Bool) -> Int
+maxRight l r p = runIdentity $ maxRightM l r (pure . p)
+
+{-# INLINE maxRightM #-}
+maxRightM :: (HasCallStack, Monad m) => Int -> Int -> (Int -> m Bool) -> m Int
+maxRightM l0 r0 = intBisectImpl l0 (r0 + 1)
+  where
+    !_ = ACIA.checkInterval "maxRightM" l0 r0
+
+-- | Takes [l, r + 1) or [r, l - 1)
+{-# INLINE intBisectImpl #-}
+intBisectImpl :: (Monad m) => Int -> Int -> (Int -> m Bool) -> m Int
+intBisectImpl l0 r0 p = inner l0 r0
+  where
+    inner l r
+      | abs (r - l) <= 1 = pure l
+      | otherwise =
+          p mid >>= \case
+            True -> inner mid r
+            False -> inner l mid
+      where
+        mid = (l + r) `div` 2
 
 -- * Common bisection method implementation
 
