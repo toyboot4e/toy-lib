@@ -190,6 +190,7 @@ library
     Data.Core.SemigroupAction
     Data.Core.Semiring
     Data.Core.Unindex
+    Data.DigitDp
     Data.Graph.Alias
     Data.Graph.Generic
     Data.Instances.A2
