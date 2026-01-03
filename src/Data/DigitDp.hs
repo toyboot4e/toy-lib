@@ -128,7 +128,7 @@ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 bs = foldM step 
 solveAgc23A :: BS.ByteString -> Int
 solveAgc23A s =
   let hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s
-      accept _dfa = const True
+      accept _dfa = True
    in getMax . foldMap snd $ filter (accept . fst) $ HM.toList hm
   where
     toNextInputs = const [0 .. 9]
