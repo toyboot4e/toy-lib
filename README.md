@@ -98,6 +98,7 @@ $ cabal haddock --open
 
 - [cojna/iota](https://github.com/cojna/iota)
   iota is surely the best resource!
+- [cjp240/cjp-lib](https://github.com/cjp240/cjp-lib)
 - [meooow25/haccepted](https://github.com/meooow25/haccepted)
   Beautiful library compatible with Codeforces.
 - [minoki/my-atcoder-solutions](https://github.com/minoki/my-atcoder-solutions)
