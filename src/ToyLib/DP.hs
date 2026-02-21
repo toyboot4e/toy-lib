@@ -176,6 +176,8 @@ ordPowerset set0 = U.map (.|. bit lsb) $ powersetU set'
     lsb = countTrailingZeros set0
     set' = clearBit set0 lsb
 
+-- See also: partitionsOfK in Math.BitSet
+
 -- | Longest increasing subsequence. **The input must be compressed**.
 --
 -- FIXME: NOT TESTED

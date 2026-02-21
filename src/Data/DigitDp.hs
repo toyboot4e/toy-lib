@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 -- | Digit DP based on automatons.
 module Data.DigitDp where
 
@@ -186,21 +188,21 @@ solveAbc154E s k =
       pure ()
     hm0 = HM.singleton (Equal, CountNonZero (0 :: Int)) (Sum (1 :: Int))
 
--- target: string ([A-Z]*)
-solve242E :: BS.ByteString -> MI.ModInt 998244353
-solve242E s =
-  let -- In order to create a palindrome: (TODO: create alphabets automatically)
-      s' = take ((BS.length s + 1) `div` 2) $ BS.zipWith (,) s (BS.reverse s)
-      hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s'
-      accept (LtEqWithBackHalfOrdering Equal !backOrd) =
-        let !_ = dbg backOrd in
-        backOrd /= GT
-      accept (LtEqWithBackHalfOrdering LessThan !_) = True
-   in getSum . foldMap snd . filter (accept . fst) $ HM.toList hm
-  where
-    toNextInputs _x = [0 :: Int .. 25]
-    updateValue v _a = v
-    createDfa (!f, !b) _a = do
-      pure $ LtEqWithBackHalfOrderingDfa (ord f - ord 'A', ord b - ord 'A')
-    afterDigit _x = pure ()
-    hm0 = HM.singleton (LtEqWithBackHalfOrdering Equal EQ) (Sum (modInt 1))
+-- -- target: string ([A-Z]*)
+-- solve242E :: BS.ByteString -> MI.ModInt 998244353
+-- solve242E s =
+--   let -- In order to create a palindrome: (TODO: create alphabets automatically)
+--       s' = take ((BS.length s + 1) `div` 2) $ BS.zipWith (,) s (BS.reverse s)
+--       hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s'
+--       accept (LtEqWithBackHalfOrdering Equal !backOrd) =
+--         let !_ = dbg backOrd in
+--         backOrd /= GT
+--       accept (LtEqWithBackHalfOrdering LessThan !_) = True
+--    in getSum . foldMap snd . filter (accept . fst) $ HM.toList hm
+--   where
+--     toNextInputs _x = [0 :: Int .. 25]
+--     updateValue v _a = v
+--     createDfa (!f, !b) _a = do
+--       pure $ LtEqWithBackHalfOrderingDfa (ord f - ord 'A', ord b - ord 'A')
+--     afterDigit _x = pure ()
+--     hm0 = HM.singleton (LtEqWithBackHalfOrdering Equal EQ) (Sum (modInt 1))

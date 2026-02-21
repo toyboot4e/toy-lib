@@ -15,23 +15,35 @@ import Data.List (unfoldr)
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
--- | \(O(f N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
--- ranges for each @l@ that satisfy the given @check@.
-twoPointers :: Int -> (Int -> Int -> Bool) -> [(Int, Int)]
-twoPointers !n !p = unfoldr (uncurry f) s0
-  where
-    -- the inners are the same as @twoPointersU@:
-    !s0 = (0, 0) :: (Int, Int)
-    f l r
-      | l == n = Nothing
-      | not (p l r) = f (l + 1) (max (l + 1) r)
-      | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
-      where
-        -- run peek check and advance on success
-        r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
+-- -- | \(O(f N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
+-- -- ranges for each @l@ that satisfy the given @check@.
+-- --
+-- -- REMARK: Use accumulate if you need empty intervals.
+-- --
+-- -- @
+-- -- U.accumulate max (U.generate n pred) (twoPointersU n p)
+-- -- @
+-- twoPointers :: Int -> (Int -> Int -> Bool) -> [(Int, Int)]
+-- twoPointers !n !p = unfoldr (uncurry f) s0
+--   where
+--     -- the inners are the same as @twoPointersU@:
+--     !s0 = (0, 0) :: (Int, Int)
+--     f l r
+--       | l == n = Nothing
+--       | not (p l r) = f (l + 1) (max (l + 1) r)
+--       | otherwise = Just ((l, r'), (l + 1, max (l + 1) r'))
+--       where
+--         -- run peek check and advance on success
+--         r' = until ((||) <$> (== n - 1) <*> not . p l . succ) succ r
 
 -- | \(O(f N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
 -- ranges for each @l@ that satisfy the given @check@.
+--
+-- REMARK: Use accumulate if you need empty intervals.
+--
+-- @
+-- U.accumulate max (U.generate n pred) (twoPointersU n p)
+-- @
 twoPointersU :: Int -> (Int -> Int -> Bool) -> U.Vector (Int, Int)
 twoPointersU !n !p = U.unfoldr (uncurry f) s0
   where
