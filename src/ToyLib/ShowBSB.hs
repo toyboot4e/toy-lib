@@ -12,7 +12,6 @@ import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BS
 import Data.Coerce (coerce)
 import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
 import Data.Word (Word32, Word64)
 import System.IO (stdout)
 
@@ -140,18 +139,10 @@ ynBSB = bool (BSB.string8 "No") (BSB.string8 "Yes")
 printYn :: (MonadIO m) => Bool -> m ()
 printYn = putLnBSB . ynBSB
 
-{-# INLINE printList #-}
-printList :: (ShowBSB a, U.Unbox a, MonadIO m) => [a] -> m ()
-printList = putLnBSB . unwordsBSB . U.fromList
+{-# INLINE printRow #-}
+printRow :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
+printRow = putLnBSB . unwordsBSB
 
-{-# INLINE putList #-}
-putList :: (ShowBSB a, U.Unbox a, MonadIO m) => [a] -> m ()
-putList = putBSB . unwordsBSB . U.fromList
-
-{-# INLINE printVec #-}
-printVec :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
-printVec = putLnBSB . unwordsBSB
-
-{-# INLINE putVec #-}
-putVec :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
-putVec = putBSB . unwordsBSB
+{-# INLINE printCol #-}
+printCol :: (ShowBSB a, G.Vector v a, MonadIO m) => v a -> m ()
+printCol = putLnBSB . unlinesBSB

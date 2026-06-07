@@ -23,8 +23,8 @@ solve = do
   let !res = lisOf' $ U.map (bindex dict) xs
   printBSB $ G.length res
   -- no need to restore the value, we just need their index:
-  -- printVec $ U.backpermute dict res
-  printVec res
+  -- printCol $ U.backpermute dict res
+  printCol res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/longest_increasing_subsequence
 -- #lis
