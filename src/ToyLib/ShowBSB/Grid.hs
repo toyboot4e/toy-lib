@@ -13,7 +13,7 @@ printGrid :: (MonadIO m, ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> m ()
 printGrid = putBSB . showGridBSB
 
 showGridBSB :: (ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> BSB.Builder
-showGridBSB mat = G.foldMap ((<> endlBSB) . unwordsBSB) rows
+showGridBSB mat = G.foldMap ((<> endlBSB) . concatBSB) rows
   where
     ((!y1, !x1), (!y2, !x2)) = boundsIV mat
     !h = y2 + 1 - y1

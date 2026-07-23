@@ -203,6 +203,7 @@ library
     Data.SegmentTree.Beats
     Data.SegmentTree.Beats.SumMinMax
     Data.SegmentTree.Util
+    Data.Semigroup.Max2
     Data.Slide
     Data.Trie
     Data.UnionFind.Sparse

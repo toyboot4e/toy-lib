@@ -111,7 +111,7 @@ ifilterIV !f IxVector {..} = U.ifilter (f . unindex boundsIV) vecIV
 indexedIV :: (Unindex i, U.Unbox a) => IxVector i (U.Vector a) -> U.Vector (i, a)
 indexedIV IxVector {..} = U.imap ((,) . unindex boundsIV) vecIV
 
--- | \(O(N)\)
+-- | \(O(N)\). Use `newIV` for mutable vector.
 {-# INLINE replicateIV #-}
 replicateIV :: (Unindex i, U.Unbox a) => (i, i) -> a -> IxUVector i a
 replicateIV bnd x = IxVector bnd $ U.replicate (rangeSize bnd) x
@@ -122,6 +122,16 @@ zipWithIV :: (U.Unbox a, U.Unbox b, U.Unbox c) => (a -> b -> c) -> IxVector i (U
 zipWithIV !f !vec1 !vec2 = IxVector bnd $ U.zipWith f (vecIV vec1) (vecIV vec2)
   where
     !bnd = boundsIV vec1
+
+{-# INLINE updateIV #-}
+updateIV :: (Ix i, Show i, U.Unbox i, U.Unbox a) => IxVector i (U.Vector a) -> U.Vector (i, a) -> IxVector i (U.Vector a)
+updateIV !vec0 !commands =
+  let input1d = U.map (first (index' bnd)) commands
+      -- TODO: boundary check?
+      !vec1d = U.update (vecIV vec0) input1d
+   in IxVector bnd vec1d
+  where
+    !bnd = boundsIV vec0
 
 -- | \(O(f X)\) Altertnative to `accumulate` for `IxVector` that share the same bounds.
 {-# INLINE accumulateIV #-}
@@ -192,8 +202,7 @@ freezeIV iv = IxVector (boundsIV iv) <$> G.freeze (vecIV iv)
 unsafeFreezeIV :: (PrimMonad m, G.Vector v a) => IxVector i (G.Mutable v (PrimState m) a) -> m (IxVector i (v a))
 unsafeFreezeIV iv = IxVector (boundsIV iv) <$> G.unsafeFreeze (vecIV iv)
 
--- | \(O(N)\)
--- | Creates a new `IxVector` with initial value.
+-- | \(O(N)\) Creates a new `IxVector` with initial value.
 {-# INLINE newIV #-}
 newIV :: (Ix i, PrimMonad m, U.Unbox a) => (i, i) -> a -> m (IxMUVector (PrimState m) i a)
 newIV bnd e0 = IxVector bnd <$> UM.replicate (rangeSize bnd) e0
