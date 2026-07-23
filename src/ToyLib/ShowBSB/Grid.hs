@@ -2,11 +2,11 @@
 module ToyLib.ShowBSB.Grid where
 
 import Control.Monad.IO.Class
-import qualified Data.ByteString.Builder as BSB
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as G
+import Data.ByteString.Builder qualified as BSB
+import Data.Vector qualified as V
+import Data.Vector.Generic qualified as G
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 import ToyLib.ShowBSB
 
 printGrid :: (MonadIO m, ShowBSB a, U.Unbox a) => IxUVector (Int, Int) a -> m ()

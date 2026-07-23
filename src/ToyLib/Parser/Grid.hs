@@ -3,12 +3,12 @@ module ToyLib.Parser.Grid where
 
 import Control.Monad.Primitive (PrimMonad)
 import Control.Monad.State.Class
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Char8 qualified as BS
 import Data.Ix
-import qualified Data.Vector.Generic.Mutable as GM
+import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import ToyLib.Parser
 
 -- | \(O(HW)\) Reads next @h * w@ elements as matrix of type @a@.

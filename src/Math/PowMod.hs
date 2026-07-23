@@ -3,10 +3,10 @@
 -- TODO: Test all the functions.
 module Math.PowMod where
 
-import qualified AtCoder.Extra.Math as EM
+import AtCoder.Extra.Math qualified as EM
 import Data.List (foldl')
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 
 -- | \(O(1)\)
 addMod, subMod, mulMod :: Int -> Int -> Int -> Int

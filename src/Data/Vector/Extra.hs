@@ -6,12 +6,12 @@ import AtCoder.Extra.Bisect
 import Control.Monad.Primitive (PrimMonad)
 import Data.Maybe
 import Data.Ord (comparing)
-import qualified Data.Vector as V
-import qualified Data.Vector.Algorithms.Intro as VAI
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector qualified as V
+import Data.Vector.Algorithms.Intro qualified as VAI
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
 
 -- | \(O(N \log N)\) One dimensional index compression: xs -> (nubSortXs, xs')

@@ -2,7 +2,7 @@
 module Math.DigitsVector where
 
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 
 -- | >>> toDigitsU 3 ((3^0)*1 + (3^1)*2 + (3^2)*1)
 -- [1,2,1]

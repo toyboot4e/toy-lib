@@ -5,12 +5,12 @@
 -- = Typical Problems
 module Data.Slide where
 
-import qualified AtCoder.Internal.Queue as Q
+import AtCoder.Internal.Queue qualified as Q
 import Control.Monad.Extra (whenM)
 import Control.Monad.Primitive
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack
 
 -- | Stack-based sliding window folding, going from left to right only.

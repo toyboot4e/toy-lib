@@ -4,9 +4,9 @@
 -- - [ABC 269 D - Do use hexagon grid](https://atcoder.jp/contests/abc269/tasks/abc269_d)
 module Data.UnionFind.Sparse where
 
-import qualified Data.IntMap.Strict as IM
+import Data.IntMap.Strict qualified as IM
 import Data.List (foldl')
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
 
 -- | @gotoki_no_joe. Vertex -> -size | root (negative if it's root)

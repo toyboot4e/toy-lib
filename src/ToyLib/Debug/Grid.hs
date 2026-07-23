@@ -3,7 +3,7 @@ module ToyLib.Debug.Grid where
 
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
-import qualified Data.Vector.Generic as G
+import Data.Vector.Generic qualified as G
 import Data.Vector.IxVector
 import Debug.Trace
 import ToyLib.Debug

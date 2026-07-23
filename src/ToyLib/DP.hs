@@ -5,24 +5,24 @@
 -- TODO: Refactor `relaxMany` variants.
 module ToyLib.DP where
 
-import qualified AtCoder.Extra.Graph as AG
-import qualified AtCoder.SegTree as Seg
+import AtCoder.Extra.Graph qualified as AG
+import AtCoder.SegTree qualified as Seg
 import Control.Monad (forM_)
 import Control.Monad.ST
 import Data.Bits
 import Data.Bool (bool)
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Char8 qualified as BS
 import Data.Char (ord)
 import Data.Core.Unindex
 import Data.Ix
 import Data.Semigroup
-import qualified Data.Vector as V
-import qualified Data.Vector.Algorithms.Intro as VAI
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
+import Data.Vector qualified as V
+import Data.Vector.Algorithms.Intro qualified as VAI
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (powersetU)
 import ToyLib.Debug

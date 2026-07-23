@@ -6,12 +6,12 @@
 -- | `Semiring`. I usually use `Num` + `Monoid` as an implicit `Semiring` though.
 module Data.Core.Semiring where
 
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Primitive as P
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Base as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Primitive qualified as P
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Base qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- | Semiring @(s, <+>, <.>)`. Sometimes called "deoid" (double monoid).
 class Semiring s where

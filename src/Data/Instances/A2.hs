@@ -7,10 +7,10 @@ module Data.Instances.A2 where
 
 import Control.Monad
 import Data.Bits
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- | Unboxed 2D array packed in one array when stored in `U.Vector`.
 data A2 a = A2 !a !a

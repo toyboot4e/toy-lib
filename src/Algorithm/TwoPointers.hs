@@ -12,8 +12,8 @@ module Algorithm.TwoPointers where
 
 import Control.Monad.Identity
 import Data.List (unfoldr)
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 
 -- -- | \(O(f N)\) Stateless two pointer method over a range. Returns the longest non-null inclusive
 -- -- ranges for each @l@ that satisfy the given @check@.

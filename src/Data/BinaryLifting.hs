@@ -4,12 +4,12 @@
 -- | Multi set backed by `IntMap`.
 module Data.BinaryLifting where
 
-import qualified AtCoder.Internal.Assert as ACIA
+import AtCoder.Internal.Assert qualified as ACIA
 import Data.Bits (testBit)
 import Data.Maybe (fromJust)
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector qualified as V
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
 import Math.BitSet
 

@@ -2,13 +2,13 @@ module ToyLib.Prelude where
 
 import Control.Monad.Fix
 import Data.Bifunctor
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Char8 qualified as BS
 import Data.Core.Unindex
 import Data.Ix
 import Data.Tuple.Extra hiding (first, second)
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector qualified as V
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 
 -- | \(O(N)\)
 {-# INLINE rleOf #-}

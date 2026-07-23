@@ -74,46 +74,46 @@ import Data.Array.ST
 import Data.Array.Unboxed (UArray)
 import Data.Array.Unsafe
 
-import qualified Data.Array as A
+import Data.Array qualified as A
 
 -- ac-library-hs
-import qualified AtCoder.Dsu as Dsu
-import qualified AtCoder.Extra.Bisect as B
-import qualified AtCoder.Extra.DsuMonoid as DsuM
-import qualified AtCoder.Extra.Graph as Gr
-import qualified AtCoder.Extra.Vector as EV
-import qualified AtCoder.Extra.Vector.Prim as EVP
-import qualified AtCoder.Extra.Bisect as B
-import qualified AtCoder.Extra.Math as EM
-import qualified AtCoder.Extra.HashMap as EHM
-import qualified AtCoder.Extra.IntMap as EIM
-import qualified AtCoder.Extra.IntSet as EIS
-import qualified AtCoder.Extra.IntervalMap as EIT
+import AtCoder.Dsu qualified as Dsu
+import AtCoder.Extra.Bisect qualified as B
+import AtCoder.Extra.DsuMonoid qualified as DsuM
+import AtCoder.Extra.Graph qualified as Gr
+import AtCoder.Extra.Vector qualified as EV
+import AtCoder.Extra.Vector.Prim qualified as EVP
+import AtCoder.Extra.Bisect qualified as B
+import AtCoder.Extra.Math qualified as EM
+import AtCoder.Extra.HashMap qualified as EHM
+import AtCoder.Extra.IntMap qualified as EIM
+import AtCoder.Extra.IntSet qualified as EIS
+import AtCoder.Extra.IntervalMap qualified as EIT
 import AtCoder.Extra.Ix0
-import qualified AtCoder.Extra.Monoid.RangeAdd as RangeAdd
-import qualified AtCoder.Extra.Monoid.RangeSet as RangeSet
-import qualified AtCoder.Extra.Monoid.RollingHash as RH
-import qualified AtCoder.Extra.Semigroup.Matrix as Mat
-import qualified AtCoder.Extra.Semigroup.Permutation as Permutation
-import qualified AtCoder.Extra.Tree as Tr
-import qualified AtCoder.Extra.Tree.Hld as Hld
-import qualified AtCoder.Extra.Tree.Lct as Lct
-import qualified AtCoder.Extra.Tree.TreeMonoid as Tm
-import qualified AtCoder.FenwickTree as Ft
-import qualified AtCoder.Internal.Assert as ACIA
-import qualified AtCoder.Internal.MinHeap as MH
-import qualified AtCoder.Internal.Queue as Q
-import qualified AtCoder.LazySegTree as LSeg
-import qualified AtCoder.ModInt as MI
-import qualified AtCoder.SegTree as Seg
+import AtCoder.Extra.Monoid.RangeAdd qualified as RangeAdd
+import AtCoder.Extra.Monoid.RangeSet qualified as RangeSet
+import AtCoder.Extra.Monoid.RollingHash qualified as RH
+import AtCoder.Extra.Semigroup.Matrix qualified as Mat
+import AtCoder.Extra.Semigroup.Permutation qualified as Permutation
+import AtCoder.Extra.Tree qualified as Tr
+import AtCoder.Extra.Tree.Hld qualified as Hld
+import AtCoder.Extra.Tree.Lct qualified as Lct
+import AtCoder.Extra.Tree.TreeMonoid qualified as Tm
+import AtCoder.FenwickTree qualified as Ft
+import AtCoder.Internal.Assert qualified as ACIA
+import AtCoder.Internal.MinHeap qualified as MH
+import AtCoder.Internal.Queue qualified as Q
+import AtCoder.LazySegTree qualified as LSeg
+import AtCoder.ModInt qualified as MI
+import AtCoder.SegTree qualified as Seg
 
 -- bitvec
 import Data.Bit
 
 -- bytestring
-import qualified Data.ByteString.Builder as BSB
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Unsafe as BSU
+import Data.ByteString.Builder qualified as BSB
+import Data.ByteString.Char8 qualified as BS
+import Data.ByteString.Unsafe qualified as BSU
 
 -- extra
 import Control.Monad.Extra hiding (loop) -- foldM, ..
@@ -124,47 +124,47 @@ import Numeric.Extra       -- showDP, intToFloat, ..
 
 -- utility-ht
 import Data.Bool.HT  -- if', ..
-import qualified Data.Ix.Enum as HT
-import qualified Data.List.HT as HT -- `groupBy`, but with adjacent elements
+import Data.Ix.Enum qualified as HT
+import Data.List.HT qualified as HT -- `groupBy`, but with adjacent elements
 
 -- vector
-import qualified Data.Vector.Fusion.Bundle as FB
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Primitive as P
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Base as U
-import qualified Data.Vector.Unboxed.Mutable as UM
-import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as VM
+import Data.Vector.Fusion.Bundle qualified as FB
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Primitive qualified as P
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Base qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
+import Data.Vector qualified as V
+import Data.Vector.Mutable qualified as VM
 
-import qualified Data.Vector.Fusion.Bundle.Monadic as MB
-import qualified Data.Vector.Fusion.Bundle.Size    as MB
-import qualified Data.Vector.Fusion.Stream.Monadic as MS
+import Data.Vector.Fusion.Bundle.Monadic qualified as MB
+import Data.Vector.Fusion.Bundle.Size qualified    as MB
+import Data.Vector.Fusion.Stream.Monadic qualified as MS
 
 -- vector-algorithms
-import qualified Data.Vector.Algorithms.Merge as VAM
-import qualified Data.Vector.Algorithms.Intro as VAI
-import qualified Data.Vector.Algorithms.Radix as VAR
-import qualified Data.Vector.Algorithms.Search as VAS
+import Data.Vector.Algorithms.Merge qualified as VAM
+import Data.Vector.Algorithms.Intro qualified as VAI
+import Data.Vector.Algorithms.Radix qualified as VAR
+import Data.Vector.Algorithms.Search qualified as VAS
 
 -- containers
-import qualified Data.IntMap.Strict as IM
-import qualified Data.Map.Strict as M
-import qualified Data.IntSet as IS
-import qualified Data.Set as S
-import qualified Data.Sequence as Seq
+import Data.IntMap.Strict qualified as IM
+import Data.Map.Strict qualified as M
+import Data.IntSet qualified as IS
+import Data.Set qualified as S
+import Data.Sequence qualified as Seq
 
 -- heaps
-import qualified Data.Heap as H
+import Data.Heap qualified as H
 
 -- unordered-containers
 import Data.Hashable
-import qualified Data.HashMap.Strict as HM
-import qualified Data.HashSet as HS
+import Data.HashMap.Strict qualified as HM
+import Data.HashSet qualified as HS
 
 -- quickcheck
-import qualified Test.QuickCheck as QC
+import Test.QuickCheck qualified as QC
 
 {- ORMOLU_ENABLE -}
 

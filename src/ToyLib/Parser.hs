@@ -5,11 +5,11 @@ import Control.Monad.IO.Class
 import Control.Monad.State.Class
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT)
 import Data.Bifunctor (first)
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Char8 qualified as BS
 import Data.Char (digitToInt, isSpace)
 import Data.List (unfoldr)
 import Data.Maybe
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
 
 -- | Reads the whole stdin and runs the user program.

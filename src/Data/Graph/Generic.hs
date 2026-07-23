@@ -8,9 +8,9 @@ module Data.Graph.Generic where
 import Control.Monad.Extra (unlessM)
 import Control.Monad.ST (runST)
 import Data.Graph.Alias (Vertex)
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
 
 -- * Graph search

@@ -4,10 +4,10 @@ module Data.Vector.CSum where
 import Control.Monad.Primitive
 import Data.Core.Unindex
 import Data.Ix
-import qualified Data.Vector.Generic as G
+import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable as GM
 import Data.Vector.IxVector
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable as UM
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug

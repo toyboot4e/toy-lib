@@ -19,13 +19,13 @@
 -- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)
 module Math.Divisors where
 
-import qualified AtCoder.Extra.Math as EM
+import AtCoder.Extra.Math qualified as EM
 import Control.Monad.Primitive
 import Data.Foldable (for_)
 import Data.List
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- \(O(N \log N)\) Divisor enumeration (sorted). Too slow, never use it.
 divisorsOf :: Int -> [Int]

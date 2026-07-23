@@ -1,12 +1,12 @@
 -- | Inversion numbers.
 module Data.Vector.InvNum where
 
-import qualified AtCoder.SegTree as Seg
+import AtCoder.SegTree qualified as Seg
 import Control.Monad.ST
 import Data.Monoid
 import Data.Vector.Extra (compressU)
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
 import Math.PowMod (factModsN)
 

@@ -3,9 +3,9 @@
 -- | Safe, total functions.
 module Data.SafeList where
 
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector qualified as V
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 
 -- | Safelist
 class SafeList v where

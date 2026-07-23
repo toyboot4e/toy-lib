@@ -1,7 +1,7 @@
 -- | Multi set backed by `IntMap`.
 module Data.MultiSet where
 
-import qualified Data.IntMap.Strict as IM
+import Data.IntMap.Strict qualified as IM
 import Data.List (foldl')
 import GHC.Stack (HasCallStack)
 

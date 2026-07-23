@@ -1,7 +1,7 @@
 module Heuristic.Randoms where
 
 import Control.Monad.State.Class
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 import System.Random
 import System.Random.Stateful
 

@@ -13,10 +13,10 @@ module Data.SegmentTree.Beats.SumMinMax where
 import AtCoder.LazySegTree (SegAct (..))
 import Control.Monad.Trans.State.Strict (execState, modify')
 import Data.SegmentTree.Util (FailableSemigroupActionTarget (..))
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 import ToyLib.Debug
 
 -- | Sum + Min + Max information on segment tree beats.

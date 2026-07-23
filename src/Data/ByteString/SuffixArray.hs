@@ -6,9 +6,9 @@
 -- \(\mathcal{originalOrderOf(i)}\) returns the order of i-th suffix.
 module Data.ByteString.SuffixArray where
 
-import qualified AtCoder.String as AS
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.Vector.Unboxed as VU
+import AtCoder.String qualified as AS
+import Data.ByteString.Char8 qualified as BS
+import Data.Vector.Unboxed qualified as VU
 
 countUniqueSubstringsBS :: BS.ByteString -> Int
 countUniqueSubstringsBS bs = (n * (n + 1)) `div` 2 - VU.sum lcp

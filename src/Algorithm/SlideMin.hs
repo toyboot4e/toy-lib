@@ -1,14 +1,14 @@
 -- | Sliding minimum window.
 module Algorithm.SlideMin where
 
-import qualified AtCoder.Internal.Queue as Q
+import AtCoder.Internal.Queue qualified as Q
 import Control.Monad.Extra (whenM)
 import Control.Monad.Fix
 import Control.Monad.ST
 import Data.Maybe
 import Data.Ord (Down (..))
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Generic qualified as G
+import Data.Vector.Unboxed qualified as U
 
 -- | \(O(N)\) (1) in <https://qiita.com/kuuso1/items/318d42cd089a49eeb332>
 {-# INLINE slideCmpIndicesOn #-}

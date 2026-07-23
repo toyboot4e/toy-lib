@@ -2,7 +2,7 @@
 module Data.Core.Unindex where
 
 import Data.Ix
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 
 class (Ix i, U.Unbox i) => Unindex i where
   -- TODO: Fusing

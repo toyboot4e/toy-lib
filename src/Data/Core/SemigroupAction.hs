@@ -5,11 +5,11 @@
 -- | Semigroup action @*@ is an operator where \(s_2 * (s_1 * a) == (s_2 \diamond s_1) * a\) holds.
 module Data.Core.SemigroupAction where
 
-import qualified AtCoder.Extra.Math as EM
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import AtCoder.Extra.Math qualified as EM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- | Right semigroup aciton.
 class SemigroupAction s a where

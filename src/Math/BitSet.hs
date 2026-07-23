@@ -5,7 +5,7 @@ import Control.Monad
 import Data.Bits
 import Data.List (unfoldr)
 import Data.Tuple.Extra (dupe)
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed qualified as U
 
 -- | \(O(1)\) Retrieves the most significant bit.
 --

@@ -5,10 +5,10 @@
 
 module Data.Semigroup.Max2 where
 
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 newtype Max2 a = Max2 (Max2Repr a)
   deriving newtype (Eq, Ord, Show)

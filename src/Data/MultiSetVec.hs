@@ -7,10 +7,10 @@
 module Data.MultiSetVec where
 
 import Control.Monad.Primitive
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- | Dense, mutable multi set.
 data MultiSetVec s = MultiSetVec (UM.MVector s Int) (UM.MVector s Int)

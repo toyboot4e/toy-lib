@@ -2,7 +2,7 @@
 module Data.MultiSet2 where
 
 import Data.List (foldl')
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 import GHC.Stack (HasCallStack)
 
 -- | MultiSet2: (nKeys, (key -> count))

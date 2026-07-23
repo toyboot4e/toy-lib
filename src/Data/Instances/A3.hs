@@ -6,10 +6,10 @@
 module Data.Instances.A3 where
 
 import Control.Monad
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as UM
+import Data.Vector.Generic qualified as G
+import Data.Vector.Generic.Mutable qualified as GM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
 
 -- | Unboxed 3D array packed in one array when stored in `U.Vector`.
 data A3 a = A3 !a !a !a

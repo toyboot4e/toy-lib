@@ -3,13 +3,13 @@
 -- | Digit DP based on automatons.
 module Data.DigitDp where
 
-import qualified AtCoder.ModInt as MI
+import AtCoder.ModInt qualified as MI
 import Control.Monad (foldM)
 import Control.Monad.Extra (concatMapM, mapMaybeM)
 import Control.Monad.Identity (runIdentity)
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Char8 qualified as BS
 import Data.Char (digitToInt)
-import qualified Data.HashMap.Strict as HM
+import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable (hashWithSalt))
 import Data.Semigroup (Max (..), Sum (..))
 

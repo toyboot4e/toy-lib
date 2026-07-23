@@ -5,7 +5,7 @@
 -- | \(O(\log N)\) bisection method for sorted items in an inclusive range (from left to right only).
 module Algorithm.Bisect where
 
-import qualified AtCoder.Internal.Assert as ACIA
+import AtCoder.Internal.Assert qualified as ACIA
 import Data.Functor.Identity
 import GHC.Stack (HasCallStack)
 

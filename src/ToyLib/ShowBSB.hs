@@ -5,13 +5,13 @@
 -- It's good for both performance and monad transformers.
 module ToyLib.ShowBSB where
 
-import qualified AtCoder.ModInt as MI
+import AtCoder.ModInt qualified as MI
 import Control.Monad.IO.Class
 import Data.Bool (bool)
-import qualified Data.ByteString.Builder as BSB
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString.Builder qualified as BSB
+import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
-import qualified Data.Vector.Generic as G
+import Data.Vector.Generic qualified as G
 import Data.Word (Word32, Word64)
 import System.IO (stdout)
 

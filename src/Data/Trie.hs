@@ -1,6 +1,6 @@
 module Data.Trie where
 
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 import Data.Maybe (isJust)
 
 data Trie k v = Trie
