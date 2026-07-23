@@ -22,7 +22,6 @@
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE HexFloatLiterals #-}
--- `haskell-src-exts` seems not to understand it though:
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}

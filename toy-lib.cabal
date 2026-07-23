@@ -148,13 +148,13 @@ common exts2021
     GeneralisedNewtypeDeriving
     HexFloatLiterals
     ImplicitPrelude
+    ImportQualifiedPost
     InstanceSigs
     KindSignatures
     MonomorphismRestriction
     MultiParamTypeClasses
     NamedFieldPuns
     NamedWildCards
-    NoImportQualifiedPost
     NumericUnderscores
     PatternGuards
     PolyKinds
@@ -256,7 +256,7 @@ executable toy-lib-exe
     Lib.Write
 
   build-depends:
-    haskell-src-exts,
+    haskell-src-exts ^>= 1.24.0,
     temporary,
     toy-lib,
 
