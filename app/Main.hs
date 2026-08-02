@@ -85,7 +85,7 @@ mainMinifyLibrary moduleNames = do
 
   let targetSourceFiles =
         let revGr = Gr.rev gr
-            reachables = genericComponentsOf (Gr.nCsr gr) (Gr.adj revGr) $ U.fromList sourceVerts
+            reachables = componentsOf (Gr.nCsr gr) (Gr.adj revGr) $ U.fromList sourceVerts
             topSortVerts = Gr.topSort (Gr.nCsr gr) (Gr.adj gr)
             sortedReachables = U.filter (`U.elem` reachables) topSortVerts
          in -- TODO: use backpermute

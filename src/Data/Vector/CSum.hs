@@ -41,19 +41,19 @@ csum1D = U.scanl' (+) 0
     n = G.length csum - 1
 
 -- | \(O(N)\) Initialization of a mutable cumulative sum.
-{-# INLINE newCSumU #-}
-newCSumU :: (PrimMonad m, Num a, U.Unbox a) => Int -> m (UM.MVector (PrimState m) a)
-newCSumU n = UM.replicate (n + 1) 0
+{-# INLINE newU #-}
+newU :: (PrimMonad m, Num a, U.Unbox a) => Int -> m (UM.MVector (PrimState m) a)
+newU n = UM.replicate (n + 1) 0
 
 -- | \(O(1)\) The cumulative sum vector has a guard at index zero while @l@ and @r@ are zero-based.
-{-# INLINE readCSum #-}
-readCSum :: (PrimMonad m, Num a, GM.MVector v a) => v (PrimState m) a -> Int -> Int -> m a
-readCSum vec l r = (-) <$> GM.read vec (r + 1) <*> GM.read vec l
+{-# INLINE read #-}
+read :: (PrimMonad m, Num a, GM.MVector v a) => v (PrimState m) a -> Int -> Int -> m a
+read vec l r = (-) <$> GM.read vec (r + 1) <*> GM.read vec l
 
 -- | \(O(1)\) The cumulative sum vector has @len@ + 1 element (guard).
-{-# INLINE appendCSum #-}
-appendCSum :: (PrimMonad m, Num a, GM.MVector v a) => v (PrimState m) a -> Int -> a -> m ()
-appendCSum vec len dx = do
+{-# INLINE append #-}
+append :: (PrimMonad m, Num a, GM.MVector v a) => v (PrimState m) a -> Int -> a -> m ()
+append vec len dx = do
   x <- GM.read vec len
   GM.write vec (len + 1) $! x + dx
 

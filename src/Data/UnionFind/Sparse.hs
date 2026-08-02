@@ -13,48 +13,48 @@ import GHC.Stack (HasCallStack)
 type SparseUnionFind = IM.IntMap Int
 
 -- | \(O(1)\)
-newSUF :: SparseUnionFind
-newSUF = IM.empty
+new :: SparseUnionFind
+new = IM.empty
 
 -- | \(O(1)\)
-emptySUF :: SparseUnionFind
-emptySUF = IM.empty
+empty :: SparseUnionFind
+empty = IM.empty
 
 -- | \(O(\log N)\)
-memberSUF :: Int -> SparseUnionFind -> Bool
-memberSUF = IM.member
+member :: Int -> SparseUnionFind -> Bool
+member = IM.member
 
 -- | \(O(\log N)\)
-insertSUF :: Int -> SparseUnionFind -> SparseUnionFind
-insertSUF !x !uf = IM.insert x (-1) uf
+insert :: Int -> SparseUnionFind -> SparseUnionFind
+insert !x !uf = IM.insert x (-1) uf
 
 -- | \(O(E)\) From edges
-fromListSUF :: [(Int, Int)] -> SparseUnionFind
-fromListSUF = foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
+fromList :: [(Int, Int)] -> SparseUnionFind
+fromList = foldl' (\uf (!i, !j) -> unify i j uf) new
 
 -- | \(O(E)\) From edges
-fromVecSUF :: U.Vector (Int, Int) -> SparseUnionFind
-fromVecSUF = U.foldl' (\uf (!i, !j) -> unifySUF i j uf) newSUF
+fromVec :: U.Vector (Int, Int) -> SparseUnionFind
+fromVec = U.foldl' (\uf (!i, !j) -> unify i j uf) new
 
 -- | \(O(\min(N, W))\) Returns (root, size)
-rootSUF :: (HasCallStack) => Int -> SparseUnionFind -> (Int, Int)
-rootSUF !i !uf
+root :: (HasCallStack) => Int -> SparseUnionFind -> (Int, Int)
+root !i !uf
   | IM.notMember i uf = (i, 1)
   | j < 0 = (i, -j)
-  | otherwise = rootSUF j uf
+  | otherwise = root j uf
   where
     j = uf IM.! i
 
 -- | \(O(\min(N, W))\)
-sameSUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> Bool
-sameSUF !i !j !uf = fst (rootSUF i uf) == fst (rootSUF j uf)
+same :: (HasCallStack) => Int -> Int -> SparseUnionFind -> Bool
+same !i !j !uf = fst (root i uf) == fst (root j uf)
 
 -- | \(O(\min(N, W))\)
-unifySUF :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
-unifySUF !i !j !uf
+unify :: (HasCallStack) => Int -> Int -> SparseUnionFind -> SparseUnionFind
+unify !i !j !uf
   | a == b = uf
   | r >= s = IM.insert a (negate $! r + s) $ IM.insert b a uf
   | otherwise = IM.insert b (negate $! r + s) $ IM.insert a b uf
   where
-    (!a, !r) = rootSUF i uf
-    (!b, !s) = rootSUF j uf
+    (!a, !r) = root i uf
+    (!b, !s) = root j uf

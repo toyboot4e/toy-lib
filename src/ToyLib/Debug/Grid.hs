@@ -4,7 +4,8 @@ module ToyLib.Debug.Grid where
 import Control.Monad
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Vector.Generic qualified as G
-import Data.Vector.IxVector
+import Data.Vector.IxVector (IxVector, (@!))
+import Data.Vector.IxVector qualified as IV
 import Debug.Trace
 import ToyLib.Debug
 import ToyLib.Macro
@@ -18,7 +19,7 @@ instance (G.Vector v a, Show a) => ShowGrid (IxVector (Int, Int) (v a)) where
   showGrid = showGridN 0
   showGridN !len !grid = unlines $ map f [y0 .. y1]
     where
-      ((!y0, !x0), (!y1, !x1)) = boundsIV grid
+      ((!y0, !x0), (!y1, !x1)) = IV.bounds grid
       f !y = unwords $ map (showN . (grid @!) . (y,)) [x0 .. x1]
       showN x =
         let !s = show x
@@ -33,7 +34,7 @@ dbgGrid gr = dbgS (showGrid gr)
 dbgGridM :: (PrimMonad m, G.Vector v a, Show a, ShowGrid (IxVector (Int, Int) (v a))) => IxVector (Int, Int) (G.Mutable v (PrimState m) a) -> m ()
 -- TODO: simplifiable instance?
 dbgGridM gr = when debug $ do
-  !gr' <- unsafeFreezeIV gr
+  !gr' <- IV.unsafeFreeze gr
   let !_ = trace (showGridN 4 gr') ()
   pure ()
 

@@ -113,8 +113,8 @@ instance DigitDfa KnownValueModKDfa KnownValueModK Int where
   transiteDfa (KnownValueModKDfa {k, digitUnit}) (KnownValueModK acc) d =
     Just $ KnownValueModK ((acc + d * digitUnit) `mod` k)
 
-{-# INLINE foldlMDigitDp #-}
-foldlMDigitDp ::
+{-# INLINE foldlM #-}
+foldlM ::
   forall m dfa s v a t x.
   (Monad m, DigitDfa dfa s a, Hashable s, Semigroup v, Foldable t) =>
   -- | Next input values (alphabets)
@@ -131,7 +131,7 @@ foldlMDigitDp ::
   t x ->
   -- | Folding result
   m (HM.HashMap s v)
-foldlMDigitDp toNextInputs updateValue createDfa afterDigit = foldM step
+foldlM toNextInputs updateValue createDfa afterDigit = foldM step
   where
     step :: HM.HashMap s v -> x -> m (HM.HashMap s v)
     step sofar x = do
@@ -160,7 +160,7 @@ foldlMDigitDp toNextInputs updateValue createDfa afterDigit = foldM step
 -- 2. set the semigroup value in `hm0` of `HashMap`
 solveAgc23A :: [Char] -> Int
 solveAgc23A s =
-  let hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s
+  let hm = runIdentity $ foldlM toNextInputs updateValue createDfa afterDigit hm0 s
       accept _dfa = True
    in getMax . foldMap snd $ filter (accept . fst) $ HM.toList hm
   where
@@ -177,7 +177,7 @@ solveAgc23A s =
 -- 2. set the semigroup value in `hm0` of `HashMap`
 solveAbc154E :: [Char] -> Int -> Int
 solveAbc154E s k =
-  let hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s
+  let hm = runIdentity $ foldlM toNextInputs updateValue createDfa afterDigit hm0 s
       accept (!_, CountNonZero i) = i == k
    in getSum . foldMap snd $ filter (accept . fst) $ HM.toList hm
   where
@@ -194,7 +194,7 @@ solveAbc154E s k =
 -- solve242E s =
 --   let -- In order to create a palindrome: (TODO: create alphabets automatically)
 --       s' = take ((BS.length s + 1) `div` 2) $ BS.zipWith (,) s (BS.reverse s)
---       hm = runIdentity $ foldlMDigitDp toNextInputs updateValue createDfa afterDigit hm0 s'
+--       hm = runIdentity $ foldlM toNextInputs updateValue createDfa afterDigit hm0 s'
 --       accept (LtEqWithBackHalfOrdering Equal !backOrd) =
 --         let !_ = dbg backOrd in
 --         backOrd /= GT

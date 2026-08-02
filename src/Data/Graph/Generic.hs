@@ -16,8 +16,8 @@ import GHC.Stack (HasCallStack)
 -- * Graph search
 
 -- | \(O(V+E)\) DFS that paints connnected components starting from a vertex.
-genericComponentsOf :: Int -> (Vertex -> U.Vector Vertex) -> U.Vector Vertex -> U.Vector Vertex
-genericComponentsOf nVerts gr sources = runST $ do
+componentsOf :: Int -> (Vertex -> U.Vector Vertex) -> U.Vector Vertex -> U.Vector Vertex
+componentsOf nVerts gr sources = runST $ do
   vis <- UM.replicate nVerts False
   let dfs v1 = do
         GM.write vis v1 True

@@ -36,8 +36,8 @@ import Data.Vector.Unboxed.Mutable qualified as UM
 newtype Affine1 a = Affine1 (Affine1Repr a)
   deriving newtype (Eq, Ord, Show)
 
-identAffine1 :: (Num a) => Affine1 a
-identAffine1 = Affine1 (1, 0)
+ident :: (Num a) => Affine1 a
+ident = Affine1 (1, 0)
 
 -- | `Affine1` represents @x -> a x + b@.
 type Affine1Repr a = (a, a)
@@ -51,7 +51,7 @@ instance (Num a) => Semigroup (Affine1 a) where
 
 instance (Num a) => Monoid (Affine1 a) where
   {-# INLINE mempty #-}
-  mempty = identAffine1
+  mempty = ident
 
 -- * SegAct implementations
 

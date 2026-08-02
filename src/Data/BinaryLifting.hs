@@ -14,8 +14,8 @@ import GHC.Stack (HasCallStack)
 import Math.BitSet
 
 -- | Binary lifting
-cacheBL :: (Semigroup a) => Int -> a -> V.Vector a
-cacheBL n s = V.constructN n $ \sofar ->
+cache :: (Semigroup a) => Int -> a -> V.Vector a
+cache n s = V.constructN n $ \sofar ->
   if G.null sofar
     then s
     else
@@ -23,17 +23,17 @@ cacheBL n s = V.constructN n $ \sofar ->
        in s1 <> s1
 
 -- | Binary lifting
-{-# INLINE stimesBL #-}
-stimesBL :: (HasCallStack, Semigroup s, G.Vector v s) => v s -> Int -> s
-stimesBL cache n = G.foldl' f (cache G.! b) bs
+{-# INLINE stimes #-}
+stimes :: (HasCallStack, Semigroup s, G.Vector v s) => v s -> Int -> s
+stimes cache n = G.foldl' f (cache G.! b) bs
   where
     (!b, !bs) = fromJust . U.uncons $ bitsOf n
     f !a !iBit = a <> cache G.! iBit
 
 -- | Binary lifting
-{-# INLINE sactWithBL #-}
-sactWithBL :: (HasCallStack, G.Vector v s) => v s -> (s -> a -> a) -> Int -> a -> a
-sactWithBL cache sactF n a0
+{-# INLINE sactWith #-}
+sactWith :: (HasCallStack, G.Vector v s) => v s -> (s -> a -> a) -> Int -> a -> a
+sactWith cache sactF n a0
   | n == 0 = a0
   | otherwise = G.ifoldl' f a0 cache
   where

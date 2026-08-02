@@ -25,11 +25,11 @@ import ToyLib.Debug
 data SegmentTreeBeats a op s = SegmentTreeBeats !(UM.MVector s a) !(UM.MVector s op) {-# UNPACK #-} !Int
 
 -- | \(O(N)\) Creates a `SegmentTreeBeats` with `mempty` as the initial accumulated values.
-newSTBImpl ::
+newImpl ::
   (Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
   m (SegmentTreeBeats a op (PrimState m))
-newSTBImpl !n = do
+newImpl !n = do
   !as <- GM.replicate n2 mempty
   !ops <- UM.replicate n2 mempty
   pure $ SegmentTreeBeats as ops h
@@ -38,16 +38,16 @@ newSTBImpl !n = do
     (!h, !n2) = until ((>= 2 * n) . snd) (bimap succ (* 2)) (0 :: Int, 1 :: Int)
 
 -- | \(O(N)\)
-newSTB :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (SegmentTreeBeats a op (PrimState m))
-newSTB = newSTBImpl
+new :: (U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> m (SegmentTreeBeats a op (PrimState m))
+new = newImpl
 
 -- | \(O(N)\) Creates `SegmentTreeBeats` with initial leaf values.
-generateSTBImpl ::
+generateImpl ::
   (HasCallStack, Monoid a, U.Unbox a, Monoid op, U.Unbox op, PrimMonad m) =>
   Int ->
   (Int -> a) ->
   m (SegmentTreeBeats a op (PrimState m))
-generateSTBImpl !n !f = do
+generateImpl !n !f = do
   !as <- GM.unsafeNew n2
 
   -- Fill leaves:
@@ -70,13 +70,13 @@ generateSTBImpl !n !f = do
     !nLeaves = n2 .>>. 1
 
 -- | \(O(N)\)
-generateSTB :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (SegmentTreeBeats a op (PrimState m))
-generateSTB = generateSTBImpl
+generate :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => Int -> (Int -> a) -> m (SegmentTreeBeats a op (PrimState m))
+generate = generateImpl
 
 -- | \(O(N)\). TODO: Share the internal implementation with `genearteSTB` takeing filling function.
-{-# INLINE buildSTB #-}
-buildSTB :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => U.Vector a -> m (SegmentTreeBeats a op (PrimState m))
-buildSTB xs = do
+{-# INLINE build #-}
+build :: (HasCallStack, U.Unbox a, Monoid a, Monoid op, U.Unbox op, PrimMonad m) => U.Vector a -> m (SegmentTreeBeats a op (PrimState m))
+build xs = do
   !as <- GM.unsafeNew n2
 
   -- Fill leaves:
@@ -103,17 +103,17 @@ buildSTB xs = do
 -- * Action with length given by the segment tree
 
 -- | \(O(\log N)\)
-foldSTB ::
+fold ::
   forall a op m.
   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
   m a
-foldSTB stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
+fold stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
-          "foldSTB: wrong range " ++ show (iLLeaf, iRLeaf)
+          "fold: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
   _propDownFromRootSTB stree iLLeaf 0
@@ -144,41 +144,41 @@ foldSTB stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf = stToPrim $ do
           glitchFold ((l + 1) .>>. 1) ((r - 1) .>>. 1) lAcc' rAcc'
 
 -- | \(O(\log N)\)
-{-# INLINE foldMaySTB #-}
-foldMaySTB ::
+{-# INLINE foldMay #-}
+foldMay ::
   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   Int ->
   m (Maybe a)
-foldMaySTB stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf
+foldMay stree@(SegmentTreeBeats !as !_ !_) !iLLeaf !iRLeaf
   | 0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1) =
-      Just <$> foldSTB stree iLLeaf iRLeaf
+      Just <$> fold stree iLLeaf iRLeaf
   | otherwise = pure Nothing
   where
     !nLeaves = GM.length as .>>. 1
 
 -- | \(O(\log N)\) Read one leaf. TODO: Faster implementation.
-{-# INLINE readSTB #-}
-readSTB ::
+{-# INLINE read #-}
+read ::
   (HasCallStack, FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   m a
-readSTB stree i = foldSTB stree i i
+read stree i = fold stree i i
 
 -- | \(O(\log N)\)
-{-# INLINE foldAllSTB #-}
-foldAllSTB ::
+{-# INLINE foldAll #-}
+foldAll ::
   (HasCallStack, FailableSemigroupActionTarget a, Eq a, Monoid a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   m a
 -- TODO: faster implementation
 -- FIXME: the length must not include non-existing leaves. Remember the original length?
-foldAllSTB stree@(SegmentTreeBeats !as !_ !_) = foldSTB stree 0 (GM.length as .>>. 1 - 1)
+foldAll stree@(SegmentTreeBeats !as !_ !_) = fold stree 0 (GM.length as .>>. 1 - 1)
 
 -- | \(O(\log N)\) Applies a lazy operator monoid over an interval, propagated lazily.
-sactSTB ::
+sact ::
   forall a op m.
   (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
@@ -186,10 +186,10 @@ sactSTB ::
   Int ->
   op ->
   m ()
-sactSTB stree@(SegmentTreeBeats !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
+sact stree@(SegmentTreeBeats !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim $ do
   let !_ =
         dbgAssert (0 <= iLLeaf && iLLeaf <= iRLeaf && iRLeaf <= (nLeaves - 1)) $
-          "sactSTB: wrong range " ++ show (iLLeaf, iRLeaf)
+          "sact: wrong range " ++ show (iLLeaf, iRLeaf)
 
   -- 1. Propagate the parents' lazy operator monoids and evaluate up to the acted vertices:
   _propDownFromRootSTB stree iLLeaf 0
@@ -225,14 +225,14 @@ sactSTB stree@(SegmentTreeBeats !as !ops !height) !iLLeaf !iRLeaf !op = stToPrim
           GM.write as v $! l <> r
 
 -- | \(O(\log N)\) Acts on one leaf. TODO: Specialize the implementation.
-{-# INLINE sactAtSTB #-}
-sactAtSTB ::
+{-# INLINE sactAt #-}
+sactAt ::
   (FailableSemigroupActionTarget a, Monoid a, Eq a, U.Unbox a, Monoid op, SegAct op a, Eq op, U.Unbox op, PrimMonad m) =>
   SegmentTreeBeats a op (PrimState m) ->
   Int ->
   op ->
   m ()
-sactAtSTB stree i = sactSTB stree i i
+sactAt stree i = sact stree i i
 
 -- TODO: writeSTB
 -- TODO: modifySTB
@@ -324,7 +324,7 @@ _propAt stree@(SegmentTreeBeats !_ !ops !_) !vertex = do
 --   m (Maybe Int, Maybe Int)
 -- bisectSTB stree@(SegmentTreeBeats !as !_ !_) l r f = do
 --   bisectM l r $ \r' -> do
---     !acc <- foldSTB stree l r'
+--     !acc <- fold stree l r'
 --     pure $! f acc
 --   where
 --     !_ = dbgAssert (0 <= l && l <= r && r <= nLeaves - 1) $ "bisectSTB: giveninvalid range " ++ show (l, r)

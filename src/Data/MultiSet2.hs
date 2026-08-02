@@ -4,36 +4,37 @@ module Data.MultiSet2 where
 import Data.List (foldl')
 import Data.Map.Strict qualified as M
 import GHC.Stack (HasCallStack)
+import Prelude hiding (lookup)
 
 -- | MultiSet2: (nKeys, (key -> count))
 type MultiSet2 k = (Int, M.Map k Int)
 
 -- | \(O(1)\)
-{-# INLINE emptyMS2 #-}
-emptyMS2 :: MultiSet2 k
-emptyMS2 = (0, M.empty)
+{-# INLINE empty #-}
+empty :: MultiSet2 k
+empty = (0, M.empty)
 
 -- | \(O(1)\)
-{-# INLINE singletonMS2 #-}
-singletonMS2 :: k -> MultiSet2 k
-singletonMS2 !x = (1, M.singleton x 1)
+{-# INLINE singleton #-}
+singleton :: k -> MultiSet2 k
+singleton !x = (1, M.singleton x 1)
 
 -- | \(O(N W)\)
-{-# INLINE fromListMS2 #-}
-fromListMS2 :: (Ord k) => [k] -> MultiSet2 k
-fromListMS2 = foldl' (flip incMS2) emptyMS2
+{-# INLINE fromList #-}
+fromList :: (Ord k) => [k] -> MultiSet2 k
+fromList = foldl' (flip inc) empty
 
 -- | \(O(W)\) Increments key.
-{-# INLINE incMS2 #-}
-incMS2 :: (Ord k) => k -> MultiSet2 k -> MultiSet2 k
-incMS2 !k (!nKeys, !im) = case M.lookup k im of
+{-# INLINE inc #-}
+inc :: (Ord k) => k -> MultiSet2 k -> MultiSet2 k
+inc !k (!nKeys, !im) = case M.lookup k im of
   Just !n -> (nKeys, M.insert k (n + 1) im)
   Nothing -> (nKeys + 1, M.insert k 1 im)
 
 -- | \(O(W)\) Decrements key.
-{-# INLINE decMS2 #-}
-decMS2 :: (Ord k) => k -> MultiSet2 k -> MultiSet2 k
-decMS2 !k (!nKeys, !im) =
+{-# INLINE dec #-}
+dec :: (Ord k) => k -> MultiSet2 k -> MultiSet2 k
+dec !k (!nKeys, !im) =
   case M.lookup k im of
     Just 1 -> (nKeys - 1, M.delete k im)
     Just n -> (nKeys, M.insert k (n - 1) im)
@@ -41,17 +42,17 @@ decMS2 !k (!nKeys, !im) =
     Nothing -> (nKeys, im)
 
 -- | \(O(W)\) Adds key by @dn@.
-{-# INLINE addMS2 #-}
-addMS2 :: (Ord k) => k -> Int -> MultiSet2 k -> MultiSet2 k
-addMS2 !k !dn (!nKeys, !im) =
+{-# INLINE add #-}
+add :: (Ord k) => k -> Int -> MultiSet2 k -> MultiSet2 k
+add !k !dn (!nKeys, !im) =
   case M.lookup k im of
     Just n -> (nKeys, M.insert k (n + dn) im)
     Nothing -> (nKeys + 1, M.insert k dn im)
 
 -- | \(O(W)\) Subtracts key by @dn@.
-{-# INLINE subMS2 #-}
-subMS2 :: (Ord k) => k -> Int -> MultiSet2 k -> MultiSet2 k
-subMS2 !k !dn (!nKeys, !im) =
+{-# INLINE sub #-}
+sub :: (Ord k) => k -> Int -> MultiSet2 k -> MultiSet2 k
+sub !k !dn (!nKeys, !im) =
   case M.lookup k im of
     Just n
       | n > dn -> (nKeys, M.insert k (n - dn) im)
@@ -61,42 +62,42 @@ subMS2 !k !dn (!nKeys, !im) =
     Nothing -> (nKeys, im)
 
 -- | \(O(W)\)
-{-# INLINE memberMS2 #-}
-memberMS2 :: (Ord k) => k -> MultiSet2 k -> Bool
-memberMS2 !k (!_, !im) = M.member k im
+{-# INLINE member #-}
+member :: (Ord k) => k -> MultiSet2 k -> Bool
+member !k (!_, !im) = M.member k im
 
 -- | \(O(W)\)
-{-# INLINE notMemberMS2 #-}
-notMemberMS2 :: (Ord k) => k -> MultiSet2 k -> Bool
-notMemberMS2 !k (!_, !im) = M.notMember k im
+{-# INLINE notMember #-}
+notMember :: (Ord k) => k -> MultiSet2 k -> Bool
+notMember !k (!_, !im) = M.notMember k im
 
 -- | \(O(W)\)
-{-# INLINE decFindMinMS2 #-}
-decFindMinMS2 :: (Ord k) => MultiSet2 k -> (k, MultiSet2 k)
-decFindMinMS2 ms@(!_, !im) =
+{-# INLINE decFindMin #-}
+decFindMin :: (Ord k) => MultiSet2 k -> (k, MultiSet2 k)
+decFindMin ms@(!_, !im) =
   let !key = fst $ M.findMin im
-   in (key, decMS2 key ms)
+   in (key, dec key ms)
 
 -- | \(O(W)\)
-{-# INLINE decFindMaxMS2 #-}
-decFindMaxMS2 :: (Ord k) => MultiSet2 k -> (k, MultiSet2 k)
-decFindMaxMS2 ms@(!_, !im) =
+{-# INLINE decFindMax #-}
+decFindMax :: (Ord k) => MultiSet2 k -> (k, MultiSet2 k)
+decFindMax ms@(!_, !im) =
   let !key = fst $ M.findMax im
-   in (key, decMS2 key ms)
+   in (key, dec key ms)
 
 -- | \(O(W)\)
-{-# INLINE lookupMS2 #-}
-lookupMS2 :: (Ord k) => k -> MultiSet2 k -> Maybe Int
-lookupMS2 !k = M.lookup k . innerMS2
+{-# INLINE lookup #-}
+lookup :: (Ord k) => k -> MultiSet2 k -> Maybe Int
+lookup !k = M.lookup k . inner
 
--- | \(O(W)\) Partial alternative to `lookupMS2`.
-{-# INLINE getMS2 #-}
-getMS2 :: (HasCallStack, Ord k, Show k) => k -> MultiSet2 k -> Int
-getMS2 !k !ms = case lookupMS2 k ms of
+-- | \(O(W)\) Partial alternative to `lookup`.
+{-# INLINE get #-}
+get :: (HasCallStack, Ord k, Show k) => k -> MultiSet2 k -> Int
+get !k !ms = case lookup k ms of
   Just x -> x
-  Nothing -> error $ "getMS2: panic with key: " ++ show k
+  Nothing -> error $ "get: panic with key: " ++ show k
 
 -- | \(O(1)\) Unwraps `MultiSet2` into the underlying `Map`.
-{-# INLINE innerMS2 #-}
-innerMS2 :: MultiSet2 k -> M.Map k Int
-innerMS2 (!_, !im) = im
+{-# INLINE inner #-}
+inner :: MultiSet2 k -> M.Map k Int
+inner (!_, !im) = im

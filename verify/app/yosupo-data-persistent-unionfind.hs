@@ -6,6 +6,7 @@
 import Data.Graph.Generic
 import Data.Graph.Sparse
 import Data.UnionFind.Sparse
+import Data.UnionFind.Sparse qualified as SUF
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -25,13 +26,13 @@ solve = do
   let !gr = buildSG_ (q + 1) $ G.imap (\i0 (!_, !from0, !_, !_) -> (from0 + 1, i0 + 1)) qs
 
   res <- UM.replicate q (-2 :: Int)
-  runPersistentDfs (gr `adjW`) 0 emptySUF $ \ !uf _ q1' _ -> do
+  runPersistentDfs (gr `adjW`) 0 SUF.empty $ \ !uf _ q1' _ -> do
     let (!t, !_, !u, !v) = U.unsafeIndex qs (q1' - 1)
     case t of
       0 -> do
-        return $ unifySUF u v uf
+        return $ SUF.unify u v uf
       1 -> do
-        GM.unsafeWrite res (q1' - 1) . bool 0 1 $ sameSUF u v uf
+        GM.unsafeWrite res (q1' - 1) . bool 0 1 $ SUF.same u v uf
         return uf
       _ -> error "unreachable"
 

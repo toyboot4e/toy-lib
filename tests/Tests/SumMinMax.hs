@@ -7,7 +7,9 @@ import Control.Monad
 import Control.Monad.ST
 import Data.List (foldl')
 import Data.SegmentTree.Beats
+import Data.SegmentTree.Beats qualified as STB
 import Data.SegmentTree.Beats.SumMinMax
+import Data.SegmentTree.Beats.SumMinMax qualified as SMM
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import Test.Tasty
@@ -19,11 +21,11 @@ testSMM =
   testGroup
     "SumMinMax tests"
     [ testCase "SumMinMax identity" $ do
-        let smm = singletonSMM (10 :: Int)
+        let smm = SMM.singleton (10 :: Int)
         smm <> mempty @?= smm
         mempty <> smm @?= smm,
       testCase "SumMinMax length 1" $ do
-        let smm = singletonSMM (10 :: Int)
+        let smm = SMM.singleton (10 :: Int)
         let s1 = segActWithLength 1 (newAddACC (15 :: Int)) smm
         let s2 = segActWithLength 1 (newChminACC (5 :: Int)) smm
         let s3 = segActWithLength 1 (newChminACC (15 :: Int)) smm
@@ -49,7 +51,7 @@ testACC =
         newChmaxACC x <> mempty @?= newChmaxACC x
         mempty <> newChmaxACC x @?= newChmaxACC x,
       testCase "AddChminChmax simple sact" $ do
-        let y = segActWithLength 1 (newAddACC (-1 :: Int)) (singletonSMM (0 :: Int))
+        let y = segActWithLength 1 (newAddACC (-1 :: Int)) (SMM.singleton (0 :: Int))
         failsSMM y @?= False
         sumSMM y @?= -1
     ]
@@ -67,7 +69,7 @@ testCompositeACC =
             1 -> newChmaxACC x
             2 -> newAddACC x
             _ -> error "unreachable"
-        x <- singletonSMM <$> QC.chooseInt (-10, 10)
+        x <- SMM.singleton <$> QC.chooseInt (-10, 10)
         let len = 1 -- len <- QC.chooseInt (1, 5)
         return . QC.counterexample (show (a1, a2)) $
           segActWithLength len (a1 <> a2) x QC.=== segActWithLength len a1 (segActWithLength len a2 x),
@@ -81,7 +83,7 @@ testCompositeACC =
             1 -> newChmaxACC x
             2 -> newAddACC x
             _ -> error "unreachable"
-        x <- singletonSMM <$> QC.chooseInt (-10, 10)
+        x <- SMM.singleton <$> QC.chooseInt (-10, 10)
         let x1 = segActWithLength 1 (foldl' (<>) mempty (reverse as)) x
         let x2 = foldl' (flip (segActWithLength 1)) x as
         return . QC.counterexample (show as) $ x1 QC.=== x2
@@ -107,23 +109,23 @@ testBeats =
 
         -- [(1,0,1,1),(0,0,1,-2),(3,0,0,3)]
         let res = runST $ do
-              stree <- buildSTB $ U.replicate n (singletonSMM (0 :: Int))
+              stree <- STB.build $ U.replicate n (SMM.singleton (0 :: Int))
               vec <- UM.replicate n (0 :: Int)
               (`U.mapMaybeM` qs) $ \case
                 (0, !l, !r, !x) -> do
-                  sactSTB stree l r $ newChminACC x
+                  STB.sact stree l r $ newChminACC x
                   forM_ [l .. r] $ UM.modify vec (min x)
                   return Nothing
                 (1, !l, !r, !x) -> do
-                  sactSTB stree l r $ newChmaxACC x
+                  STB.sact stree l r $ newChmaxACC x
                   forM_ [l .. r] $ UM.modify vec (max x)
                   return Nothing
                 (2, !l, !r, !x) -> do
-                  sactSTB stree l r $ newAddACC x
+                  STB.sact stree l r $ newAddACC x
                   forM_ [l .. r] $ UM.modify vec (+ x)
                   return Nothing
                 (3, !l, !r, !_) -> do
-                  s1 <- sumSMM <$> foldSTB stree l r
+                  s1 <- sumSMM <$> STB.fold stree l r
                   s2 <- U.sum <$> U.unsafeFreeze (UM.slice l (r - l + 1) vec)
                   return $ Just (s1, s2)
                 _ -> error "unreachable"

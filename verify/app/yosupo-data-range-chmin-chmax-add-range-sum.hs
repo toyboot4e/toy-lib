@@ -2,7 +2,9 @@
 #include "./__import"
 -- {{{ toy-lib import
 import Data.SegmentTree.Beats
+import Data.SegmentTree.Beats qualified as STB
 import Data.SegmentTree.Beats.SumMinMax
+import Data.SegmentTree.Beats.SumMinMax qualified as SMM
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -27,19 +29,19 @@ solve = do
         3 -> (3 :: Int,,,-1) <$> intP <*> int1P
         _ -> error "unreachable"
 
-  stree <- buildSTB $ U.map singletonSMM xs
+  stree <- STB.build $ U.map SMM.singleton xs
   res <- (`U.mapMaybeM` qs) $ \(c, !l, !r, !x) -> case c of
     0 -> do
-      sactSTB stree l r $ newChminACC x
+      STB.sact stree l r $ newChminACC x
       return Nothing
     1 -> do
-      sactSTB stree l r $ newChmaxACC x
+      STB.sact stree l r $ newChmaxACC x
       return Nothing
     2 -> do
-      sactSTB stree l r $ newAddACC x
+      STB.sact stree l r $ newAddACC x
       return Nothing
     3 -> do
-      Just . sumSMM <$> foldSTB stree l r
+      Just . sumSMM <$> STB.fold stree l r
     _ -> error "unreachable"
 
   printBSB $ unlinesBSB res

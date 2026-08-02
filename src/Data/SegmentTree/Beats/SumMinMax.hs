@@ -22,7 +22,7 @@ import ToyLib.Debug
 -- | Sum + Min + Max information on segment tree beats.
 --
 -- REMARK: Be sure to NOT use `mempty` as initial values in segment tree beats, use
--- @singletonSMM 0@ instead.
+-- @singleton 0@ instead.
 --
 -- TODO: Specialize and `UNPACK`.
 data SumMinMax a = SumMinMax
@@ -45,9 +45,9 @@ instance FailableSemigroupActionTarget (SumMinMax a) where
   {-# INLINE isFailureFSAT #-}
   isFailureFSAT = failsSMM
 
-{-# INLINE singletonSMM #-}
-singletonSMM :: a -> SumMinMax a
-singletonSMM x = SumMinMax x x x 1 1 x x False
+{-# INLINE singleton #-}
+singleton :: a -> SumMinMax a
+singleton x = SumMinMax x x x 1 1 x x False
 
 instance (Num a, Ord a) => Semigroup (SumMinMax a) where
   -- not inline?

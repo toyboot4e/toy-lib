@@ -21,6 +21,7 @@ import Data.Vector.Algorithms.Intro qualified as VAI
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.IxVector
+import Data.Vector.IxVector qualified as IV
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
@@ -93,18 +94,18 @@ pushBasedConstructN !relax !vec0 !expander = G.create $ do
 
 pushBasedConstructIV :: (HasCallStack, Unindex i, U.Unbox a) => (a -> a -> a) -> IxUVector i a -> (IxUVector i a -> i -> U.Vector (i, a)) -> IxUVector i a
 pushBasedConstructIV !relax !vec0 !expander = runST $ do
-  !vec <- unsafeThawIV vec0
-  let bnd@(!_, !_) = boundsIV vec0
-  let !_ = dbgAssert (rangeSize bnd == GM.length (vecIV vec)) "wrong bounds"
+  !vec <- IV.unsafeThaw vec0
+  let bnd@(!_, !_) = IV.bounds vec0
+  let !_ = dbgAssert (rangeSize bnd == GM.length (IV.vec vec)) "wrong bounds"
 
-  forM_ [0 .. GM.length (vecIV vec) - 1] $ \iFrom -> do
+  forM_ [0 .. GM.length (IV.vec vec) - 1] $ \iFrom -> do
     let !iFrom' = unindex bnd iFrom
     -- Because this is a push-based DP, the value for the interested index is already known.
-    !freezed <- unsafeFreezeIV vec
+    !freezed <- IV.unsafeFreeze vec
     U.forM_ (expander freezed iFrom') $ \(!iTo, !x') -> do
-      modifyIV vec (`relax` x') iTo
+      IV.modify vec (`relax` x') iTo
 
-  unsafeFreezeIV vec
+  IV.unsafeFreeze vec
 
 -- | \([l, r]\) span.
 type Span = (Int, Int)
@@ -136,8 +137,8 @@ iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r)))
 -- | \(O(N^3)\) Span-based DP with preset index patterns.
 --
 -- REMARK: @sofar@ is accessed as @@sofar @! (len, l)@@.
-spanDP :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (U.Vector a)
-spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
+span :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IxVector (Int, Int) (U.Vector a)
+span !n !undef !onOne !f = IV.construct ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
   if spanLen == 0 || spanL >= (n + 1 - spanLen)
     then undef
     else
@@ -150,8 +151,8 @@ spanDP !n !undef !onOne !f = constructIV ((0, 0), (n + 1, n)) $ \vec (!spanLen, 
 --
 -- = Typical problems
 -- - [ABC 317 C - Remembering the Days](https://atcoder.jp/contests/abc317/tasks/abc317_c)
-tspDP :: Int -> IxUVector (Int, Int) Int -> U.Vector Int
-tspDP !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `divMod` nVerts of
+tsp :: Int -> IxUVector (Int, Int) Int -> U.Vector Int
+tsp !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `divMod` nVerts of
   -- initial states
   (!s, !vTo) | s == bit vTo -> 0 :: Int
   -- non-reachable states
@@ -227,7 +228,7 @@ lisOf' !xs = runST $ do
 
 -- | Longest common sequence.
 lcsOf :: BS.ByteString -> BS.ByteString -> Int
-lcsOf !s !t = U.last . vecIV . constructIV bnd $ \sofar i -> case i of
+lcsOf !s !t = U.last . IV.vec . IV.construct bnd $ \sofar i -> case i of
   (0, 0) -> 0 :: Int
   (0, _) -> 0 :: Int
   (_, 0) -> 0 :: Int
@@ -277,9 +278,9 @@ lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
 -- -- = Typical problem
 -- -- - [PAST 11 K - 部分列](https://atcoder.jp/contests/past202206-open/tasks/past202206_k)
 -- countCommonSubsequence :: BS.ByteString -> BS.ByteString -> MyModInt
--- countCommonSubsequence s t = done $ constructIV bnd f
+-- countCommonSubsequence s t = done $ IV.construct bnd f
 --   where
---     done = subtract 1 . U.last . vecIV
+--     done = subtract 1 . U.last . IV.vec
 --     bnd = ((0, 0), (BS.length s, BS.length t))
 --     sOccur = lastCharOccurrences s
 --     tOccur = lastCharOccurrences t
