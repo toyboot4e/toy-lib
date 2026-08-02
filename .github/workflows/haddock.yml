@@ -1,0 +1,58 @@
+name: Haddock
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  haddock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # `cabal.project` enables `-fllvm` (GHC 9.8 supports LLVM 11–15)
+      - name: Install LLVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-15
+          echo "/usr/lib/llvm-15/bin" >> "$GITHUB_PATH"
+
+      - uses: haskell-actions/setup@v2
+        id: setup
+        with:
+          ghc-version: '9.8.4'
+          cabal-version: '3.12.1.0'
+
+      - name: Cache cabal store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+          key: haddock-${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            haddock-${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-
+
+      - name: Generate Haddock
+        run: |
+          cabal haddock toy-lib \
+            --haddock-quickjump \
+            --haddock-hyperlink-source \
+            --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+
+      - name: Collect docs
+        run: |
+          doc_dir="$(find dist-newstyle -type d -path '*/doc/html/toy-lib' | head -n 1)"
+          cp -r "$doc_dir" site
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
