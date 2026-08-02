@@ -4,7 +4,7 @@ module Data.Vector.InvNum where
 import AtCoder.SegTree qualified as Seg
 import Control.Monad.ST
 import Data.Monoid
-import Data.Vector.Extra (compressU)
+-- import Data.Vector.Extra (compressU)
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
@@ -25,12 +25,12 @@ invNum xMax xs = runST $ do
     Seg.modify stree (+ 1) x
     pure $! acc + s
 
--- | \(O(N \log N)\) Calculates the inversion number, but after applying index compression.
--- It can significantly improve the performance, like in ABC 261 F.
-compressInvNumG :: (HasCallStack) => U.Vector Int -> Int
-compressInvNumG xs = invNum (U.length xs' - 1) xs'
-  where
-    !xs' = snd $ compressU xs
+-- -- | \(O(N \log N)\) Calculates the inversion number, but after applying index compression.
+-- -- It can significantly improve the performance, like in ABC 261 F.
+-- compressInvNumG :: (HasCallStack) => U.Vector Int -> Int
+-- compressInvNumG xs = invNum (U.length xs' - 1) xs'
+--   where
+--     !xs' = snd $ compressU xs
 
 -- | \(O(N \log N)\) Returns 1-based lexicographic order of the given array.
 --

@@ -15,7 +15,8 @@ import Data.Semigroup (Max (..), Sum (..))
 
 class DigitDfa context s a where
   transiteDfa :: context -> s -> a -> Maybe s
-  -- acceptDigitDfa :: s -> Bool
+
+-- acceptDigitDfa :: s -> Bool
 
 newtype AndDfa a = AndDfa a
   deriving (Eq, Show)
