@@ -16,7 +16,7 @@ debug = False
 solve :: StateT BS.ByteString IO ()
 solve = do
   s <- lineP
-  printBSB $ countUniqueSubstrings s
+  printBSB $ countUniqueSubstringsBS s
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/number_of_substrings
 -- #suffix-array

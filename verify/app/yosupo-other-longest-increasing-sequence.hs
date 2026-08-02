@@ -19,11 +19,10 @@ solve :: StateT BS.ByteString IO ()
 solve = do
   n <- intP
   xs <- intsP
-  let !dict = U.uniq $ U.modify VAI.sort xs
-  let !res = lisOf' $ U.map (bindex dict) xs
+  let (!_, !xs') = compressU xs
+  let !res = lisOf' xs'
   printBSB $ G.length res
   -- no need to restore the value, we just need their index:
-  -- printCol $ U.backpermute dict res
   printCol res
 
 -- verification-helper: PROBLEM https://judge.yosupo.jp/problem/longest_increasing_subsequence

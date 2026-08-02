@@ -3,8 +3,8 @@
 
 -- {{{ toy-lib import
 
+import AtCoder.Extra.Graph qualified as Gr
 import Data.Graph.Generic
-import Data.Graph.Sparse
 import Data.UnionFind.Sparse
 import Data.UnionFind.Sparse qualified as SUF
 import ToyLib.Parser
@@ -23,10 +23,10 @@ solve = do
 
   -- type, from, u, v
   qs <- U.replicateM q ints4P
-  let !gr = buildSG_ (q + 1) $ G.imap (\i0 (!_, !from0, !_, !_) -> (from0 + 1, i0 + 1)) qs
+  let !gr = Gr.build' (q + 1) $ G.imap (\i0 (!_, !from0, !_, !_) -> (from0 + 1, i0 + 1)) qs
 
   res <- UM.replicate q (-2 :: Int)
-  runPersistentDfs (gr `adjW`) 0 SUF.empty $ \ !uf _ q1' _ -> do
+  runPersistentDfs (Gr.adjW gr) 0 SUF.empty $ \ !uf _ q1' _ -> do
     let (!t, !_, !u, !v) = U.unsafeIndex qs (q1' - 1)
     case t of
       0 -> do
