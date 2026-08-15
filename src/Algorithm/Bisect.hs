@@ -6,7 +6,7 @@
 module Algorithm.Bisect where
 
 import AtCoder.Internal.Assert qualified as ACIA
-import Data.Functor.Identity
+import Data.Functor.Identity (runIdentity)
 import GHC.Stack (HasCallStack)
 
 {-# INLINE maxRight #-}

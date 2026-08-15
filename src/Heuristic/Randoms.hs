@@ -1,9 +1,14 @@
 module Heuristic.Randoms where
 
-import Control.Monad.State.Class
+import Control.Monad.State.Class (MonadState (state))
 import Data.Vector.Unboxed qualified as U
-import System.Random
+import System.Random (RandomGen, UniformRange, uniformR)
 import System.Random.Stateful
+  ( RandomGen,
+    StatefulGen,
+    UniformRange (uniformRM),
+    uniformR,
+  )
 
 -- | Generates `n` random values in `rng`.
 --

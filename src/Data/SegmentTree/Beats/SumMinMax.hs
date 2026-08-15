@@ -17,7 +17,7 @@ import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
-import ToyLib.Debug
+import ToyLib.Debug (dbgAssert)
 
 -- | Sum + Min + Max information on segment tree beats.
 --

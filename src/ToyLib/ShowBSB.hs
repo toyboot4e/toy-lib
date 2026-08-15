@@ -6,7 +6,7 @@
 module ToyLib.ShowBSB where
 
 import AtCoder.ModInt qualified as MI
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO (..))
 import Data.Bool (bool)
 import Data.ByteString.Builder qualified as BSB
 import Data.ByteString.Char8 qualified as BS

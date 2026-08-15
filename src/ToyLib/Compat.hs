@@ -8,7 +8,7 @@ module ToyLib.Compat where
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
 import Control.Monad.Trans.State.Strict (StateT (..))
 import Data.Bits ((.>>.))
-import Data.Coerce
+import Data.Coerce ()
 import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM

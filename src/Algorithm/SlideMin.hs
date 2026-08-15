@@ -3,9 +3,9 @@ module Algorithm.SlideMin where
 
 import AtCoder.Internal.Queue qualified as Q
 import Control.Monad.Extra (whenM)
-import Control.Monad.Fix
-import Control.Monad.ST
-import Data.Maybe
+import Control.Monad.Fix (fix)
+import Control.Monad.ST (runST)
+import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U

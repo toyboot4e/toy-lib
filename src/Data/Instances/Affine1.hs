@@ -15,9 +15,9 @@
 module Data.Instances.Affine1 where
 
 import AtCoder.LazySegTree (SegAct (..))
-import Data.Core.Group
-import Data.Core.SemigroupAction
-import Data.Semigroup
+import Data.Core.Group (Group (..))
+import Data.Core.SemigroupAction (SemigroupAction (..))
+import Data.Semigroup (Product (Product), Sum (Sum))
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U

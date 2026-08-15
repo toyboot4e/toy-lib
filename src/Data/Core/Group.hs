@@ -1,7 +1,7 @@
 -- | Group is a monoid with inverse elements.
 module Data.Core.Group where
 
-import Data.Semigroup
+import Data.Semigroup (Dual (Dual), Product (Product), Sum (Sum))
 
 -- | Group (S, *) is a monoid with inverse elements.
 --

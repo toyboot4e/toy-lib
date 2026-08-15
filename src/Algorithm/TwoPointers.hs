@@ -10,8 +10,7 @@
 -- See also: <https://zenn.dev/osushi0x/articles/e5bd9fe60abee4>
 module Algorithm.TwoPointers where
 
-import Control.Monad.Identity
-import Data.List (unfoldr)
+import Control.Monad.Identity (runIdentity)
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 

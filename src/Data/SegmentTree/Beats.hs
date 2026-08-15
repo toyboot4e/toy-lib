@@ -8,18 +8,25 @@
 module Data.SegmentTree.Beats where
 
 import AtCoder.LazySegTree (SegAct (..))
-import Control.Monad
+import Control.Monad (forM_, when)
 import Control.Monad.Extra (whenM)
 import Control.Monad.Primitive (PrimMonad, PrimState, stToPrim)
-import Data.Bifunctor
-import Data.Bits
+import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bits ((.<<.), (.>>.))
 import Data.SegmentTree.Util
+  ( FailableSemigroupActionTarget (..),
+    _childL,
+    _childR,
+    _isLChild,
+    _isRChild,
+    _pruneTrick,
+  )
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (msbOf)
-import ToyLib.Debug
+import ToyLib.Debug (dbgAssert)
 
 -- | Segment tree beats
 data SegmentTreeBeats a op s = SegmentTreeBeats !(UM.MVector s a) !(UM.MVector s op) {-# UNPACK #-} !Int

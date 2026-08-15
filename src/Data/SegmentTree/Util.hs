@@ -5,8 +5,8 @@
 
 module Data.SegmentTree.Util where
 
-import Data.Bits
-import Data.Core.SemigroupAction
+import Data.Bits (Bits (testBit, (.|.)), (.<<.), (.>>.))
+import Data.Core.SemigroupAction ()
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U

@@ -2,8 +2,8 @@
 module Data.Vector.InvNum where
 
 import AtCoder.SegTree qualified as Seg
-import Control.Monad.ST
-import Data.Monoid
+import Control.Monad.ST (runST)
+import Data.Monoid (Sum (..))
 -- import Data.Vector.Extra (compressU)
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U

@@ -11,7 +11,7 @@ import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
-import Math.BitSet
+import Math.BitSet (bitsOf)
 
 -- | Binary lifting
 cache :: (Semigroup a) => Int -> a -> V.Vector a

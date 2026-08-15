@@ -1,8 +1,11 @@
 -- | Bit set tricks (not so much).
 module Math.BitSet where
 
-import Control.Monad
+import Control.Monad (unless)
 import Data.Bits
+  ( Bits (bit, clearBit, complement, popCount, testBit, (.&.), (.|.)),
+    FiniteBits (..),
+  )
 import Data.List (unfoldr)
 import Data.Tuple.Extra (dupe)
 import Data.Vector.Unboxed qualified as U

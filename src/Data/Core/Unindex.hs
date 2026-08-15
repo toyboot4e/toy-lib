@@ -1,7 +1,7 @@
 -- | Handy, more restricted `Data.Ix` with reverse conversion, fast monadic iteration and unboxing.
 module Data.Core.Unindex where
 
-import Data.Ix
+import Data.Ix (Ix)
 import Data.Vector.Unboxed qualified as U
 
 class (Ix i, U.Unbox i) => Unindex i where

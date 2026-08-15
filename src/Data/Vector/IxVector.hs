@@ -4,12 +4,12 @@
 module Data.Vector.IxVector where
 
 import Control.Monad (when)
-import Control.Monad.Primitive
-import Control.Monad.ST
+import Control.Monad.Primitive (PrimMonad (PrimState))
+import Control.Monad.ST (ST, runST)
 import Data.Bifunctor (first, second)
-import Data.Core.Unindex
+import Data.Core.Unindex (Unindex (..))
 import Data.Foldable (for_)
-import Data.Ix
+import Data.Ix (Ix (inRange, index, rangeSize))
 import Data.Tuple.Extra (both)
 import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G
@@ -19,9 +19,9 @@ import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
+import ToyLib.Debug ()
+import ToyLib.Prelude (zero2)
 import Prelude hiding (filter, length, map, read, replicate, zipWith)
-import ToyLib.Debug
-import ToyLib.Prelude
 
 -- | \(O(1)\) Safer `index`
 {-# INLINE index' #-}

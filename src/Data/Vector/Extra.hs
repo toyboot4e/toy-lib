@@ -2,9 +2,9 @@
 
 module Data.Vector.Extra where
 
-import AtCoder.Extra.Bisect
+import AtCoder.Extra.Bisect ( lowerBound )
 import Control.Monad.Primitive (PrimMonad)
-import Data.Maybe
+import Data.Maybe ()
 import Data.Ord (comparing)
 import Data.Vector qualified as V
 import Data.Vector.Algorithms.Intro qualified as VAI

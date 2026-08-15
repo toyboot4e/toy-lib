@@ -8,25 +8,28 @@ module ToyLib.DP where
 import AtCoder.Extra.Graph qualified as AG
 import AtCoder.SegTree qualified as Seg
 import Control.Monad (forM_)
-import Control.Monad.ST
+import Control.Monad.ST (runST)
 import Data.Bits
+  ( Bits (bit, clearBit, testBit, (.|.)),
+    FiniteBits (countTrailingZeros),
+  )
 import Data.Bool (bool)
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (ord)
-import Data.Core.Unindex
-import Data.Ix
-import Data.Semigroup
+import Data.Core.Unindex (Unindex (..))
+import Data.Ix (Ix (rangeSize))
+import Data.Semigroup (Max (Max, getMax))
 import Data.Vector qualified as V
 import Data.Vector.Algorithms.Intro qualified as VAI
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
-import Data.Vector.IxVector
+import Data.Vector.IxVector (IxUVector, IxVector, (@!))
 import Data.Vector.IxVector qualified as IV
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
 import Math.BitSet (powersetU)
-import ToyLib.Debug
+import ToyLib.Debug (dbgAssert)
 import ToyLib.Prelude (rangeU)
 
 -- | Variant of `U.constructN`.

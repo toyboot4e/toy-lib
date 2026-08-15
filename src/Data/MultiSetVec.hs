@@ -6,7 +6,7 @@
 -- - [ABC 315 D - Magical Cookies](https://atcoder.jp/contests/abc315/tasks/abc315_d)
 module Data.MultiSetVec where
 
-import Control.Monad.Primitive
+import Control.Monad.Primitive (PrimMonad (PrimState))
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U

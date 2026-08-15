@@ -2,7 +2,7 @@
 module Math.Digits where
 
 import Data.List (foldl', genericTake)
-import Data.Maybe
+import Data.Maybe (fromJust)
 
 -- TODO: revive
 

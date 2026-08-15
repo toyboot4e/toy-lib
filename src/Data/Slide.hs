@@ -1,5 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
+-- TODO: rename methods
+
 -- | Sliding window data structures. See also `Data.Algorithm.SlideMin`.
 --
 -- = Typical Problems
@@ -7,11 +9,11 @@ module Data.Slide where
 
 import AtCoder.Internal.Queue qualified as Q
 import Control.Monad.Extra (whenM)
-import Control.Monad.Primitive
+import Control.Monad.Primitive (PrimMonad (PrimState))
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
-import GHC.Stack
+import GHC.Stack (HasCallStack)
 
 -- | Stack-based sliding window folding, going from left to right only.
 -- SWAG (sliding window aggregation).

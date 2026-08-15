@@ -1,11 +1,11 @@
 module ToyLib.Prelude where
 
-import Control.Monad.Fix
-import Data.Bifunctor
+import Control.Monad.Fix (fix)
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.ByteString.Char8 qualified as BS
-import Data.Core.Unindex
-import Data.Ix
-import Data.Tuple.Extra hiding (first, second)
+import Data.Core.Unindex (Unindex (unindex))
+import Data.Ix (Ix (inRange, index))
+import Data.Tuple.Extra (both)
 import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G
 import Data.Vector.Unboxed qualified as U

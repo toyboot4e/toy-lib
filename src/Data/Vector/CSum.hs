@@ -1,17 +1,17 @@
 -- | Cumulative sum in one dimension.
 module Data.Vector.CSum where
 
-import Control.Monad.Primitive
-import Data.Core.Unindex
-import Data.Ix
+import Control.Monad.Primitive (PrimMonad (PrimState))
+import Data.Core.Unindex (Unindex (unindex))
+import Data.Ix (Ix (inRange))
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
-import Data.Vector.IxVector
+import Data.Vector.IxVector (IxUVector, IxVector (IxVector), (@!))
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
-import ToyLib.Debug
-import ToyLib.Macro
+import ToyLib.Debug (dbgAssert)
+import ToyLib.Macro (debug)
 
 -- | \(O(N)\) Immutable cumulative sum initialization. The first element is a guard.
 {-# INLINE csum1D #-}

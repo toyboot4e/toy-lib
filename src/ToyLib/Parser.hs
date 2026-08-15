@@ -1,14 +1,14 @@
 -- | `StateT` -based parser.
 module ToyLib.Parser where
 
-import Control.Monad.IO.Class
-import Control.Monad.State.Class
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.State.Class (MonadState (state))
 import Control.Monad.Trans.State.Strict (State, StateT, evalState, evalStateT)
 import Data.Bifunctor (first)
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (digitToInt, isSpace)
 import Data.List (unfoldr)
-import Data.Maybe
+import Data.Maybe (fromJust)
 import Data.Vector.Unboxed qualified as U
 import GHC.Stack (HasCallStack)
 
