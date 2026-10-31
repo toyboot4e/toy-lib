@@ -219,7 +219,6 @@ library
     Math.Exgcd
     Math.Manhattan
     Math.PowMod
-    ToyLib.Compat
     ToyLib.Contest.Grid
     ToyLib.Contest.Prelude
     ToyLib.DP
