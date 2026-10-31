@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | Multi set backed by `IntMap`.
 module Data.BinaryLifting where

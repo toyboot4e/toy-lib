@@ -1,6 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | `Affine1`, `Mat2x2` and `V2` as a `SemigroupAction` instance.

@@ -122,62 +122,13 @@ common deps
   if flag(debug)
     cpp-options: -DDEBUG
 
-common exts2021
-  default-extensions:
-    BangPatterns
-    BinaryLiterals
-    ConstrainedClassMethods
-    ConstraintKinds
-    DeriveDataTypeable
-    DeriveFoldable
-    DeriveFunctor
-    DeriveGeneric
-    DeriveLift
-    DeriveTraversable
-    DoAndIfThenElse
-    EmptyCase
-    EmptyDataDecls
-    EmptyDataDeriving
-    ExistentialQuantification
-    ExplicitForAll
-    FieldSelectors
-    FlexibleContexts
-    FlexibleInstances
-    ForeignFunctionInterface
-    GADTSyntax
-    GeneralisedNewtypeDeriving
-    HexFloatLiterals
-    ImplicitPrelude
-    ImportQualifiedPost
-    InstanceSigs
-    KindSignatures
-    MonomorphismRestriction
-    MultiParamTypeClasses
-    NamedFieldPuns
-    NamedWildCards
-    NumericUnderscores
-    PatternGuards
-    PolyKinds
-    PostfixOperators
-    RankNTypes
-    RelaxedPolyRec
-    ScopedTypeVariables
-    StandaloneDeriving
-    StandaloneKindSignatures
-    StarIsType
-    TraditionalRecordSyntax
-    TupleSections
-    TypeApplications
-    TypeOperators
-    TypeSynonymInstances
-
 source-repository head
   type: git
   location: https://github.com/toyboot4e/toy-lib
 
 library
-  import: deps, exts2021
-  default-language: Haskell2010
+  import: deps
+  default-language: GHC2021
   -- updated with `cabal-fmt -i toy-lib.cabal`:
   -- cabal-gild: discover src
   exposed-modules:

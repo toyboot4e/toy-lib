@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Semigroup action @*@ is an operator where \(s_2 * (s_1 * a) == (s_2 \diamond s_1) * a\) holds.

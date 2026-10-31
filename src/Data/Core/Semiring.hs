@@ -1,6 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | `Semiring`. I usually use `Num` + `Monoid` as an implicit `Semiring` though.

@@ -2,7 +2,7 @@
 
 {-# LANGUAGE BlockArguments, DataKinds, DefaultSignatures, DerivingVia, LambdaCase, MagicHash #-}
 {-# LANGUAGE MultiWayIf, NumDecimals, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving, StrictData, TypeFamilies, ViewPatterns #-}
+{-# LANGUAGE StrictData, TypeFamilies, ViewPatterns #-}
 
 -- {-# LANGUAGE OverloadedLists, PatternSynonyms, QuantifiedConstraints, RecordWildCards #-}
 
