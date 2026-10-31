@@ -138,7 +138,7 @@ iwiSpansU' !l !r = U.map (\len -> ((l, l + len - 1), l + len, (l + len + 1, r)))
 
 -- | \(O(N^3)\) Span-based DP with preset index patterns.
 --
--- REMARK: @sofar@ is accessed as @@sofar IV.@! (len, l)@@.
+-- REMARK: @sofar@ is accessed as @@sofar IV.! (len, l)@@.
 span :: (U.Unbox a) => Int -> a -> (Int -> a) -> (IV.IxVector (Int, Int) (U.Vector a) -> (Int, Int) -> a) -> IV.IxVector (Int, Int) (U.Vector a)
 span !n !undef !onOne !f = IV.construct ((0, 0), (n + 1, n)) $ \vec (!spanLen, !spanL) ->
   if spanLen == 0 || spanL >= (n + 1 - spanLen)
@@ -164,7 +164,7 @@ tsp !nVerts !gr = U.constructN (nSets * nVerts) $ \vec -> case G.length vec `div
     let !s' = clearBit s vTo
         !candidates = (U.take nVerts . U.drop (nVerts * s')) vec
      in U.maximum $ flip U.imap candidates $ \vFrom w0 ->
-          let !dw = gr IV.@! (vFrom, vTo)
+          let !dw = gr IV.! (vFrom, vTo)
            in -- !_ = dbg (s, "<-", s', (vFrom, vTo), w0, dw, w0 + dw)
               bool (w0 + dw) undef (dw == undef || w0 == undef)
   where
@@ -236,10 +236,10 @@ lcsOf !s !t = U.last . IV.vec . IV.construct bnd $ \sofar i -> case i of
   (_, 0) -> 0 :: Int
   (!ls, !lt) -> n1 `max` n2 `max` n3
     where
-      n1 = sofar IV.@! (ls - 1, lt)
-      n2 = sofar IV.@! (ls, lt - 1)
+      n1 = sofar IV.! (ls - 1, lt)
+      n2 = sofar IV.! (ls, lt - 1)
       n3
-        | BS.index s (ls - 1) == BS.index t (lt - 1) = sofar IV.@! (ls - 1, lt - 1) + 1
+        | BS.index s (ls - 1) == BS.index t (lt - 1) = sofar IV.! (ls - 1, lt - 1) + 1
         | otherwise = 0
   where
     bnd = ((0, 0), (BS.length s, BS.length t))
@@ -293,19 +293,19 @@ lexPerms xs = V.unfoldr f (G.modify VAI.sort xs)
 --       where
 --         -- when we don't consume the pair as part of the subsequence
 --         cumulativePart =
---           let !x1 = sofar IV.@! (i1 - 1, i2 - 1)
---               !x2 = sofar IV.@! (i1, i2 - 1)
---               !x3 = sofar IV.@! (i1 - 1, i2)
+--           let !x1 = sofar IV.! (i1 - 1, i2 - 1)
+--               !x2 = sofar IV.! (i1, i2 - 1)
+--               !x3 = sofar IV.! (i1 - 1, i2)
 --            in x2 + x3 - x1
 --         -- when we consume the pair as part of the subsequence
 --         augPart
 --           | BS.index s (i1 - 1) /= BS.index t (i2 - 1) = modInt 0
 --           | otherwise =
 --               -- be sure to diminish..
---               let !x1 = bool (sofar IV.@! (i1' - 1, i2' - 1)) 0 $ i1' == 0 || i2' == 0
---                   !x2 = bool (sofar IV.@! (i1 - 1, i2' - 1)) 0 $ i2' == 0
---                   !x3 = bool (sofar IV.@! (i1' - 1, i2 - 1)) 0 $ i1' == 0
---                   !x4 = sofar IV.@! (i1 - 1, i2 - 1)
+--               let !x1 = bool (sofar IV.! (i1' - 1, i2' - 1)) 0 $ i1' == 0 || i2' == 0
+--                   !x2 = bool (sofar IV.! (i1 - 1, i2' - 1)) 0 $ i2' == 0
+--                   !x3 = bool (sofar IV.! (i1' - 1, i2 - 1)) 0 $ i1' == 0
+--                   !x4 = sofar IV.! (i1 - 1, i2 - 1)
 --                in x4 - (x2 + x3 - x1)
 --           where
 --             !c = ord (BS.index s (i1 - 1)) - ord 'a'

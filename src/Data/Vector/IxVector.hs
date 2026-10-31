@@ -21,7 +21,7 @@ import GHC.Ix (unsafeIndex)
 import GHC.Stack (HasCallStack)
 import ToyLib.Debug ()
 import ToyLib.Prelude (zero2)
-import Prelude hiding (filter, length, map, read, replicate, zipWith)
+import Prelude hiding (filter, length, map, read, replicate, zipWith, (!!))
 
 -- | \(O(1)\) Safer `index`
 {-# INLINE index' #-}
@@ -47,27 +47,27 @@ type IxMUVector s i a = IxVector i (UM.MVector s a)
 type IxMBVector s i a = IxVector i (VM.MVector s a)
 
 -- | Partial `IxVector` accessor
-{-# INLINE (@!) #-}
-(@!) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> a
-(@!) IxVector {..} i = vec G.! index' bounds i
+{-# INLINE (!) #-}
+(!) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> a
+(!) IxVector {..} i = vec G.! index' bounds i
 
 -- | Partial unsafe `IxVector` accessor
-{-# INLINE (@!!) #-}
-(@!!) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
-(@!!) IxVector {..} i = G.unsafeIndex vec (unsafeIndex bounds i)
+{-# INLINE (!!) #-}
+(!!) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> a
+(!!) IxVector {..} i = G.unsafeIndex vec (unsafeIndex bounds i)
 
 -- | \(O(1)\) Total `IxVector` accessor
-{-# INLINE (@!?) #-}
-(@!?) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
-(@!?) IxVector {..} i
+{-# INLINE (!?) #-}
+(!?) :: (HasCallStack, Ix i, Show i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(!?) IxVector {..} i
   -- NOTE: `index` panics on out of range
   | inRange bounds i = Just (vec G.! index' bounds i)
   | otherwise = Nothing
 
 -- | Total unsafe `IxVector` accessor
-{-# INLINE (@!!?) #-}
-(@!!?) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
-(@!!?) IxVector {..} i
+{-# INLINE (!!?) #-}
+(!!?) :: (Ix i, G.Vector v a) => IxVector i (v a) -> i -> Maybe a
+(!!?) IxVector {..} i
   -- NOTE: `index` panics on out of range
   | inRange bounds i = Just (G.unsafeIndex vec (unsafeIndex bounds i))
   | otherwise = Nothing
@@ -324,7 +324,7 @@ imos2d h w rangeAdds = IxVector (zero2 h w) $ U.create $ do
   where
     seeds = extractImos2d h w rangeAdds
 
--- REMARK: imos functions take (y1, y2, x1, x2, d), while `@+!` take ((y1, x1), (y2, x2))
+-- REMARK: imos functions take (y1, y2, x1, x2, d), while `+!` take ((y1, x1), (y2, x2))
 
 -- | \(O(HW)\) Calculates two-dimensional cumulative sum.
 --
@@ -342,10 +342,10 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
   (!y, !x) -> v0 + fromY + fromX - fromD
     where
       -- NOTE: Use zero-based indices on original graph access
-      v0 = gr @! (y - 1, x - 1)
-      fromY = IxVector bnd sofar @! (y - 1, x)
-      fromX = IxVector bnd sofar @! (y, x - 1)
-      fromD = IxVector bnd sofar @! (y - 1, x - 1)
+      v0 = gr ! (y - 1, x - 1)
+      fromY = IxVector bnd sofar ! (y - 1, x)
+      fromX = IxVector bnd sofar ! (y, x - 1)
+      fromD = IxVector bnd sofar ! (y - 1, x - 1)
   where
     -- Insert the zero row and the zero column:
     !bnd = second (both (+ 1)) (bounds gr)
@@ -358,17 +358,17 @@ csum2D !gr = IxVector bnd $ U.constructN (rangeSize bnd) $ \sofar -> case uninde
 -- = = # # #
 -- = = # # #
 -- @
-{-# INLINE (@+!) #-}
-(@+!) :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
-(@+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
+{-# INLINE (+!) #-}
+(+!) :: (HasCallStack, Num a, U.Unbox a) => IxUVector (Int, Int) a -> ((Int, Int), (Int, Int)) -> a
+(+!) !csum ((!y1, !x1), (!y2, !x2)) = s1 + s4 - s2 - s3
   where
     -- NOTE: Using one-based indices sinces zeros are inserted
     --
     -- From top left to @#@
-    !s1 = csum @! (y2 + 1, x2 + 1)
+    !s1 = csum ! (y2 + 1, x2 + 1)
     -- From top left to @*@
-    !s2 = csum @! (y1, x2 + 1)
+    !s2 = csum ! (y1, x2 + 1)
     -- From top left to @=@
-    !s3 = csum @! (y2 + 1, x1)
+    !s3 = csum ! (y2 + 1, x1)
     -- From top left to @-@
-    !s4 = csum @! (y1, x1)
+    !s4 = csum ! (y1, x1)

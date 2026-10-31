@@ -69,14 +69,14 @@ csum3D !n !gr = IV.IxVector bnd $ U.constructN (succ n * succ n * succ n) $ \sof
   (!x, !y, !z) -> v0 + (fromZ + fromY + fromX) - 2 * fromDiag - (dupX + dupY + dupZ)
     where
       -- NOTE: Use zero-based indices for original grid access
-      v0 = gr IV.@! (x - 1, y - 1, z - 1)
+      v0 = gr IV.! (x - 1, y - 1, z - 1)
       sofar' = IV.IxVector bnd sofar
-      fromZ = sofar' IV.@! (x - 1, y, z)
-      fromY = sofar' IV.@! (x, y - 1, z)
-      fromX = sofar' IV.@! (x, y, z - 1)
-      fromDiag = sofar' IV.@! (x - 1, y - 1, z - 1)
-      dupX = sofar' IV.@! (x - 1, y - 1, z) - fromDiag
-      dupY = sofar' IV.@! (x - 1, y, z - 1) - fromDiag
-      dupZ = sofar' IV.@! (x, y - 1, z - 1) - fromDiag
+      fromZ = sofar' IV.! (x - 1, y, z)
+      fromY = sofar' IV.! (x, y - 1, z)
+      fromX = sofar' IV.! (x, y, z - 1)
+      fromDiag = sofar' IV.! (x - 1, y - 1, z - 1)
+      dupX = sofar' IV.! (x - 1, y - 1, z) - fromDiag
+      dupY = sofar' IV.! (x - 1, y, z - 1) - fromDiag
+      dupZ = sofar' IV.! (x, y - 1, z - 1) - fromDiag
   where
     !bnd = ((0, 0, 0), (n, n, n))

@@ -19,7 +19,7 @@ instance (G.Vector v a, Show a) => ShowGrid (IV.IxVector (Int, Int) (v a)) where
   showGridN !len !grid = unlines $ map f [y0 .. y1]
     where
       ((!y0, !x0), (!y1, !x1)) = IV.bounds grid
-      f !y = unwords $ map (showN . (grid IV.@!) . (y,)) [x0 .. x1]
+      f !y = unwords $ map (showN . (grid IV.!) . (y,)) [x0 .. x1]
       showN x =
         let !s = show x
             !lenX = length s
