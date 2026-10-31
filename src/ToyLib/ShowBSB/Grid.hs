@@ -1,7 +1,7 @@
 -- | `ShowBSB` implementation for grids.
 module ToyLib.ShowBSB.Grid where
 
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO)
 import Data.ByteString.Builder qualified as BSB
 import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G

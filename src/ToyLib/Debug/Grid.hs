@@ -1,12 +1,12 @@
 -- | Debug utilities
 module ToyLib.Debug.Grid where
 
-import Control.Monad
+import Control.Monad (when)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Vector.Generic qualified as G
 import Data.Vector.IxVector (IxVector, (@!))
 import Data.Vector.IxVector qualified as IV
-import Debug.Trace
+import Debug.Trace (trace)
 import ToyLib.Debug
 import ToyLib.Macro
 

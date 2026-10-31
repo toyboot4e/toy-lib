@@ -22,7 +22,7 @@ import Control.Monad.Fix
 import Control.Monad.IO.Class
 import Control.Monad.Primitive
 import Control.Monad.ST
-import Control.Monad.State.Class
+import Control.Monad.State.Class (MonadState)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Cont
 import Control.Monad.Trans.Maybe

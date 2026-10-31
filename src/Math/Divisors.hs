@@ -22,7 +22,7 @@ module Math.Divisors where
 import AtCoder.Extra.Math qualified as EM
 import Control.Monad.Primitive (PrimMonad (PrimState))
 import Data.Foldable (for_)
-import Data.List
+import Data.List (sort)
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM

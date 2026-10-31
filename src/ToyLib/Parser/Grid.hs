@@ -2,9 +2,9 @@
 module ToyLib.Parser.Grid where
 
 import Control.Monad.Primitive (PrimMonad)
-import Control.Monad.State.Class
+import Control.Monad.State.Class (MonadState)
 import Data.ByteString.Char8 qualified as BS
-import Data.Ix
+import Data.Ix (Ix (index))
 import Data.Vector.Generic.Mutable qualified as GM
 import Data.Vector.IxVector
 import Data.Vector.Unboxed qualified as U
