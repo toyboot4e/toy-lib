@@ -245,23 +245,6 @@ library
     -Wredundant-constraints
     -Wno-missing-export-lists
 
-executable toy-lib-exe
-  import: deps
-  default-language: GHC2021
-  main-is: Main.hs
-  hs-source-dirs: app
-  other-modules:
-    Lib
-    Lib.Parse
-    Lib.Write
-
-  build-depends:
-    haskell-src-exts ^>= 1.24.0,
-    temporary,
-    toy-lib,
-
-  ghc-options: -Wall
-
 test-suite toy-lib-test
   -- import:           deps
   default-language: GHC2021

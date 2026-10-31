@@ -1,38 +1,11 @@
 # ToyLib
 
-ToyLib is my Haskell library for solving AtCoder problems. Note that most of the contents has been ported into the `Extra` module of [`ac-library-hs`](https://github.com/toyboot4e/ac-library-hs).
+ToyLib is my Haskell library for solving AtCoder problems.
+
+- Most of the library was orted into the `Extra` module of [`ac-library-hs`](https://github.com/toyboot4e/ac-library-hs).
+- The bundler was replaced with [`bundler-hs`](https://github.com/toyboot4e/bundler-hs).
 
 [API documentation](https://toyboot4e.github.io/toy-lib/)
-
-## CLI
-
-`toy-lib-exe` is the source file bunlder.
-
-### Usage
-
-Generate a template that bundles all the source files:
-
-```sh
-$ cabal run toy-lib-exe > template.hs
-```
-
-Minify the toy-lib modules and their dependencies into one line:
-
-```sh
-$ cabal run toy-lib-exe -m Data.Graph.Sparse Data.UnionFind.Mutable
-```
-
-Embed toy-lib modules:
-
-```sh
-$ cat Example.hs
--- {{{ toy-lib import
-import Math.Manhattan
--- }}} toy-lib import
-
-$ cabal run toy-lib-exe -e Examle.hs
-rot45 :: (Int, Int) -> (Int, Int);rot45 (!x, !y) = (x - y, x + y)
-```
 
 ## Project setting notes
 
@@ -50,26 +23,6 @@ No explicit exports are assumed, as they're bundled into one file (`Main.hs`):
 ghc-options:
 - -Wno-missing-export-lists
 ```
-
-We're using `Haskell2010` because `haskell-src-exts` (the parser) does not understand `GHC2021`, but all the extensions enabled by `GHC20210` are enabled via `default-extensisons`:
-
-```yaml
-default-language: Haskell2010
-
-default-extensions:
-- BangPatterns
-# and lots more
-```
-
-### Limitations
-
-We have limitations coming from [haskell-src-exts](https://github.com/haskell-suite/haskell-src-exts):
-
-- Can't use `MultiWayIf`  
-  `haskell-src-exts` does not understand it well.
-
-- Can't use `GHC2021` syntax  
-  For example `import X qualified as Y` is not available.
 
 ## Useful commands
 
