@@ -6,7 +6,7 @@ import Control.Monad.State.Class (MonadState)
 import Data.ByteString.Char8 qualified as BS
 import Data.Ix (Ix (index))
 import Data.Vector.Generic.Mutable qualified as GM
-import Data.Vector.IxVector
+import Data.Vector.IxVector qualified as IV
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import ToyLib.Parser
@@ -28,8 +28,8 @@ import ToyLib.Parser
 -- 1 2 3
 -- 4 5 6
 -- @
-matP :: (MonadState BS.ByteString m) => Int -> Int -> m (IxVector (Int, Int) (U.Vector Int))
-matP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) intP
+matP :: (MonadState BS.ByteString m) => Int -> Int -> m (IV.IxVector (Int, Int) (U.Vector Int))
+matP !h !w = IV.IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) intP
 
 -- | \(O(HW)\) Reads next @h * w@ elements as a char-based grid.
 --
@@ -48,8 +48,8 @@ matP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) intP
 -- a b c
 -- d e f
 -- @
-gridP :: (MonadState BS.ByteString m) => Int -> Int -> m (IxUVector (Int, Int) Char)
-gridP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) charP
+gridP :: (MonadState BS.ByteString m) => Int -> Int -> m (IV.IxUVector (Int, Int) Char)
+gridP !h !w = IV.IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) charP
 
 -- | \(O(HW)\) Gets diagnoal matrix input.
 --
@@ -71,8 +71,8 @@ gridP !h !w = IxVector ((0, 0), (h - 1, w - 1)) <$> U.replicateM (h * w) charP
 -- 8 6 0 3
 -- 5 8 3 0
 -- @
-diagMatP :: (PrimMonad m, MonadState BS.ByteString m) => Int -> m (IxUVector (Int, Int) Int)
-diagMatP !n = fmap (IxVector bnd) $ do
+diagMatP :: (PrimMonad m, MonadState BS.ByteString m) => Int -> m (IV.IxUVector (Int, Int) Int)
+diagMatP !n = fmap (IV.IxVector bnd) $ do
   !vec <- UM.replicate (n * n) (0 :: Int)
   U.forM_ (U.generate (n - 1) id) $ \y -> do
     !ws <- intsP

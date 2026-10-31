@@ -6,7 +6,7 @@ import Data.Core.Unindex (Unindex (unindex))
 import Data.Ix (Ix (inRange))
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
-import Data.Vector.IxVector (IxUVector, IxVector (IxVector), (@!))
+import Data.Vector.IxVector qualified as IV
 import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import GHC.Stack (HasCallStack)
@@ -61,22 +61,22 @@ append vec len dx = do
 
 -- | 3D cumulative sum (cubic only)
 {-# INLINE csum3D #-}
-csum3D :: (HasCallStack, Num a, U.Unbox a) => Int -> IxUVector (Int, Int, Int) a -> IxUVector (Int, Int, Int) a
-csum3D !n !gr = IxVector bnd $ U.constructN (succ n * succ n * succ n) $ \sofar -> case unindex bnd (G.length sofar) of
+csum3D :: (HasCallStack, Num a, U.Unbox a) => Int -> IV.IxUVector (Int, Int, Int) a -> IV.IxUVector (Int, Int, Int) a
+csum3D !n !gr = IV.IxVector bnd $ U.constructN (succ n * succ n * succ n) $ \sofar -> case unindex bnd (G.length sofar) of
   (0, !_, !_) -> 0
   (!_, 0, !_) -> 0
   (!_, !_, 0) -> 0
   (!x, !y, !z) -> v0 + (fromZ + fromY + fromX) - 2 * fromDiag - (dupX + dupY + dupZ)
     where
       -- NOTE: Use zero-based indices for original grid access
-      v0 = gr @! (x - 1, y - 1, z - 1)
-      sofar' = IxVector bnd sofar
-      fromZ = sofar' @! (x - 1, y, z)
-      fromY = sofar' @! (x, y - 1, z)
-      fromX = sofar' @! (x, y, z - 1)
-      fromDiag = sofar' @! (x - 1, y - 1, z - 1)
-      dupX = sofar' @! (x - 1, y - 1, z) - fromDiag
-      dupY = sofar' @! (x - 1, y, z - 1) - fromDiag
-      dupZ = sofar' @! (x, y - 1, z - 1) - fromDiag
+      v0 = gr IV.@! (x - 1, y - 1, z - 1)
+      sofar' = IV.IxVector bnd sofar
+      fromZ = sofar' IV.@! (x - 1, y, z)
+      fromY = sofar' IV.@! (x, y - 1, z)
+      fromX = sofar' IV.@! (x, y, z - 1)
+      fromDiag = sofar' IV.@! (x - 1, y - 1, z - 1)
+      dupX = sofar' IV.@! (x - 1, y - 1, z) - fromDiag
+      dupY = sofar' IV.@! (x - 1, y, z - 1) - fromDiag
+      dupZ = sofar' IV.@! (x, y - 1, z - 1) - fromDiag
   where
     !bnd = ((0, 0, 0), (n, n, n))

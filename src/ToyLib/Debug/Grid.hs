@@ -4,7 +4,6 @@ module ToyLib.Debug.Grid where
 import Control.Monad (when)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.Vector.Generic qualified as G
-import Data.Vector.IxVector (IxVector, (@!))
 import Data.Vector.IxVector qualified as IV
 import Debug.Trace (trace)
 import ToyLib.Debug
@@ -15,12 +14,12 @@ class ShowGrid a where
   showGrid :: a -> String
   showGridN :: Int -> a -> String
 
-instance (G.Vector v a, Show a) => ShowGrid (IxVector (Int, Int) (v a)) where
+instance (G.Vector v a, Show a) => ShowGrid (IV.IxVector (Int, Int) (v a)) where
   showGrid = showGridN 0
   showGridN !len !grid = unlines $ map f [y0 .. y1]
     where
       ((!y0, !x0), (!y1, !x1)) = IV.bounds grid
-      f !y = unwords $ map (showN . (grid @!) . (y,)) [x0 .. x1]
+      f !y = unwords $ map (showN . (grid IV.@!) . (y,)) [x0 .. x1]
       showN x =
         let !s = show x
             !lenX = length s
@@ -31,7 +30,7 @@ dbgGrid :: (ShowGrid a) => a -> ()
 dbgGrid gr = dbgS (showGrid gr)
 
 -- | Monadic variant of `dbgGrid`.
-dbgGridM :: (PrimMonad m, G.Vector v a, Show a, ShowGrid (IxVector (Int, Int) (v a))) => IxVector (Int, Int) (G.Mutable v (PrimState m) a) -> m ()
+dbgGridM :: (PrimMonad m, G.Vector v a, Show a, ShowGrid (IV.IxVector (Int, Int) (v a))) => IV.IxVector (Int, Int) (G.Mutable v (PrimState m) a) -> m ()
 -- TODO: simplifiable instance?
 dbgGridM gr = when debug $ do
   !gr' <- IV.unsafeFreeze gr
