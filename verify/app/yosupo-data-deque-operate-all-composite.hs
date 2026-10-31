@@ -37,11 +37,11 @@ solve = do
   res <- (`U.mapMaybeM` qs) $ \case
     (0, !a, !b) -> do
       -- push front
-      pushFrontDSF window . Dual $ Affine1 (MI.modInt a, MI.modInt b)
+      pushFrontDSF window . Dual $ Affine1 (modInt a, modInt b)
       return Nothing
     (1, !a, !b) -> do
       -- push back
-      pushBackDSF window . Dual $ Affine1 (MI.modInt a, MI.modInt b)
+      pushBackDSF window . Dual $ Affine1 (modInt a, modInt b)
       return Nothing
     (2, !_, !_) -> do
       -- pop froot

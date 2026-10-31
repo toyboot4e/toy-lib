@@ -1,9 +1,10 @@
 {-# LANGUAGE CPP #-}
 #include "./__import"
+
+import AtCoder.Extra.Graph qualified as Gr
 -- {{{ toy-lib import
 
 import Data.Graph.Generic
-import Data.Graph.Sparse
 import ToyLib.Parser
 import ToyLib.Prelude
 import ToyLib.ShowBSB
@@ -25,10 +26,10 @@ solve = do
       1 -> (1 :: Int,,-1 :: Int) <$> (succ <$> intP)
       _ -> error "unreachable"
 
-  let !gr = buildSG_ (q + 1) $ U.imap (\v (!_, !u1, !_) -> (u1, v + 1)) qs
+  let !gr = Gr.build' (q + 1) $ U.imap (\v (!_, !u1, !_) -> (u1, v + 1)) qs
   res <- UM.replicate q (-1 :: Int)
 
-  runPersistentDfs (gr `adjW`) 0 Seq.empty $ \ !seq !_ !v1 () -> do
+  runPersistentDfs (gr `Gr.adjW`) 0 Seq.empty $ \ !seq !_ !v1 () -> do
     case U.unsafeIndex qs (v1 - 1) of
       (0, !_, !x) -> do
         return $ seq Seq.:|> x
