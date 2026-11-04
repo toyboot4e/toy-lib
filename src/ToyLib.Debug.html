@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Debug utilities</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">ToyLib.Debug</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimMonad</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">PrimState</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Debug.Trace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">trace</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">traceShow</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Stack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">HasCallStack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Macro.html"><span class="hs-identifier">ToyLib.Macro</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ToyLib.Macro.html#debug"><span class="hs-identifier">debug</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- When run as script, `dbg` expands to `traceShow`.</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Otherwise it's an empty function.</span><span>
+</span><span id="line-12"></span><span id="local-6989586621679284043"><span class="annot"><a href="ToyLib.Debug.html#dbg"><span class="hs-identifier hs-type">dbg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284043"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284043"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-13"></span><span id="dbg"><span class="annot"><span class="annottext">dbg :: forall a. Show a =&gt; a -&gt; ()
+</span><a href="ToyLib.Debug.html#dbg"><span class="hs-identifier hs-var hs-var">dbg</span></a></span></span><span> </span><span id="local-6989586621679284102"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284102"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; () -&gt; ()
+forall a b. Show a =&gt; a -&gt; b -&gt; b
+</span><span class="hs-identifier hs-var">traceShow</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284102"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679284047"><span id="local-6989586621679284048"><span class="annot"><a href="ToyLib.Debug.html#dbgM"><span class="hs-identifier hs-type">dbgM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679284047"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284048"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284047"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284048"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284047"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-18"></span><span id="dbgM"><span class="annot"><span class="annottext">dbgM :: forall (m :: * -&gt; *) a. (Monad m, Show a) =&gt; m a -&gt; m ()
+</span><a href="ToyLib.Debug.html#dbgM"><span class="hs-identifier hs-var hs-var">dbgM</span></a></span></span><span> </span><span id="local-6989586621679284112"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679284112"><span class="hs-identifier hs-var">m</span></a></span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-20"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284113"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284113"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679284112"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-21"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; () -&gt; ()
+forall a b. Show a =&gt; a -&gt; b -&gt; b
+</span><span class="hs-identifier hs-var">traceShow</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284113"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="ToyLib.Debug.html#dbgS"><span class="hs-identifier hs-type">dbgS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span id="dbgS"><span class="annot"><span class="annottext">dbgS :: String -&gt; ()
+</span><a href="ToyLib.Debug.html#dbgS"><span class="hs-identifier hs-var hs-var">dbgS</span></a></span></span><span> </span><span id="local-6989586621679284116"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284116"><span class="hs-identifier hs-var">s</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; () -&gt; ()
+forall a. String -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">trace</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284116"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span id="local-6989586621679284055"><span class="annot"><a href="ToyLib.Debug.html#dbgSM"><span class="hs-identifier hs-type">dbgSM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679284055"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284055"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284055"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-31"></span><span id="dbgSM"><span class="annot"><span class="annottext">dbgSM :: forall (m :: * -&gt; *). Monad m =&gt; m String -&gt; m ()
+</span><a href="ToyLib.Debug.html#dbgSM"><span class="hs-identifier hs-var hs-var">dbgSM</span></a></span></span><span> </span><span id="local-6989586621679284123"><span class="annot"><span class="annottext">m String
+</span><a href="#local-6989586621679284123"><span class="hs-identifier hs-var">m</span></a></span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-33"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284124"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284124"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m String
+</span><a href="#local-6989586621679284123"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-34"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; () -&gt; ()
+forall a. String -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">trace</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284124"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span id="local-6989586621679284057"><span class="annot"><a href="ToyLib.Debug.html#dbgId"><span class="hs-identifier hs-type">dbgId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284057"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284057"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284057"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-39"></span><span id="dbgId"><span class="annot"><span class="annottext">dbgId :: forall a. Show a =&gt; a -&gt; a
+</span><a href="ToyLib.Debug.html#dbgId"><span class="hs-identifier hs-var hs-var">dbgId</span></a></span></span><span> </span><span id="local-6989586621679284127"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284127"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; () -&gt; ()
+forall a b. Show a =&gt; a -&gt; b -&gt; b
+</span><span class="hs-identifier hs-var">traceShow</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284127"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284127"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284127"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span id="local-6989586621679284059"><span id="local-6989586621679284060"><span class="annot"><a href="ToyLib.Debug.html#note"><span class="hs-identifier hs-type">note</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284059"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284060"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284059"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284060"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284060"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-44"></span><span id="note"><span class="annot"><span class="annottext">note :: forall s a. (Show s, Show a) =&gt; s -&gt; a -&gt; a
+</span><a href="ToyLib.Debug.html#note"><span class="hs-identifier hs-var hs-var">note</span></a></span></span><span> </span><span id="local-6989586621679284132"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679284132"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679284133"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284133"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; () -&gt; ()
+forall a. String -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">trace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">s -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679284132"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284133"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284133"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284133"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><a href="ToyLib.Debug.html#dbgAssert"><span class="hs-identifier hs-type">dbgAssert</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span id="dbgAssert"><span class="annot"><span class="annottext">dbgAssert :: HasCallStack =&gt; Bool -&gt; String -&gt; ()
+</span><a href="ToyLib.Debug.html#dbgAssert"><span class="hs-identifier hs-var hs-var">dbgAssert</span></a></span></span><span> </span><span id="local-6989586621679284141"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284141"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679284142"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284142"><span class="hs-identifier hs-var">s</span></a></span></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284141"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ()
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; ()) -&gt; String -&gt; ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;assertion failed!: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679284142"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span id="local-6989586621679284072"><span class="annot"><a href="ToyLib.Debug.html#asserted"><span class="hs-identifier hs-type">asserted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284072"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284072"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-54"></span><span id="asserted"><span class="annot"><span class="annottext">asserted :: forall a. HasCallStack =&gt; Bool -&gt; a -&gt; a
+</span><a href="ToyLib.Debug.html#asserted"><span class="hs-identifier hs-var hs-var">asserted</span></a></span></span><span> </span><span id="local-6989586621679284150"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284150"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679284151"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284151"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284150"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;assertion failed!&quot;</span></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284151"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><span class="hs-comment">-- | `$` with `dbgId`</span></span><span>
+</span><span id="line-59"></span><span id="local-6989586621679284074"><span id="local-6989586621679284075"><span class="annot"><a href="ToyLib.Debug.html#%24%24"><span class="hs-operator hs-type">($$)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284074"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284074"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284075"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284074"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284075"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-60"></span><span id="%24%24"><span class="annot"><span class="annottext">$$ :: forall a b. Show a =&gt; (a -&gt; b) -&gt; a -&gt; b
+</span><a href="ToyLib.Debug.html#%24%24"><span class="hs-operator hs-var hs-var">($$)</span></a></span></span><span> </span><span id="local-6989586621679284155"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679284155"><span class="hs-identifier hs-var">lhs</span></a></span></span><span> </span><span id="local-6989586621679284156"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284156"><span class="hs-identifier hs-var">rhs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679284155"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Show a =&gt; a -&gt; a
+</span><a href="ToyLib.Debug.html#dbgId"><span class="hs-identifier hs-var">dbgId</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284156"><span class="hs-identifier hs-var">rhs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">0</span><span> </span><span class="annot"><a href="ToyLib.Debug.html#%24%24"><span class="hs-operator hs-type">$$</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">-- | `.` with `dbgId`. TODO: Working?</span></span><span>
+</span><span id="line-65"></span><span id="local-6989586621679284078"><span id="local-6989586621679284079"><span id="local-6989586621679284080"><span class="annot"><a href="ToyLib.Debug.html#.%24"><span class="hs-operator hs-type">(.$)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679284078"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284078"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284079"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284080"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284078"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284080"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284079"><span class="hs-identifier hs-type">c</span></a></span></span></span></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679284160"><span class="annot"><span class="annottext">b -&gt; c
+</span><a href="#local-6989586621679284160"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span id=".%24"><span class="annot"><span class="annottext">.$ :: forall b c a. Show b =&gt; (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="ToyLib.Debug.html#.%24"><span class="hs-operator hs-var hs-var">.$</span></a></span></span><span> </span><span id="local-6989586621679284161"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679284161"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679284162"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284162"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284164"><span class="annot"><span class="annottext">b :: b
+</span><a href="#local-6989586621679284164"><span class="hs-identifier hs-var hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall a. Show a =&gt; a -&gt; a
+</span><a href="ToyLib.Debug.html#dbgId"><span class="hs-identifier hs-var">dbgId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679284161"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284162"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">b -&gt; c
+</span><a href="#local-6989586621679284160"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679284164"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">9</span><span> </span><span class="annot"><a href="ToyLib.Debug.html#.%24"><span class="hs-operator hs-type">.$</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="annot"><span class="hs-comment">-- | Shows the mutable vector.</span></span><span>
+</span><span id="line-71"></span><span id="local-6989586621679284084"><span id="local-6989586621679284085"><span id="local-6989586621679284087"><span class="annot"><a href="ToyLib.Debug.html#dbgVec"><span class="hs-identifier hs-type">dbgVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284084"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284085"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679284084"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284085"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679284087"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">G.Mutable</span></span><span> </span><span class="annot"><a href="#local-6989586621679284084"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679284087"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679284085"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284087"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-72"></span><span id="dbgVec"><span class="annot"><span class="annottext">dbgVec :: forall (v :: * -&gt; *) a (m :: * -&gt; *).
+(Show (v a), Vector v a, PrimMonad m) =&gt;
+Mutable v (PrimState m) a -&gt; m ()
+</span><a href="ToyLib.Debug.html#dbgVec"><span class="hs-identifier hs-var hs-var">dbgVec</span></a></span></span><span> </span><span id="local-6989586621679284177"><span class="annot"><span class="annottext">Mutable v (PrimState m) a
+</span><a href="#local-6989586621679284177"><span class="hs-identifier hs-var">vec</span></a></span></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="ToyLib.Macro.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-74"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284178"><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679284178"><span class="hs-identifier hs-var">xs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Mutable v (PrimState m) a -&gt; m (v a)
+forall (m :: * -&gt; *) (v :: * -&gt; *) a.
+(PrimMonad m, Vector v a) =&gt;
+Mutable v (PrimState m) a -&gt; m (v a)
+</span><span class="hs-identifier hs-var">G.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">Mutable v (PrimState m) a
+</span><a href="#local-6989586621679284177"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-75"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v a -&gt; ()
+forall a. Show a =&gt; a -&gt; ()
+</span><a href="ToyLib.Debug.html#dbg"><span class="hs-identifier hs-var">dbg</span></a></span><span> </span><span class="annot"><span class="annottext">v a
+</span><a href="#local-6989586621679284178"><span class="hs-identifier hs-var">xs'</span></a></span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span></pre></body></html>

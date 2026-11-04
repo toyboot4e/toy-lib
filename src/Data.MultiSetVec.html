@@ -1,0 +1,466 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- | Dense, mutable multi set.</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- = Typical problems</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- - [ABC 315 D - Magical Cookies](https://atcoder.jp/contests/abc315/tasks/abc315_d)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.MultiSetVec</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimMonad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimState</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><span class="hs-comment">-- | Dense, mutable multi set.</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">data</span><span> </span><span id="MultiSetVec"><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-var">MultiSetVec</span></a></span></span><span> </span><span id="local-6989586621679280548"><span class="annot"><a href="#local-6989586621679280548"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MultiSetVec"><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-var">MultiSetVec</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679280548"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679280548"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><span class="hs-comment">-- | Monadic `show` over `MultiSetVec`.</span></span><span>
+</span><span id="line-19"></span><span id="local-6989586621679280519"><span class="annot"><a href="Data.MultiSetVec.html#show"><span class="hs-identifier hs-type">show</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280519"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280519"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280519"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span></span><span>
+</span><span id="line-20"></span><span id="show"><span class="annot"><span class="annottext">show :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m String
+</span><a href="Data.MultiSetVec.html#show"><span class="hs-identifier hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280634"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280634"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280635"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280635"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679280636"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280636"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">UM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280634"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679280638"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280638"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Mutable Vector (PrimState m) Int -&gt; m (Vector Int)
+forall (m :: * -&gt; *) (v :: * -&gt; *) a.
+(PrimMonad m, Vector v a) =&gt;
+Mutable v (PrimState m) a -&gt; m (v a)
+</span><span class="hs-identifier hs-var">G.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+Mutable Vector (PrimState m) Int
+</span><a href="#local-6989586621679280635"><span class="hs-identifier hs-var">mVec</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; m String
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m String) -&gt; String -&gt; m String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int, Vector Int) -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">Prelude.show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280636"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280638"><span class="hs-identifier hs-var">vec</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-26"></span><span id="local-6989586621679280546"><span class="annot"><a href="Data.MultiSetVec.html#new"><span class="hs-identifier hs-type">new</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280546"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280546"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280546"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-27"></span><span id="new"><span class="annot"><span class="annottext">new :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+Int -&gt; m (MultiSetVec (PrimState m))
+</span><a href="Data.MultiSetVec.html#new"><span class="hs-identifier hs-var hs-var">new</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280652"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280652"><span class="hs-identifier hs-var">capacity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+-&gt; MVector (PrimState m) Int -&gt; MultiSetVec (PrimState m)
+forall s. MVector s Int -&gt; MVector s Int -&gt; MultiSetVec s
+</span><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-var">MultiSetVec</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector (PrimState m) Int
+ -&gt; MVector (PrimState m) Int -&gt; MultiSetVec (PrimState m))
+-&gt; m (MVector (PrimState m) Int)
+-&gt; m (MVector (PrimState m) Int -&gt; MultiSetVec (PrimState m))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; m (MVector (PrimState m) Int)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">UM.replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (MVector (PrimState m) Int -&gt; MultiSetVec (PrimState m))
+-&gt; m (MVector (PrimState m) Int) -&gt; m (MultiSetVec (PrimState m))
+forall a b. m (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; m (MVector (PrimState m) Int)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">UM.replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280652"><span class="hs-identifier hs-var">capacity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- -- | WARNING: Any read/write will result im runtime error. Use `clear` if it's accessed again.</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- empty :: (PrimMonad m) =&gt; m (MultiSetVec (PrimState m))</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- empty = new 0</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-34"></span><span id="local-6989586621679280556"><span class="annot"><a href="Data.MultiSetVec.html#clear"><span class="hs-identifier hs-type">clear</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280556"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280556"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280556"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-35"></span><span id="clear"><span class="annot"><span class="annottext">clear :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m ()
+</span><a href="Data.MultiSetVec.html#clear"><span class="hs-identifier hs-var hs-var">clear</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280667"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280667"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280668"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280668"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">UM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280667"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.set</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280668"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679280564"><span class="annot"><a href="Data.MultiSetVec.html#fromVec"><span class="hs-identifier hs-type">fromVec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280564"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280564"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280564"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-40"></span><span id="fromVec"><span class="annot"><span class="annottext">fromVec :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+Int -&gt; Vector Int -&gt; m (MultiSetVec (PrimState m))
+</span><a href="Data.MultiSetVec.html#fromVec"><span class="hs-identifier hs-var hs-var">fromVec</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280682"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280682"><span class="hs-identifier hs-var">capacity</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280683"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280683"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679280684"><span class="annot"><span class="annottext">MultiSetVec (PrimState m)
+</span><a href="#local-6989586621679280684"><span class="hs-identifier hs-var">msv</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (MultiSetVec (PrimState m))
+forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+Int -&gt; m (MultiSetVec (PrimState m))
+</span><a href="Data.MultiSetVec.html#new"><span class="hs-identifier hs-var">new</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280682"><span class="hs-identifier hs-var">capacity</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><span class="annottext">Vector Int -&gt; (Int -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280683"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MultiSetVec (PrimState m) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; Int -&gt; m ()
+</span><a href="Data.MultiSetVec.html#inc"><span class="hs-identifier hs-var">inc</span></a></span><span> </span><span class="annot"><span class="annottext">MultiSetVec (PrimState m)
+</span><a href="#local-6989586621679280684"><span class="hs-identifier hs-var">msv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><span class="annottext">MultiSetVec (PrimState m) -&gt; m (MultiSetVec (PrimState m))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">MultiSetVec (PrimState m)
+</span><a href="#local-6989586621679280684"><span class="hs-identifier hs-var">msv</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\) Returns the number of keys in the multiset.</span></span><span>
+</span><span id="line-46"></span><span id="local-6989586621679280570"><span class="annot"><a href="Data.MultiSetVec.html#count"><span class="hs-identifier hs-type">count</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280570"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280570"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280570"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-47"></span><span id="count"><span class="annot"><span class="annottext">count :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m Int
+</span><a href="Data.MultiSetVec.html#count"><span class="hs-identifier hs-var hs-var">count</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280691"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280691"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">UM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280691"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679280572"><span class="annot"><a href="Data.MultiSetVec.html#null"><span class="hs-identifier hs-type">null</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280572"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280572"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280572"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-51"></span><span id="null"><span class="annot"><span class="annottext">null :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m Bool
+</span><a href="Data.MultiSetVec.html#null"><span class="hs-identifier hs-var hs-var">null</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Bool) -&gt; m Int -&gt; m Bool
+forall a b. (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m Int -&gt; m Bool)
+-&gt; (MultiSetVec (PrimState m) -&gt; m Int)
+-&gt; MultiSetVec (PrimState m)
+-&gt; m Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">MultiSetVec (PrimState m) -&gt; m Int
+forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m Int
+</span><a href="Data.MultiSetVec.html#count"><span class="hs-identifier hs-var">count</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-54"></span><span id="local-6989586621679280581"><span class="annot"><a href="Data.MultiSetVec.html#read"><span class="hs-identifier hs-type">read</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280581"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280581"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280581"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-55"></span><span id="read"><span class="annot"><span class="annottext">read :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; Int -&gt; m Int
+</span><a href="Data.MultiSetVec.html#read"><span class="hs-identifier hs-var hs-var">read</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280709"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280709"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">GM.read</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280709"><span class="hs-identifier hs-var">mVec</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621679280569"><span class="annot"><a href="Data.MultiSetVec.html#inc"><span class="hs-identifier hs-type">inc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280569"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280569"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280569"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-59"></span><span id="inc"><span class="annot"><span class="annottext">inc :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; Int -&gt; m ()
+</span><a href="Data.MultiSetVec.html#inc"><span class="hs-identifier hs-var hs-var">inc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280736"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280736"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280737"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280737"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679280738"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280738"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">GM.read</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280737"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280738"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">m Int -&gt; (Int -&gt; m ()) -&gt; m ()
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; (Int -&gt; Int) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">UM.unsafeModify</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280736"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-63"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280737"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280738"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679280742"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280742"><span class="hs-identifier hs-var">nk</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-65"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280737"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280738"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280742"><span class="hs-identifier hs-var">nk</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-68"></span><span id="local-6989586621679280743"><span class="annot"><a href="Data.MultiSetVec.html#dec"><span class="hs-identifier hs-type">dec</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280743"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280743"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280743"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-69"></span><span id="dec"><span class="annot"><span class="annottext">dec :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; Int -&gt; m ()
+</span><a href="Data.MultiSetVec.html#dec"><span class="hs-identifier hs-var hs-var">dec</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280774"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280774"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280775"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280775"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679280776"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280776"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">GM.read</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280775"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280776"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">m Int -&gt; (Int -&gt; m ()) -&gt; m ()
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-73"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; (Int -&gt; Int) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">UM.unsafeModify</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280774"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">subtract</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-74"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280775"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280776"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679280778"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280778"><span class="hs-identifier hs-var">nk</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280775"><span class="hs-identifier hs-var">mVec</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280776"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280778"><span class="hs-identifier hs-var">nk</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\) Finds the minimum key element</span></span><span>
+</span><span id="line-79"></span><span id="local-6989586621679280597"><span class="annot"><a href="Data.MultiSetVec.html#min"><span class="hs-identifier hs-type">min</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280597"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280597"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280597"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-80"></span><span id="min"><span class="annot"><span class="annottext">min :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m (Maybe (Int, Int))
+</span><a href="Data.MultiSetVec.html#min"><span class="hs-identifier hs-var hs-var">min</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280802"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280802"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280803"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280803"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">UM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280802"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">m Int -&gt; (Int -&gt; m (Maybe (Int, Int))) -&gt; m (Maybe (Int, Int))
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, Int) -&gt; m (Maybe (Int, Int))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Int, Int)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-84"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679280804"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280804"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Mutable Vector (PrimState m) Int -&gt; m (Vector Int)
+forall (m :: * -&gt; *) (v :: * -&gt; *) a.
+(PrimMonad m, Vector v a) =&gt;
+Mutable v (PrimState m) a -&gt; m (v a)
+</span><span class="hs-identifier hs-var">G.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+Mutable Vector (PrimState m) Int
+</span><a href="#local-6989586621679280803"><span class="hs-identifier hs-var">mVec</span></a></span><span>
+</span><span id="line-85"></span><span>      </span><span class="annot"><span class="annottext">Maybe (Int, Int) -&gt; m (Maybe (Int, Int))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Int, Int) -&gt; m (Maybe (Int, Int)))
+-&gt; (Maybe Int -&gt; Maybe (Int, Int))
+-&gt; Maybe Int
+-&gt; m (Maybe (Int, Int))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; (Int, Int)) -&gt; Maybe Int -&gt; Maybe (Int, Int)
+forall a b. (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679280805"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280805"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280805"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280804"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int -&gt; Int
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">G.!</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280805"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe Int -&gt; m (Maybe (Int, Int)))
+-&gt; Maybe Int -&gt; m (Maybe (Int, Int))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Bool) -&gt; Vector Int -&gt; Maybe Int
+forall (v :: * -&gt; *) a.
+Vector v a =&gt;
+(a -&gt; Bool) -&gt; v a -&gt; Maybe Int
+</span><span class="hs-identifier hs-var">G.findIndex</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280804"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\) Finds the maximum key element</span></span><span>
+</span><span id="line-88"></span><span id="local-6989586621679280809"><span class="annot"><a href="Data.MultiSetVec.html#max"><span class="hs-identifier hs-type">max</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280809"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280809"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280809"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-89"></span><span id="max"><span class="annot"><span class="annottext">max :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m (Maybe (Int, Int))
+</span><a href="Data.MultiSetVec.html#max"><span class="hs-identifier hs-var hs-var">max</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280831"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280831"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280832"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280832"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">UM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280831"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">m Int -&gt; (Int -&gt; m (Maybe (Int, Int))) -&gt; m (Maybe (Int, Int))
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, Int) -&gt; m (Maybe (Int, Int))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Int, Int)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-93"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679280833"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280833"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Mutable Vector (PrimState m) Int -&gt; m (Vector Int)
+forall (m :: * -&gt; *) (v :: * -&gt; *) a.
+(PrimMonad m, Vector v a) =&gt;
+Mutable v (PrimState m) a -&gt; m (v a)
+</span><span class="hs-identifier hs-var">G.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+Mutable Vector (PrimState m) Int
+</span><a href="#local-6989586621679280832"><span class="hs-identifier hs-var">mVec</span></a></span><span>
+</span><span id="line-94"></span><span>      </span><span class="annot"><span class="annottext">Maybe (Int, Int) -&gt; m (Maybe (Int, Int))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Int, Int) -&gt; m (Maybe (Int, Int)))
+-&gt; (Maybe Int -&gt; Maybe (Int, Int))
+-&gt; Maybe Int
+-&gt; m (Maybe (Int, Int))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; (Int, Int)) -&gt; Maybe Int -&gt; Maybe (Int, Int)
+forall a b. (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679280834"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280834"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280834"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280833"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int -&gt; Int
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">G.!</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679280834"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe Int -&gt; m (Maybe (Int, Int)))
+-&gt; Maybe Int -&gt; m (Maybe (Int, Int))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Bool) -&gt; Vector Int -&gt; Maybe Int
+forall (v :: * -&gt; *) a.
+Vector v a =&gt;
+(a -&gt; Bool) -&gt; v a -&gt; Maybe Int
+</span><span class="hs-identifier hs-var">G.findIndexR</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679280833"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-97"></span><span id="local-6989586621679280606"><span class="annot"><a href="Data.MultiSetVec.html#unsafeFreeze"><span class="hs-identifier hs-type">unsafeFreeze</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679280606"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679280606"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679280606"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-98"></span><span id="unsafeFreeze"><span class="annot"><span class="annottext">unsafeFreeze :: forall (m :: * -&gt; *).
+PrimMonad m =&gt;
+MultiSetVec (PrimState m) -&gt; m (Int, Vector Int)
+</span><a href="Data.MultiSetVec.html#unsafeFreeze"><span class="hs-identifier hs-var hs-var">unsafeFreeze</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.MultiSetVec.html#MultiSetVec"><span class="hs-identifier hs-type">MultiSetVec</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280847"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280847"><span class="hs-identifier hs-var">nRef</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679280848"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280848"><span class="hs-identifier hs-var">mVec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Vector Int -&gt; (Int, Vector Int))
+-&gt; m Int -&gt; m (Vector Int -&gt; (Int, Vector Int))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+MVector (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">UM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280847"><span class="hs-identifier hs-var">nRef</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">m (Vector Int -&gt; (Int, Vector Int))
+-&gt; m (Vector Int) -&gt; m (Int, Vector Int)
+forall a b. m (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; m (Vector Int)
+forall a (m :: * -&gt; *).
+(Unbox a, PrimMonad m) =&gt;
+MVector (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">U.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679280848"><span class="hs-identifier hs-var">mVec</span></a></span><span>
+</span><span id="line-99"></span></pre></body></html>

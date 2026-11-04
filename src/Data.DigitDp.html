@@ -1,0 +1,1000 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621679277834"><span id="local-6989586621679277835"></span></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">-- | Digit DP based on automatons.</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.DigitDp</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.ModInt</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">MI</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">foldM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">concatMapM</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">mapMaybeM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Identity</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">runIdentity</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString.Char8</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Char</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">digitToInt</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.HashMap.Strict</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">HM</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">hashWithSalt</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Max</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Sum</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">class</span><span> </span><span id="DigitDfa"><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-var">DigitDfa</span></a></span></span><span> </span><span id="local-6989586621679277725"><span class="annot"><a href="#local-6989586621679277725"><span class="hs-identifier hs-type">context</span></a></span></span><span> </span><span id="local-6989586621679277726"><span class="annot"><a href="#local-6989586621679277726"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679277727"><span class="annot"><a href="#local-6989586621679277727"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-17"></span><span>  </span><span id="transiteDfa"><span class="annot"><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-type">transiteDfa</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679277725"><span class="hs-identifier hs-type">context</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277726"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277727"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679277726"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- acceptDigitDfa :: s -&gt; Bool</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">newtype</span><span> </span><span id="AndDfa"><span class="annot"><a href="Data.DigitDp.html#AndDfa"><span class="hs-identifier hs-var">AndDfa</span></a></span></span><span> </span><span id="local-6989586621679277830"><span class="annot"><a href="#local-6989586621679277830"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="AndDfa"><span class="annot"><a href="Data.DigitDp.html#AndDfa"><span class="hs-identifier hs-var">AndDfa</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679277830"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277859"><span id="local-6989586621679277863"><span class="annot"><span class="annottext">AndDfa a -&gt; AndDfa a -&gt; Bool
+(AndDfa a -&gt; AndDfa a -&gt; Bool)
+-&gt; (AndDfa a -&gt; AndDfa a -&gt; Bool) -&gt; Eq (AndDfa a)
+forall a. Eq a =&gt; AndDfa a -&gt; AndDfa a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; AndDfa a -&gt; AndDfa a -&gt; Bool
+== :: AndDfa a -&gt; AndDfa a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; AndDfa a -&gt; AndDfa a -&gt; Bool
+/= :: AndDfa a -&gt; AndDfa a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277870"><span id="local-6989586621679277874"><span id="local-6989586621679277878"><span class="annot"><span class="annottext">Int -&gt; AndDfa a -&gt; ShowS
+[AndDfa a] -&gt; ShowS
+AndDfa a -&gt; String
+(Int -&gt; AndDfa a -&gt; ShowS)
+-&gt; (AndDfa a -&gt; String) -&gt; ([AndDfa a] -&gt; ShowS) -&gt; Show (AndDfa a)
+forall a. Show a =&gt; Int -&gt; AndDfa a -&gt; ShowS
+forall a. Show a =&gt; [AndDfa a] -&gt; ShowS
+forall a. Show a =&gt; AndDfa a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; AndDfa a -&gt; ShowS
+showsPrec :: Int -&gt; AndDfa a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; AndDfa a -&gt; String
+show :: AndDfa a -&gt; String
+$cshowList :: forall a. Show a =&gt; [AndDfa a] -&gt; ShowS
+showList :: [AndDfa a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-25"></span><span>  </span><span id="local-6989586621679277728"><span id="local-6989586621679277729"><span id="local-6989586621679277730"><span id="local-6989586621679277731"><span id="local-6989586621679277732"><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277728"><span class="hs-identifier hs-type">context1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277729"><span class="hs-identifier hs-type">s1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277730"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277731"><span class="hs-identifier hs-type">context2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277732"><span class="hs-identifier hs-type">s2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277730"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#AndDfa"><span class="hs-identifier hs-type">AndDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277728"><span class="hs-identifier hs-type">context1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679277731"><span class="hs-identifier hs-type">context2</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277729"><span class="hs-identifier hs-type">s1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679277732"><span class="hs-identifier hs-type">s2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679277730"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>  </span><span id="local-6989586621679277893"><span class="annot"><span class="annottext">transiteDfa :: AndDfa (context1, context2) -&gt; (s1, s2) -&gt; a -&gt; Maybe (s1, s2)
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var hs-var hs-var hs-var">transiteDfa</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#AndDfa"><span class="hs-identifier hs-type">AndDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679277894"><span class="annot"><span class="annottext">context1
+</span><a href="#local-6989586621679277894"><span class="hs-identifier hs-var">context1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679277895"><span class="annot"><span class="annottext">context2
+</span><a href="#local-6989586621679277895"><span class="hs-identifier hs-var">context2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679277896"><span class="annot"><span class="annottext">s1
+</span><a href="#local-6989586621679277896"><span class="hs-identifier hs-var">s1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679277897"><span class="annot"><span class="annottext">s2
+</span><a href="#local-6989586621679277897"><span class="hs-identifier hs-var">s2</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277898"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277898"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679277899"><span class="annot"><span class="annottext">s1
+</span><a href="#local-6989586621679277899"><span class="hs-identifier hs-var">s1'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">context1 -&gt; s1 -&gt; a -&gt; Maybe s1
+forall context s a.
+DigitDfa context s a =&gt;
+context -&gt; s -&gt; a -&gt; Maybe s
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="annot"><span class="annottext">context1
+</span><a href="#local-6989586621679277894"><span class="hs-identifier hs-var">context1</span></a></span><span> </span><span class="annot"><span class="annottext">s1
+</span><a href="#local-6989586621679277896"><span class="hs-identifier hs-var">s1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277898"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621679277900"><span class="annot"><span class="annottext">s2
+</span><a href="#local-6989586621679277900"><span class="hs-identifier hs-var">s2'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">context2 -&gt; s2 -&gt; a -&gt; Maybe s2
+forall context s a.
+DigitDfa context s a =&gt;
+context -&gt; s -&gt; a -&gt; Maybe s
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="annot"><span class="annottext">context2
+</span><a href="#local-6989586621679277895"><span class="hs-identifier hs-var">context2</span></a></span><span> </span><span class="annot"><span class="annottext">s2
+</span><a href="#local-6989586621679277897"><span class="hs-identifier hs-var">s2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277898"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="annottext">(s1, s2) -&gt; Maybe (s1, s2)
+forall a. a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">s1
+</span><a href="#local-6989586621679277899"><span class="hs-identifier hs-var">s1'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">s2
+</span><a href="#local-6989586621679277900"><span class="hs-identifier hs-var">s2'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><span class="hs-comment">-- | Less than or equal to target value</span></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">data</span><span> </span><span id="LtEq"><span class="annot"><a href="Data.DigitDp.html#LtEq"><span class="hs-identifier hs-var">LtEq</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LessThan"><span class="annot"><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Equal"><span class="annot"><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277904"><span id="local-6989586621679277906"><span class="annot"><span class="annottext">LtEq -&gt; LtEq -&gt; Bool
+(LtEq -&gt; LtEq -&gt; Bool) -&gt; (LtEq -&gt; LtEq -&gt; Bool) -&gt; Eq LtEq
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LtEq -&gt; LtEq -&gt; Bool
+== :: LtEq -&gt; LtEq -&gt; Bool
+$c/= :: LtEq -&gt; LtEq -&gt; Bool
+/= :: LtEq -&gt; LtEq -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277910"><span id="local-6989586621679277912"><span id="local-6989586621679277916"><span class="annot"><span class="annottext">Int -&gt; LtEq -&gt; ShowS
+[LtEq] -&gt; ShowS
+LtEq -&gt; String
+(Int -&gt; LtEq -&gt; ShowS)
+-&gt; (LtEq -&gt; String) -&gt; ([LtEq] -&gt; ShowS) -&gt; Show LtEq
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LtEq -&gt; ShowS
+showsPrec :: Int -&gt; LtEq -&gt; ShowS
+$cshow :: LtEq -&gt; String
+show :: LtEq -&gt; String
+$cshowList :: [LtEq] -&gt; ShowS
+showList :: [LtEq] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277919"><span id="local-6989586621679277926"><span id="local-6989586621679277932"><span id="local-6989586621679277941"><span id="local-6989586621679277943"><span id="local-6989586621679277947"><span id="local-6989586621679277951"><span id="local-6989586621679277955"><span class="annot"><span class="annottext">Int -&gt; LtEq
+LtEq -&gt; Int
+LtEq -&gt; [LtEq]
+LtEq -&gt; LtEq
+LtEq -&gt; LtEq -&gt; [LtEq]
+LtEq -&gt; LtEq -&gt; LtEq -&gt; [LtEq]
+(LtEq -&gt; LtEq)
+-&gt; (LtEq -&gt; LtEq)
+-&gt; (Int -&gt; LtEq)
+-&gt; (LtEq -&gt; Int)
+-&gt; (LtEq -&gt; [LtEq])
+-&gt; (LtEq -&gt; LtEq -&gt; [LtEq])
+-&gt; (LtEq -&gt; LtEq -&gt; [LtEq])
+-&gt; (LtEq -&gt; LtEq -&gt; LtEq -&gt; [LtEq])
+-&gt; Enum LtEq
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+$csucc :: LtEq -&gt; LtEq
+succ :: LtEq -&gt; LtEq
+$cpred :: LtEq -&gt; LtEq
+pred :: LtEq -&gt; LtEq
+$ctoEnum :: Int -&gt; LtEq
+toEnum :: Int -&gt; LtEq
+$cfromEnum :: LtEq -&gt; Int
+fromEnum :: LtEq -&gt; Int
+$cenumFrom :: LtEq -&gt; [LtEq]
+enumFrom :: LtEq -&gt; [LtEq]
+$cenumFromThen :: LtEq -&gt; LtEq -&gt; [LtEq]
+enumFromThen :: LtEq -&gt; LtEq -&gt; [LtEq]
+$cenumFromTo :: LtEq -&gt; LtEq -&gt; [LtEq]
+enumFromTo :: LtEq -&gt; LtEq -&gt; [LtEq]
+$cenumFromThenTo :: LtEq -&gt; LtEq -&gt; LtEq -&gt; [LtEq]
+enumFromThenTo :: LtEq -&gt; LtEq -&gt; LtEq -&gt; [LtEq]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679277960"><span id="local-6989586621679277964"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEq"><span class="hs-identifier hs-type">LtEq</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span> </span><span id="local-6989586621679277969"><span class="annot"><span class="annottext">&lt;&gt; :: LtEq -&gt; LtEq -&gt; LtEq
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span id="local-6989586621679277970"><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679277970"><span class="hs-identifier hs-var">rhs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679277970"><span class="hs-identifier hs-var">rhs</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679277975"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEq"><span class="hs-identifier hs-type">LtEq</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621679277982"><span class="annot"><span class="annottext">hashWithSalt :: Int -&gt; LtEq -&gt; Int
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">hashWithSalt</span></span></span><span> </span><span id="local-6989586621679277983"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679277983"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679277984"><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679277984"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Hashable a =&gt; Int -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">hashWithSalt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679277983"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LtEq -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679277984"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><span class="hs-comment">-- | Tracks numbers less than or equal to L.</span></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">newtype</span><span> </span><span id="LtEqDfa"><span class="annot"><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-var">LtEqDfa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LtEqDfa"><span class="annot"><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-var">LtEqDfa</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277988"><span id="local-6989586621679277992"><span class="annot"><span class="annottext">LtEqDfa -&gt; LtEqDfa -&gt; Bool
+(LtEqDfa -&gt; LtEqDfa -&gt; Bool)
+-&gt; (LtEqDfa -&gt; LtEqDfa -&gt; Bool) -&gt; Eq LtEqDfa
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LtEqDfa -&gt; LtEqDfa -&gt; Bool
+== :: LtEqDfa -&gt; LtEqDfa -&gt; Bool
+$c/= :: LtEqDfa -&gt; LtEqDfa -&gt; Bool
+/= :: LtEqDfa -&gt; LtEqDfa -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277997"><span id="local-6989586621679278001"><span id="local-6989586621679278005"><span class="annot"><span class="annottext">Int -&gt; LtEqDfa -&gt; ShowS
+[LtEqDfa] -&gt; ShowS
+LtEqDfa -&gt; String
+(Int -&gt; LtEqDfa -&gt; ShowS)
+-&gt; (LtEqDfa -&gt; String) -&gt; ([LtEqDfa] -&gt; ShowS) -&gt; Show LtEqDfa
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LtEqDfa -&gt; ShowS
+showsPrec :: Int -&gt; LtEqDfa -&gt; ShowS
+$cshow :: LtEqDfa -&gt; String
+show :: LtEqDfa -&gt; String
+$cshowList :: [LtEqDfa] -&gt; ShowS
+showList :: [LtEqDfa] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-type">LtEqDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEq"><span class="hs-identifier hs-type">LtEq</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679278010"><span class="annot"><span class="annottext">transiteDfa :: LtEqDfa -&gt; LtEq -&gt; Int -&gt; Maybe LtEq
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var hs-var hs-var hs-var">transiteDfa</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-type">LtEqDfa</span></a></span><span> </span><span id="local-6989586621679278011"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278011"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span> </span><span id="local-6989586621679278012"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278012"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278012"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278011"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-51"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Maybe LtEq
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span>
+</span><span id="line-52"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Maybe LtEq
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span>
+</span><span id="line-53"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe LtEq
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="annot"><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-type">LtEqDfa</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><span class="annottext">LtEq -&gt; Maybe LtEq
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | LtEq from the front and Ordering from the back</span></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">data</span><span> </span><span id="LtEqWithBackHalfOrdering"><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-var">LtEqWithBackHalfOrdering</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LtEqWithBackHalfOrdering"><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-var">LtEqWithBackHalfOrdering</span></a></span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEq"><span class="hs-identifier hs-type">LtEq</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ordering</span></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278016"><span id="local-6989586621679278021"><span class="annot"><span class="annottext">LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool
+(LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool)
+-&gt; (LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool)
+-&gt; Eq LtEqWithBackHalfOrdering
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool
+== :: LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool
+$c/= :: LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool
+/= :: LtEqWithBackHalfOrdering -&gt; LtEqWithBackHalfOrdering -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278025"><span id="local-6989586621679278031"><span id="local-6989586621679278035"><span class="annot"><span class="annottext">Int -&gt; LtEqWithBackHalfOrdering -&gt; ShowS
+[LtEqWithBackHalfOrdering] -&gt; ShowS
+LtEqWithBackHalfOrdering -&gt; String
+(Int -&gt; LtEqWithBackHalfOrdering -&gt; ShowS)
+-&gt; (LtEqWithBackHalfOrdering -&gt; String)
+-&gt; ([LtEqWithBackHalfOrdering] -&gt; ShowS)
+-&gt; Show LtEqWithBackHalfOrdering
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LtEqWithBackHalfOrdering -&gt; ShowS
+showsPrec :: Int -&gt; LtEqWithBackHalfOrdering -&gt; ShowS
+$cshow :: LtEqWithBackHalfOrdering -&gt; String
+show :: LtEqWithBackHalfOrdering -&gt; String
+$cshowList :: [LtEqWithBackHalfOrdering] -&gt; ShowS
+showList :: [LtEqWithBackHalfOrdering] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679278041"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-type">LtEqWithBackHalfOrdering</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-62"></span><span>  </span><span id="local-6989586621679278047"><span class="annot"><span class="annottext">hashWithSalt :: Int -&gt; LtEqWithBackHalfOrdering -&gt; Int
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">hashWithSalt</span></span></span><span> </span><span id="local-6989586621679278048"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278048"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-type">LtEqWithBackHalfOrdering</span></a></span><span> </span><span id="local-6989586621679278049"><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679278049"><span class="hs-identifier hs-var">ltEq</span></a></span></span><span> </span><span id="local-6989586621679278050"><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278050"><span class="hs-identifier hs-var">ord</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Ordering -&gt; Int
+forall a. Hashable a =&gt; Int -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">hashWithSalt</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; LtEq -&gt; Int
+forall a. Hashable a =&gt; Int -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">hashWithSalt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278048"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="#local-6989586621679278049"><span class="hs-identifier hs-var">ltEq</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278050"><span class="hs-identifier hs-var">ord</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">-- | A pair of (front, back) characters.</span></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">newtype</span><span> </span><span id="LtEqWithBackHalfOrderingDfa"><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrderingDfa"><span class="hs-identifier hs-var">LtEqWithBackHalfOrderingDfa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LtEqWithBackHalfOrderingDfa"><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrderingDfa"><span class="hs-identifier hs-var">LtEqWithBackHalfOrderingDfa</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278053"><span id="local-6989586621679278060"><span class="annot"><span class="annottext">LtEqWithBackHalfOrderingDfa -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool
+(LtEqWithBackHalfOrderingDfa
+ -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool)
+-&gt; (LtEqWithBackHalfOrderingDfa
+    -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool)
+-&gt; Eq LtEqWithBackHalfOrderingDfa
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LtEqWithBackHalfOrderingDfa -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool
+== :: LtEqWithBackHalfOrderingDfa -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool
+$c/= :: LtEqWithBackHalfOrderingDfa -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool
+/= :: LtEqWithBackHalfOrderingDfa -&gt; LtEqWithBackHalfOrderingDfa -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278067"><span id="local-6989586621679278074"><span id="local-6989586621679278078"><span class="annot"><span class="annottext">Int -&gt; LtEqWithBackHalfOrderingDfa -&gt; ShowS
+[LtEqWithBackHalfOrderingDfa] -&gt; ShowS
+LtEqWithBackHalfOrderingDfa -&gt; String
+(Int -&gt; LtEqWithBackHalfOrderingDfa -&gt; ShowS)
+-&gt; (LtEqWithBackHalfOrderingDfa -&gt; String)
+-&gt; ([LtEqWithBackHalfOrderingDfa] -&gt; ShowS)
+-&gt; Show LtEqWithBackHalfOrderingDfa
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LtEqWithBackHalfOrderingDfa -&gt; ShowS
+showsPrec :: Int -&gt; LtEqWithBackHalfOrderingDfa -&gt; ShowS
+$cshow :: LtEqWithBackHalfOrderingDfa -&gt; String
+show :: LtEqWithBackHalfOrderingDfa -&gt; String
+$cshowList :: [LtEqWithBackHalfOrderingDfa] -&gt; ShowS
+showList :: [LtEqWithBackHalfOrderingDfa] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- Note that the earlier part (*) takes higher precedence in `backHalfOrd`:</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- 1 2 3 0 1 &lt;-- original array</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--       *</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- 1 2 3 2 1 &lt;-- an Equal palindrome</span><span>
+</span><span id="line-72"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrderingDfa"><span class="hs-identifier hs-type">LtEqWithBackHalfOrderingDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-type">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-73"></span><span>  </span><span id="local-6989586621679278090"><span class="annot"><span class="annottext">transiteDfa :: LtEqWithBackHalfOrderingDfa
+-&gt; LtEqWithBackHalfOrdering
+-&gt; Int
+-&gt; Maybe LtEqWithBackHalfOrdering
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var hs-var hs-var hs-var">transiteDfa</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrderingDfa"><span class="hs-identifier hs-type">LtEqWithBackHalfOrderingDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679278091"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278091"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679278092"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278092"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-type">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span> </span><span id="local-6989586621679278093"><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278093"><span class="hs-identifier hs-var">backHalfOrd</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679278094"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278094"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278094"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278091"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-75"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering)
+-&gt; LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+</span><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-var">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span> </span><span class="annot"><span class="annottext">(Ordering -&gt; LtEqWithBackHalfOrdering)
+-&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278094"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278092"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Ordering -&gt; Ordering
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278093"><span class="hs-identifier hs-var">backHalfOrd</span></a></span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering)
+-&gt; LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+</span><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-var">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span> </span><span class="annot"><span class="annottext">(Ordering -&gt; LtEqWithBackHalfOrdering)
+-&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278094"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278092"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Ordering -&gt; Ordering
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278093"><span class="hs-identifier hs-var">backHalfOrd</span></a></span><span>
+</span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe LtEqWithBackHalfOrdering
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrderingDfa"><span class="hs-identifier hs-type">LtEqWithBackHalfOrderingDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679278095"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278095"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-type">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span> </span><span id="local-6989586621679278096"><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278096"><span class="hs-identifier hs-var">backHalfOrd</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679278097"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278097"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><span class="annottext">LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering)
+-&gt; LtEqWithBackHalfOrdering -&gt; Maybe LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+</span><a href="Data.DigitDp.html#LtEqWithBackHalfOrdering"><span class="hs-identifier hs-var">LtEqWithBackHalfOrdering</span></a></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span><span> </span><span class="annot"><span class="annottext">(Ordering -&gt; LtEqWithBackHalfOrdering)
+-&gt; Ordering -&gt; LtEqWithBackHalfOrdering
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278097"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278095"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Ordering -&gt; Ordering
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679278096"><span class="hs-identifier hs-var">backHalfOrd</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="annot"><span class="hs-comment">-- | Counts the number of non-zero numbers in each digit.</span></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">newtype</span><span> </span><span id="CountNonZero"><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-var">CountNonZero</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CountNonZero"><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-var">CountNonZero</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278100"><span id="local-6989586621679278104"><span class="annot"><span class="annottext">CountNonZero -&gt; CountNonZero -&gt; Bool
+(CountNonZero -&gt; CountNonZero -&gt; Bool)
+-&gt; (CountNonZero -&gt; CountNonZero -&gt; Bool) -&gt; Eq CountNonZero
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CountNonZero -&gt; CountNonZero -&gt; Bool
+== :: CountNonZero -&gt; CountNonZero -&gt; Bool
+$c/= :: CountNonZero -&gt; CountNonZero -&gt; Bool
+/= :: CountNonZero -&gt; CountNonZero -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278109"><span id="local-6989586621679278113"><span id="local-6989586621679278117"><span class="annot"><span class="annottext">Int -&gt; CountNonZero -&gt; ShowS
+[CountNonZero] -&gt; ShowS
+CountNonZero -&gt; String
+(Int -&gt; CountNonZero -&gt; ShowS)
+-&gt; (CountNonZero -&gt; String)
+-&gt; ([CountNonZero] -&gt; ShowS)
+-&gt; Show CountNonZero
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CountNonZero -&gt; ShowS
+showsPrec :: Int -&gt; CountNonZero -&gt; ShowS
+$cshow :: CountNonZero -&gt; String
+show :: CountNonZero -&gt; String
+$cshowList :: [CountNonZero] -&gt; ShowS
+showList :: [CountNonZero] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679278123"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">hashWithSalt</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621679278127"><span class="annot"><span class="annottext">hashWithSalt :: Int -&gt; CountNonZero -&gt; Int
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">hashWithSalt</span></span></span><span> </span><span id="local-6989586621679278128"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278128"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span><span> </span><span id="local-6989586621679278129"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278129"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Hashable a =&gt; Int -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">hashWithSalt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278128"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278129"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-keyword">newtype</span><span> </span><span id="CountNonZeroDfa"><span class="annot"><a href="Data.DigitDp.html#CountNonZeroDfa"><span class="hs-identifier hs-var">CountNonZeroDfa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CountNonZeroDfa"><span class="annot"><a href="Data.DigitDp.html#CountNonZeroDfa"><span class="hs-identifier hs-var">CountNonZeroDfa</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278132"><span id="local-6989586621679278136"><span class="annot"><span class="annottext">CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool
+(CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool)
+-&gt; (CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool)
+-&gt; Eq CountNonZeroDfa
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool
+== :: CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool
+$c/= :: CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool
+/= :: CountNonZeroDfa -&gt; CountNonZeroDfa -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278141"><span id="local-6989586621679278145"><span id="local-6989586621679278149"><span class="annot"><span class="annottext">Int -&gt; CountNonZeroDfa -&gt; ShowS
+[CountNonZeroDfa] -&gt; ShowS
+CountNonZeroDfa -&gt; String
+(Int -&gt; CountNonZeroDfa -&gt; ShowS)
+-&gt; (CountNonZeroDfa -&gt; String)
+-&gt; ([CountNonZeroDfa] -&gt; ShowS)
+-&gt; Show CountNonZeroDfa
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CountNonZeroDfa -&gt; ShowS
+showsPrec :: Int -&gt; CountNonZeroDfa -&gt; ShowS
+$cshow :: CountNonZeroDfa -&gt; String
+show :: CountNonZeroDfa -&gt; String
+$cshowList :: [CountNonZeroDfa] -&gt; ShowS
+showList :: [CountNonZeroDfa] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#CountNonZeroDfa"><span class="hs-identifier hs-type">CountNonZeroDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-93"></span><span>  </span><span id="local-6989586621679278158"><span class="annot"><span class="annottext">transiteDfa :: CountNonZeroDfa -&gt; CountNonZero -&gt; Int -&gt; Maybe CountNonZero
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var hs-var hs-var hs-var">transiteDfa</span></a></span></span><span> </span><span class="annot"><span class="annottext">CountNonZeroDfa
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679278159"><span class="annot"><span class="annottext">CountNonZero
+</span><a href="#local-6989586621679278159"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CountNonZero -&gt; Maybe CountNonZero
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">CountNonZero
+</span><a href="#local-6989586621679278159"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#CountNonZeroDfa"><span class="hs-identifier hs-type">CountNonZeroDfa</span></a></span><span> </span><span id="local-6989586621679278160"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278160"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span><span> </span><span id="local-6989586621679278161"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278161"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278161"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278160"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe CountNonZero
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CountNonZero -&gt; Maybe CountNonZero
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(CountNonZero -&gt; Maybe CountNonZero)
+-&gt; CountNonZero -&gt; Maybe CountNonZero
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; CountNonZero
+</span><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-var">CountNonZero</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278161"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="annot"><span class="hs-comment">-- | The known value at this point (in the context of digit DP) mod k.</span></span><span>
+</span><span id="line-99"></span><span class="hs-keyword">newtype</span><span> </span><span id="KnownValueModK"><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-var">KnownValueModK</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="KnownValueModK"><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-var">KnownValueModK</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-100"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278165"><span id="local-6989586621679278169"><span class="annot"><span class="annottext">KnownValueModK -&gt; KnownValueModK -&gt; Bool
+(KnownValueModK -&gt; KnownValueModK -&gt; Bool)
+-&gt; (KnownValueModK -&gt; KnownValueModK -&gt; Bool) -&gt; Eq KnownValueModK
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: KnownValueModK -&gt; KnownValueModK -&gt; Bool
+== :: KnownValueModK -&gt; KnownValueModK -&gt; Bool
+$c/= :: KnownValueModK -&gt; KnownValueModK -&gt; Bool
+/= :: KnownValueModK -&gt; KnownValueModK -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278174"><span id="local-6989586621679278178"><span id="local-6989586621679278182"><span class="annot"><span class="annottext">Int -&gt; KnownValueModK -&gt; ShowS
+[KnownValueModK] -&gt; ShowS
+KnownValueModK -&gt; String
+(Int -&gt; KnownValueModK -&gt; ShowS)
+-&gt; (KnownValueModK -&gt; String)
+-&gt; ([KnownValueModK] -&gt; ShowS)
+-&gt; Show KnownValueModK
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; KnownValueModK -&gt; ShowS
+showsPrec :: Int -&gt; KnownValueModK -&gt; ShowS
+$cshow :: KnownValueModK -&gt; String
+show :: KnownValueModK -&gt; String
+$cshowList :: [KnownValueModK] -&gt; ShowS
+showList :: [KnownValueModK] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679278188"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-type">KnownValueModK</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-103"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">hashWithSalt</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-type">KnownValueModK</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679278192"><span class="annot"><span class="annottext">hashWithSalt :: Int -&gt; KnownValueModK -&gt; Int
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">hashWithSalt</span></span></span><span> </span><span id="local-6989586621679278193"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278193"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-type">KnownValueModK</span></a></span><span> </span><span id="local-6989586621679278194"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278194"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Hashable a =&gt; Int -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">hashWithSalt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278193"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278194"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-keyword">data</span><span> </span><span id="KnownValueModKDfa"><span class="annot"><a href="Data.DigitDp.html#KnownValueModKDfa"><span class="hs-identifier hs-var">KnownValueModKDfa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="KnownValueModKDfa"><span class="annot"><a href="Data.DigitDp.html#KnownValueModKDfa"><span class="hs-identifier hs-var">KnownValueModKDfa</span></a></span></span><span>
+</span><span id="line-107"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="k"><span class="annot"><span class="annottext">KnownValueModKDfa -&gt; Int
+</span><a href="Data.DigitDp.html#k"><span class="hs-identifier hs-var hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
+</span><span id="line-108"></span><span>    </span><span id="digitUnit"><span class="annot"><span class="annottext">KnownValueModKDfa -&gt; Int
+</span><a href="Data.DigitDp.html#digitUnit"><span class="hs-identifier hs-var hs-var">digitUnit</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-109"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278199"><span id="local-6989586621679278203"><span class="annot"><span class="annottext">KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool
+(KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool)
+-&gt; (KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool)
+-&gt; Eq KnownValueModKDfa
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool
+== :: KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool
+$c/= :: KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool
+/= :: KnownValueModKDfa -&gt; KnownValueModKDfa -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278207"><span id="local-6989586621679278212"><span id="local-6989586621679278216"><span class="annot"><span class="annottext">Int -&gt; KnownValueModKDfa -&gt; ShowS
+[KnownValueModKDfa] -&gt; ShowS
+KnownValueModKDfa -&gt; String
+(Int -&gt; KnownValueModKDfa -&gt; ShowS)
+-&gt; (KnownValueModKDfa -&gt; String)
+-&gt; ([KnownValueModKDfa] -&gt; ShowS)
+-&gt; Show KnownValueModKDfa
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; KnownValueModKDfa -&gt; ShowS
+showsPrec :: Int -&gt; KnownValueModKDfa -&gt; ShowS
+$cshow :: KnownValueModKDfa -&gt; String
+show :: KnownValueModKDfa -&gt; String
+$cshowList :: [KnownValueModKDfa] -&gt; ShowS
+showList :: [KnownValueModKDfa] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#KnownValueModKDfa"><span class="hs-identifier hs-type">KnownValueModKDfa</span></a></span><span> </span><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-type">KnownValueModK</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-113"></span><span>  </span><span id="local-6989586621679278224"><span class="annot"><span class="annottext">transiteDfa :: KnownValueModKDfa -&gt; KnownValueModK -&gt; Int -&gt; Maybe KnownValueModK
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var hs-var hs-var hs-var">transiteDfa</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#KnownValueModKDfa"><span class="hs-identifier hs-type">KnownValueModKDfa</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679278225"><span class="annot"><span class="annottext">Int
+k :: KnownValueModKDfa -&gt; Int
+k :: Int
+</span><a href="Data.DigitDp.html#k"><span class="hs-identifier hs-var hs-var">k</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278226"><span class="annot"><span class="annottext">Int
+digitUnit :: KnownValueModKDfa -&gt; Int
+digitUnit :: Int
+</span><a href="Data.DigitDp.html#digitUnit"><span class="hs-identifier hs-var hs-var">digitUnit</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-type">KnownValueModK</span></a></span><span> </span><span id="local-6989586621679278227"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278227"><span class="hs-identifier hs-var">acc</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679278228"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278228"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-114"></span><span>    </span><span class="annot"><span class="annottext">KnownValueModK -&gt; Maybe KnownValueModK
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(KnownValueModK -&gt; Maybe KnownValueModK)
+-&gt; KnownValueModK -&gt; Maybe KnownValueModK
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; KnownValueModK
+</span><a href="Data.DigitDp.html#KnownValueModK"><span class="hs-identifier hs-var">KnownValueModK</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278227"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278228"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278226"><span class="hs-identifier hs-var">digitUnit</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`mod`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278225"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.DigitDp.html#foldlM"><span class="hs-pragma hs-type">foldlM</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-117"></span><span class="annot"><a href="Data.DigitDp.html#foldlM"><span class="hs-identifier hs-type">foldlM</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679277760"><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679277761"><span class="annot"><a href="#local-6989586621679277761"><span class="hs-identifier hs-type">dfa</span></a></span></span><span> </span><span id="local-6989586621679277762"><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679277764"><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621679277763"><span class="annot"><a href="#local-6989586621679277763"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621679277765"><span class="annot"><a href="#local-6989586621679277765"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679277766"><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-119"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DigitDp.html#DigitDfa"><span class="hs-identifier hs-type">DigitDfa</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277761"><span class="hs-identifier hs-type">dfa</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277763"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Foldable</span></span><span> </span><span class="annot"><a href="#local-6989586621679277765"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-120"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Next input values (alphabets)</span></span><span>
+</span><span id="line-121"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679277763"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-122"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Update value</span></span><span>
+</span><span id="line-123"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277763"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-124"></span><span>  </span><span class="annot"><span class="hs-comment">-- | DFA creater</span></span><span>
+</span><span id="line-125"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277763"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277761"><span class="hs-identifier hs-type">dfa</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-126"></span><span>  </span><span class="annot"><span class="hs-comment">-- | After digit</span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-128"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Initial hashmap</span></span><span>
+</span><span id="line-129"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">HM.HashMap</span></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-130"></span><span>  </span><span class="annot"><span class="hs-comment">-- | The folding string</span></span><span>
+</span><span id="line-131"></span><span>  </span><span class="annot"><a href="#local-6989586621679277765"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-132"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Folding result</span></span><span>
+</span><span id="line-133"></span><span>  </span><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HM.HashMap</span></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span id="foldlM"><span class="annot"><span class="annottext">foldlM :: forall (m :: * -&gt; *) dfa s v a (t :: * -&gt; *) x.
+(Monad m, DigitDfa dfa s a, Hashable s, Semigroup v, Foldable t) =&gt;
+(x -&gt; [a])
+-&gt; (v -&gt; a -&gt; v)
+-&gt; (x -&gt; a -&gt; m dfa)
+-&gt; (x -&gt; m ())
+-&gt; HashMap s v
+-&gt; t x
+-&gt; m (HashMap s v)
+</span><a href="Data.DigitDp.html#foldlM"><span class="hs-identifier hs-var hs-var">foldlM</span></a></span></span><span> </span><span id="local-6989586621679278258"><span class="annot"><span class="annottext">x -&gt; [a]
+</span><a href="#local-6989586621679278258"><span class="hs-identifier hs-var">toNextInputs</span></a></span></span><span> </span><span id="local-6989586621679278259"><span class="annot"><span class="annottext">v -&gt; a -&gt; v
+</span><a href="#local-6989586621679278259"><span class="hs-identifier hs-var">updateValue</span></a></span></span><span> </span><span id="local-6989586621679278260"><span class="annot"><span class="annottext">x -&gt; a -&gt; m dfa
+</span><a href="#local-6989586621679278260"><span class="hs-identifier hs-var">createDfa</span></a></span></span><span> </span><span id="local-6989586621679278261"><span class="annot"><span class="annottext">x -&gt; m ()
+</span><a href="#local-6989586621679278261"><span class="hs-identifier hs-var">afterDigit</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(HashMap s v -&gt; x -&gt; m (HashMap s v))
+-&gt; HashMap s v -&gt; t x -&gt; m (HashMap s v)
+forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
+(Foldable t, Monad m) =&gt;
+(b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
+</span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="annot"><span class="annottext">HashMap s v -&gt; x -&gt; m (HashMap s v)
+</span><a href="#local-6989586621679278262"><span class="hs-identifier hs-var">step</span></a></span><span>
+</span><span id="line-135"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-136"></span><span>    </span><span class="annot"><a href="#local-6989586621679278262"><span class="hs-identifier hs-type">step</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HM.HashMap</span></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277766"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277760"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HM.HashMap</span></span><span> </span><span class="annot"><a href="#local-6989586621679277762"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277764"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>    </span><span id="local-6989586621679278262"><span class="annot"><span class="annottext">step :: HashMap s v -&gt; x -&gt; m (HashMap s v)
+</span><a href="#local-6989586621679278262"><span class="hs-identifier hs-var hs-var">step</span></a></span></span><span> </span><span id="local-6989586621679278263"><span class="annot"><span class="annottext">HashMap s v
+</span><a href="#local-6989586621679278263"><span class="hs-identifier hs-var">sofar</span></a></span></span><span> </span><span id="local-6989586621679278264"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679278264"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-138"></span><span>      </span><span id="local-6989586621679278265"><span class="annot"><span class="annottext">HashMap s v
+</span><a href="#local-6989586621679278265"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-139"></span><span>        </span><span class="annot"><span class="annottext">([(s, v)] -&gt; HashMap s v) -&gt; m [(s, v)] -&gt; m (HashMap s v)
+forall a b. (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(v -&gt; v -&gt; v) -&gt; [(s, v)] -&gt; HashMap s v
+forall k v.
+(Eq k, Hashable k) =&gt;
+(v -&gt; v -&gt; v) -&gt; [(k, v)] -&gt; HashMap k v
+</span><span class="hs-identifier hs-var">HM.fromListWith</span></span><span> </span><span class="annot"><span class="annottext">v -&gt; v -&gt; v
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">(&lt;&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>          </span><span class="annot"><span class="annottext">(m [(s, v)] -&gt; m (HashMap s v))
+-&gt; ([(s, v)] -&gt; m [(s, v)]) -&gt; [(s, v)] -&gt; m (HashMap s v)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((s, v) -&gt; m [(s, v)]) -&gt; [(s, v)] -&gt; m [(s, v)]
+forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m [b]) -&gt; [a] -&gt; m [b]
+</span><span class="hs-identifier hs-var">concatMapM</span></span><span>
+</span><span id="line-141"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679278268"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679278268"><span class="hs-identifier hs-var">state</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679278269"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679278269"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-142"></span><span>                </span><span class="annot"><span class="annottext">(a -&gt; m (Maybe (s, v))) -&gt; [a] -&gt; m [(s, v)]
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+</span><span class="hs-identifier hs-var">mapMaybeM</span></span><span>
+</span><span id="line-143"></span><span>                  </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679278270"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278270"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-144"></span><span>                      </span><span id="local-6989586621679278271"><span class="annot"><span class="annottext">dfa
+</span><a href="#local-6989586621679278271"><span class="hs-identifier hs-var">dfa</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">x -&gt; a -&gt; m dfa
+</span><a href="#local-6989586621679278260"><span class="hs-identifier hs-var">createDfa</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679278264"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278270"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-145"></span><span>                      </span><span class="annot"><span class="annottext">Maybe (s, v) -&gt; m (Maybe (s, v))
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (s, v) -&gt; m (Maybe (s, v)))
+-&gt; Maybe (s, v) -&gt; m (Maybe (s, v))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-146"></span><span>                        </span><span class="hs-glyph">!</span><span id="local-6989586621679278272"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679278272"><span class="hs-identifier hs-var">state'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">dfa -&gt; s -&gt; a -&gt; Maybe s
+forall context s a.
+DigitDfa context s a =&gt;
+context -&gt; s -&gt; a -&gt; Maybe s
+</span><a href="Data.DigitDp.html#transiteDfa"><span class="hs-identifier hs-var">transiteDfa</span></a></span><span> </span><span class="annot"><span class="annottext">dfa
+</span><a href="#local-6989586621679278271"><span class="hs-identifier hs-var">dfa</span></a></span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679278268"><span class="hs-identifier hs-var">state</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278270"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-147"></span><span>                        </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679278273"><span class="annot"><span class="annottext">v' :: v
+</span><a href="#local-6989586621679278273"><span class="hs-identifier hs-var hs-var">v'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v -&gt; a -&gt; v
+</span><a href="#local-6989586621679278259"><span class="hs-identifier hs-var">updateValue</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679278269"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278270"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-148"></span><span>                        </span><span class="annot"><span class="annottext">(s, v) -&gt; Maybe (s, v)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679278272"><span class="hs-identifier hs-var">state'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679278273"><span class="hs-identifier hs-var">v'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>                  </span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>                  </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679278274"><span class="hs-identifier hs-var">nextInputs</span></a></span><span>
+</span><span id="line-151"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>          </span><span class="annot"><span class="annottext">([(s, v)] -&gt; m (HashMap s v)) -&gt; [(s, v)] -&gt; m (HashMap s v)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">HashMap s v -&gt; [(s, v)]
+forall k v. HashMap k v -&gt; [(k, v)]
+</span><span class="hs-identifier hs-var">HM.toList</span></span><span> </span><span class="annot"><span class="annottext">HashMap s v
+</span><a href="#local-6989586621679278263"><span class="hs-identifier hs-var">sofar</span></a></span><span>
+</span><span id="line-153"></span><span>      </span><span class="annot"><span class="annottext">x -&gt; m ()
+</span><a href="#local-6989586621679278261"><span class="hs-identifier hs-var">afterDigit</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679278264"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-comment">-- TODO: do we ever need it?</span><span>
+</span><span id="line-154"></span><span>      </span><span class="annot"><span class="annottext">HashMap s v -&gt; m (HashMap s v)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">HashMap s v
+</span><a href="#local-6989586621679278265"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><span id="line-155"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-156"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679278274"><span class="annot"><span class="annottext">nextInputs :: [a]
+</span><a href="#local-6989586621679278274"><span class="hs-identifier hs-var hs-var">nextInputs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; [a]
+</span><a href="#local-6989586621679278258"><span class="hs-identifier hs-var">toNextInputs</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679278264"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- https://atcoder.jp/contests/agc021/tasks/agc021_a</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- 1. select your DFA in `createDfa`</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- 2. set the semigroup value in `hm0` of `HashMap`</span><span>
+</span><span id="line-161"></span><span class="annot"><a href="Data.DigitDp.html#solveAgc23A"><span class="hs-identifier hs-type">solveAgc23A</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-162"></span><span id="solveAgc23A"><span class="annot"><span class="annottext">solveAgc23A :: String -&gt; Int
+</span><a href="Data.DigitDp.html#solveAgc23A"><span class="hs-identifier hs-var hs-var">solveAgc23A</span></a></span></span><span> </span><span id="local-6989586621679278277"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679278277"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679278292"><span class="annot"><span class="annottext">hm :: HashMap LtEq (Max Int)
+</span><a href="#local-6989586621679278292"><span class="hs-identifier hs-var hs-var">hm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (HashMap LtEq (Max Int)) -&gt; HashMap LtEq (Max Int)
+forall a. Identity a -&gt; a
+</span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (HashMap LtEq (Max Int)) -&gt; HashMap LtEq (Max Int))
+-&gt; Identity (HashMap LtEq (Max Int)) -&gt; HashMap LtEq (Max Int)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Char -&gt; [Int])
+-&gt; (Max Int -&gt; Int -&gt; Max Int)
+-&gt; (Char -&gt; Int -&gt; Identity LtEqDfa)
+-&gt; (Char -&gt; Identity ())
+-&gt; HashMap LtEq (Max Int)
+-&gt; String
+-&gt; Identity (HashMap LtEq (Max Int))
+forall (m :: * -&gt; *) dfa s v a (t :: * -&gt; *) x.
+(Monad m, DigitDfa dfa s a, Hashable s, Semigroup v, Foldable t) =&gt;
+(x -&gt; [a])
+-&gt; (v -&gt; a -&gt; v)
+-&gt; (x -&gt; a -&gt; m dfa)
+-&gt; (x -&gt; m ())
+-&gt; HashMap s v
+-&gt; t x
+-&gt; m (HashMap s v)
+</span><a href="Data.DigitDp.html#foldlM"><span class="hs-identifier hs-var">foldlM</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; [Int]
+forall {a} {p}. (Num a, Enum a) =&gt; p -&gt; [a]
+</span><a href="#local-6989586621679278293"><span class="hs-identifier hs-var">toNextInputs</span></a></span><span> </span><span class="annot"><span class="annottext">Max Int -&gt; Int -&gt; Max Int
+forall {a}. Num a =&gt; Max a -&gt; a -&gt; Max a
+</span><a href="#local-6989586621679278294"><span class="hs-identifier hs-var">updateValue</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; Identity LtEqDfa
+forall {f :: * -&gt; *} {p}. Applicative f =&gt; Char -&gt; p -&gt; f LtEqDfa
+</span><a href="#local-6989586621679278295"><span class="hs-identifier hs-var">createDfa</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Identity ()
+forall {f :: * -&gt; *} {p}. Applicative f =&gt; p -&gt; f ()
+</span><a href="#local-6989586621679278296"><span class="hs-identifier hs-var">afterDigit</span></a></span><span> </span><span class="annot"><span class="annottext">HashMap LtEq (Max Int)
+</span><a href="#local-6989586621679278297"><span class="hs-identifier hs-var">hm0</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679278277"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-164"></span><span>      </span><span id="local-6989586621679278298"><span class="annot"><span class="annottext">accept :: p -&gt; Bool
+</span><a href="#local-6989586621679278298"><span class="hs-identifier hs-var hs-var">accept</span></a></span></span><span> </span><span id="local-6989586621679278299"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278299"><span class="hs-identifier hs-var">_dfa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-165"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Max Int -&gt; Int
+forall a. Max a -&gt; a
+</span><span class="hs-identifier hs-var">getMax</span></span><span> </span><span class="annot"><span class="annottext">(Max Int -&gt; Int)
+-&gt; ([(LtEq, Max Int)] -&gt; Max Int) -&gt; [(LtEq, Max Int)] -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((LtEq, Max Int) -&gt; Max Int) -&gt; [(LtEq, Max Int)] -&gt; Max Int
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="annot"><span class="annottext">(LtEq, Max Int) -&gt; Max Int
+forall a b. (a, b) -&gt; b
+</span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">([(LtEq, Max Int)] -&gt; Int) -&gt; [(LtEq, Max Int)] -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">((LtEq, Max Int) -&gt; Bool) -&gt; [(LtEq, Max Int)] -&gt; [(LtEq, Max Int)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LtEq -&gt; Bool
+forall {p}. p -&gt; Bool
+</span><a href="#local-6989586621679278298"><span class="hs-identifier hs-var">accept</span></a></span><span> </span><span class="annot"><span class="annottext">(LtEq -&gt; Bool)
+-&gt; ((LtEq, Max Int) -&gt; LtEq) -&gt; (LtEq, Max Int) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(LtEq, Max Int) -&gt; LtEq
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(LtEq, Max Int)] -&gt; [(LtEq, Max Int)])
+-&gt; [(LtEq, Max Int)] -&gt; [(LtEq, Max Int)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">HashMap LtEq (Max Int) -&gt; [(LtEq, Max Int)]
+forall k v. HashMap k v -&gt; [(k, v)]
+</span><span class="hs-identifier hs-var">HM.toList</span></span><span> </span><span class="annot"><span class="annottext">HashMap LtEq (Max Int)
+</span><a href="#local-6989586621679278292"><span class="hs-identifier hs-var">hm</span></a></span><span>
+</span><span id="line-166"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-167"></span><span>    </span><span id="local-6989586621679278293"><span class="annot"><span class="annottext">toNextInputs :: p -&gt; [a]
+</span><a href="#local-6989586621679278293"><span class="hs-identifier hs-var hs-var">toNextInputs</span></a></span></span><span> </span><span id="local-6989586621679278309"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278309"><span class="hs-identifier hs-var">_x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">9</span></span><span class="hs-special">]</span><span>
+</span><span id="line-168"></span><span>    </span><span id="local-6989586621679278294"><span class="annot"><span class="annottext">updateValue :: Max a -&gt; a -&gt; Max a
+</span><a href="#local-6989586621679278294"><span class="hs-identifier hs-var hs-var">updateValue</span></a></span></span><span> </span><span id="local-6989586621679278314"><span class="annot"><span class="annottext">Max a
+</span><a href="#local-6989586621679278314"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679278315"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278315"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Max a
+</span><a href="#local-6989586621679278314"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Max a -&gt; Max a -&gt; Max a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Max a
+forall a. a -&gt; Max a
+</span><span class="hs-identifier hs-var">Max</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679278315"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-169"></span><span>    </span><span id="local-6989586621679278295"><span class="annot"><span class="annottext">createDfa :: Char -&gt; p -&gt; f LtEqDfa
+</span><a href="#local-6989586621679278295"><span class="hs-identifier hs-var hs-var">createDfa</span></a></span></span><span> </span><span id="local-6989586621679278321"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679278321"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679278322"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278322"><span class="hs-identifier hs-var">_a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-170"></span><span>      </span><span class="annot"><span class="annottext">LtEqDfa -&gt; f LtEqDfa
+forall a. a -&gt; f a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(LtEqDfa -&gt; f LtEqDfa) -&gt; (Int -&gt; LtEqDfa) -&gt; Int -&gt; f LtEqDfa
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; LtEqDfa
+</span><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-var">LtEqDfa</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; f LtEqDfa) -&gt; Int -&gt; f LtEqDfa
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+</span><span class="hs-identifier hs-var">digitToInt</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679278321"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-171"></span><span>    </span><span id="local-6989586621679278296"><span class="annot"><span class="annottext">afterDigit :: p -&gt; f ()
+</span><a href="#local-6989586621679278296"><span class="hs-identifier hs-var hs-var">afterDigit</span></a></span></span><span> </span><span id="local-6989586621679278327"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278327"><span class="hs-identifier hs-var">_x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-172"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; f ()
+forall a. a -&gt; f a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-173"></span><span>    </span><span id="local-6989586621679278297"><span class="annot"><span class="annottext">hm0 :: HashMap LtEq (Max Int)
+</span><a href="#local-6989586621679278297"><span class="hs-identifier hs-var hs-var">hm0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LtEq -&gt; Max Int -&gt; HashMap LtEq (Max Int)
+forall k v. Hashable k =&gt; k -&gt; v -&gt; HashMap k v
+</span><span class="hs-identifier hs-var">HM.singleton</span></span><span> </span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Max Int
+forall a. a -&gt; Max a
+</span><span class="hs-identifier hs-var">Max</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- https://atcoder.jp/contests/abc154/tasks/abc154_e</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- 1. select your DFA in `createDfa`</span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- 2. set the semigroup value in `hm0` of `HashMap`</span><span>
+</span><span id="line-178"></span><span class="annot"><a href="Data.DigitDp.html#solveAbc154E"><span class="hs-identifier hs-type">solveAbc154E</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-179"></span><span id="solveAbc154E"><span class="annot"><span class="annottext">solveAbc154E :: String -&gt; Int -&gt; Int
+</span><a href="Data.DigitDp.html#solveAbc154E"><span class="hs-identifier hs-var hs-var">solveAbc154E</span></a></span></span><span> </span><span id="local-6989586621679278331"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679278331"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679278332"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278332"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679278347"><span class="annot"><span class="annottext">hm :: HashMap (LtEq, CountNonZero) (Sum Int)
+</span><a href="#local-6989586621679278347"><span class="hs-identifier hs-var hs-var">hm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (HashMap (LtEq, CountNonZero) (Sum Int))
+-&gt; HashMap (LtEq, CountNonZero) (Sum Int)
+forall a. Identity a -&gt; a
+</span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (HashMap (LtEq, CountNonZero) (Sum Int))
+ -&gt; HashMap (LtEq, CountNonZero) (Sum Int))
+-&gt; Identity (HashMap (LtEq, CountNonZero) (Sum Int))
+-&gt; HashMap (LtEq, CountNonZero) (Sum Int)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Char -&gt; [Int])
+-&gt; (Sum Int -&gt; Int -&gt; Sum Int)
+-&gt; (Char -&gt; Int -&gt; Identity (AndDfa (LtEqDfa, CountNonZeroDfa)))
+-&gt; (Char -&gt; Identity ())
+-&gt; HashMap (LtEq, CountNonZero) (Sum Int)
+-&gt; String
+-&gt; Identity (HashMap (LtEq, CountNonZero) (Sum Int))
+forall (m :: * -&gt; *) dfa s v a (t :: * -&gt; *) x.
+(Monad m, DigitDfa dfa s a, Hashable s, Semigroup v, Foldable t) =&gt;
+(x -&gt; [a])
+-&gt; (v -&gt; a -&gt; v)
+-&gt; (x -&gt; a -&gt; m dfa)
+-&gt; (x -&gt; m ())
+-&gt; HashMap s v
+-&gt; t x
+-&gt; m (HashMap s v)
+</span><a href="Data.DigitDp.html#foldlM"><span class="hs-identifier hs-var">foldlM</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; [Int]
+forall {p}. p -&gt; [Int]
+</span><a href="#local-6989586621679278348"><span class="hs-identifier hs-var">toNextInputs</span></a></span><span> </span><span class="annot"><span class="annottext">Sum Int -&gt; Int -&gt; Sum Int
+forall {p} {p}. p -&gt; p -&gt; p
+</span><a href="#local-6989586621679278349"><span class="hs-identifier hs-var">updateValue</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; Identity (AndDfa (LtEqDfa, CountNonZeroDfa))
+forall {f :: * -&gt; *} {p}.
+Applicative f =&gt;
+Char -&gt; p -&gt; f (AndDfa (LtEqDfa, CountNonZeroDfa))
+</span><a href="#local-6989586621679278350"><span class="hs-identifier hs-var">createDfa</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Identity ()
+forall {f :: * -&gt; *} {p}. Applicative f =&gt; p -&gt; f ()
+</span><a href="#local-6989586621679278351"><span class="hs-identifier hs-var">afterDigit</span></a></span><span> </span><span class="annot"><span class="annottext">HashMap (LtEq, CountNonZero) (Sum Int)
+</span><a href="#local-6989586621679278352"><span class="hs-identifier hs-var">hm0</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679278331"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-181"></span><span>      </span><span id="local-6989586621679278354"><span class="annot"><span class="annottext">accept :: (a, CountNonZero) -&gt; Bool
+</span><a href="#local-6989586621679278354"><span class="hs-identifier hs-var hs-var">accept</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-type">CountNonZero</span></a></span><span> </span><span id="local-6989586621679278355"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278355"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278355"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278332"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-182"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Sum Int -&gt; Int
+forall a. Sum a -&gt; a
+</span><span class="hs-identifier hs-var">getSum</span></span><span> </span><span class="annot"><span class="annottext">(Sum Int -&gt; Int)
+-&gt; ([((LtEq, CountNonZero), Sum Int)] -&gt; Sum Int)
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+-&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(((LtEq, CountNonZero), Sum Int) -&gt; Sum Int)
+-&gt; [((LtEq, CountNonZero), Sum Int)] -&gt; Sum Int
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="annot"><span class="annottext">((LtEq, CountNonZero), Sum Int) -&gt; Sum Int
+forall a b. (a, b) -&gt; b
+</span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">([((LtEq, CountNonZero), Sum Int)] -&gt; Int)
+-&gt; [((LtEq, CountNonZero), Sum Int)] -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(((LtEq, CountNonZero), Sum Int) -&gt; Bool)
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(LtEq, CountNonZero) -&gt; Bool
+forall {a}. (a, CountNonZero) -&gt; Bool
+</span><a href="#local-6989586621679278354"><span class="hs-identifier hs-var">accept</span></a></span><span> </span><span class="annot"><span class="annottext">((LtEq, CountNonZero) -&gt; Bool)
+-&gt; (((LtEq, CountNonZero), Sum Int) -&gt; (LtEq, CountNonZero))
+-&gt; ((LtEq, CountNonZero), Sum Int)
+-&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((LtEq, CountNonZero), Sum Int) -&gt; (LtEq, CountNonZero)
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([((LtEq, CountNonZero), Sum Int)]
+ -&gt; [((LtEq, CountNonZero), Sum Int)])
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">HashMap (LtEq, CountNonZero) (Sum Int)
+-&gt; [((LtEq, CountNonZero), Sum Int)]
+forall k v. HashMap k v -&gt; [(k, v)]
+</span><span class="hs-identifier hs-var">HM.toList</span></span><span> </span><span class="annot"><span class="annottext">HashMap (LtEq, CountNonZero) (Sum Int)
+</span><a href="#local-6989586621679278347"><span class="hs-identifier hs-var">hm</span></a></span><span>
+</span><span id="line-183"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-184"></span><span>    </span><span id="local-6989586621679278348"><span class="annot"><span class="annottext">toNextInputs :: p -&gt; [Int]
+</span><a href="#local-6989586621679278348"><span class="hs-identifier hs-var hs-var">toNextInputs</span></a></span></span><span> </span><span id="local-6989586621679278359"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278359"><span class="hs-identifier hs-var">_x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">9</span></span><span class="hs-special">]</span><span>
+</span><span id="line-185"></span><span>    </span><span id="local-6989586621679278349"><span class="annot"><span class="annottext">updateValue :: p -&gt; p -&gt; p
+</span><a href="#local-6989586621679278349"><span class="hs-identifier hs-var hs-var">updateValue</span></a></span></span><span> </span><span id="local-6989586621679278360"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278360"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679278361"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278361"><span class="hs-identifier hs-var">_d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278360"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-186"></span><span>    </span><span id="local-6989586621679278350"><span class="annot"><span class="annottext">createDfa :: Char -&gt; p -&gt; f (AndDfa (LtEqDfa, CountNonZeroDfa))
+</span><a href="#local-6989586621679278350"><span class="hs-identifier hs-var hs-var">createDfa</span></a></span></span><span> </span><span id="local-6989586621679278366"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679278366"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679278367"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278367"><span class="hs-identifier hs-var">_a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-187"></span><span>      </span><span class="annot"><span class="annottext">AndDfa (LtEqDfa, CountNonZeroDfa)
+-&gt; f (AndDfa (LtEqDfa, CountNonZeroDfa))
+forall a. a -&gt; f a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(AndDfa (LtEqDfa, CountNonZeroDfa)
+ -&gt; f (AndDfa (LtEqDfa, CountNonZeroDfa)))
+-&gt; AndDfa (LtEqDfa, CountNonZeroDfa)
+-&gt; f (AndDfa (LtEqDfa, CountNonZeroDfa))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(LtEqDfa, CountNonZeroDfa) -&gt; AndDfa (LtEqDfa, CountNonZeroDfa)
+forall a. a -&gt; AndDfa a
+</span><a href="Data.DigitDp.html#AndDfa"><span class="hs-identifier hs-var">AndDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; LtEqDfa
+</span><a href="Data.DigitDp.html#LtEqDfa"><span class="hs-identifier hs-var">LtEqDfa</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Int
+</span><span class="hs-identifier hs-var">digitToInt</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679278366"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; CountNonZeroDfa
+</span><a href="Data.DigitDp.html#CountNonZeroDfa"><span class="hs-identifier hs-var">CountNonZeroDfa</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278332"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-188"></span><span>    </span><span id="local-6989586621679278351"><span class="annot"><span class="annottext">afterDigit :: p -&gt; f ()
+</span><a href="#local-6989586621679278351"><span class="hs-identifier hs-var hs-var">afterDigit</span></a></span></span><span> </span><span id="local-6989586621679278372"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679278372"><span class="hs-identifier hs-var">_c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-189"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; f ()
+forall a. a -&gt; f a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-190"></span><span>    </span><span id="local-6989586621679278352"><span class="annot"><span class="annottext">hm0 :: HashMap (LtEq, CountNonZero) (Sum Int)
+</span><a href="#local-6989586621679278352"><span class="hs-identifier hs-var hs-var">hm0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(LtEq, CountNonZero)
+-&gt; Sum Int -&gt; HashMap (LtEq, CountNonZero) (Sum Int)
+forall k v. Hashable k =&gt; k -&gt; v -&gt; HashMap k v
+</span><span class="hs-identifier hs-var">HM.singleton</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LtEq
+</span><a href="Data.DigitDp.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; CountNonZero
+</span><a href="Data.DigitDp.html#CountNonZero"><span class="hs-identifier hs-var">CountNonZero</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Sum Int
+forall a. a -&gt; Sum a
+</span><span class="hs-identifier hs-var">Sum</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span class="hs-comment">-- -- target: string ([A-Z]*)</span><span>
+</span><span id="line-193"></span><span class="hs-comment">-- solve242E :: BS.ByteString -&gt; MI.ModInt 998244353</span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- solve242E s =</span><span>
+</span><span id="line-195"></span><span class="hs-comment">--   let -- In order to create a palindrome: (TODO: create alphabets automatically)</span><span>
+</span><span id="line-196"></span><span class="hs-comment">--       s' = take ((BS.length s + 1) `div` 2) $ BS.zipWith (,) s (BS.reverse s)</span><span>
+</span><span id="line-197"></span><span class="hs-comment">--       hm = runIdentity $ foldlM toNextInputs updateValue createDfa afterDigit hm0 s'</span><span>
+</span><span id="line-198"></span><span class="hs-comment">--       accept (LtEqWithBackHalfOrdering Equal !backOrd) =</span><span>
+</span><span id="line-199"></span><span class="hs-comment">--         let !_ = dbg backOrd in</span><span>
+</span><span id="line-200"></span><span class="hs-comment">--         backOrd /= GT</span><span>
+</span><span id="line-201"></span><span class="hs-comment">--       accept (LtEqWithBackHalfOrdering LessThan !_) = True</span><span>
+</span><span id="line-202"></span><span class="hs-comment">--    in getSum . foldMap snd . filter (accept . fst) $ HM.toList hm</span><span>
+</span><span id="line-203"></span><span class="hs-comment">--   where</span><span>
+</span><span id="line-204"></span><span class="hs-comment">--     toNextInputs _x = [0 :: Int .. 25]</span><span>
+</span><span id="line-205"></span><span class="hs-comment">--     updateValue v _a = v</span><span>
+</span><span id="line-206"></span><span class="hs-comment">--     createDfa (!f, !b) _a = do</span><span>
+</span><span id="line-207"></span><span class="hs-comment">--       pure $ LtEqWithBackHalfOrderingDfa (ord f - ord 'A', ord b - ord 'A')</span><span>
+</span><span id="line-208"></span><span class="hs-comment">--     afterDigit _x = pure ()</span><span>
+</span><span id="line-209"></span><span class="hs-comment">--     hm0 = HM.singleton (LtEqWithBackHalfOrdering Equal EQ) (Sum (modInt 1))</span><span>
+</span><span id="line-210"></span></pre></body></html>

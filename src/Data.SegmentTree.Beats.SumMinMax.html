@@ -1,0 +1,943 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingVia #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- | `SumMinMax` and `AddChminChmax` on the segment tree beats.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- = Typical problems</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- - [Range Chmin Chmax Add Range Sum](https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SegmentTree.Beats.SumMinMax</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.LazySegTree</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">SegAct</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.State.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">execState</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">modify'</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SegmentTree.Util.html"><span class="hs-identifier">Data.SegmentTree.Util</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Util.html#FailableSemigroupActionTarget"><span class="hs-identifier">FailableSemigroupActionTarget</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Debug.html"><span class="hs-identifier">ToyLib.Debug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ToyLib.Debug.html#dbgAssert"><span class="hs-identifier">dbgAssert</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- | Sum + Min + Max information on segment tree beats.</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- REMARK: Be sure to NOT use `mempty` as initial values in segment tree beats, use</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- @singleton 0@ instead.</span><span>
+</span><span id="line-24"></span><span class="hs-comment">--</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- TODO: Specialize and `UNPACK`.</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="SumMinMax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-var">SumMinMax</span></a></span></span><span> </span><span id="local-6989586621679284181"><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="SumMinMax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-var">SumMinMax</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="sumSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var hs-var">sumSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span id="minSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var hs-var">minSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span id="maxSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var hs-var">maxSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- | The number of elements that equals to `minSMM` in the interval.</span></span><span>
+</span><span id="line-31"></span><span>    </span><span id="nMinSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var hs-var">nMinSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-comment">-- | The number of elements that equals to `maxSMM` in the interval.</span></span><span>
+</span><span id="line-33"></span><span>    </span><span id="nMaxSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var hs-var">nMaxSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Secondary minimum value.</span></span><span>
+</span><span id="line-35"></span><span>    </span><span id="min2SMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var hs-var">min2SMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Secondary maximum value.</span></span><span>
+</span><span id="line-37"></span><span>    </span><span id="max2SMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var hs-var">max2SMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span id="failsSMM"><span class="annot"><span class="annottext">forall a. SumMinMax a -&gt; Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var hs-var">failsSMM</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679284382"><span id="local-6989586621679284396"><span id="local-6989586621679284400"><span class="annot"><span class="annottext">Int -&gt; SumMinMax a -&gt; ShowS
+[SumMinMax a] -&gt; ShowS
+SumMinMax a -&gt; String
+(Int -&gt; SumMinMax a -&gt; ShowS)
+-&gt; (SumMinMax a -&gt; String)
+-&gt; ([SumMinMax a] -&gt; ShowS)
+-&gt; Show (SumMinMax a)
+forall a. Show a =&gt; Int -&gt; SumMinMax a -&gt; ShowS
+forall a. Show a =&gt; [SumMinMax a] -&gt; ShowS
+forall a. Show a =&gt; SumMinMax a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; SumMinMax a -&gt; ShowS
+showsPrec :: Int -&gt; SumMinMax a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; SumMinMax a -&gt; String
+show :: SumMinMax a -&gt; String
+$cshowList :: forall a. Show a =&gt; [SumMinMax a] -&gt; ShowS
+showList :: [SumMinMax a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679284405"><span id="local-6989586621679284417"><span class="annot"><span class="annottext">SumMinMax a -&gt; SumMinMax a -&gt; Bool
+(SumMinMax a -&gt; SumMinMax a -&gt; Bool)
+-&gt; (SumMinMax a -&gt; SumMinMax a -&gt; Bool) -&gt; Eq (SumMinMax a)
+forall a. Eq a =&gt; SumMinMax a -&gt; SumMinMax a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; SumMinMax a -&gt; SumMinMax a -&gt; Bool
+== :: SumMinMax a -&gt; SumMinMax a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; SumMinMax a -&gt; SumMinMax a -&gt; Bool
+/= :: SumMinMax a -&gt; SumMinMax a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284201"><span class="annot"><a href="Data.SegmentTree.Util.html#FailableSemigroupActionTarget"><span class="hs-identifier hs-type">FailableSemigroupActionTarget</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284201"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.SegmentTree.Util.html#isFailureFSAT"><span class="hs-pragma hs-type">isFailureFSAT</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-44"></span><span>  </span><span id="local-6989586621679284425"><span class="annot"><span class="annottext">isFailureFSAT :: SumMinMax a -&gt; Bool
+</span><a href="Data.SegmentTree.Util.html#isFailureFSAT"><span class="hs-identifier hs-var hs-var hs-var hs-var">isFailureFSAT</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Bool
+forall a. SumMinMax a -&gt; Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#singleton"><span class="hs-pragma hs-type">singleton</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-47"></span><span id="local-6989586621679284202"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#singleton"><span class="hs-identifier hs-type">singleton</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679284202"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284202"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-48"></span><span id="singleton"><span class="annot"><span class="annottext">singleton :: forall a. a -&gt; SumMinMax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#singleton"><span class="hs-identifier hs-var hs-var">singleton</span></a></span></span><span> </span><span id="local-6989586621679284427"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; Int -&gt; Int -&gt; a -&gt; a -&gt; Bool -&gt; SumMinMax a
+forall a.
+a -&gt; a -&gt; a -&gt; Int -&gt; Int -&gt; a -&gt; a -&gt; Bool -&gt; SumMinMax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-var">SumMinMax</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284208"><span id="local-6989586621679284432"><span id="local-6989586621679284436"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284208"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284208"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284208"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-comment">-- not inline?</span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679284476"><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679284477"><span class="annot"><span class="annottext">&lt;&gt; :: SumMinMax a -&gt; SumMinMax a -&gt; SumMinMax a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span id="local-6989586621679284478"><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-comment">-- when x is mempty</span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-comment">-- when y is mempty</span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-59"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679284480"><span class="annot"><span class="annottext">sum' :: a
+</span><a href="#local-6989586621679284480"><span class="hs-identifier hs-var hs-var">sum'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-60"></span><span>            </span><span id="local-6989586621679284482"><span class="annot"><span class="annottext">min' :: a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var hs-var">min'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`min`</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-61"></span><span>            </span><span id="local-6989586621679284484"><span class="annot"><span class="annottext">max' :: a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var hs-var">max'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`max`</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-62"></span><span>            </span><span id="local-6989586621679284486"><span class="annot"><span class="annottext">nMin' :: Int
+</span><a href="#local-6989586621679284486"><span class="hs-identifier hs-var hs-var">nMin'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-63"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-64"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-65"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-66"></span><span>            </span><span id="local-6989586621679284488"><span class="annot"><span class="annottext">nMax' :: Int
+</span><a href="#local-6989586621679284488"><span class="hs-identifier hs-var hs-var">nMax'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-67"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-68"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-69"></span><span>              </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-70"></span><span>            </span><span id="local-6989586621679284489"><span class="annot"><span class="annottext">min2' :: a
+</span><a href="#local-6989586621679284489"><span class="hs-identifier hs-var hs-var">min2'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">State a () -&gt; a -&gt; a
+forall s a. State s a -&gt; s -&gt; s
+</span><span class="hs-operator hs-var">`execState`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(State a () -&gt; a) -&gt; State a () -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>              </span><span class="hs-comment">-- chmin2 folding manually unrolled:</span><span>
+</span><span id="line-72"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284490"><span class="hs-identifier hs-var">chmin2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284490"><span class="hs-identifier hs-var">chmin2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284490"><span class="hs-identifier hs-var">chmin2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284490"><span class="hs-identifier hs-var">chmin2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>            </span><span id="local-6989586621679284491"><span class="annot"><span class="annottext">max2' :: a
+</span><a href="#local-6989586621679284491"><span class="hs-identifier hs-var hs-var">max2'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">State a () -&gt; a -&gt; a
+forall s a. State s a -&gt; s -&gt; s
+</span><span class="hs-operator hs-var">`execState`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(State a () -&gt; a) -&gt; State a () -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-77"></span><span>              </span><span class="hs-comment">-- chmax2 folding manually unrolled:</span><span>
+</span><span id="line-78"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284492"><span class="hs-identifier hs-var">chmax2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-79"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284492"><span class="hs-identifier hs-var">chmax2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284476"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-80"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284492"><span class="hs-identifier hs-var">chmax2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-81"></span><span>              </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; State a ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">modify'</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; a) -&gt; State a ()) -&gt; (a -&gt; a) -&gt; State a ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; a
+forall {a}. Ord a =&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284492"><span class="hs-identifier hs-var">chmax2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284478"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-82"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; Int -&gt; Int -&gt; a -&gt; a -&gt; Bool -&gt; SumMinMax a
+forall a.
+a -&gt; a -&gt; a -&gt; Int -&gt; Int -&gt; a -&gt; a -&gt; Bool -&gt; SumMinMax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-var">SumMinMax</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284480"><span class="hs-identifier hs-var">sum'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284482"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284484"><span class="hs-identifier hs-var">max'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284486"><span class="hs-identifier hs-var">nMin'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284488"><span class="hs-identifier hs-var">nMax'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284489"><span class="hs-identifier hs-var">min2'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284491"><span class="hs-identifier hs-var">max2'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-84"></span><span>      </span><span id="local-6989586621679284490"><span class="annot"><span class="annottext">chmin2 :: a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284490"><span class="hs-identifier hs-var hs-var">chmin2</span></a></span></span><span> </span><span id="local-6989586621679284499"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284499"><span class="hs-identifier hs-var">l_</span></a></span></span><span> </span><span id="local-6989586621679284500"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284500"><span class="hs-identifier hs-var">r_</span></a></span></span><span> </span><span id="local-6989586621679284501"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284501"><span class="hs-identifier hs-var">x_</span></a></span></span><span>
+</span><span id="line-85"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284499"><span class="hs-identifier hs-var">l_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284500"><span class="hs-identifier hs-var">r_</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284500"><span class="hs-identifier hs-var">r_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284501"><span class="hs-identifier hs-var">x_</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284500"><span class="hs-identifier hs-var">r_</span></a></span><span>
+</span><span id="line-86"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284501"><span class="hs-identifier hs-var">x_</span></a></span><span>
+</span><span id="line-87"></span><span>      </span><span id="local-6989586621679284492"><span class="annot"><span class="annottext">chmax2 :: a -&gt; a -&gt; a -&gt; a
+</span><a href="#local-6989586621679284492"><span class="hs-identifier hs-var hs-var">chmax2</span></a></span></span><span> </span><span id="local-6989586621679284509"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284509"><span class="hs-identifier hs-var">l_</span></a></span></span><span> </span><span id="local-6989586621679284510"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284510"><span class="hs-identifier hs-var">r_</span></a></span></span><span> </span><span id="local-6989586621679284511"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284511"><span class="hs-identifier hs-var">x_</span></a></span></span><span>
+</span><span id="line-88"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284511"><span class="hs-identifier hs-var">x_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284509"><span class="hs-identifier hs-var">l_</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284509"><span class="hs-identifier hs-var">l_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284510"><span class="hs-identifier hs-var">r_</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284509"><span class="hs-identifier hs-var">l_</span></a></span><span>
+</span><span id="line-89"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284511"><span class="hs-identifier hs-var">x_</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284236"><span id="local-6989586621679284519"><span id="local-6989586621679284523"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">mempty</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-93"></span><span>  </span><span id="local-6989586621679284531"><span class="annot"><span class="annottext">mempty :: SumMinMax a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-94"></span><span>    </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span>
+</span><span id="line-95"></span><span>      </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">sumSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span>
+</span><span id="line-96"></span><span>        </span><span class="annot"><span class="annottext">minSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span class="hs-special">,</span><span>
+</span><span id="line-97"></span><span>        </span><span class="annot"><span class="annottext">maxSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span class="hs-special">,</span><span>
+</span><span id="line-98"></span><span>        </span><span class="annot"><span class="annottext">nMinSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span>
+</span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">nMaxSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span>
+</span><span id="line-100"></span><span>        </span><span class="annot"><span class="annottext">min2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span class="hs-special">,</span><span>
+</span><span id="line-101"></span><span>        </span><span class="annot"><span class="annottext">max2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span class="hs-special">,</span><span>
+</span><span id="line-102"></span><span>        </span><span class="annot"><span class="annottext">failsSMM :: Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-103"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- | Add first then apply chmin and chmax, works on segment tree beats.</span><span>
+</span><span id="line-106"></span><span class="hs-comment">--</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- TODO: Specialize and `UNPACK`.</span><span>
+</span><span id="line-108"></span><span class="hs-keyword">data</span><span> </span><span id="AddChminChmax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-var">AddChminChmax</span></a></span></span><span> </span><span id="local-6989586621679284238"><span class="annot"><a href="#local-6989586621679284238"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="AddChminChmax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-var">AddChminChmax</span></a></span></span><span>
+</span><span id="line-109"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="addACC"><span class="annot"><span class="annottext">forall a. AddChminChmax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#addACC"><span class="hs-identifier hs-var hs-var">addACC</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284238"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-110"></span><span>    </span><span id="chminACC"><span class="annot"><span class="annottext">forall a. AddChminChmax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#chminACC"><span class="hs-identifier hs-var hs-var">chminACC</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284238"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-111"></span><span>    </span><span id="chmaxACC"><span class="annot"><span class="annottext">forall a. AddChminChmax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#chmaxACC"><span class="hs-identifier hs-var hs-var">chmaxACC</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679284238"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-112"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-113"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679284539"><span id="local-6989586621679284545"><span id="local-6989586621679284549"><span class="annot"><span class="annottext">Int -&gt; AddChminChmax a -&gt; ShowS
+[AddChminChmax a] -&gt; ShowS
+AddChminChmax a -&gt; String
+(Int -&gt; AddChminChmax a -&gt; ShowS)
+-&gt; (AddChminChmax a -&gt; String)
+-&gt; ([AddChminChmax a] -&gt; ShowS)
+-&gt; Show (AddChminChmax a)
+forall a. Show a =&gt; Int -&gt; AddChminChmax a -&gt; ShowS
+forall a. Show a =&gt; [AddChminChmax a] -&gt; ShowS
+forall a. Show a =&gt; AddChminChmax a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; AddChminChmax a -&gt; ShowS
+showsPrec :: Int -&gt; AddChminChmax a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; AddChminChmax a -&gt; String
+show :: AddChminChmax a -&gt; String
+$cshowList :: forall a. Show a =&gt; [AddChminChmax a] -&gt; ShowS
+showList :: [AddChminChmax a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679284553"><span id="local-6989586621679284558"><span class="annot"><span class="annottext">AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+(AddChminChmax a -&gt; AddChminChmax a -&gt; Bool)
+-&gt; (AddChminChmax a -&gt; AddChminChmax a -&gt; Bool)
+-&gt; Eq (AddChminChmax a)
+forall a. Eq a =&gt; AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+== :: AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+/= :: AddChminChmax a -&gt; AddChminChmax a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newAddACC"><span class="hs-pragma hs-type">newAddACC</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-116"></span><span id="local-6989586621679284247"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newAddACC"><span class="hs-identifier hs-type">newAddACC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284247"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284247"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284247"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284247"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284247"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-117"></span><span id="newAddACC"><span class="annot"><span class="annottext">newAddACC :: forall a. (Num a, Ord a, Bounded a) =&gt; a -&gt; AddChminChmax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#newAddACC"><span class="hs-identifier hs-var hs-var">newAddACC</span></a></span></span><span> </span><span id="local-6989586621679284567"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284567"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AddChminChmax a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-special">{</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#addACC"><span class="hs-identifier hs-var">addACC</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284567"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newChminACC"><span class="hs-pragma hs-type">newChminACC</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-120"></span><span id="local-6989586621679284569"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newChminACC"><span class="hs-identifier hs-type">newChminACC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284569"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284569"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284569"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284569"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284569"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-121"></span><span id="newChminACC"><span class="annot"><span class="annottext">newChminACC :: forall a. (Num a, Ord a, Bounded a) =&gt; a -&gt; AddChminChmax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#newChminACC"><span class="hs-identifier hs-var hs-var">newChminACC</span></a></span></span><span> </span><span id="local-6989586621679284574"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284574"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AddChminChmax a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-special">{</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#chminACC"><span class="hs-identifier hs-var">chminACC</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284574"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newChmaxACC"><span class="hs-pragma hs-type">newChmaxACC</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-124"></span><span id="local-6989586621679284576"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#newChmaxACC"><span class="hs-identifier hs-type">newChmaxACC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284576"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284576"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284576"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284576"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284576"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-125"></span><span id="newChmaxACC"><span class="annot"><span class="annottext">newChmaxACC :: forall a. (Num a, Ord a, Bounded a) =&gt; a -&gt; AddChminChmax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#newChmaxACC"><span class="hs-identifier hs-var hs-var">newChmaxACC</span></a></span></span><span> </span><span id="local-6989586621679284581"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284581"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AddChminChmax a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-special">{</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#chmaxACC"><span class="hs-identifier hs-var">chmaxACC</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284581"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284254"><span id="local-6989586621679284587"><span id="local-6989586621679284591"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-128"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-129"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span id="local-6989586621679284606"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">a1</span></a></span></span><span> </span><span id="local-6989586621679284607"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">min1</span></a></span></span><span> </span><span id="local-6989586621679284608"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284608"><span class="hs-identifier hs-var">max1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679284609"><span class="annot"><span class="annottext">&lt;&gt; :: AddChminChmax a -&gt; AddChminChmax a -&gt; AddChminChmax a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span id="local-6989586621679284610"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284610"><span class="hs-identifier hs-var">a2</span></a></span></span><span> </span><span id="local-6989586621679284611"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284611"><span class="hs-identifier hs-var">min2</span></a></span></span><span> </span><span id="local-6989586621679284612"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284612"><span class="hs-identifier hs-var">max2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; AddChminChmax a
+forall a. a -&gt; a -&gt; a -&gt; AddChminChmax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-var">AddChminChmax</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284613"><span class="hs-identifier hs-var">a'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284614"><span class="hs-identifier hs-var">min'</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284615"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-131"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284613"><span class="annot"><span class="annottext">a' :: a
+</span><a href="#local-6989586621679284613"><span class="hs-identifier hs-var hs-var">a'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">a1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284610"><span class="hs-identifier hs-var">a2</span></a></span><span>
+</span><span id="line-132"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284614"><span class="annot"><span class="annottext">min' :: a
+</span><a href="#local-6989586621679284614"><span class="hs-identifier hs-var hs-var">min'</span></a></span></span><span>
+</span><span id="line-133"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284611"><span class="hs-identifier hs-var">min2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">min1</span></a></span><span>
+</span><span id="line-134"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">min1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284611"><span class="hs-identifier hs-var">min2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">a1</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>      </span><span class="hs-glyph">!</span><span id="local-6989586621679284615"><span class="annot"><span class="annottext">max' :: a
+</span><a href="#local-6989586621679284615"><span class="hs-identifier hs-var hs-var">max'</span></a></span></span><span>
+</span><span id="line-136"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284612"><span class="hs-identifier hs-var">max2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284608"><span class="hs-identifier hs-var">max1</span></a></span><span>
+</span><span id="line-137"></span><span>        </span><span class="hs-comment">-- REMARK: Be sure to run @min min1@, or else the segment tree algebra</span><span>
+</span><span id="line-138"></span><span>        </span><span class="hs-comment">-- @(op &lt;&gt; op) `sact` x = op `sact` op `sact x@ does not hold.</span><span>
+</span><span id="line-139"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">max</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284608"><span class="hs-identifier hs-var">max1</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">min1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284612"><span class="hs-identifier hs-var">max2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">a1</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284249"><span id="local-6989586621679284623"><span id="local-6989586621679284626"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284249"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284249"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284249"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284249"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-142"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">mempty</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-143"></span><span>  </span><span id="local-6989586621679284631"><span class="annot"><span class="annottext">mempty :: AddChminChmax a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; AddChminChmax a
+forall a. a -&gt; a -&gt; a -&gt; AddChminChmax a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-var">AddChminChmax</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284260"><span id="local-6989586621679284638"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679284260"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679284260"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679284260"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SegAct</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284260"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284260"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-146"></span><span>  </span><span class="hs-comment">-- TODO: not inline?</span><span>
+</span><span id="line-147"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">segActWithLength</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-148"></span><span>  </span><span id="local-6989586621679284684"><span class="annot"><span class="annottext">segActWithLength :: Int -&gt; AddChminChmax a -&gt; SumMinMax a -&gt; SumMinMax a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">segActWithLength</span></span></span><span> </span><span id="local-6989586621679284685"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284685"><span class="hs-identifier hs-var">len</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284686"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284687"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284687"><span class="hs-identifier hs-var">aMin</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284688"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284688"><span class="hs-identifier hs-var">aMax</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284689"><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-149"></span><span>    </span><span class="hs-comment">-- when @x@ is identity element</span><span>
+</span><span id="line-150"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-151"></span><span>    </span><span class="hs-comment">-- No chmin or chmax</span><span>
+</span><span id="line-152"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284687"><span class="hs-identifier hs-var">aMin</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284688"><span class="hs-identifier hs-var">aMax</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-153"></span><span>        </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284690"><span class="hs-identifier hs-type">sum'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284691"><span class="hs-identifier hs-type">min'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284692"><span class="hs-identifier hs-type">max'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284693"><span class="hs-identifier hs-type">min2'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284694"><span class="hs-identifier hs-type">max2'</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-comment">-- There's only one different value</span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var">max''</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; SumMinMax a
+forall {a}. Num a =&gt; a -&gt; Int -&gt; SumMinMax a
+</span><a href="#local-6989586621679284697"><span class="hs-identifier hs-var">singleton</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284685"><span class="hs-identifier hs-var">len</span></a></span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-comment">-- There are only two different values: min'' &lt; max''</span><span>
+</span><span id="line-157"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284694"><span class="hs-identifier hs-var">max2'</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; a -&gt; Int -&gt; SumMinMax a
+forall {a}. Num a =&gt; a -&gt; Int -&gt; a -&gt; Int -&gt; SumMinMax a
+</span><a href="#local-6989586621679284699"><span class="hs-identifier hs-var">twoValues</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284685"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var">max''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-comment">-- There are only two different values: max'' &lt; min''</span><span>
+</span><span id="line-159"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284693"><span class="hs-identifier hs-var">min2'</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var">max''</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; a -&gt; Int -&gt; SumMinMax a
+forall {a}. Num a =&gt; a -&gt; Int -&gt; a -&gt; Int -&gt; SumMinMax a
+</span><a href="#local-6989586621679284699"><span class="hs-identifier hs-var">twoValues</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var">max''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284685"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; Int
+forall a. SumMinMax a -&gt; Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>    </span><span class="hs-comment">-- The sum can be recalculated at once:</span><span>
+</span><span id="line-161"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var">min''</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284693"><span class="hs-identifier hs-var">min2'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284694"><span class="hs-identifier hs-var">max2'</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var">max''</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-162"></span><span>        </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-163"></span><span>          </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284690"><span class="hs-identifier hs-type">sum'</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">+</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284695"><span class="hs-identifier hs-type">min''</span></a></span><span> </span><span class="annot"><span class="hs-glyph hs-type">-</span></span><span> </span><span class="annot"><a href="#local-6989586621679284691"><span class="hs-identifier hs-type">min'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">*</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">fromIntegral</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284689"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">+</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284696"><span class="hs-identifier hs-type">max''</span></a></span><span> </span><span class="annot"><span class="hs-glyph hs-type">-</span></span><span> </span><span class="annot"><a href="#local-6989586621679284692"><span class="hs-identifier hs-type">max'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">*</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">fromIntegral</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284689"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-164"></span><span>            </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284695"><span class="hs-identifier hs-type">min''</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-165"></span><span>            </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284696"><span class="hs-identifier hs-type">max''</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-166"></span><span>            </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284693"><span class="hs-identifier hs-type">min2'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-167"></span><span>            </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679284694"><span class="hs-identifier hs-type">max2'</span></a></span><span>
+</span><span id="line-168"></span><span>          </span><span class="hs-special">}</span><span>
+</span><span id="line-169"></span><span>    </span><span class="hs-comment">-- Otherwise we have to look into the values in (min2', max2'):</span><span>
+</span><span id="line-170"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-special">{</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">True</span></span><span class="hs-special">}</span><span>
+</span><span id="line-171"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-172"></span><span>      </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Bool -&gt; String -&gt; ()
+Bool -&gt; String -&gt; ()
+</span><a href="ToyLib.Debug.html#dbgAssert"><span class="hs-identifier hs-var">dbgAssert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumMinMax a -&gt; Bool
+forall a. SumMinMax a -&gt; Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;AddChminChmax applied while it's failed&quot;</span></span><span>
+</span><span id="line-173"></span><span>      </span><span class="hs-comment">-- after add</span><span>
+</span><span id="line-174"></span><span>      </span><span id="local-6989586621679284690"><span class="annot"><span class="annottext">sum' :: a
+</span><a href="#local-6989586621679284690"><span class="hs-identifier hs-var hs-var">sum'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284685"><span class="hs-identifier hs-var">len</span></a></span><span>
+</span><span id="line-175"></span><span>      </span><span id="local-6989586621679284691"><span class="annot"><span class="annottext">min' :: a
+</span><a href="#local-6989586621679284691"><span class="hs-identifier hs-var hs-var">min'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span><span>
+</span><span id="line-176"></span><span>      </span><span id="local-6989586621679284692"><span class="annot"><span class="annottext">max' :: a
+</span><a href="#local-6989586621679284692"><span class="hs-identifier hs-var hs-var">max'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span><span>
+</span><span id="line-177"></span><span>      </span><span id="local-6989586621679284693"><span class="annot"><span class="annottext">min2' :: a
+</span><a href="#local-6989586621679284693"><span class="hs-identifier hs-var hs-var">min2'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span><span>
+</span><span id="line-178"></span><span>      </span><span id="local-6989586621679284694"><span class="annot"><span class="annottext">max2' :: a
+</span><a href="#local-6989586621679284694"><span class="hs-identifier hs-var hs-var">max2'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SumMinMax a -&gt; a
+forall a. SumMinMax a -&gt; a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="annot"><span class="annottext">SumMinMax a
+</span><a href="#local-6989586621679284689"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284686"><span class="hs-identifier hs-var">aAdd</span></a></span><span>
+</span><span id="line-179"></span><span>      </span><span class="hs-comment">-- apply chmin and chmax</span><span>
+</span><span id="line-180"></span><span>      </span><span id="local-6989586621679284695"><span class="annot"><span class="annottext">min'' :: a
+</span><a href="#local-6989586621679284695"><span class="hs-identifier hs-var hs-var">min''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">max</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284688"><span class="hs-identifier hs-var">aMax</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284687"><span class="hs-identifier hs-var">aMin</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284691"><span class="hs-identifier hs-var">min'</span></a></span><span>
+</span><span id="line-181"></span><span>      </span><span id="local-6989586621679284696"><span class="annot"><span class="annottext">max'' :: a
+</span><a href="#local-6989586621679284696"><span class="hs-identifier hs-var hs-var">max''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">max</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284688"><span class="hs-identifier hs-var">aMax</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284687"><span class="hs-identifier hs-var">aMin</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284692"><span class="hs-identifier hs-var">max'</span></a></span><span>
+</span><span id="line-182"></span><span>      </span><span class="hs-comment">-- constructors:</span><span>
+</span><span id="line-183"></span><span>      </span><span id="local-6989586621679284697"><span class="annot"><span class="annottext">singleton :: a -&gt; Int -&gt; SumMinMax a
+</span><a href="#local-6989586621679284697"><span class="hs-identifier hs-var hs-var">singleton</span></a></span></span><span> </span><span id="local-6989586621679284709"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679284710"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284710"><span class="hs-identifier hs-var">len_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-184"></span><span>        </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span>
+</span><span id="line-185"></span><span>          </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">sumSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284710"><span class="hs-identifier hs-var">len_</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-186"></span><span>            </span><span class="annot"><span class="annottext">minSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-187"></span><span>            </span><span class="annot"><span class="annottext">maxSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-188"></span><span>            </span><span class="annot"><span class="annottext">nMinSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284710"><span class="hs-identifier hs-var">len_</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-189"></span><span>            </span><span class="annot"><span class="annottext">nMaxSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284710"><span class="hs-identifier hs-var">len_</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-190"></span><span>            </span><span class="annot"><span class="annottext">min2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-191"></span><span>            </span><span class="annot"><span class="annottext">max2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284709"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-192"></span><span>            </span><span class="annot"><span class="annottext">failsSMM :: Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-193"></span><span>          </span><span class="hs-special">}</span><span>
+</span><span id="line-194"></span><span>      </span><span id="local-6989586621679284699"><span class="annot"><span class="annottext">twoValues :: a -&gt; Int -&gt; a -&gt; Int -&gt; SumMinMax a
+</span><a href="#local-6989586621679284699"><span class="hs-identifier hs-var hs-var">twoValues</span></a></span></span><span> </span><span id="local-6989586621679284719"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284719"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621679284720"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284720"><span class="hs-identifier hs-var">n1</span></a></span></span><span> </span><span id="local-6989586621679284721"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284721"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span id="local-6989586621679284722"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284722"><span class="hs-identifier hs-var">n2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-195"></span><span>        </span><span class="hs-comment">-- v1 &lt; v2</span><span>
+</span><span id="line-196"></span><span>        </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span>
+</span><span id="line-197"></span><span>          </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">sumSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-identifier hs-var">sumSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284719"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284720"><span class="hs-identifier hs-var">n1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284721"><span class="hs-identifier hs-var">v2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284722"><span class="hs-identifier hs-var">n2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-198"></span><span>            </span><span class="annot"><span class="annottext">minSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#minSMM"><span class="hs-identifier hs-var">minSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284719"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-199"></span><span>            </span><span class="annot"><span class="annottext">maxSMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#maxSMM"><span class="hs-identifier hs-var">maxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284721"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-200"></span><span>            </span><span class="annot"><span class="annottext">nMinSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMinSMM"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284720"><span class="hs-identifier hs-var">n1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-201"></span><span>            </span><span class="annot"><span class="annottext">nMaxSMM :: Int
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#nMaxSMM"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284722"><span class="hs-identifier hs-var">n2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-202"></span><span>            </span><span class="annot"><span class="annottext">min2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#min2SMM"><span class="hs-identifier hs-var">min2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284721"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-203"></span><span>            </span><span class="annot"><span class="annottext">max2SMM :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#max2SMM"><span class="hs-identifier hs-var">max2SMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284719"><span class="hs-identifier hs-var">v1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-204"></span><span>            </span><span class="annot"><span class="annottext">failsSMM :: Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#failsSMM"><span class="hs-identifier hs-var">failsSMM</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-205"></span><span>          </span><span class="hs-special">}</span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="annot"><span class="hs-comment">-- * `Unbox` instances</span></span><span>
+</span><span id="line-208"></span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- vector provides unbox implementation up to 6-tuples</span><span>
+</span><span id="line-210"></span><span class="hs-keyword">type</span><span> </span><span id="SumMinMaxRepr"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-var">SumMinMaxRepr</span></a></span></span><span> </span><span id="local-6989586621679284723"><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284723"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span><span>
+</span><span id="line-212"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284274"><span class="annot"><span class="hs-identifier hs-type">U.IsoUnbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284274"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-type">SumMinMaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284274"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-213"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">toURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-214"></span><span>  </span><span id="local-6989586621679284729"><span class="annot"><span class="annottext">toURepr :: SumMinMax a -&gt; SumMinMaxRepr a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toURepr</span></span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679284730"><span id="local-6989586621679284731"><span id="local-6989586621679284732"><span id="local-6989586621679284733"><span id="local-6989586621679284734"><span id="local-6989586621679284735"><span id="local-6989586621679284736"><span id="local-6989586621679284737"><span class="annot"><span class="annottext">a
+Bool
+Int
+sumSMM :: forall a. SumMinMax a -&gt; a
+minSMM :: forall a. SumMinMax a -&gt; a
+maxSMM :: forall a. SumMinMax a -&gt; a
+nMinSMM :: forall a. SumMinMax a -&gt; Int
+nMaxSMM :: forall a. SumMinMax a -&gt; Int
+min2SMM :: forall a. SumMinMax a -&gt; a
+max2SMM :: forall a. SumMinMax a -&gt; a
+failsSMM :: forall a. SumMinMax a -&gt; Bool
+sumSMM :: a
+minSMM :: a
+maxSMM :: a
+nMinSMM :: Int
+nMaxSMM :: Int
+min2SMM :: a
+max2SMM :: a
+failsSMM :: Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284730"><span class="hs-identifier hs-var">sumSMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284731"><span class="hs-identifier hs-var">minSMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284732"><span class="hs-identifier hs-var">maxSMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284735"><span class="hs-identifier hs-var">min2SMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284736"><span class="hs-identifier hs-var">max2SMM</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284733"><span class="hs-identifier hs-var">nMinSMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284734"><span class="hs-identifier hs-var">nMaxSMM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284737"><span class="hs-identifier hs-var">failsSMM</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-215"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">fromURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-216"></span><span>  </span><span id="local-6989586621679284739"><span class="annot"><span class="annottext">fromURepr :: SumMinMaxRepr a -&gt; SumMinMax a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679284740"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284740"><span class="hs-identifier hs-var">sumSMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284741"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284741"><span class="hs-identifier hs-var">minSMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284742"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284742"><span class="hs-identifier hs-var">maxSMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284743"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284743"><span class="hs-identifier hs-var">min2SMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284744"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284744"><span class="hs-identifier hs-var">max2SMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679284745"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284745"><span class="hs-identifier hs-var">nMinSMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284746"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284746"><span class="hs-identifier hs-var">nMaxSMM</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284747"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679284747"><span class="hs-identifier hs-var">failsSMM</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">a
+Bool
+Int
+sumSMM :: a
+minSMM :: a
+maxSMM :: a
+nMinSMM :: Int
+nMaxSMM :: Int
+min2SMM :: a
+max2SMM :: a
+failsSMM :: Bool
+sumSMM :: a
+minSMM :: a
+maxSMM :: a
+min2SMM :: a
+max2SMM :: a
+nMinSMM :: Int
+nMaxSMM :: Int
+failsSMM :: Bool
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#sumSMM"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-217"></span><span>
+</span><span id="line-218"></span><span class="hs-comment">{- ORMOLU_DISABLE -}</span><span>
+</span><span id="line-219"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">U.MVector</span></span></span><span> </span><span id="local-6989586621679284748"><span id="local-6989586621679284749"><span class="annot"><a href="#local-6989586621679284748"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284749"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_SumMinMax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#MV_SumMinMax"><span class="hs-identifier hs-var">MV_SumMinMax</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679284748"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-type">SumMinMaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284749"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-220"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span id="local-6989586621679284751"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284751"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_SumMinMax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#V_SumMinMax"><span class="hs-identifier hs-var">V_SumMinMax</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-type">SumMinMaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284751"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-221"></span><span id="local-6989586621679284755"><span id="local-6989586621679284762"><span id="local-6989586621679284768"><span id="local-6989586621679284774"><span id="local-6989586621679284780"><span id="local-6989586621679284786"><span id="local-6989586621679284792"><span id="local-6989586621679284798"><span id="local-6989586621679284804"><span id="local-6989586621679284810"><span id="local-6989586621679284816"><span id="local-6989586621679284822"><span id="local-6989586621679284828"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679284319"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284319"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-type">SumMinMaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284319"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284319"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284319"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-222"></span><span id="local-6989586621679284896"><span id="local-6989586621679284904"><span id="local-6989586621679284911"><span id="local-6989586621679284917"><span id="local-6989586621679284923"><span id="local-6989586621679284929"><span id="local-6989586621679284936"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679284337"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284337"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMaxRepr"><span class="hs-identifier hs-type">SumMinMaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span>
+</span><span id="line-223"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284340"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284340"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#SumMinMax"><span class="hs-identifier hs-type">SumMinMax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284340"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-224"></span><span class="hs-comment">{- ORMOLU_ENABLE -}</span><span>
+</span><span id="line-225"></span><span>
+</span><span id="line-226"></span><span class="hs-comment">-- vector provides unbox implementation up to 6-tuples</span><span>
+</span><span id="line-227"></span><span class="hs-keyword">type</span><span> </span><span id="AddChminChmaxRepr"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-var">AddChminChmaxRepr</span></a></span></span><span> </span><span id="local-6989586621679284978"><span class="annot"><a href="#local-6989586621679284978"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679284978"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284978"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679284978"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-228"></span><span>
+</span><span id="line-229"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284343"><span class="annot"><span class="hs-identifier hs-type">U.IsoUnbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284343"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-type">AddChminChmaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284343"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-230"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">toURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-231"></span><span>  </span><span id="local-6989586621679284982"><span class="annot"><span class="annottext">toURepr :: AddChminChmax a -&gt; AddChminChmaxRepr a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toURepr</span></span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679284983"><span id="local-6989586621679284984"><span id="local-6989586621679284985"><span class="annot"><span class="annottext">a
+addACC :: forall a. AddChminChmax a -&gt; a
+chminACC :: forall a. AddChminChmax a -&gt; a
+chmaxACC :: forall a. AddChminChmax a -&gt; a
+addACC :: a
+chminACC :: a
+chmaxACC :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#addACC"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284983"><span class="hs-identifier hs-var">addACC</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284984"><span class="hs-identifier hs-var">chminACC</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284985"><span class="hs-identifier hs-var">chmaxACC</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-232"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">fromURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-233"></span><span>  </span><span id="local-6989586621679284986"><span class="annot"><span class="annottext">fromURepr :: AddChminChmaxRepr a -&gt; AddChminChmax a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679284987"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284987"><span class="hs-identifier hs-var">addACC</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284988"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284988"><span class="hs-identifier hs-var">chminACC</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679284989"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679284989"><span class="hs-identifier hs-var">chmaxACC</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">a
+addACC :: a
+chminACC :: a
+chmaxACC :: a
+addACC :: a
+chminACC :: a
+chmaxACC :: a
+</span><a href="Data.SegmentTree.Beats.SumMinMax.html#addACC"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-234"></span><span>
+</span><span id="line-235"></span><span class="hs-comment">{- ORMOLU_DISABLE -}</span><span>
+</span><span id="line-236"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">U.MVector</span></span></span><span> </span><span id="local-6989586621679284990"><span id="local-6989586621679284991"><span class="annot"><a href="#local-6989586621679284990"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284991"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_AddChminChmax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#MV_AddChminChmax"><span class="hs-identifier hs-var">MV_AddChminChmax</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679284990"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-type">AddChminChmaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284991"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-237"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span id="local-6989586621679284993"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284993"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_AddChminChmax"><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#V_AddChminChmax"><span class="hs-identifier hs-var">V_AddChminChmax</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-type">AddChminChmaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284993"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-238"></span><span id="local-6989586621679284997"><span id="local-6989586621679285003"><span id="local-6989586621679285009"><span id="local-6989586621679285015"><span id="local-6989586621679285021"><span id="local-6989586621679285027"><span id="local-6989586621679285033"><span id="local-6989586621679285039"><span id="local-6989586621679285045"><span id="local-6989586621679285051"><span id="local-6989586621679285057"><span id="local-6989586621679285063"><span id="local-6989586621679285069"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679284358"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284358"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-type">AddChminChmaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284358"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284358"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284358"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-239"></span><span id="local-6989586621679285080"><span id="local-6989586621679285087"><span id="local-6989586621679285094"><span id="local-6989586621679285100"><span id="local-6989586621679285106"><span id="local-6989586621679285112"><span id="local-6989586621679285119"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679284364"><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284364"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmaxRepr"><span class="hs-identifier hs-type">AddChminChmaxRepr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284364"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284364"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284364"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span>
+</span><span id="line-240"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679284366"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679284366"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SegmentTree.Beats.SumMinMax.html#AddChminChmax"><span class="hs-identifier hs-type">AddChminChmax</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284366"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-241"></span><span class="hs-comment">{- ORMOLU_ENABLE -}</span><span>
+</span><span id="line-242"></span></pre></body></html>

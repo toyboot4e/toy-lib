@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Grid parsers.</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">ToyLib.Parser.Grid</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimMonad</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State.Class</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">MonadState</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString.Char8</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Ix</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Ix</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">index</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html"><span class="hs-identifier">Data.Vector.IxVector</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">IV</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.Parser.html"><span class="hs-identifier">ToyLib.Parser</span></a></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- | \(O(HW)\) Reads next @h * w@ elements as matrix of type @a@.</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- = Example</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- Input:</span><span>
+</span><span id="line-19"></span><span class="hs-comment">--</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- 1 2 3</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- 4 5 6</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-24"></span><span class="hs-comment">--</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- Parsed result:</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- 1 2 3</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- 4 5 6</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-31"></span><span id="local-6989586621679288637"><span class="annot"><a href="ToyLib.Parser.Grid.html#matP"><span class="hs-identifier hs-type">matP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span> </span><span class="annot"><a href="#local-6989586621679288637"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679288637"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-type">IV.IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-32"></span><span id="matP"><span class="annot"><span class="annottext">matP :: forall (m :: * -&gt; *).
+MonadState ByteString m =&gt;
+Int -&gt; Int -&gt; m (IxVector (Int, Int) (Vector Int))
+</span><a href="ToyLib.Parser.Grid.html#matP"><span class="hs-identifier hs-var hs-var">matP</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288716"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288716"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288717"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288717"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+-&gt; Vector Int -&gt; IxVector (Int, Int) (Vector Int)
+forall i v. (i, i) -&gt; v -&gt; IxVector i v
+</span><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IV.IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288716"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288717"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Vector Int -&gt; IxVector (Int, Int) (Vector Int))
+-&gt; m (Vector Int) -&gt; m (IxVector (Int, Int) (Vector Int))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; m Int -&gt; m (Vector Int)
+forall (m :: * -&gt; *) a.
+(Monad m, Unbox a) =&gt;
+Int -&gt; m a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">U.replicateM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288716"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288717"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m Int
+forall (m :: * -&gt; *).
+(HasCallStack, MonadState ByteString m) =&gt;
+m Int
+</span><a href="ToyLib.Parser.html#intP"><span class="hs-identifier hs-var">intP</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- | \(O(HW)\) Reads next @h * w@ elements as a char-based grid.</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- = Example</span><span>
+</span><span id="line-37"></span><span class="hs-comment">--</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Input:</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- abc</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- def</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-44"></span><span class="hs-comment">--</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- Parsed result:</span><span>
+</span><span id="line-46"></span><span class="hs-comment">--</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- a b c</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- d e f</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-51"></span><span id="local-6989586621679288657"><span class="annot"><a href="ToyLib.Parser.Grid.html#gridP"><span class="hs-identifier hs-type">gridP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span> </span><span class="annot"><a href="#local-6989586621679288657"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679288657"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-52"></span><span id="gridP"><span class="annot"><span class="annottext">gridP :: forall (m :: * -&gt; *).
+MonadState ByteString m =&gt;
+Int -&gt; Int -&gt; m (IxUVector (Int, Int) Char)
+</span><a href="ToyLib.Parser.Grid.html#gridP"><span class="hs-identifier hs-var hs-var">gridP</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288740"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288740"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288741"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288741"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+-&gt; Vector Char -&gt; IxUVector (Int, Int) Char
+forall i v. (i, i) -&gt; v -&gt; IxVector i v
+</span><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IV.IxVector</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288740"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288741"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Vector Char -&gt; IxUVector (Int, Int) Char)
+-&gt; m (Vector Char) -&gt; m (IxUVector (Int, Int) Char)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; m Char -&gt; m (Vector Char)
+forall (m :: * -&gt; *) a.
+(Monad m, Unbox a) =&gt;
+Int -&gt; m a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">U.replicateM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288740"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288741"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m Char
+forall (m :: * -&gt; *).
+(HasCallStack, MonadState ByteString m) =&gt;
+m Char
+</span><a href="ToyLib.Parser.html#charP"><span class="hs-identifier hs-var">charP</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- | \(O(HW)\) Gets diagnoal matrix input.</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- = Example</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- Input:</span><span>
+</span><span id="line-59"></span><span class="hs-comment">--</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- 4 8 5</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- 6 8</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- 3</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- Parsed result:</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- 0 4 8 5</span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- 4 0 6 8</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- 8 6 0 3</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- 5 8 3 0</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-74"></span><span id="local-6989586621679288661"><span class="annot"><a href="ToyLib.Parser.Grid.html#diagMatP"><span class="hs-identifier hs-type">diagMatP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679288661"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span> </span><span class="annot"><a href="#local-6989586621679288661"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679288661"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-75"></span><span id="diagMatP"><span class="annot"><span class="annottext">diagMatP :: forall (m :: * -&gt; *).
+(PrimMonad m, MonadState ByteString m) =&gt;
+Int -&gt; m (IxVector (Int, Int) (Vector Int))
+</span><a href="ToyLib.Parser.Grid.html#diagMatP"><span class="hs-identifier hs-var hs-var">diagMatP</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288783"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Vector Int -&gt; IxVector (Int, Int) (Vector Int))
+-&gt; m (Vector Int) -&gt; m (IxVector (Int, Int) (Vector Int))
+forall a b. (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+-&gt; Vector Int -&gt; IxVector (Int, Int) (Vector Int)
+forall i v. (i, i) -&gt; v -&gt; IxVector i v
+</span><a href="Data.Vector.IxVector.html#IxVector"><span class="hs-identifier hs-var">IV.IxVector</span></a></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+</span><a href="#local-6989586621679288784"><span class="hs-identifier hs-var">bnd</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m (Vector Int) -&gt; m (IxVector (Int, Int) (Vector Int)))
+-&gt; m (Vector Int) -&gt; m (IxVector (Int, Int) (Vector Int))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-glyph">!</span><span id="local-6989586621679288785"><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679288785"><span class="hs-identifier hs-var">vec</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; m (MVector (PrimState m) Int)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">UM.replicate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><span class="annottext">Vector Int -&gt; (Int -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; (Int -&gt; Int) -&gt; Vector Int
+forall a. Unbox a =&gt; Int -&gt; (Int -&gt; a) -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.generate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. a -&gt; a
+</span><span class="hs-identifier hs-var">id</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Int -&gt; m ()) -&gt; m ()) -&gt; (Int -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679288790"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288790"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-78"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679288791"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679288791"><span class="hs-identifier hs-var">ws</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m (Vector Int)
+forall (m :: * -&gt; *). MonadState ByteString m =&gt; m (Vector Int)
+</span><a href="ToyLib.Parser.html#intsP"><span class="hs-identifier hs-var">intsP</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><span class="annottext">Vector Int -&gt; (Int -&gt; Int -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (Int -&gt; a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.iforM_</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679288791"><span class="hs-identifier hs-var">ws</span></a></span><span> </span><span class="annot"><span class="annottext">((Int -&gt; Int -&gt; m ()) -&gt; m ()) -&gt; (Int -&gt; Int -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679288794"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288794"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679288795"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288795"><span class="hs-identifier hs-var">dw</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-80"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679288799"><span class="annot"><span class="annottext">x :: Int
+</span><a href="#local-6989586621679288799"><span class="hs-identifier hs-var hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288790"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288794"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-81"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679288785"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; (Int, Int) -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+</span><a href="#local-6989586621679288784"><span class="hs-identifier hs-var">bnd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288790"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288799"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288795"><span class="hs-identifier hs-var">dw</span></a></span><span>
+</span><span id="line-82"></span><span>      </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; Int -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.write</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679288785"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Int, Int), (Int, Int)) -&gt; (Int, Int) -&gt; Int
+forall a. Ix a =&gt; (a, a) -&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">index</span></span><span> </span><span class="annot"><span class="annottext">((Int, Int), (Int, Int))
+</span><a href="#local-6989586621679288784"><span class="hs-identifier hs-var">bnd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288799"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288790"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288795"><span class="hs-identifier hs-var">dw</span></a></span><span>
+</span><span id="line-83"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) Int -&gt; m (Vector Int)
+forall a (m :: * -&gt; *).
+(Unbox a, PrimMonad m) =&gt;
+MVector (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">U.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) Int
+</span><a href="#local-6989586621679288785"><span class="hs-identifier hs-var">vec</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-85"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679288784"><span class="annot"><span class="annottext">bnd :: ((Int, Int), (Int, Int))
+</span><a href="#local-6989586621679288784"><span class="hs-identifier hs-var hs-var">bnd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679288783"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span></pre></body></html>

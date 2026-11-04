@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Bit set tricks (not so much).</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.BitSet</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unless</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Bits</span></span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Bits</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">bit</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">clearBit</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">complement</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">popCount</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">testBit</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(.&amp;.)</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(.|.)</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><span class="hs-identifier">FiniteBits</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unfoldr</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Tuple.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">dupe</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- | \(O(1)\) Retrieves the most significant bit.</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- &gt;&gt;&gt; msbOf 0</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- &gt;&gt;&gt; msbOf maxBound</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- 62</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- &gt;&gt;&gt; msbOf $ 4 + 2 + 1</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- 2</span><span>
+</span><span id="line-21"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#msbOf"><span class="hs-pragma hs-type">msbOf</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Math.BitSet.html#msbOf"><span class="hs-identifier hs-type">msbOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-23"></span><span id="msbOf"><span class="annot"><span class="annottext">msbOf :: Int -&gt; Int
+</span><a href="Math.BitSet.html#msbOf"><span class="hs-identifier hs-var hs-var">msbOf</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282762"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282762"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">63</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countLeadingZeros</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282762"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- | \(O(1)\) Retrieves the least significant bit.</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- &gt;&gt;&gt; lsbOf 0</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- -1</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- &gt;&gt;&gt; lsbOf maxBound</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- 0</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- &gt;&gt;&gt; lsbOf $ 4 + 2 + 1</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- 0</span><span>
+</span><span id="line-33"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#lsbOf"><span class="hs-pragma hs-type">lsbOf</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Math.BitSet.html#lsbOf"><span class="hs-identifier hs-type">lsbOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-35"></span><span id="lsbOf"><span class="annot"><span class="annottext">lsbOf :: Int -&gt; Int
+</span><a href="Math.BitSet.html#lsbOf"><span class="hs-identifier hs-var hs-var">lsbOf</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Math.BitSet.html#lsbOf"><span class="hs-identifier hs-var">lsbOf</span></a></span><span> </span><span id="local-6989586621679282765"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282765"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countTrailingZeros</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282765"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-39"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#bitsOf"><span class="hs-pragma hs-type">bitsOf</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Math.BitSet.html#bitsOf"><span class="hs-identifier hs-type">bitsOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-41"></span><span id="bitsOf"><span class="annot"><span class="annottext">bitsOf :: Int -&gt; Vector Int
+</span><a href="Math.BitSet.html#bitsOf"><span class="hs-identifier hs-var hs-var">bitsOf</span></a></span></span><span> </span><span id="local-6989586621679282768"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282768"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Int -&gt; (Int, Int)) -&gt; Int -&gt; Vector Int
+forall a b. Unbox a =&gt; Int -&gt; (b -&gt; (a, b)) -&gt; b -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.unfoldrExactN</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">popCount</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282768"><span class="hs-identifier hs-var">x0</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Int, Int)
+forall {b}. FiniteBits b =&gt; b -&gt; (Int, b)
+</span><a href="#local-6989586621679282770"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282768"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>    </span><span id="local-6989586621679282770"><span class="annot"><span class="annottext">f :: b -&gt; (Int, b)
+</span><a href="#local-6989586621679282770"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679282778"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282778"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-44"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282782"><span class="annot"><span class="annottext">lsb :: Int
+</span><a href="#local-6989586621679282782"><span class="hs-identifier hs-var hs-var">lsb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countTrailingZeros</span></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282778"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-45"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282782"><span class="hs-identifier hs-var">lsb</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b -&gt; Int -&gt; b
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">clearBit</span></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282778"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282782"><span class="hs-identifier hs-var">lsb</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- TODO: super efficient bit operations</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- | \(O(1)\) Log base of two, floored.</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- &lt;https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-Bits.html#v:countLeadingZeros&gt;</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- &gt;&gt;&gt; log2 (0b11 :: Int)</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- &gt;&gt;&gt; log2 (0b111 :: Int)</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- 2</span><span>
+</span><span id="line-56"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#log2"><span class="hs-pragma hs-type">log2</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-57"></span><span id="local-6989586621679282784"><span class="annot"><a href="Math.BitSet.html#log2"><span class="hs-identifier hs-type">log2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FiniteBits</span></span><span> </span><span class="annot"><a href="#local-6989586621679282784"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282784"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-58"></span><span id="log2"><span class="annot"><span class="annottext">log2 :: forall b. FiniteBits b =&gt; b -&gt; Int
+</span><a href="Math.BitSet.html#log2"><span class="hs-identifier hs-var hs-var">log2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282791"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282791"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">finiteBitSize</span></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282791"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countLeadingZeros</span></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679282791"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- | \(O(1)\) Ceiling of log base 2 of an `Int`.</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- &gt;&gt;&gt; bitCeil (0b11 :: Int)</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- 2</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- &gt;&gt;&gt; bitCeil (0b111 :: Int)</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- 3</span><span>
+</span><span id="line-66"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#bitCeil"><span class="hs-pragma hs-type">bitCeil</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-67"></span><span class="annot"><a href="Math.BitSet.html#bitCeil"><span class="hs-identifier hs-type">bitCeil</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-68"></span><span id="bitCeil"><span class="annot"><span class="annottext">bitCeil :: Int -&gt; Int
+</span><a href="Math.BitSet.html#bitCeil"><span class="hs-identifier hs-var hs-var">bitCeil</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282794"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282794"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282795"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282797"><span class="hs-identifier hs-var">ceiling_</span></a></span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679282795"><span class="annot"><span class="annottext">msb :: Int
+</span><a href="#local-6989586621679282795"><span class="hs-identifier hs-var hs-var">msb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><a href="Math.BitSet.html#log2"><span class="hs-identifier hs-var">log2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282794"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679282797"><span class="annot"><span class="annottext">ceiling_ :: Int
+</span><a href="#local-6989586621679282797"><span class="hs-identifier hs-var hs-var">ceiling_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">clearBit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282794"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282795"><span class="hs-identifier hs-var">msb</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- | \(O(1)\) Calculates the smallest integral power of two that is not smaller than @x@.</span><span>
+</span><span id="line-74"></span><span class="hs-comment">--</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- &gt;&gt;&gt; ceil2 3</span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- 4</span><span>
+</span><span id="line-77"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#ceil2"><span class="hs-pragma hs-type">ceil2</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-78"></span><span class="annot"><a href="Math.BitSet.html#ceil2"><span class="hs-identifier hs-type">ceil2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-79"></span><span id="ceil2"><span class="annot"><span class="annottext">ceil2 :: Int -&gt; Int
+</span><a href="Math.BitSet.html#ceil2"><span class="hs-identifier hs-var hs-var">ceil2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">bit</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; (Int -&gt; Int) -&gt; Int -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="Math.BitSet.html#bitCeil"><span class="hs-identifier hs-var">bitCeil</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="annot"><span class="hs-comment">-- | \(O(2^N)\) Originally by @yamate11</span></span><span>
+</span><span id="line-82"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#powersetM_"><span class="hs-pragma hs-type">powersetM_</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-83"></span><span id="local-6989586621679282687"><span id="local-6989586621679282688"><span class="annot"><a href="Math.BitSet.html#powersetM_"><span class="hs-identifier hs-type">powersetM_</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Bits</span></span><span> </span><span class="annot"><a href="#local-6989586621679282687"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679282687"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679282688"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282687"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679282687"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282688"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282688"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-84"></span><span id="powersetM_"><span class="annot"><span class="annottext">powersetM_ :: forall a (m :: * -&gt; *).
+(Bits a, Num a, Monad m) =&gt;
+a -&gt; (a -&gt; m ()) -&gt; m ()
+</span><a href="Math.BitSet.html#powersetM_"><span class="hs-identifier hs-var hs-var">powersetM_</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282816"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282816"><span class="hs-identifier hs-var">is0</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282817"><span class="annot"><span class="annottext">a -&gt; m ()
+</span><a href="#local-6989586621679282817"><span class="hs-identifier hs-var">act</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; m ()
+</span><a href="#local-6989586621679282818"><span class="hs-identifier hs-var">act2</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282816"><span class="hs-identifier hs-var">is0</span></a></span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>    </span><span id="local-6989586621679282818"><span class="annot"><span class="annottext">act2 :: a -&gt; m ()
+</span><a href="#local-6989586621679282818"><span class="hs-identifier hs-var hs-var">act2</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282830"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282830"><span class="hs-identifier hs-var">is</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-87"></span><span>      </span><span class="annot"><span class="annottext">a -&gt; m ()
+</span><a href="#local-6989586621679282817"><span class="hs-identifier hs-var">act</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282830"><span class="hs-identifier hs-var">is</span></a></span><span>
+</span><span id="line-88"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282830"><span class="hs-identifier hs-var">is</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; m ()
+</span><a href="#local-6989586621679282818"><span class="hs-identifier hs-var">act2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282816"><span class="hs-identifier hs-var">is0</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282830"><span class="hs-identifier hs-var">is</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- | \(O(2^N)\) Originally by @yamate11</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- &gt;&gt;&gt; powerset (7 :: Int)</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- [7,6,5,4,3,2,1,0]</span><span>
+</span><span id="line-94"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#powerset"><span class="hs-pragma hs-type">powerset</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-95"></span><span id="local-6989586621679282695"><span class="annot"><a href="Math.BitSet.html#powerset"><span class="hs-identifier hs-type">powerset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Bits</span></span><span> </span><span class="annot"><a href="#local-6989586621679282695"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679282695"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282695"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679282695"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-96"></span><span id="powerset"><span class="annot"><span class="annottext">powerset :: forall a. (Bits a, Num a) =&gt; a -&gt; [a]
+</span><a href="Math.BitSet.html#powerset"><span class="hs-identifier hs-var hs-var">powerset</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282835"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282835"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282835"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Maybe (a, a)) -&gt; a -&gt; [a]
+forall b a. (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]
+</span><span class="hs-identifier hs-var">unfoldr</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe (a, a)
+</span><a href="#local-6989586621679282836"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282835"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-97"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-98"></span><span>    </span><span id="local-6989586621679282836"><span class="annot"><span class="annottext">f :: a -&gt; Maybe (a, a)
+</span><a href="#local-6989586621679282836"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (a, a)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><a href="#local-6989586621679282836"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282843"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282843"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, a) -&gt; Maybe (a, a)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">((a, a) -&gt; Maybe (a, a)) -&gt; (a -&gt; (a, a)) -&gt; a -&gt; Maybe (a, a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. a -&gt; (a, a)
+</span><span class="hs-identifier hs-var">dupe</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Maybe (a, a)) -&gt; a -&gt; Maybe (a, a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282835"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282843"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- | \(O(2^N)\) Returns a powerset of @x0@ in descending order.</span><span>
+</span><span id="line-102"></span><span class="hs-comment">--</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- &gt;&gt;&gt; powersetU (7 :: Int)</span><span>
+</span><span id="line-104"></span><span class="hs-comment">-- [7,6,5,4,3,2,1,0]</span><span>
+</span><span id="line-105"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#powersetU"><span class="hs-pragma hs-type">powersetU</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-106"></span><span id="local-6989586621679282704"><span class="annot"><a href="Math.BitSet.html#powersetU"><span class="hs-identifier hs-type">powersetU</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Bits</span></span><span> </span><span class="annot"><a href="#local-6989586621679282704"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679282704"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679282704"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282704"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679282704"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-107"></span><span id="powersetU"><span class="annot"><span class="annottext">powersetU :: forall a. (Bits a, Num a, Unbox a) =&gt; a -&gt; Vector a
+</span><a href="Math.BitSet.html#powersetU"><span class="hs-identifier hs-var hs-var">powersetU</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282851"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282851"><span class="hs-identifier hs-var">x0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; (a -&gt; (a, a)) -&gt; a -&gt; Vector a
+forall a b. Unbox a =&gt; Int -&gt; (b -&gt; (a, b)) -&gt; b -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.unfoldrExactN</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282852"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+</span><a href="#local-6989586621679282853"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282851"><span class="hs-identifier hs-var">x0</span></a></span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-109"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679282852"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679282852"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">bit</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">popCount</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282851"><span class="hs-identifier hs-var">x0</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621679282853"><span class="annot"><span class="annottext">f :: a -&gt; (a, a)
+</span><a href="#local-6989586621679282853"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282862"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282862"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282862"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282862"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679282851"><span class="hs-identifier hs-var">x0</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- | \(O(W)\)</span><span>
+</span><span id="line-113"></span><span class="hs-comment">--</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- &gt;&gt;&gt; unBitSet 4 5</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- [0,2]</span><span>
+</span><span id="line-116"></span><span class="hs-comment">--</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- TODO: which is faster: unfoldrExactN with count leading zeros.</span><span>
+</span><span id="line-118"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Math.BitSet.html#unBitSet"><span class="hs-pragma hs-type">unBitSet</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-119"></span><span class="annot"><a href="Math.BitSet.html#unBitSet"><span class="hs-identifier hs-type">unBitSet</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-120"></span><span id="unBitSet"><span class="annot"><span class="annottext">unBitSet :: Int -&gt; Int -&gt; Vector Int
+</span><a href="Math.BitSet.html#unBitSet"><span class="hs-identifier hs-var hs-var">unBitSet</span></a></span></span><span> </span><span id="local-6989586621679282864"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282864"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679282865"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282865"><span class="hs-identifier hs-var">bits</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Bool) -&gt; Vector Int -&gt; Vector Int
+forall a. Unbox a =&gt; (a -&gt; Bool) -&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.filter</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Bits a =&gt; a -&gt; Int -&gt; Bool
+</span><span class="hs-identifier hs-var">testBit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282865"><span class="hs-identifier hs-var">bits</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; (Int -&gt; Int) -&gt; Vector Int
+forall a. Unbox a =&gt; Int -&gt; (Int -&gt; a) -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.generate</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282864"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. a -&gt; a
+</span><span class="hs-identifier hs-var">id</span></span><span class="hs-special">)</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- | \(O(N \cdot N!)\) DFS that enumerates all possible [partitions](https://en.wikipedia.org/wiki/Partition_of_a_set) of a bitset.</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- Prefer `partitionsOfK` when you only need specific size of families.</span><span>
+</span><span id="line-124"></span><span class="hs-comment">--</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- &gt;&gt;&gt; partitionsOf (bit 4 - 1)</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- [[8,4,2,1],[12,2,1],[8,6,1],[4,10,1],[14,1],[8,4,3],[12,3],[8,2,5],[10,5],[8,7],[4,2,9],[6,9],[4,11],[2,13],[15]]</span><span>
+</span><span id="line-127"></span><span class="annot"><a href="Math.BitSet.html#partitionsOf"><span class="hs-identifier hs-type">partitionsOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-128"></span><span id="partitionsOf"><span class="annot"><span class="annottext">partitionsOf :: Int -&gt; [[Int]]
+</span><a href="Math.BitSet.html#partitionsOf"><span class="hs-identifier hs-var hs-var">partitionsOf</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282871"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-129"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-130"></span><span>    </span><span class="annot"><a href="#local-6989586621679282871"><span class="hs-identifier hs-type">inner</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-131"></span><span>    </span><span id="local-6989586621679282871"><span class="annot"><span class="annottext">inner :: [[Int]] -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282871"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282872"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282872"><span class="hs-identifier hs-var">results</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282873"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282873"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282873"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [[Int]] -&gt; [[Int]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282872"><span class="hs-identifier hs-var">results</span></a></span><span>
+</span><span id="line-132"></span><span>    </span><span class="annot"><a href="#local-6989586621679282871"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282874"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282874"><span class="hs-identifier hs-var">results</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282875"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282875"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282876"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282876"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([[Int]] -&gt; Int -&gt; [[Int]]) -&gt; [[Int]] -&gt; Vector Int -&gt; [[Int]]
+forall b a. Unbox b =&gt; (a -&gt; b -&gt; a) -&gt; a -&gt; Vector b -&gt; a
+</span><span class="hs-identifier hs-var">U.foldl'</span></span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282878"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282874"><span class="hs-identifier hs-var">results</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Vector Int
+forall a. (Bits a, Num a, Unbox a) =&gt; a -&gt; Vector a
+</span><a href="Math.BitSet.html#powersetU"><span class="hs-identifier hs-var">powersetU</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282879"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-134"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679282881"><span class="annot"><span class="annottext">lsb :: Int
+</span><a href="#local-6989586621679282881"><span class="hs-identifier hs-var hs-var">lsb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countTrailingZeros</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282876"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-135"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679282879"><span class="annot"><span class="annottext">rest' :: Int
+</span><a href="#local-6989586621679282879"><span class="hs-identifier hs-var hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">clearBit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282876"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282881"><span class="hs-identifier hs-var">lsb</span></a></span><span>
+</span><span id="line-136"></span><span>        </span><span id="local-6989586621679282878"><span class="annot"><span class="annottext">step :: [[Int]] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282878"><span class="hs-identifier hs-var hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282885"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282885"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282886"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282886"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-137"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282890"><span class="annot"><span class="annottext">set' :: Int
+</span><a href="#local-6989586621679282890"><span class="hs-identifier hs-var hs-var">set'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282886"><span class="hs-identifier hs-var">set</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.|.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">bit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282881"><span class="hs-identifier hs-var">lsb</span></a></span><span>
+</span><span id="line-138"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282871"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282885"><span class="hs-identifier hs-var">res</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282890"><span class="hs-identifier hs-var">set'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282875"><span class="hs-identifier hs-var">acc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282879"><span class="hs-identifier hs-var">rest'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">complement</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282890"><span class="hs-identifier hs-var">set'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- FIXME: write how to use</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- | \(O(N \cdot N!)\) (or faster?) DFS that numerates [partitions](https://en.wikipedia.org/wiki/Partition_of_a_set)</span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- of size @k0@.</span><span>
+</span><span id="line-144"></span><span class="hs-comment">--</span><span>
+</span><span id="line-145"></span><span class="hs-comment">-- = Typical problems</span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- - [ABC 310 D - Peaceful Teams](https://atcoder.jp/contests/abc310/tasks/abc310_d)</span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- - [ABC 319 D - General Weighted Max Matching](https://atcoder.jp/contests/abc318/tasks/abc318_d)</span><span>
+</span><span id="line-148"></span><span class="hs-comment">--   (Not the exact pattern though)</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- - [Typical 045 - Simple Grouping (&#9733; 6)](https://atcoder.jp/contests/typical90/tasks/typical90_as)</span><span>
+</span><span id="line-150"></span><span class="hs-comment">--</span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- = DP</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- Faster solution would be \(O(2^N N)\) (correct?) DP. Use @pushBasedConstructN ((0, 0), (bit n - 1, n))@ or</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- fold-like @times k@ for that. Choose sets with the lsb of the remaining set only.</span><span>
+</span><span id="line-154"></span><span class="annot"><a href="Math.BitSet.html#partitionsOfK"><span class="hs-identifier hs-type">partitionsOfK</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-155"></span><span id="partitionsOfK"><span class="annot"><span class="annottext">partitionsOfK :: Int -&gt; Int -&gt; [[Int]]
+</span><a href="Math.BitSet.html#partitionsOfK"><span class="hs-identifier hs-var hs-var">partitionsOfK</span></a></span></span><span> </span><span id="local-6989586621679282891"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282891"><span class="hs-identifier hs-var">set0</span></a></span></span><span> </span><span id="local-6989586621679282892"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282892"><span class="hs-identifier hs-var">k0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; Int -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282893"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282892"><span class="hs-identifier hs-var">k0</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282891"><span class="hs-identifier hs-var">set0</span></a></span><span>
+</span><span id="line-156"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-157"></span><span>    </span><span class="annot"><a href="#local-6989586621679282893"><span class="hs-identifier hs-type">inner</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-comment">-- inner results (-1) _ _ = results</span><span>
+</span><span id="line-159"></span><span>    </span><span id="local-6989586621679282893"><span class="annot"><span class="annottext">inner :: [[Int]] -&gt; Int -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282893"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282894"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282894"><span class="hs-identifier hs-var">results</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679282895"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282895"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282895"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [[Int]] -&gt; [[Int]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282894"><span class="hs-identifier hs-var">results</span></a></span><span>
+</span><span id="line-160"></span><span>    </span><span class="annot"><a href="#local-6989586621679282893"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282896"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282896"><span class="hs-identifier hs-var">results</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282896"><span class="hs-identifier hs-var">results</span></a></span><span>
+</span><span id="line-161"></span><span>    </span><span class="annot"><a href="#local-6989586621679282893"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282897"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282897"><span class="hs-identifier hs-var">results</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282898"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282898"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282899"><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282899"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282900"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282900"><span class="hs-identifier hs-var">rest</span></a></span></span><span>
+</span><span id="line-162"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282898"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">popCount</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282900"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282897"><span class="hs-identifier hs-var">results</span></a></span><span>
+</span><span id="line-163"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([[Int]] -&gt; Int -&gt; [[Int]]) -&gt; [[Int]] -&gt; Vector Int -&gt; [[Int]]
+forall b a. Unbox b =&gt; (a -&gt; b -&gt; a) -&gt; a -&gt; Vector b -&gt; a
+</span><span class="hs-identifier hs-var">U.foldl'</span></span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282901"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282897"><span class="hs-identifier hs-var">results</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Vector Int
+forall a. (Bits a, Num a, Unbox a) =&gt; a -&gt; Vector a
+</span><a href="Math.BitSet.html#powersetU"><span class="hs-identifier hs-var">powersetU</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282902"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-164"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-165"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679282904"><span class="annot"><span class="annottext">lsb :: Int
+</span><a href="#local-6989586621679282904"><span class="hs-identifier hs-var hs-var">lsb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall b. FiniteBits b =&gt; b -&gt; Int
+</span><span class="hs-identifier hs-var">countTrailingZeros</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282900"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-166"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679282902"><span class="annot"><span class="annottext">rest' :: Int
+</span><a href="#local-6989586621679282902"><span class="hs-identifier hs-var hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">clearBit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282900"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282904"><span class="hs-identifier hs-var">lsb</span></a></span><span>
+</span><span id="line-167"></span><span>        </span><span id="local-6989586621679282901"><span class="annot"><span class="annottext">step :: [[Int]] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282901"><span class="hs-identifier hs-var hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282910"><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282910"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282911"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282911"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-168"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282915"><span class="annot"><span class="annottext">set' :: Int
+</span><a href="#local-6989586621679282915"><span class="hs-identifier hs-var hs-var">set'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282911"><span class="hs-identifier hs-var">set</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.|.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">bit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282904"><span class="hs-identifier hs-var">lsb</span></a></span><span>
+</span><span id="line-169"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[[Int]] -&gt; Int -&gt; [Int] -&gt; Int -&gt; [[Int]]
+</span><a href="#local-6989586621679282893"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">[[Int]]
+</span><a href="#local-6989586621679282910"><span class="hs-identifier hs-var">res</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282898"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282915"><span class="hs-identifier hs-var">set'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Int]
+</span><a href="#local-6989586621679282899"><span class="hs-identifier hs-var">acc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282902"><span class="hs-identifier hs-var">rest'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Bits a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">complement</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679282915"><span class="hs-identifier hs-var">set'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span></pre></body></html>

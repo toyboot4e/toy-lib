@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">-- | Multi set backed by `IntMap`.</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.BinaryLifting</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.Internal.Assert</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ACIA</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Bits</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">testBit</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">fromJust</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Stack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">HasCallStack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Math.BitSet.html"><span class="hs-identifier">Math.BitSet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Math.BitSet.html#bitsOf"><span class="hs-identifier">bitsOf</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><span class="hs-comment">-- | Binary lifting</span></span><span>
+</span><span id="line-16"></span><span id="local-6989586621679282916"><span class="annot"><a href="Data.BinaryLifting.html#cache"><span class="hs-identifier hs-type">cache</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679282916"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282916"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679282916"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-17"></span><span id="cache"><span class="annot"><span class="annottext">cache :: forall a. Semigroup a =&gt; Int -&gt; a -&gt; Vector a
+</span><a href="Data.BinaryLifting.html#cache"><span class="hs-identifier hs-var hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679283012"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283012"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679283013"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283013"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Vector a -&gt; a) -&gt; Vector a
+forall a. Int -&gt; (Vector a -&gt; a) -&gt; Vector a
+</span><span class="hs-identifier hs-var">V.constructN</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283012"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">((Vector a -&gt; a) -&gt; Vector a) -&gt; (Vector a -&gt; a) -&gt; Vector a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679283015"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679283015"><span class="hs-identifier hs-var">sofar</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Bool
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Bool
+</span><span class="hs-identifier hs-var">G.null</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679283015"><span class="hs-identifier hs-var">sofar</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283013"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-keyword">else</span><span>
+</span><span id="line-21"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283018"><span class="annot"><span class="annottext">s1 :: a
+</span><a href="#local-6989586621679283018"><span class="hs-identifier hs-var hs-var">s1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; a
+</span><span class="hs-identifier hs-var">G.last</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679283015"><span class="hs-identifier hs-var">sofar</span></a></span><span>
+</span><span id="line-22"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283018"><span class="hs-identifier hs-var">s1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283018"><span class="hs-identifier hs-var">s1</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="annot"><span class="hs-comment">-- | Binary lifting</span></span><span>
+</span><span id="line-25"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#stimes"><span class="hs-pragma hs-type">stimes</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-26"></span><span id="local-6989586621679282932"><span id="local-6989586621679282933"><span class="annot"><a href="Data.BinaryLifting.html#stimes"><span class="hs-identifier hs-type">stimes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679282932"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679282933"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282932"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282933"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282932"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282932"><span class="hs-identifier hs-type">s</span></a></span></span></span><span>
+</span><span id="line-27"></span><span id="stimes"><span class="annot"><span class="annottext">stimes :: forall s (v :: * -&gt; *).
+(HasCallStack, Semigroup s, Vector v s) =&gt;
+v s -&gt; Int -&gt; s
+</span><a href="Data.BinaryLifting.html#stimes"><span class="hs-identifier hs-var hs-var">stimes</span></a></span></span><span> </span><span id="local-6989586621679283031"><span class="annot"><span class="annottext">v s
+</span><a href="#local-6989586621679283031"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679283032"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283032"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(s -&gt; Int -&gt; s) -&gt; s -&gt; Vector Int -&gt; s
+forall (v :: * -&gt; *) b a.
+Vector v b =&gt;
+(a -&gt; b -&gt; a) -&gt; a -&gt; v b -&gt; a
+</span><span class="hs-identifier hs-var">G.foldl'</span></span><span> </span><span class="annot"><span class="annottext">s -&gt; Int -&gt; s
+</span><a href="#local-6989586621679283034"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">v s
+</span><a href="#local-6989586621679283031"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">v s -&gt; Int -&gt; s
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">G.!</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283036"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283037"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679283036"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283036"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283037"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283037"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Int, Vector Int) -&gt; (Int, Vector Int)
+forall a. HasCallStack =&gt; Maybe a -&gt; a
+</span><span class="hs-identifier hs-var">fromJust</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Int, Vector Int) -&gt; (Int, Vector Int))
+-&gt; (Vector Int -&gt; Maybe (Int, Vector Int))
+-&gt; Vector Int
+-&gt; (Int, Vector Int)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Maybe (Int, Vector Int)
+forall a. Unbox a =&gt; Vector a -&gt; Maybe (a, Vector a)
+</span><span class="hs-identifier hs-var">U.uncons</span></span><span> </span><span class="annot"><span class="annottext">(Vector Int -&gt; (Int, Vector Int))
+-&gt; Vector Int -&gt; (Int, Vector Int)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Vector Int
+</span><a href="Math.BitSet.html#bitsOf"><span class="hs-identifier hs-var">bitsOf</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283032"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621679283034"><span class="annot"><span class="annottext">f :: s -&gt; Int -&gt; s
+</span><a href="#local-6989586621679283034"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283049"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679283049"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283050"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283050"><span class="hs-identifier hs-var">iBit</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679283049"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">s -&gt; s -&gt; s
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">v s
+</span><a href="#local-6989586621679283031"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">v s -&gt; Int -&gt; s
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">G.!</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283050"><span class="hs-identifier hs-var">iBit</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><span class="hs-comment">-- | Binary lifting</span></span><span>
+</span><span id="line-33"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#sactWith"><span class="hs-pragma hs-type">sactWith</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-34"></span><span id="local-6989586621679282952"><span id="local-6989586621679282953"><span id="local-6989586621679282954"><span class="annot"><a href="Data.BinaryLifting.html#sactWith"><span class="hs-identifier hs-type">sactWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679282952"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282953"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282952"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282953"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679282953"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282954"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282954"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282954"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679282954"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-35"></span><span id="sactWith"><span class="annot"><span class="annottext">sactWith :: forall (v :: * -&gt; *) s a.
+(HasCallStack, Vector v s) =&gt;
+v s -&gt; (s -&gt; a -&gt; a) -&gt; Int -&gt; a -&gt; a
+</span><a href="Data.BinaryLifting.html#sactWith"><span class="hs-identifier hs-var hs-var">sactWith</span></a></span></span><span> </span><span id="local-6989586621679283059"><span class="annot"><span class="annottext">v s
+</span><a href="#local-6989586621679283059"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679283060"><span class="annot"><span class="annottext">s -&gt; a -&gt; a
+</span><a href="#local-6989586621679283060"><span class="hs-identifier hs-var">sactF</span></a></span></span><span> </span><span id="local-6989586621679283061"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283061"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679283062"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283062"><span class="hs-identifier hs-var">a0</span></a></span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283061"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283062"><span class="hs-identifier hs-var">a0</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Int -&gt; s -&gt; a) -&gt; a -&gt; v s -&gt; a
+forall (v :: * -&gt; *) b a.
+Vector v b =&gt;
+(a -&gt; Int -&gt; b -&gt; a) -&gt; a -&gt; v b -&gt; a
+</span><span class="hs-identifier hs-var">G.ifoldl'</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; s -&gt; a
+</span><a href="#local-6989586621679283064"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283062"><span class="hs-identifier hs-var">a0</span></a></span><span> </span><span class="annot"><span class="annottext">v s
+</span><a href="#local-6989586621679283059"><span class="hs-identifier hs-var">cache</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>    </span><span id="local-6989586621679283064"><span class="annot"><span class="annottext">f :: a -&gt; Int -&gt; s -&gt; a
+</span><a href="#local-6989586621679283064"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283067"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283067"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679283068"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283068"><span class="hs-identifier hs-var">iBit</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283069"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679283069"><span class="hs-identifier hs-var">s</span></a></span></span><span>
+</span><span id="line-40"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Bits a =&gt; a -&gt; Int -&gt; Bool
+</span><span class="hs-identifier hs-var">testBit</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283061"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283068"><span class="hs-identifier hs-var">iBit</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">s -&gt; a -&gt; a
+</span><a href="#local-6989586621679283060"><span class="hs-identifier hs-var">sactF</span></a></span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679283069"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283067"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-41"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283067"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">newtype</span><span> </span><span id="PermutationWithSemigroup"><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-var">PermutationWithSemigroup</span></a></span></span><span> </span><span id="local-6989586621679282964"><span class="annot"><a href="#local-6989586621679282964"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PermutationWithSemigroup"><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-var">PermutationWithSemigroup</span></a></span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="unPermutationWithSemigroup"><span class="annot"><span class="annottext">forall a. PermutationWithSemigroup a -&gt; Vector (Int, a)
+</span><a href="Data.BinaryLifting.html#unPermutationWithSemigroup"><span class="hs-identifier hs-var hs-var">unPermutationWithSemigroup</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679282964"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679283075"><span id="local-6989586621679283082"><span class="annot"><span class="annottext">PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+(PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool)
+-&gt; (PermutationWithSemigroup a
+    -&gt; PermutationWithSemigroup a -&gt; Bool)
+-&gt; Eq (PermutationWithSemigroup a)
+forall a.
+(Unbox a, Eq a) =&gt;
+PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a.
+(Unbox a, Eq a) =&gt;
+PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+== :: PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+$c/= :: forall a.
+(Unbox a, Eq a) =&gt;
+PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+/= :: PermutationWithSemigroup a -&gt; PermutationWithSemigroup a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679283098"><span id="local-6989586621679283105"><span id="local-6989586621679283111"><span class="annot"><span class="annottext">Int -&gt; PermutationWithSemigroup a -&gt; ShowS
+[PermutationWithSemigroup a] -&gt; ShowS
+PermutationWithSemigroup a -&gt; String
+(Int -&gt; PermutationWithSemigroup a -&gt; ShowS)
+-&gt; (PermutationWithSemigroup a -&gt; String)
+-&gt; ([PermutationWithSemigroup a] -&gt; ShowS)
+-&gt; Show (PermutationWithSemigroup a)
+forall a.
+(Show a, Unbox a) =&gt;
+Int -&gt; PermutationWithSemigroup a -&gt; ShowS
+forall a.
+(Show a, Unbox a) =&gt;
+[PermutationWithSemigroup a] -&gt; ShowS
+forall a. (Show a, Unbox a) =&gt; PermutationWithSemigroup a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a.
+(Show a, Unbox a) =&gt;
+Int -&gt; PermutationWithSemigroup a -&gt; ShowS
+showsPrec :: Int -&gt; PermutationWithSemigroup a -&gt; ShowS
+$cshow :: forall a. (Show a, Unbox a) =&gt; PermutationWithSemigroup a -&gt; String
+show :: PermutationWithSemigroup a -&gt; String
+$cshowList :: forall a.
+(Show a, Unbox a) =&gt;
+[PermutationWithSemigroup a] -&gt; ShowS
+showList :: [PermutationWithSemigroup a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#newPWP"><span class="hs-pragma hs-type">newPWP</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-49"></span><span id="local-6989586621679282984"><span class="annot"><a href="Data.BinaryLifting.html#newPWP"><span class="hs-identifier hs-type">newPWP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679282984"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679282984"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282984"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-50"></span><span id="newPWP"><span class="annot"><span class="annottext">newPWP :: forall a.
+(HasCallStack, Unbox a) =&gt;
+Vector (Int, a) -&gt; PermutationWithSemigroup a
+</span><a href="Data.BinaryLifting.html#newPWP"><span class="hs-identifier hs-var hs-var">newPWP</span></a></span></span><span> </span><span id="local-6989586621679283133"><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283133"><span class="hs-identifier hs-var">ixs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; PermutationWithSemigroup a
+forall a. Vector (Int, a) -&gt; PermutationWithSemigroup a
+</span><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-var">PermutationWithSemigroup</span></a></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283133"><span class="hs-identifier hs-var">ixs</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621679283141"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679283141"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int
+</span><span class="hs-identifier hs-var">U.length</span></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283133"><span class="hs-identifier hs-var">ixs</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(() -&gt; (Int, a) -&gt; ()) -&gt; () -&gt; Vector (Int, a) -&gt; ()
+forall b a. Unbox b =&gt; (a -&gt; b -&gt; a) -&gt; a -&gt; Vector b -&gt; a
+</span><span class="hs-identifier hs-var">U.foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679283151"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283151"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Bool -&gt; String -&gt; ()
+Bool -&gt; String -&gt; ()
+</span><span class="hs-identifier hs-var">ACIA.runtimeAssert</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283151"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283151"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283141"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;newPWP: index boundary error&quot;</span></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283133"><span class="hs-identifier hs-var">ixs</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><span class="hs-comment">-- | @since 1.1.0.0</span></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679282995"><span id="local-6989586621679283167"><span id="local-6989586621679283171"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679282995"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679282995"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679282995"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span id="local-6989586621679283181"><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283181"><span class="hs-identifier hs-var">p2</span></a></span></span><span> </span><span id="local-6989586621679283182"><span class="annot"><span class="annottext">&lt;&gt; :: PermutationWithSemigroup a
+-&gt; PermutationWithSemigroup a -&gt; PermutationWithSemigroup a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span id="local-6989586621679283183"><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283183"><span class="hs-identifier hs-var">p1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; PermutationWithSemigroup a
+forall a. Vector (Int, a) -&gt; PermutationWithSemigroup a
+</span><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-var">PermutationWithSemigroup</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector (Int, a) -&gt; PermutationWithSemigroup a)
+-&gt; Vector (Int, a) -&gt; PermutationWithSemigroup a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">((Int, a) -&gt; (Int, a)) -&gt; Vector (Int, a) -&gt; Vector (Int, a)
+forall a b. (Unbox a, Unbox b) =&gt; (a -&gt; b) -&gt; Vector a -&gt; Vector b
+</span><span class="hs-identifier hs-var">U.map</span></span><span> </span><span class="annot"><span class="annottext">(Int, a) -&gt; (Int, a)
+</span><a href="#local-6989586621679283185"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283183"><span class="hs-identifier hs-var">p1</span></a></span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>      </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Bool -&gt; String -&gt; ()
+Bool -&gt; String -&gt; ()
+</span><span class="hs-identifier hs-var">ACIA.runtimeAssert</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int
+</span><span class="hs-identifier hs-var">U.length</span></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283181"><span class="hs-identifier hs-var">p2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int
+</span><span class="hs-identifier hs-var">U.length</span></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283183"><span class="hs-identifier hs-var">p1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;(&lt;&gt;): length mismatch&quot;</span></span><span>
+</span><span id="line-61"></span><span>      </span><span id="local-6989586621679283185"><span class="annot"><span class="annottext">f :: (Int, a) -&gt; (Int, a)
+</span><a href="#local-6989586621679283185"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-number">1</span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283203"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283203"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283203"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>      </span><span class="annot"><a href="#local-6989586621679283185"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679283204"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283204"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283205"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283205"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-63"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679283214"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283214"><span class="hs-identifier hs-var">i'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283215"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283215"><span class="hs-identifier hs-var">aNew</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; Int -&gt; (Int, a)
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; a
+</span><span class="hs-identifier hs-var">G.unsafeIndex</span></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283181"><span class="hs-identifier hs-var">p2</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283204"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-64"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283214"><span class="hs-identifier hs-var">i'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283215"><span class="hs-identifier hs-var">aNew</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283205"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#actPWP"><span class="hs-pragma hs-type">actPWP</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-67"></span><span id="local-6989586621679283002"><span class="annot"><a href="Data.BinaryLifting.html#actPWP"><span class="hs-identifier hs-type">actPWP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679283002"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679283002"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679283002"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679283002"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679283002"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-68"></span><span id="actPWP"><span class="annot"><span class="annottext">actPWP :: forall a.
+(HasCallStack, Semigroup a, Unbox a) =&gt;
+PermutationWithSemigroup a -&gt; (Int, a) -&gt; (Int, a)
+</span><a href="Data.BinaryLifting.html#actPWP"><span class="hs-identifier hs-var hs-var">actPWP</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.BinaryLifting.html#PermutationWithSemigroup"><span class="hs-identifier hs-type">PermutationWithSemigroup</span></a></span><span> </span><span id="local-6989586621679283229"><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283229"><span class="hs-identifier hs-var">vec</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679283230"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283230"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283231"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283231"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Vector (Int, a)
+</span><a href="#local-6989586621679283229"><span class="hs-identifier hs-var">vec</span></a></span><span> </span><span class="annot"><span class="annottext">Vector (Int, a) -&gt; Int -&gt; (Int, a)
+forall (v :: * -&gt; *) a.
+(HasCallStack, Vector v a) =&gt;
+v a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">G.!</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283230"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-number">1</span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283230"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283231"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679283232"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283232"><span class="hs-identifier hs-var">i'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283233"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283233"><span class="hs-identifier hs-var">aOld</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283232"><span class="hs-identifier hs-var">i'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283231"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283233"><span class="hs-identifier hs-var">aOld</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span></pre></body></html>

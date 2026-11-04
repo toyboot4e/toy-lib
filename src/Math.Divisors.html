@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- | The number of divisor is smaller than \(log N\).</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- See also: &lt;https://scrapbox.io/magurofly/%E7%B4%84%E6%95%B0%E3%81%AE%E5%80%8B%E6%95%B0%E3%81%AE%E3%82%AA%E3%83%BC%E3%83%80%E3%83%BC&gt;</span><span>
+</span><span id="line-3"></span><span class="hs-comment">--</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- = Tips</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- - The last number could be decided with division, not enumeration.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- = Typical problems</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- - [Typical 085 - Multiplication (&#9733;4)](https://atcoder.jp/contests/typical90/tasks/typical90_cg)</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- - [ABC 300 D - AABBC (Difficulty 908)](https://atcoder.jp/contests/abc300/tasks/abc300_d)</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- = Prime factors</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- - [Typical 030 - K Factors (&#9733;5)](https://atcoder.jp/contests/typical90/tasks/typical90_ad)</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--   Numbers with i &gt;= k prime factors can be enumerated very fastly.</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- = Split and list / meet in the middle</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- - [Typical 051 - Typical Shop (&#9733;5)](https://atcoder.jp/contests/typical90/tasks/typical90_ay)</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- = Other problems</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- - [ABC 254 D - Together Square (Difficulty 1191)](https://atcoder.jp/contests/abc254/tasks/abc254_d)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Math.Divisors</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.Extra.Math</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">EM</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimMonad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimState</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">for_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">sort</span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- \(O(N \log N)\) Divisor enumeration (sorted). Too slow, never use it.</span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Math.Divisors.html#divisorsOf"><span class="hs-identifier hs-type">divisorsOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span id="divisorsOf"><span class="annot"><span class="annottext">divisorsOf :: Int -&gt; [Int]
+</span><a href="Math.Divisors.html#divisorsOf"><span class="hs-identifier hs-var hs-var">divisorsOf</span></a></span></span><span> </span><span id="local-6989586621679283502"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283502"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; [Int]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">([Int] -&gt; [Int]) -&gt; [Int] -&gt; [Int]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
+</span><a href="#local-6989586621679283503"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621679283503"><span class="annot"><span class="annottext">inner :: Int -&gt; [Int]
+</span><a href="#local-6989586621679283503"><span class="hs-identifier hs-var hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679283515"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span></span><span>
+</span><span id="line-35"></span><span>      </span><span class="hs-comment">-- no dependency to `Int` square root function</span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283502"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-37"></span><span>      </span><span class="hs-comment">-- no divisor duplication</span><span>
+</span><span id="line-38"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283502"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-39"></span><span>      </span><span class="hs-comment">-- not sorted yet</span><span>
+</span><span id="line-40"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283518"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283519"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
+</span><a href="#local-6989586621679283503"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>      </span><span class="hs-comment">-- ignore non divisors</span><span>
+</span><span id="line-42"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int]
+</span><a href="#local-6989586621679283503"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>        </span><span class="hs-comment">-- This strict evaluation and unboxing takes some effect, even though they're not always</span><span>
+</span><span id="line-45"></span><span>        </span><span class="hs-comment">-- used.</span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679283519"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283519"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679283518"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283518"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283502"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; (Int, Int)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><span class="hs-operator hs-var">`divMod`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283515"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | For instance, [6], i.e., [0, 0, 0, 0, 0, 0, 1] becomes [0, 1, 1, 1, 0, 0, 1].</span></span><span>
+</span><span id="line-49"></span><span id="local-6989586621679283447"><span id="local-6989586621679283449"><span id="local-6989586621679283450"><span class="annot"><a href="Math.Divisors.html#countDivisorsInPlace"><span class="hs-identifier hs-type">countDivisorsInPlace</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679283447"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679283449"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679283450"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679283450"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679283449"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679283447"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679283450"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679283447"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-50"></span><span id="countDivisorsInPlace"><span class="annot"><span class="annottext">countDivisorsInPlace :: forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a, Num a) =&gt;
+Vector Int -&gt; v (PrimState m) a -&gt; m ()
+</span><a href="Math.Divisors.html#countDivisorsInPlace"><span class="hs-identifier hs-var hs-var">countDivisorsInPlace</span></a></span></span><span> </span><span id="local-6989586621679283553"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283553"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span id="local-6989586621679283554"><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="#local-6989586621679283554"><span class="hs-identifier hs-var">cnt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679283558"><span class="annot"><span class="annottext">maxX :: Int
+</span><a href="#local-6989586621679283558"><span class="hs-identifier hs-var hs-var">maxX</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; Int
+forall (v :: * -&gt; * -&gt; *) a s. MVector v a =&gt; v s a -&gt; Int
+</span><span class="hs-identifier hs-var">GM.length</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="#local-6989586621679283554"><span class="hs-identifier hs-var">cnt</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-comment">-- For example, for 6, we get [0, 1, 1, 1, 0, 0, 1] from [0, 0, 0, 0, 0, 0, 1] with the following steps:</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-comment">-- - p = 2: cnt[3] += cnt[6], cnt[2] += cnt[4], cnt[1] += cnt[2]</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-comment">-- - p = 3: cnt[2] += cnt[6]</span><span>
+</span><span id="line-55"></span><span>  </span><span class="annot"><span class="annottext">Vector Int -&gt; (Int -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283553"><span class="hs-identifier hs-var">ps</span></a></span><span> </span><span class="annot"><span class="annottext">((Int -&gt; m ()) -&gt; m ()) -&gt; (Int -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679283561"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283561"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679283563"><span class="annot"><span class="annottext">np :: Int
+</span><a href="#local-6989586621679283563"><span class="hs-identifier hs-var hs-var">np</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283558"><span class="hs-identifier hs-var">maxX</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283561"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><span class="annottext">[Int] -&gt; (Int -&gt; m ()) -&gt; m ()
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Foldable t, Applicative f) =&gt;
+t a -&gt; (a -&gt; f b) -&gt; f ()
+</span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283563"><span class="hs-identifier hs-var">np</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283563"><span class="hs-identifier hs-var">np</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">((Int -&gt; m ()) -&gt; m ()) -&gt; (Int -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679283565"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283565"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-58"></span><span>      </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; (a -&gt; m a) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; (a -&gt; m a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.modifyM</span></span><span>
+</span><span id="line-59"></span><span>        </span><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="#local-6989586621679283554"><span class="hs-identifier hs-var">cnt</span></a></span><span>
+</span><span id="line-60"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679283567"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283567"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>            </span><span id="local-6989586621679283568"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283568"><span class="hs-identifier hs-var">dx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">GM.read</span></span><span> </span><span class="annot"><span class="annottext">v (PrimState m) a
+</span><a href="#local-6989586621679283554"><span class="hs-identifier hs-var">cnt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283565"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283561"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>            </span><span class="annot"><span class="annottext">a -&gt; m a
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m a) -&gt; a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283567"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679283568"><span class="hs-identifier hs-var">dx</span></a></span><span>
+</span><span id="line-63"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283565"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- | For instance, [6], i.e., [0, 0, 0, 0, 0, 0, 1] becomes [0, 1, 1, 1, 0, 0, 1].</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- ==== Typical problems</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- - [ABC 393 - E: GCD of Subset](https://atcoder.jp/contests/abc393/tasks/abc393_e)</span><span>
+</span><span id="line-70"></span><span class="annot"><a href="Math.Divisors.html#countDivisors"><span class="hs-identifier hs-type">countDivisors</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-71"></span><span id="countDivisors"><span class="annot"><span class="annottext">countDivisors :: Vector Int -&gt; Vector Int
+</span><a href="Math.Divisors.html#countDivisors"><span class="hs-identifier hs-var hs-var">countDivisors</span></a></span></span><span> </span><span id="local-6989586621679283573"><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283573"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall s. ST s (MVector s Int)) -&gt; Vector Int
+forall a. Unbox a =&gt; (forall s. ST s (MVector s a)) -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.create</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (MVector s Int)) -&gt; Vector Int)
+-&gt; (forall s. ST s (MVector s Int)) -&gt; Vector Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679283600"><span class="annot"><span class="annottext">maxX :: Int
+</span><a href="#local-6989586621679283600"><span class="hs-identifier hs-var hs-var">maxX</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int
+forall a. (Unbox a, Ord a) =&gt; Vector a -&gt; a
+</span><span class="hs-identifier hs-var">U.maximum</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283573"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span id="local-6989586621679283602"><span class="annot"><span class="annottext">MVector s Int
+</span><a href="#local-6989586621679283602"><span class="hs-identifier hs-var">cnt</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; ST s (MVector (PrimState (ST s)) Int)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">UM.replicate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283600"><span class="hs-identifier hs-var">maxX</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><span class="annottext">Vector Int -&gt; (Int -&gt; ST s ()) -&gt; ST s ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283573"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">((Int -&gt; ST s ()) -&gt; ST s ()) -&gt; (Int -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679283604"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283604"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><span class="annottext">MVector (PrimState (ST s)) Int -&gt; (Int -&gt; Int) -&gt; Int -&gt; ST s ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(HasCallStack, PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.modify</span></span><span> </span><span class="annot"><span class="annottext">MVector s Int
+MVector (PrimState (ST s)) Int
+</span><a href="#local-6989586621679283602"><span class="hs-identifier hs-var">cnt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283604"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679283608"><span class="annot"><span class="annottext">ps :: Vector Int
+</span><a href="#local-6989586621679283608"><span class="hs-identifier hs-var hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Int -&gt; Vector Int
+Int -&gt; Vector Int
+</span><span class="hs-identifier hs-var">EM.primes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679283600"><span class="hs-identifier hs-var">maxX</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><span class="annottext">Vector Int -&gt; MVector (PrimState (ST s)) Int -&gt; ST s ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a, Num a) =&gt;
+Vector Int -&gt; v (PrimState m) a -&gt; m ()
+</span><a href="Math.Divisors.html#countDivisorsInPlace"><span class="hs-identifier hs-var">countDivisorsInPlace</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679283608"><span class="hs-identifier hs-var">ps</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s Int
+MVector (PrimState (ST s)) Int
+</span><a href="#local-6989586621679283602"><span class="hs-identifier hs-var">cnt</span></a></span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><span class="annottext">MVector s Int -&gt; ST s (MVector s Int)
+forall a. a -&gt; ST s a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">MVector s Int
+</span><a href="#local-6989586621679283602"><span class="hs-identifier hs-var">cnt</span></a></span><span>
+</span><span id="line-79"></span></pre></body></html>

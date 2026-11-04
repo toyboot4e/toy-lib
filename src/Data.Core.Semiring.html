@@ -1,0 +1,671 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingVia #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="annot"><span class="hs-comment">-- | `Semiring`. I usually use `Num` + `Monoid` as an implicit `Semiring` though.</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Core.Semiring</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Primitive</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">P</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Base</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><span class="hs-comment">-- | Semiring @(s, &lt;+&gt;, &lt;.&gt;)`. Sometimes called &quot;deoid&quot; (double monoid).</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">class</span><span> </span><span id="Semiring"><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-var">Semiring</span></a></span></span><span> </span><span id="local-6989586621679276573"><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-comment">-- | Plus (addition) opeator of the communicative monoid @(s, &lt;+&gt;, szero)@.</span><span>
+</span><span id="line-17"></span><span>  </span><span id="%3C%2B%3E"><span class="annot"><a href="Data.Core.Semiring.html#%3C%2B%3E"><span class="hs-operator hs-type">(&lt;+&gt;)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-comment">-- | Identical element of the communicative monoid @(s, &lt;+&gt;, szero)@.</span><span>
+</span><span id="line-20"></span><span>  </span><span id="szero"><span class="annot"><a href="Data.Core.Semiring.html#szero"><span class="hs-identifier hs-type">szero</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-comment">-- | Times (mulitplication) operator of the monoid @(s, &lt;.&gt;, sone)@.</span><span>
+</span><span id="line-23"></span><span>  </span><span id="%3C.%3E"><span class="annot"><a href="Data.Core.Semiring.html#%3C.%3E"><span class="hs-operator hs-type">(&lt;.&gt;)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-comment">-- | Identical element of the monoid @(s, &lt;.&gt;, sone)@</span><span>
+</span><span id="line-26"></span><span>  </span><span id="sone"><span class="annot"><a href="Data.Core.Semiring.html#sone"><span class="hs-identifier hs-type">sone</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276573"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><span class="hs-comment">-- | Fold using the `&lt;+&gt;` (plus) opreator.</span></span><span>
+</span><span id="line-29"></span><span id="local-6989586621679276564"><span id="local-6989586621679276566"><span class="annot"><a href="Data.Core.Semiring.html#foldP"><span class="hs-identifier hs-type">foldP</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276564"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679276566"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276564"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276566"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276564"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276564"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-30"></span><span id="foldP"><span class="annot"><span class="annottext">foldP :: forall a (v :: * -&gt; *). (Semiring a, Vector v a) =&gt; v a -&gt; a
+</span><a href="Data.Core.Semiring.html#foldP"><span class="hs-identifier hs-var hs-var">foldP</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; a -&gt; v a -&gt; a
+forall (v :: * -&gt; *) b a.
+Vector v b =&gt;
+(a -&gt; b -&gt; a) -&gt; a -&gt; v b -&gt; a
+</span><span class="hs-identifier hs-var">G.foldl'</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall s. Semiring s =&gt; s -&gt; s -&gt; s
+</span><a href="Data.Core.Semiring.html#%3C%2B%3E"><span class="hs-operator hs-var">(&lt;+&gt;)</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall s. Semiring s =&gt; s
+</span><a href="Data.Core.Semiring.html#szero"><span class="hs-identifier hs-var">szero</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><span class="hs-comment">-- | Fold using the `&lt;.&gt;` (times) opreator.</span></span><span>
+</span><span id="line-33"></span><span id="local-6989586621679276745"><span id="local-6989586621679276746"><span class="annot"><a href="Data.Core.Semiring.html#foldT"><span class="hs-identifier hs-type">foldT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276745"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679276746"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276745"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276746"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276745"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679276745"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-34"></span><span id="foldT"><span class="annot"><span class="annottext">foldT :: forall a (v :: * -&gt; *). (Semiring a, Vector v a) =&gt; v a -&gt; a
+</span><a href="Data.Core.Semiring.html#foldT"><span class="hs-identifier hs-var hs-var">foldT</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; a -&gt; v a -&gt; a
+forall (v :: * -&gt; *) b a.
+Vector v b =&gt;
+(a -&gt; b -&gt; a) -&gt; a -&gt; v b -&gt; a
+</span><span class="hs-identifier hs-var">G.foldl'</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall s. Semiring s =&gt; s -&gt; s -&gt; s
+</span><a href="Data.Core.Semiring.html#%3C.%3E"><span class="hs-operator hs-var">(&lt;.&gt;)</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall s. Semiring s =&gt; s
+</span><a href="Data.Core.Semiring.html#sone"><span class="hs-identifier hs-var">sone</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><span class="hs-comment">-- | Max-Plus semiring</span></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">newtype</span><span> </span><span id="MaxPlus"><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span></span><span> </span><span id="local-6989586621679276576"><span class="annot"><a href="#local-6989586621679276576"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MaxPlus"><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getMaxPlus"><span class="annot"><span class="annottext">forall a. MaxPlus a -&gt; a
+</span><a href="Data.Core.Semiring.html#getMaxPlus"><span class="hs-identifier hs-var hs-var">getMaxPlus</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276576"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679276757"><span id="local-6989586621679276761"><span id="local-6989586621679276765"><span id="local-6989586621679276769"><span id="local-6989586621679276773"><span id="local-6989586621679276777"><span id="local-6989586621679276781"><span id="local-6989586621679276785"><span id="local-6989586621679276789"><span id="local-6989586621679276793"><span id="local-6989586621679276797"><span id="local-6989586621679276801"><span class="annot"><span class="annottext">Addr# -&gt; Int# -&gt; MaxPlus a
+ByteArray# -&gt; Int# -&gt; MaxPlus a
+Proxy (MaxPlus a) -&gt; Int#
+MaxPlus a -&gt; Int#
+(Proxy (MaxPlus a) -&gt; Int#)
+-&gt; (MaxPlus a -&gt; Int#)
+-&gt; (Proxy (MaxPlus a) -&gt; Int#)
+-&gt; (MaxPlus a -&gt; Int#)
+-&gt; (ByteArray# -&gt; Int# -&gt; MaxPlus a)
+-&gt; (forall s.
+    MutableByteArray# s
+    -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #))
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    MutableByteArray# s
+    -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s)
+-&gt; (Addr# -&gt; Int# -&gt; MaxPlus a)
+-&gt; (forall s.
+    Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #))
+-&gt; (forall s. Addr# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    Addr# -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s)
+-&gt; Prim (MaxPlus a)
+forall s.
+Addr# -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+forall s. Addr# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+forall s.
+MutableByteArray# s -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall a. Prim a =&gt; Addr# -&gt; Int# -&gt; MaxPlus a
+forall a. Prim a =&gt; ByteArray# -&gt; Int# -&gt; MaxPlus a
+forall a. Prim a =&gt; Proxy (MaxPlus a) -&gt; Int#
+forall a. Prim a =&gt; MaxPlus a -&gt; Int#
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+forall a s.
+Prim a =&gt;
+MutableByteArray# s -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+forall a.
+(Proxy a -&gt; Int#)
+-&gt; (a -&gt; Int#)
+-&gt; (Proxy a -&gt; Int#)
+-&gt; (a -&gt; Int#)
+-&gt; (ByteArray# -&gt; Int# -&gt; a)
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; State# s -&gt; (# State# s, a #))
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (Addr# -&gt; Int# -&gt; a)
+-&gt; (forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, a #))
+-&gt; (forall s. Addr# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (forall s. Addr# -&gt; Int# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; Prim a
+$csizeOfType# :: forall a. Prim a =&gt; Proxy (MaxPlus a) -&gt; Int#
+sizeOfType# :: Proxy (MaxPlus a) -&gt; Int#
+$csizeOf# :: forall a. Prim a =&gt; MaxPlus a -&gt; Int#
+sizeOf# :: MaxPlus a -&gt; Int#
+$calignmentOfType# :: forall a. Prim a =&gt; Proxy (MaxPlus a) -&gt; Int#
+alignmentOfType# :: Proxy (MaxPlus a) -&gt; Int#
+$calignment# :: forall a. Prim a =&gt; MaxPlus a -&gt; Int#
+alignment# :: MaxPlus a -&gt; Int#
+$cindexByteArray# :: forall a. Prim a =&gt; ByteArray# -&gt; Int# -&gt; MaxPlus a
+indexByteArray# :: ByteArray# -&gt; Int# -&gt; MaxPlus a
+$creadByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+readByteArray# :: forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+$cwriteByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+writeByteArray# :: forall s.
+MutableByteArray# s -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+$csetByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+setByteArray# :: forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+$cindexOffAddr# :: forall a. Prim a =&gt; Addr# -&gt; Int# -&gt; MaxPlus a
+indexOffAddr# :: Addr# -&gt; Int# -&gt; MaxPlus a
+$creadOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+readOffAddr# :: forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MaxPlus a #)
+$cwriteOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+writeOffAddr# :: forall s. Addr# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+$csetOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+setOffAddr# :: forall s.
+Addr# -&gt; Int# -&gt; Int# -&gt; MaxPlus a -&gt; State# s -&gt; State# s
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">P.Prim</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679276808"><span id="local-6989586621679276812"><span class="annot"><span class="annottext">MaxPlus a -&gt; MaxPlus a -&gt; Bool
+(MaxPlus a -&gt; MaxPlus a -&gt; Bool)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; Bool) -&gt; Eq (MaxPlus a)
+forall a. Eq a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+== :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+/= :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276822"><span id="local-6989586621679276826"><span id="local-6989586621679276830"><span id="local-6989586621679276834"><span id="local-6989586621679276838"><span id="local-6989586621679276842"><span id="local-6989586621679276846"><span class="annot"><span class="annottext">Eq (MaxPlus a)
+Eq (MaxPlus a) =&gt;
+(MaxPlus a -&gt; MaxPlus a -&gt; Ordering)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; Bool)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; Bool)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; Bool)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; Bool)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a)
+-&gt; (MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a)
+-&gt; Ord (MaxPlus a)
+MaxPlus a -&gt; MaxPlus a -&gt; Bool
+MaxPlus a -&gt; MaxPlus a -&gt; Ordering
+MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (MaxPlus a)
+forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Ordering
+forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+$ccompare :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Ordering
+compare :: MaxPlus a -&gt; MaxPlus a -&gt; Ordering
+$c&lt; :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+&lt; :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+&lt;= :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+&gt; :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; Bool
+&gt;= :: MaxPlus a -&gt; MaxPlus a -&gt; Bool
+$cmax :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+max :: MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+$cmin :: forall a. Ord a =&gt; MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+min :: MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276854"><span id="local-6989586621679276858"><span id="local-6989586621679276862"><span class="annot"><span class="annottext">Int -&gt; MaxPlus a -&gt; ShowS
+[MaxPlus a] -&gt; ShowS
+MaxPlus a -&gt; String
+(Int -&gt; MaxPlus a -&gt; ShowS)
+-&gt; (MaxPlus a -&gt; String)
+-&gt; ([MaxPlus a] -&gt; ShowS)
+-&gt; Show (MaxPlus a)
+forall a. Show a =&gt; Int -&gt; MaxPlus a -&gt; ShowS
+forall a. Show a =&gt; [MaxPlus a] -&gt; ShowS
+forall a. Show a =&gt; MaxPlus a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; MaxPlus a -&gt; ShowS
+showsPrec :: Int -&gt; MaxPlus a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; MaxPlus a -&gt; String
+show :: MaxPlus a -&gt; String
+$cshowList :: forall a. Show a =&gt; [MaxPlus a] -&gt; ShowS
+showList :: [MaxPlus a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">U.MVector</span></span></span><span> </span><span id="local-6989586621679276867"><span id="local-6989586621679276868"><span class="annot"><a href="#local-6989586621679276867"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276868"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_MaxPlus"><span class="annot"><a href="Data.Core.Semiring.html#MV_MaxPlus"><span class="hs-identifier hs-var">MV_MaxPlus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679276867"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276868"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span id="local-6989586621679276871"><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276871"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_MaxPlus"><span class="annot"><a href="Data.Core.Semiring.html#V_MaxPlus"><span class="hs-identifier hs-var">V_MaxPlus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276871"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span id="local-6989586621679276876"><span id="local-6989586621679276882"><span id="local-6989586621679276887"><span id="local-6989586621679276892"><span id="local-6989586621679276897"><span id="local-6989586621679276902"><span id="local-6989586621679276907"><span id="local-6989586621679276912"><span id="local-6989586621679276917"><span id="local-6989586621679276922"><span id="local-6989586621679276927"><span id="local-6989586621679276932"><span id="local-6989586621679276937"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679276641"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.UnboxViaPrim</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276641"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276641"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276641"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span id="local-6989586621679276948"><span id="local-6989586621679276955"><span id="local-6989586621679276961"><span id="local-6989586621679276966"><span id="local-6989586621679276971"><span id="local-6989586621679276976"><span id="local-6989586621679276982"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679276657"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.UnboxViaPrim</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276657"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276657"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276657"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679276661"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276661"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276661"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679276663"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679276663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679276663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679276663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;+&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span id="local-6989586621679277005"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277005"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277006"><span class="annot"><span class="annottext">&lt;+&gt; :: MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#%3C%2B%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;+&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span id="local-6989586621679277007"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277007"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MaxPlus a
+forall a. a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277005"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`max`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277007"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;+&gt;@ operator</span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#szero"><span class="hs-pragma hs-type">szero</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-57"></span><span>  </span><span id="local-6989586621679277010"><span class="annot"><span class="annottext">szero :: MaxPlus a
+</span><a href="Data.Core.Semiring.html#szero"><span class="hs-identifier hs-var hs-var hs-var hs-var">szero</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MaxPlus a
+forall a. a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;.&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span id="local-6989586621679277013"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277013"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277014"><span class="annot"><span class="annottext">&lt;.&gt; :: MaxPlus a -&gt; MaxPlus a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#%3C.%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;.&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-type">MaxPlus</span></a></span><span> </span><span id="local-6989586621679277015"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277015"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MaxPlus a
+forall a. a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277013"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277015"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;.&gt;@ operator</span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#sone"><span class="hs-pragma hs-type">sone</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679277018"><span class="annot"><span class="annottext">sone :: MaxPlus a
+</span><a href="Data.Core.Semiring.html#sone"><span class="hs-identifier hs-var hs-var hs-var hs-var">sone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MaxPlus a
+forall a. a -&gt; MaxPlus a
+</span><a href="Data.Core.Semiring.html#MaxPlus"><span class="hs-identifier hs-var">MaxPlus</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><span class="hs-comment">-- | Min-Plus semiring</span></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">newtype</span><span> </span><span id="MinPlus"><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span></span><span> </span><span id="local-6989586621679276666"><span class="annot"><a href="#local-6989586621679276666"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MinPlus"><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getMinPlus"><span class="annot"><span class="annottext">forall a. MinPlus a -&gt; a
+</span><a href="Data.Core.Semiring.html#getMinPlus"><span class="hs-identifier hs-var hs-var">getMinPlus</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276666"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277023"><span id="local-6989586621679277027"><span id="local-6989586621679277031"><span id="local-6989586621679277035"><span id="local-6989586621679277039"><span id="local-6989586621679277043"><span id="local-6989586621679277047"><span id="local-6989586621679277051"><span id="local-6989586621679277055"><span id="local-6989586621679277059"><span id="local-6989586621679277063"><span id="local-6989586621679277067"><span class="annot"><span class="annottext">Addr# -&gt; Int# -&gt; MinPlus a
+ByteArray# -&gt; Int# -&gt; MinPlus a
+Proxy (MinPlus a) -&gt; Int#
+MinPlus a -&gt; Int#
+(Proxy (MinPlus a) -&gt; Int#)
+-&gt; (MinPlus a -&gt; Int#)
+-&gt; (Proxy (MinPlus a) -&gt; Int#)
+-&gt; (MinPlus a -&gt; Int#)
+-&gt; (ByteArray# -&gt; Int# -&gt; MinPlus a)
+-&gt; (forall s.
+    MutableByteArray# s
+    -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #))
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    MutableByteArray# s
+    -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s)
+-&gt; (Addr# -&gt; Int# -&gt; MinPlus a)
+-&gt; (forall s.
+    Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #))
+-&gt; (forall s. Addr# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    Addr# -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s)
+-&gt; Prim (MinPlus a)
+forall s.
+Addr# -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+forall s. Addr# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+forall s.
+MutableByteArray# s -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall a. Prim a =&gt; Addr# -&gt; Int# -&gt; MinPlus a
+forall a. Prim a =&gt; ByteArray# -&gt; Int# -&gt; MinPlus a
+forall a. Prim a =&gt; Proxy (MinPlus a) -&gt; Int#
+forall a. Prim a =&gt; MinPlus a -&gt; Int#
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+forall a s.
+Prim a =&gt;
+MutableByteArray# s -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+forall a.
+(Proxy a -&gt; Int#)
+-&gt; (a -&gt; Int#)
+-&gt; (Proxy a -&gt; Int#)
+-&gt; (a -&gt; Int#)
+-&gt; (ByteArray# -&gt; Int# -&gt; a)
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; State# s -&gt; (# State# s, a #))
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (forall s.
+    MutableByteArray# s -&gt; Int# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (Addr# -&gt; Int# -&gt; a)
+-&gt; (forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, a #))
+-&gt; (forall s. Addr# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; (forall s. Addr# -&gt; Int# -&gt; Int# -&gt; a -&gt; State# s -&gt; State# s)
+-&gt; Prim a
+$csizeOfType# :: forall a. Prim a =&gt; Proxy (MinPlus a) -&gt; Int#
+sizeOfType# :: Proxy (MinPlus a) -&gt; Int#
+$csizeOf# :: forall a. Prim a =&gt; MinPlus a -&gt; Int#
+sizeOf# :: MinPlus a -&gt; Int#
+$calignmentOfType# :: forall a. Prim a =&gt; Proxy (MinPlus a) -&gt; Int#
+alignmentOfType# :: Proxy (MinPlus a) -&gt; Int#
+$calignment# :: forall a. Prim a =&gt; MinPlus a -&gt; Int#
+alignment# :: MinPlus a -&gt; Int#
+$cindexByteArray# :: forall a. Prim a =&gt; ByteArray# -&gt; Int# -&gt; MinPlus a
+indexByteArray# :: ByteArray# -&gt; Int# -&gt; MinPlus a
+$creadByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+readByteArray# :: forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+$cwriteByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+writeByteArray# :: forall s.
+MutableByteArray# s -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+$csetByteArray# :: forall a s.
+Prim a =&gt;
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+setByteArray# :: forall s.
+MutableByteArray# s
+-&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+$cindexOffAddr# :: forall a. Prim a =&gt; Addr# -&gt; Int# -&gt; MinPlus a
+indexOffAddr# :: Addr# -&gt; Int# -&gt; MinPlus a
+$creadOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+readOffAddr# :: forall s. Addr# -&gt; Int# -&gt; State# s -&gt; (# State# s, MinPlus a #)
+$cwriteOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+writeOffAddr# :: forall s. Addr# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+$csetOffAddr# :: forall a s.
+Prim a =&gt;
+Addr# -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+setOffAddr# :: forall s.
+Addr# -&gt; Int# -&gt; Int# -&gt; MinPlus a -&gt; State# s -&gt; State# s
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">P.Prim</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277073"><span id="local-6989586621679277077"><span class="annot"><span class="annottext">MinPlus a -&gt; MinPlus a -&gt; Bool
+(MinPlus a -&gt; MinPlus a -&gt; Bool)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; Bool) -&gt; Eq (MinPlus a)
+forall a. Eq a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+== :: MinPlus a -&gt; MinPlus a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+/= :: MinPlus a -&gt; MinPlus a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277086"><span id="local-6989586621679277090"><span id="local-6989586621679277094"><span id="local-6989586621679277098"><span id="local-6989586621679277102"><span id="local-6989586621679277106"><span id="local-6989586621679277110"><span class="annot"><span class="annottext">Eq (MinPlus a)
+Eq (MinPlus a) =&gt;
+(MinPlus a -&gt; MinPlus a -&gt; Ordering)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; Bool)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; Bool)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; Bool)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; Bool)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; MinPlus a)
+-&gt; (MinPlus a -&gt; MinPlus a -&gt; MinPlus a)
+-&gt; Ord (MinPlus a)
+MinPlus a -&gt; MinPlus a -&gt; Bool
+MinPlus a -&gt; MinPlus a -&gt; Ordering
+MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (MinPlus a)
+forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Ordering
+forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+$ccompare :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Ordering
+compare :: MinPlus a -&gt; MinPlus a -&gt; Ordering
+$c&lt; :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+&lt; :: MinPlus a -&gt; MinPlus a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+&lt;= :: MinPlus a -&gt; MinPlus a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+&gt; :: MinPlus a -&gt; MinPlus a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; Bool
+&gt;= :: MinPlus a -&gt; MinPlus a -&gt; Bool
+$cmax :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+max :: MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+$cmin :: forall a. Ord a =&gt; MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+min :: MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277116"><span id="local-6989586621679277120"><span id="local-6989586621679277124"><span class="annot"><span class="annottext">Int -&gt; MinPlus a -&gt; ShowS
+[MinPlus a] -&gt; ShowS
+MinPlus a -&gt; String
+(Int -&gt; MinPlus a -&gt; ShowS)
+-&gt; (MinPlus a -&gt; String)
+-&gt; ([MinPlus a] -&gt; ShowS)
+-&gt; Show (MinPlus a)
+forall a. Show a =&gt; Int -&gt; MinPlus a -&gt; ShowS
+forall a. Show a =&gt; [MinPlus a] -&gt; ShowS
+forall a. Show a =&gt; MinPlus a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; MinPlus a -&gt; ShowS
+showsPrec :: Int -&gt; MinPlus a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; MinPlus a -&gt; String
+show :: MinPlus a -&gt; String
+$cshowList :: forall a. Show a =&gt; [MinPlus a] -&gt; ShowS
+showList :: [MinPlus a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">U.MVector</span></span></span><span> </span><span id="local-6989586621679277128"><span id="local-6989586621679277129"><span class="annot"><a href="#local-6989586621679277128"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277129"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_MinPlus"><span class="annot"><a href="Data.Core.Semiring.html#MV_MinPlus"><span class="hs-identifier hs-var">MV_MinPlus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679277128"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277129"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span id="local-6989586621679277131"><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277131"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_MinPlus"><span class="annot"><a href="Data.Core.Semiring.html#V_MinPlus"><span class="hs-identifier hs-var">V_MinPlus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277131"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span id="local-6989586621679277135"><span id="local-6989586621679277140"><span id="local-6989586621679277145"><span id="local-6989586621679277150"><span id="local-6989586621679277155"><span id="local-6989586621679277160"><span id="local-6989586621679277165"><span id="local-6989586621679277170"><span id="local-6989586621679277175"><span id="local-6989586621679277180"><span id="local-6989586621679277185"><span id="local-6989586621679277190"><span id="local-6989586621679277195"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679276697"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.UnboxViaPrim</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276697"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276697"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276697"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span id="local-6989586621679277205"><span id="local-6989586621679277211"><span id="local-6989586621679277217"><span id="local-6989586621679277222"><span id="local-6989586621679277227"><span id="local-6989586621679277232"><span id="local-6989586621679277238"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span id="local-6989586621679276703"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.UnboxViaPrim</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276703"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276703"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276703"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679276705"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">P.Prim</span></span><span> </span><span class="annot"><a href="#local-6989586621679276705"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276705"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679276707"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Num</span></span><span> </span><span class="annot"><a href="#local-6989586621679276707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bounded</span></span><span> </span><span class="annot"><a href="#local-6989586621679276707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679276707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276707"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;+&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span id="local-6989586621679277258"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277258"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277259"><span class="annot"><span class="annottext">&lt;+&gt; :: MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#%3C%2B%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;+&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span id="local-6989586621679277260"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277260"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MinPlus a
+forall a. a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277258"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`min`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277260"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;+&gt;@ operator</span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#szero"><span class="hs-pragma hs-type">szero</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621679277263"><span class="annot"><span class="annottext">szero :: MinPlus a
+</span><a href="Data.Core.Semiring.html#szero"><span class="hs-identifier hs-var hs-var hs-var hs-var">szero</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MinPlus a
+forall a. a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;.&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span id="local-6989586621679277266"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277266"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277267"><span class="annot"><span class="annottext">&lt;.&gt; :: MinPlus a -&gt; MinPlus a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#%3C.%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;.&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-type">MinPlus</span></a></span><span> </span><span id="local-6989586621679277268"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277268"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MinPlus a
+forall a. a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277266"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679277268"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;.&gt;@ operator</span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#sone"><span class="hs-pragma hs-type">sone</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-94"></span><span>  </span><span id="local-6989586621679277270"><span class="annot"><span class="annottext">sone :: MinPlus a
+</span><a href="Data.Core.Semiring.html#sone"><span class="hs-identifier hs-var hs-var hs-var hs-var">sone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; MinPlus a
+forall a. a -&gt; MinPlus a
+</span><a href="Data.Core.Semiring.html#MinPlus"><span class="hs-identifier hs-var">MinPlus</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="annot"><span class="hs-comment">-- | Boolean semiring</span></span><span>
+</span><span id="line-97"></span><span class="hs-keyword">newtype</span><span> </span><span id="Boolean"><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Boolean"><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getBoolean"><span class="annot"><span class="annottext">Boolean -&gt; Bool
+</span><a href="Data.Core.Semiring.html#getBoolean"><span class="hs-identifier hs-var hs-var">getBoolean</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">}</span><span>
+</span><span id="line-98"></span><span>  </span><span class="hs-comment">-- deriving (P.Prim)</span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679277274"><span id="local-6989586621679277279"><span class="annot"><span class="annottext">Boolean -&gt; Boolean -&gt; Bool
+(Boolean -&gt; Boolean -&gt; Bool)
+-&gt; (Boolean -&gt; Boolean -&gt; Bool) -&gt; Eq Boolean
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Boolean -&gt; Boolean -&gt; Bool
+== :: Boolean -&gt; Boolean -&gt; Bool
+$c/= :: Boolean -&gt; Boolean -&gt; Bool
+/= :: Boolean -&gt; Boolean -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277286"><span id="local-6989586621679277291"><span id="local-6989586621679277295"><span id="local-6989586621679277299"><span id="local-6989586621679277303"><span id="local-6989586621679277307"><span id="local-6989586621679277311"><span class="annot"><span class="annottext">Eq Boolean
+Eq Boolean =&gt;
+(Boolean -&gt; Boolean -&gt; Ordering)
+-&gt; (Boolean -&gt; Boolean -&gt; Bool)
+-&gt; (Boolean -&gt; Boolean -&gt; Bool)
+-&gt; (Boolean -&gt; Boolean -&gt; Bool)
+-&gt; (Boolean -&gt; Boolean -&gt; Bool)
+-&gt; (Boolean -&gt; Boolean -&gt; Boolean)
+-&gt; (Boolean -&gt; Boolean -&gt; Boolean)
+-&gt; Ord Boolean
+Boolean -&gt; Boolean -&gt; Bool
+Boolean -&gt; Boolean -&gt; Ordering
+Boolean -&gt; Boolean -&gt; Boolean
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: Boolean -&gt; Boolean -&gt; Ordering
+compare :: Boolean -&gt; Boolean -&gt; Ordering
+$c&lt; :: Boolean -&gt; Boolean -&gt; Bool
+&lt; :: Boolean -&gt; Boolean -&gt; Bool
+$c&lt;= :: Boolean -&gt; Boolean -&gt; Bool
+&lt;= :: Boolean -&gt; Boolean -&gt; Bool
+$c&gt; :: Boolean -&gt; Boolean -&gt; Bool
+&gt; :: Boolean -&gt; Boolean -&gt; Bool
+$c&gt;= :: Boolean -&gt; Boolean -&gt; Bool
+&gt;= :: Boolean -&gt; Boolean -&gt; Bool
+$cmax :: Boolean -&gt; Boolean -&gt; Boolean
+max :: Boolean -&gt; Boolean -&gt; Boolean
+$cmin :: Boolean -&gt; Boolean -&gt; Boolean
+min :: Boolean -&gt; Boolean -&gt; Boolean
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679277316"><span id="local-6989586621679277321"><span id="local-6989586621679277325"><span class="annot"><span class="annottext">Int -&gt; Boolean -&gt; ShowS
+[Boolean] -&gt; ShowS
+Boolean -&gt; String
+(Int -&gt; Boolean -&gt; ShowS)
+-&gt; (Boolean -&gt; String) -&gt; ([Boolean] -&gt; ShowS) -&gt; Show Boolean
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Boolean -&gt; ShowS
+showsPrec :: Int -&gt; Boolean -&gt; ShowS
+$cshow :: Boolean -&gt; String
+show :: Boolean -&gt; String
+$cshowList :: [Boolean] -&gt; ShowS
+showList :: [Boolean] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- NOTE: For some reason, the `primitive` package does not implement `Prim` for `Bool`.</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- I guess that's why `bitvec` exists: &lt;https://github.com/Bodigrim/bitvec&gt;</span><span>
+</span><span id="line-103"></span><span class="hs-comment">--</span><span>
+</span><span id="line-104"></span><span class="hs-comment">-- Here's some indirection to get `Unbox` implementation..</span><span>
+</span><span id="line-105"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.IsoUnbox</span></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-106"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">toURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621679277334"><span class="annot"><span class="annottext">toURepr :: Boolean -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">toURepr</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span id="local-6989586621679277335"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277335"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277335"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">fromURepr</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621679277337"><span class="annot"><span class="annottext">fromURepr :: Bool -&gt; Boolean
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromURepr</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">U.MVector</span></span></span><span> </span><span id="local-6989586621679277338"><span class="annot"><a href="#local-6989586621679277338"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_Foo"><span class="annot"><a href="Data.Core.Semiring.html#MV_Foo"><span class="hs-identifier hs-var">MV_Foo</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679277338"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_Foo"><span class="annot"><a href="Data.Core.Semiring.html#V_Foo"><span class="hs-identifier hs-var">V_Foo</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621679277342"><span id="local-6989586621679277349"><span id="local-6989586621679277355"><span id="local-6989586621679277361"><span id="local-6989586621679277367"><span id="local-6989586621679277373"><span id="local-6989586621679277379"><span id="local-6989586621679277385"><span id="local-6989586621679277391"><span id="local-6989586621679277397"><span id="local-6989586621679277403"><span id="local-6989586621679277409"><span id="local-6989586621679277415"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span id="local-6989586621679277426"><span id="local-6989586621679277434"><span id="local-6989586621679277441"><span id="local-6989586621679277447"><span id="local-6989586621679277453"><span id="local-6989586621679277459"><span id="local-6989586621679277466"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">`U.As`</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-122"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;+&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-123"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span id="local-6989586621679277482"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277482"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277483"><span class="annot"><span class="annottext">&lt;+&gt; :: Boolean -&gt; Boolean -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#%3C%2B%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;+&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span id="local-6989586621679277484"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277484"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277482"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277484"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;+&gt;@ operator</span><span>
+</span><span id="line-126"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#szero"><span class="hs-pragma hs-type">szero</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-127"></span><span>  </span><span id="local-6989586621679277486"><span class="annot"><span class="annottext">szero :: Boolean
+</span><a href="Data.Core.Semiring.html#szero"><span class="hs-identifier hs-var hs-var hs-var hs-var">szero</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="hs-pragma">(</span><span class="hs-pragma">&lt;.&gt;</span><span class="hs-pragma">)</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-130"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span id="local-6989586621679277487"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277487"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277488"><span class="annot"><span class="annottext">&lt;.&gt; :: Boolean -&gt; Boolean -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#%3C.%3E"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;.&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span id="local-6989586621679277489"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277489"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277487"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277489"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span>  </span><span class="hs-comment">-- monoid with @&lt;.&gt;@ operator</span><span>
+</span><span id="line-133"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Core.Semiring.html#sone"><span class="hs-pragma hs-type">sone</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-134"></span><span>  </span><span id="local-6989586621679277491"><span class="annot"><span class="annottext">sone :: Boolean
+</span><a href="Data.Core.Semiring.html#sone"><span class="hs-identifier hs-var hs-var hs-var hs-var">sone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Boolean
+</span><a href="Data.Core.Semiring.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-135"></span></pre></body></html>

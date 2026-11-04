@@ -1,0 +1,389 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- | Unboxed 3D array stored in a packed 1-dimensional vector.</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- The `Unbox` implementation is from @Affine@ type in @cojna/iota@.</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Instances.A3</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">liftM</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">liftM3</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><span class="hs-comment">-- | Unboxed 3D array packed in one array when stored in `U.Vector`.</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="A3"><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-var">A3</span></a></span></span><span> </span><span id="local-6989586621679278878"><span class="annot"><a href="#local-6989586621679278878"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="A3"><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-var">A3</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679278878"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679278878"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679278878"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679278910"><span id="local-6989586621679278915"><span class="annot"><span class="annottext">A3 a -&gt; A3 a -&gt; Bool
+(A3 a -&gt; A3 a -&gt; Bool) -&gt; (A3 a -&gt; A3 a -&gt; Bool) -&gt; Eq (A3 a)
+forall a. Eq a =&gt; A3 a -&gt; A3 a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; A3 a -&gt; A3 a -&gt; Bool
+== :: A3 a -&gt; A3 a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; A3 a -&gt; A3 a -&gt; Bool
+/= :: A3 a -&gt; A3 a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679278921"><span id="local-6989586621679278928"><span id="local-6989586621679278932"><span class="annot"><span class="annottext">Int -&gt; A3 a -&gt; ShowS
+[A3 a] -&gt; ShowS
+A3 a -&gt; String
+(Int -&gt; A3 a -&gt; ShowS)
+-&gt; (A3 a -&gt; String) -&gt; ([A3 a] -&gt; ShowS) -&gt; Show (A3 a)
+forall a. Show a =&gt; Int -&gt; A3 a -&gt; ShowS
+forall a. Show a =&gt; [A3 a] -&gt; ShowS
+forall a. Show a =&gt; A3 a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; A3 a -&gt; ShowS
+showsPrec :: Int -&gt; A3 a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; A3 a -&gt; String
+show :: A3 a -&gt; String
+$cshowList :: forall a. Show a =&gt; [A3 a] -&gt; ShowS
+showList :: [A3 a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="MVector"><span class="annot"><span class="hs-identifier hs-var">UM.MVector</span></span></span><span> </span><span id="local-6989586621679278858"><span id="local-6989586621679278859"><span class="annot"><a href="#local-6989586621679278858"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679278859"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MV_A3"><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-var">MV_A3</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679278858"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679278859"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Vector"><span class="annot"><span class="hs-identifier hs-var">U.Vector</span></span></span><span> </span><span id="local-6989586621679278897"><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679278897"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="V_A3"><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-var">V_A3</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="annot"><a href="#local-6989586621679278897"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679278838"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679278838"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679278838"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679278946"><span id="local-6989586621679278954"><span id="local-6989586621679278960"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679278946"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GM.MVector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679278946"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>  </span><span id="local-6989586621679278973"><span class="annot"><span class="annottext">basicLength :: forall s. MVector s (A3 a) -&gt; Int
+</span><a href="#local-6989586621679278973"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicLength</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679278975"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278975"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; Int
+forall s. MVector s a -&gt; Int
+forall (v :: * -&gt; * -&gt; *) a s. MVector v a =&gt; v s a -&gt; Int
+</span><span class="hs-identifier hs-var">GM.basicLength</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278975"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicLength</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-27"></span><span>  </span><span id="local-6989586621679278982"><span class="annot"><span class="annottext">basicUnsafeSlice :: forall s. Int -&gt; Int -&gt; MVector s (A3 a) -&gt; MVector s (A3 a)
+</span><a href="#local-6989586621679278982"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeSlice</span></a></span></span><span> </span><span id="local-6989586621679278984"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278984"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679278985"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278985"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679278986"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278986"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s (A3 a)
+forall s a. MVector s a -&gt; MVector s (A3 a)
+</span><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-var">MV_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector s a -&gt; MVector s (A3 a))
+-&gt; MVector s a -&gt; MVector s (A3 a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; MVector s a -&gt; MVector s a
+forall s. Int -&gt; Int -&gt; MVector s a -&gt; MVector s a
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+Int -&gt; Int -&gt; v s a -&gt; v s a
+</span><span class="hs-identifier hs-var">GM.basicUnsafeSlice</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278984"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679278985"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278986"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeSlice</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-29"></span><span>  </span><span id="local-6989586621679278989"><span class="annot"><span class="annottext">basicOverlaps :: forall s. MVector s (A3 a) -&gt; MVector s (A3 a) -&gt; Bool
+</span><a href="#local-6989586621679278989"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicOverlaps</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679278991"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278991"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679278992"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278992"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s a -&gt; Bool
+forall s. MVector s a -&gt; MVector s a -&gt; Bool
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; v s a -&gt; Bool
+</span><span class="hs-identifier hs-var">GM.basicOverlaps</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278991"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679278992"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicOverlaps</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-31"></span><span>  </span><span id="local-6989586621679278998"><span class="annot"><span class="annottext">basicUnsafeNew :: forall s. Int -&gt; ST s (MVector s (A3 a))
+</span><a href="#local-6989586621679278998"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeNew</span></a></span></span><span> </span><span id="local-6989586621679279000"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279000"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s (A3 a)
+forall s a. MVector s a -&gt; MVector s (A3 a)
+</span><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-var">MV_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector s a -&gt; MVector s (A3 a))
+-&gt; ST s (MVector s a) -&gt; ST s (MVector s (A3 a))
+forall (m :: * -&gt; *) a1 r. Monad m =&gt; (a1 -&gt; r) -&gt; m a1 -&gt; m r
+</span><span class="hs-operator hs-var">`liftM`</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; ST s (MVector s a)
+forall s. Int -&gt; ST s (MVector s a)
+forall (v :: * -&gt; * -&gt; *) a s. MVector v a =&gt; Int -&gt; ST s (v s a)
+</span><span class="hs-identifier hs-var">GM.basicUnsafeNew</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279000"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeNew</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-33"></span><span>  </span><span id="local-6989586621679279002"><span class="annot"><span class="annottext">basicInitialize :: forall s. MVector s (A3 a) -&gt; ST s ()
+</span><a href="#local-6989586621679279002"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicInitialize</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279004"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279004"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; ST s ()
+forall s. MVector s a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s. MVector v a =&gt; v s a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicInitialize</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279004"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicInitialize</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-35"></span><span>  </span><span id="local-6989586621679279019"><span class="annot"><span class="annottext">basicUnsafeRead :: forall s. MVector s (A3 a) -&gt; Int -&gt; ST s (A3 a)
+</span><a href="#local-6989586621679279019"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeRead</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279021"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279021"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679279022"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279022"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a -&gt; A3 a) -&gt; ST s a -&gt; ST s a -&gt; ST s a -&gt; ST s (A3 a)
+forall (m :: * -&gt; *) a1 a2 a3 r.
+Monad m =&gt;
+(a1 -&gt; a2 -&gt; a3 -&gt; r) -&gt; m a1 -&gt; m a2 -&gt; m a3 -&gt; m r
+</span><span class="hs-identifier hs-var">liftM3</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; A3 a
+forall a. a -&gt; a -&gt; a -&gt; A3 a
+</span><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-var">A3</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; ST s a
+forall s. MVector s a -&gt; Int -&gt; ST s a
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; ST s a
+</span><span class="hs-identifier hs-var">GM.basicUnsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279021"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279022"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; ST s a
+forall s. MVector s a -&gt; Int -&gt; ST s a
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; ST s a
+</span><span class="hs-identifier hs-var">GM.basicUnsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279021"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279022"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; ST s a
+forall s. MVector s a -&gt; Int -&gt; ST s a
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; ST s a
+</span><span class="hs-identifier hs-var">GM.basicUnsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279021"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279022"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeRead</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679279039"><span class="annot"><span class="annottext">basicUnsafeWrite :: forall s. MVector s (A3 a) -&gt; Int -&gt; A3 a -&gt; ST s ()
+</span><a href="#local-6989586621679279039"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeWrite</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279041"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279041"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679279042"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279042"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span id="local-6989586621679279043"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279043"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679279044"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279044"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621679279045"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279045"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall s. MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicUnsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279041"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279042"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279043"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">ST s () -&gt; ST s () -&gt; ST s ()
+forall a b. ST s a -&gt; ST s b -&gt; ST s b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall s. MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicUnsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279041"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279042"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279044"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">ST s () -&gt; ST s () -&gt; ST s ()
+forall a b. ST s a -&gt; ST s b -&gt; ST s b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall s. MVector s a -&gt; Int -&gt; a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicUnsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279041"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279042"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679279045"><span class="hs-identifier hs-var">z</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeWrite</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-39"></span><span>  </span><span id="local-6989586621679279047"><span class="annot"><span class="annottext">basicClear :: forall s. MVector s (A3 a) -&gt; ST s ()
+</span><a href="#local-6989586621679279047"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicClear</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279049"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279049"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; ST s ()
+forall s. MVector s a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s. MVector v a =&gt; v s a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicClear</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279049"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicClear</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-41"></span><span>  </span><span id="local-6989586621679279051"><span class="annot"><span class="annottext">basicUnsafeCopy :: forall s. MVector s (A3 a) -&gt; MVector s (A3 a) -&gt; ST s ()
+</span><a href="#local-6989586621679279051"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeCopy</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279053"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279053"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279054"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279054"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s a -&gt; ST s ()
+forall s. MVector s a -&gt; MVector s a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; v s a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicUnsafeCopy</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279053"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279054"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeCopy</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-43"></span><span>  </span><span id="local-6989586621679279056"><span class="annot"><span class="annottext">basicUnsafeMove :: forall s. MVector s (A3 a) -&gt; MVector s (A3 a) -&gt; ST s ()
+</span><a href="#local-6989586621679279056"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeMove</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279058"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279058"><span class="hs-identifier hs-var">v1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279059"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279059"><span class="hs-identifier hs-var">v2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s a -&gt; ST s ()
+forall s. MVector s a -&gt; MVector s a -&gt; ST s ()
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; v s a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">GM.basicUnsafeMove</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279058"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279059"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeMove</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-45"></span><span>  </span><span id="local-6989586621679279064"><span class="annot"><span class="annottext">basicUnsafeGrow :: forall s. MVector s (A3 a) -&gt; Int -&gt; ST s (MVector s (A3 a))
+</span><a href="#local-6989586621679279064"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeGrow</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279066"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279066"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679279067"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279067"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s (A3 a)
+forall s a. MVector s a -&gt; MVector s (A3 a)
+</span><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-var">MV_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector s a -&gt; MVector s (A3 a))
+-&gt; ST s (MVector s a) -&gt; ST s (MVector s (A3 a))
+forall (m :: * -&gt; *) a1 r. Monad m =&gt; (a1 -&gt; r) -&gt; m a1 -&gt; m r
+</span><span class="hs-operator hs-var">`liftM`</span></span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; Int -&gt; ST s (MVector s a)
+forall s. MVector s a -&gt; Int -&gt; ST s (MVector s a)
+forall (v :: * -&gt; * -&gt; *) a s.
+MVector v a =&gt;
+v s a -&gt; Int -&gt; ST s (v s a)
+</span><span class="hs-identifier hs-var">GM.basicUnsafeGrow</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279066"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279067"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeGrow</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679279068"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679279068"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">G.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Vector</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-type">A3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679279068"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679279085"><span class="annot"><span class="annottext">basicUnsafeFreeze :: forall s. Mutable Vector s (A3 a) -&gt; ST s (Vector (A3 a))
+</span><a href="#local-6989586621679279085"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeFreeze</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279087"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279087"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Vector (A3 a)
+forall a. Vector a -&gt; Vector (A3 a)
+</span><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-var">V_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector (A3 a))
+-&gt; ST s (Vector a) -&gt; ST s (Vector (A3 a))
+forall (m :: * -&gt; *) a1 r. Monad m =&gt; (a1 -&gt; r) -&gt; m a1 -&gt; m r
+</span><span class="hs-operator hs-var">`liftM`</span></span><span> </span><span class="annot"><span class="annottext">Mutable Vector s a -&gt; ST s (Vector a)
+forall s. Mutable Vector s a -&gt; ST s (Vector a)
+forall (v :: * -&gt; *) a s. Vector v a =&gt; Mutable v s a -&gt; ST s (v a)
+</span><span class="hs-identifier hs-var">G.basicUnsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+Mutable Vector s a
+</span><a href="#local-6989586621679279087"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeFreeze</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-51"></span><span>  </span><span id="local-6989586621679279090"><span class="annot"><span class="annottext">basicUnsafeThaw :: forall s. Vector (A3 a) -&gt; ST s (Mutable Vector s (A3 a))
+</span><a href="#local-6989586621679279090"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeThaw</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-type">V_A3</span></a></span><span> </span><span id="local-6989586621679279092"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279092"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MVector s a -&gt; MVector s (A3 a)
+forall s a. MVector s a -&gt; MVector s (A3 a)
+</span><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-var">MV_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(MVector s a -&gt; MVector s (A3 a))
+-&gt; ST s (MVector s a) -&gt; ST s (MVector s (A3 a))
+forall (m :: * -&gt; *) a1 r. Monad m =&gt; (a1 -&gt; r) -&gt; m a1 -&gt; m r
+</span><span class="hs-operator hs-var">`liftM`</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; ST s (Mutable Vector s a)
+forall s. Vector a -&gt; ST s (Mutable Vector s a)
+forall (v :: * -&gt; *) a s. Vector v a =&gt; v a -&gt; ST s (Mutable v s a)
+</span><span class="hs-identifier hs-var">G.basicUnsafeThaw</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279092"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeThaw</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679279096"><span class="annot"><span class="annottext">basicLength :: Vector (A3 a) -&gt; Int
+</span><a href="#local-6989586621679279096"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicLength</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-type">V_A3</span></a></span><span> </span><span id="local-6989586621679279098"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279098"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Int
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int
+</span><span class="hs-identifier hs-var">G.basicLength</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279098"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicLength</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679279104"><span class="annot"><span class="annottext">basicUnsafeSlice :: Int -&gt; Int -&gt; Vector (A3 a) -&gt; Vector (A3 a)
+</span><a href="#local-6989586621679279104"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeSlice</span></a></span></span><span> </span><span id="local-6989586621679279106"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279106"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679279107"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279107"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-type">V_A3</span></a></span><span> </span><span id="local-6989586621679279108"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279108"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Vector (A3 a)
+forall a. Vector a -&gt; Vector (A3 a)
+</span><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-var">V_A3</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector (A3 a)) -&gt; Vector a -&gt; Vector (A3 a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Vector a -&gt; Vector a
+forall (v :: * -&gt; *) a. Vector v a =&gt; Int -&gt; Int -&gt; v a -&gt; v a
+</span><span class="hs-identifier hs-var">G.basicUnsafeSlice</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279106"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279107"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279108"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeSlice</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-57"></span><span>  </span><span id="local-6989586621679279124"><span class="annot"><span class="annottext">basicUnsafeIndexM :: Vector (A3 a) -&gt; Int -&gt; Box (A3 a)
+</span><a href="#local-6989586621679279124"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeIndexM</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-type">V_A3</span></a></span><span> </span><span id="local-6989586621679279126"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279126"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679279127"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279127"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a -&gt; A3 a) -&gt; Box a -&gt; Box a -&gt; Box a -&gt; Box (A3 a)
+forall (m :: * -&gt; *) a1 a2 a3 r.
+Monad m =&gt;
+(a1 -&gt; a2 -&gt; a3 -&gt; r) -&gt; m a1 -&gt; m a2 -&gt; m a3 -&gt; m r
+</span><span class="hs-identifier hs-var">liftM3</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a -&gt; A3 a
+forall a. a -&gt; a -&gt; a -&gt; A3 a
+</span><a href="Data.Instances.A3.html#A3"><span class="hs-identifier hs-var">A3</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Int -&gt; Box a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; Box a
+</span><span class="hs-identifier hs-var">G.basicUnsafeIndexM</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279126"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279127"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Int -&gt; Box a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; Box a
+</span><span class="hs-identifier hs-var">G.basicUnsafeIndexM</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279126"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279127"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Int -&gt; Box a
+forall (v :: * -&gt; *) a. Vector v a =&gt; v a -&gt; Int -&gt; Box a
+</span><span class="hs-identifier hs-var">G.basicUnsafeIndexM</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279126"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679279127"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">basicUnsafeIndexM</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679279129"><span class="annot"><span class="annottext">basicUnsafeCopy :: forall s. Mutable Vector s (A3 a) -&gt; Vector (A3 a) -&gt; ST s ()
+</span><a href="#local-6989586621679279129"><span class="hs-identifier hs-var hs-var hs-var hs-var">basicUnsafeCopy</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#MV_A3"><span class="hs-identifier hs-type">MV_A3</span></a></span><span> </span><span id="local-6989586621679279131"><span class="annot"><span class="annottext">MVector s a
+</span><a href="#local-6989586621679279131"><span class="hs-identifier hs-var">mv</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Instances.A3.html#V_A3"><span class="hs-identifier hs-type">V_A3</span></a></span><span> </span><span id="local-6989586621679279132"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279132"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mutable Vector s a -&gt; Vector a -&gt; ST s ()
+forall s. Mutable Vector s a -&gt; Vector a -&gt; ST s ()
+forall (v :: * -&gt; *) a s.
+Vector v a =&gt;
+Mutable v s a -&gt; v a -&gt; ST s ()
+</span><span class="hs-identifier hs-var">G.basicUnsafeCopy</span></span><span> </span><span class="annot"><span class="annottext">MVector s a
+Mutable Vector s a
+</span><a href="#local-6989586621679279131"><span class="hs-identifier hs-var">mv</span></a></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679279132"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-60"></span><span>  </span><span id="local-6989586621679279133"><span class="annot"><span class="annottext">elemseq :: forall b. Vector (A3 a) -&gt; A3 a -&gt; b -&gt; b
+</span><a href="#local-6989586621679279133"><span class="hs-identifier hs-var hs-var hs-var hs-var">elemseq</span></a></span></span><span> </span><span class="annot"><span class="annottext">Vector (A3 a)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">A3 a -&gt; b -&gt; b
+forall a b. a -&gt; b -&gt; b
+</span><span class="hs-identifier hs-var">seq</span></span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><span class="hs-pragma hs-type">elemseq</span></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-62"></span></pre></body></html>

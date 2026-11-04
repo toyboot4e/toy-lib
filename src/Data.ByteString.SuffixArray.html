@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- | [Suffix Array](https://cp-algorithms.com/string/suffix-array.html) calculation.</span><span>
+</span><span id="line-2"></span><span class="hs-comment">--</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- = Definition</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- \(\mathcal{sa}[i] = \mathcal{originalOrderOf}(\mathcal{sa}[(n-1-i):])\) where</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- \(\mathcal{originalOrderOf(i)}\) returns the order of i-th suffix.</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.ByteString.SuffixArray</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.String</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">AS</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString.Char8</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">VU</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="annot"><a href="Data.ByteString.SuffixArray.html#countUniqueSubstringsBS"><span class="hs-identifier hs-type">countUniqueSubstringsBS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-14"></span><span id="countUniqueSubstringsBS"><span class="annot"><span class="annottext">countUniqueSubstringsBS :: ByteString -&gt; Int
+</span><a href="Data.ByteString.SuffixArray.html#countUniqueSubstringsBS"><span class="hs-identifier hs-var hs-var">countUniqueSubstringsBS</span></a></span></span><span> </span><span id="local-6989586621679276457"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679276457"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679276458"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679276458"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Vector Int -&gt; Int
+forall a. (Unbox a, Num a) =&gt; Vector a -&gt; a
+</span><span class="hs-identifier hs-var">VU.sum</span></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679276463"><span class="hs-identifier hs-var">lcp</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>    </span><span id="local-6989586621679276458"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679276458"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Int
+</span><span class="hs-identifier hs-var">BS.length</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679276457"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-17"></span><span>    </span><span id="local-6989586621679276467"><span class="annot"><span class="annottext">sa :: Vector Int
+</span><a href="#local-6989586621679276467"><span class="hs-identifier hs-var hs-var">sa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; ByteString -&gt; Vector Int
+ByteString -&gt; Vector Int
+</span><span class="hs-identifier hs-var">AS.suffixArrayBS</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679276457"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span id="local-6989586621679276463"><span class="annot"><span class="annottext">lcp :: Vector Int
+</span><a href="#local-6989586621679276463"><span class="hs-identifier hs-var hs-var">lcp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; ByteString -&gt; Vector Int -&gt; Vector Int
+ByteString -&gt; Vector Int -&gt; Vector Int
+</span><span class="hs-identifier hs-var">AS.lcpArrayBS</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679276457"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Int
+</span><a href="#local-6989586621679276467"><span class="hs-identifier hs-var">sa</span></a></span><span>
+</span><span id="line-19"></span></pre></body></html>

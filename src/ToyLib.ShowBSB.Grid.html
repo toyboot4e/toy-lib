@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | `ShowBSB` implementation for grids.</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">ToyLib.ShowBSB.Grid</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.IO.Class</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">MonadIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString.Builder</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BSB</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html"><span class="hs-identifier">Data.Vector.IxVector</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">IV</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="ToyLib.ShowBSB.html"><span class="hs-identifier">ToyLib.ShowBSB</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span id="local-6989586621679290798"><span id="local-6989586621679290800"><span class="annot"><a href="ToyLib.ShowBSB.Grid.html#printGrid"><span class="hs-identifier hs-type">printGrid</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679290798"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ToyLib.ShowBSB.html#ShowBSB"><span class="hs-identifier hs-type">ShowBSB</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679290800"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679290800"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679290800"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679290798"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-13"></span><span id="printGrid"><span class="annot"><span class="annottext">printGrid :: forall (m :: * -&gt; *) a.
+(MonadIO m, ShowBSB a, Unbox a) =&gt;
+IxUVector (Int, Int) a -&gt; m ()
+</span><a href="ToyLib.ShowBSB.Grid.html#printGrid"><span class="hs-identifier hs-var hs-var">printGrid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builder -&gt; m ()
+forall (m :: * -&gt; *). MonadIO m =&gt; Builder -&gt; m ()
+</span><a href="ToyLib.ShowBSB.html#putBSB"><span class="hs-identifier hs-var">putBSB</span></a></span><span> </span><span class="annot"><span class="annottext">(Builder -&gt; m ())
+-&gt; (IxUVector (Int, Int) a -&gt; Builder)
+-&gt; IxUVector (Int, Int) a
+-&gt; m ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; Builder
+forall a. (ShowBSB a, Unbox a) =&gt; IxUVector (Int, Int) a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.Grid.html#showGridBSB"><span class="hs-identifier hs-var">showGridBSB</span></a></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span id="local-6989586621679290811"><span class="annot"><a href="ToyLib.ShowBSB.Grid.html#showGridBSB"><span class="hs-identifier hs-type">showGridBSB</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ToyLib.ShowBSB.html#ShowBSB"><span class="hs-identifier hs-type">ShowBSB</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679290811"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679290811"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679290811"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BSB.Builder</span></span></span><span>
+</span><span id="line-16"></span><span id="showGridBSB"><span class="annot"><span class="annottext">showGridBSB :: forall a. (ShowBSB a, Unbox a) =&gt; IxUVector (Int, Int) a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.Grid.html#showGridBSB"><span class="hs-identifier hs-var hs-var">showGridBSB</span></a></span></span><span> </span><span id="local-6989586621679290867"><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290867"><span class="hs-identifier hs-var">mat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Builder) -&gt; Vector (Vector a) -&gt; Builder
+forall m (v :: * -&gt; *) a.
+(Monoid m, Vector v a) =&gt;
+(a -&gt; m) -&gt; v a -&gt; m
+</span><span class="hs-identifier hs-var">G.foldMap</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builder -&gt; Builder -&gt; Builder
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Builder
+</span><a href="ToyLib.ShowBSB.html#endlBSB"><span class="hs-identifier hs-var">endlBSB</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Builder -&gt; Builder)
+-&gt; (Vector a -&gt; Builder) -&gt; Vector a -&gt; Builder
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Builder
+forall (v :: * -&gt; *) a. (Vector v a, ShowBSB a) =&gt; v a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.html#concatBSB"><span class="hs-identifier hs-var">concatBSB</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector (Vector a)
+</span><a href="#local-6989586621679290871"><span class="hs-identifier hs-var">rows</span></a></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679290872"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290872"><span class="hs-identifier hs-var">y1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679290873"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290873"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679290874"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290874"><span class="hs-identifier hs-var">y2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679290875"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290875"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; ((Int, Int), (Int, Int))
+forall i v. IxVector i v -&gt; (i, i)
+</span><a href="Data.Vector.IxVector.html#bounds"><span class="hs-identifier hs-var">IV.bounds</span></a></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290867"><span class="hs-identifier hs-var">mat</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679290881"><span class="annot"><span class="annottext">h :: Int
+</span><a href="#local-6989586621679290881"><span class="hs-identifier hs-var hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290874"><span class="hs-identifier hs-var">y2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290872"><span class="hs-identifier hs-var">y1</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679290886"><span class="annot"><span class="annottext">w :: Int
+</span><a href="#local-6989586621679290886"><span class="hs-identifier hs-var hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290875"><span class="hs-identifier hs-var">x2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290873"><span class="hs-identifier hs-var">x1</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621679290871"><span class="annot"><span class="annottext">rows :: Vector (Vector a)
+</span><a href="#local-6989586621679290871"><span class="hs-identifier hs-var hs-var">rows</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+-&gt; (Vector a -&gt; (Vector a, Vector a))
+-&gt; Vector a
+-&gt; Vector (Vector a)
+forall b a. Int -&gt; (b -&gt; (a, b)) -&gt; b -&gt; Vector a
+</span><span class="hs-identifier hs-var">V.unfoldrExactN</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290881"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Vector a -&gt; (Vector a, Vector a)
+forall a. Unbox a =&gt; Int -&gt; Vector a -&gt; (Vector a, Vector a)
+</span><span class="hs-identifier hs-var">U.splitAt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290886"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; Vector a
+forall i v. IxVector i v -&gt; v
+</span><a href="Data.Vector.IxVector.html#vec"><span class="hs-identifier hs-var">IV.vec</span></a></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290867"><span class="hs-identifier hs-var">mat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span id="local-6989586621679290836"><span id="local-6989586621679290837"><span class="annot"><a href="ToyLib.ShowBSB.Grid.html#printMat"><span class="hs-identifier hs-type">printMat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ToyLib.ShowBSB.html#ShowBSB"><span class="hs-identifier hs-type">ShowBSB</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679290836"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679290836"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679290837"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679290836"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679290837"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-24"></span><span id="printMat"><span class="annot"><span class="annottext">printMat :: forall a (m :: * -&gt; *).
+(ShowBSB a, Unbox a, MonadIO m) =&gt;
+IxUVector (Int, Int) a -&gt; m ()
+</span><a href="ToyLib.ShowBSB.Grid.html#printMat"><span class="hs-identifier hs-var hs-var">printMat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builder -&gt; m ()
+forall (m :: * -&gt; *). MonadIO m =&gt; Builder -&gt; m ()
+</span><a href="ToyLib.ShowBSB.html#putBSB"><span class="hs-identifier hs-var">putBSB</span></a></span><span> </span><span class="annot"><span class="annottext">(Builder -&gt; m ())
+-&gt; (IxUVector (Int, Int) a -&gt; Builder)
+-&gt; IxUVector (Int, Int) a
+-&gt; m ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; Builder
+forall a. (ShowBSB a, Unbox a) =&gt; IxUVector (Int, Int) a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.Grid.html#showMatBSB"><span class="hs-identifier hs-var">showMatBSB</span></a></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span id="local-6989586621679290903"><span class="annot"><a href="ToyLib.ShowBSB.Grid.html#showMatBSB"><span class="hs-identifier hs-type">showMatBSB</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ToyLib.ShowBSB.html#ShowBSB"><span class="hs-identifier hs-type">ShowBSB</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679290903"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679290903"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Vector.IxVector.html#IxUVector"><span class="hs-identifier hs-type">IV.IxUVector</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679290903"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BSB.Builder</span></span></span><span>
+</span><span id="line-27"></span><span id="showMatBSB"><span class="annot"><span class="annottext">showMatBSB :: forall a. (ShowBSB a, Unbox a) =&gt; IxUVector (Int, Int) a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.Grid.html#showMatBSB"><span class="hs-identifier hs-var hs-var">showMatBSB</span></a></span></span><span> </span><span id="local-6989586621679290913"><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290913"><span class="hs-identifier hs-var">mat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Builder) -&gt; Vector (Vector a) -&gt; Builder
+forall m (v :: * -&gt; *) a.
+(Monoid m, Vector v a) =&gt;
+(a -&gt; m) -&gt; v a -&gt; m
+</span><span class="hs-identifier hs-var">G.foldMap</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builder -&gt; Builder -&gt; Builder
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Builder
+</span><a href="ToyLib.ShowBSB.html#endlBSB"><span class="hs-identifier hs-var">endlBSB</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Builder -&gt; Builder)
+-&gt; (Vector a -&gt; Builder) -&gt; Vector a -&gt; Builder
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Builder
+forall a (v :: * -&gt; *). (ShowBSB a, Vector v a) =&gt; v a -&gt; Builder
+</span><a href="ToyLib.ShowBSB.html#unwordsBSB"><span class="hs-identifier hs-var">unwordsBSB</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector (Vector a)
+</span><a href="#local-6989586621679290915"><span class="hs-identifier hs-var">rows</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679290916"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290916"><span class="hs-identifier hs-var">y1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679290917"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290917"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679290918"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290918"><span class="hs-identifier hs-var">y2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679290919"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290919"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; ((Int, Int), (Int, Int))
+forall i v. IxVector i v -&gt; (i, i)
+</span><a href="Data.Vector.IxVector.html#bounds"><span class="hs-identifier hs-var">IV.bounds</span></a></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290913"><span class="hs-identifier hs-var">mat</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679290923"><span class="annot"><span class="annottext">h :: Int
+</span><a href="#local-6989586621679290923"><span class="hs-identifier hs-var hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290918"><span class="hs-identifier hs-var">y2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290916"><span class="hs-identifier hs-var">y1</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-glyph">!</span><span id="local-6989586621679290927"><span class="annot"><span class="annottext">w :: Int
+</span><a href="#local-6989586621679290927"><span class="hs-identifier hs-var hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290919"><span class="hs-identifier hs-var">x2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290917"><span class="hs-identifier hs-var">x1</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span id="local-6989586621679290915"><span class="annot"><span class="annottext">rows :: Vector (Vector a)
+</span><a href="#local-6989586621679290915"><span class="hs-identifier hs-var hs-var">rows</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+-&gt; (Vector a -&gt; (Vector a, Vector a))
+-&gt; Vector a
+-&gt; Vector (Vector a)
+forall b a. Int -&gt; (b -&gt; (a, b)) -&gt; b -&gt; Vector a
+</span><span class="hs-identifier hs-var">V.unfoldrExactN</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290923"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Vector a -&gt; (Vector a, Vector a)
+forall a. Unbox a =&gt; Int -&gt; Vector a -&gt; (Vector a, Vector a)
+</span><span class="hs-identifier hs-var">U.splitAt</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679290927"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IxUVector (Int, Int) a -&gt; Vector a
+forall i v. IxVector i v -&gt; v
+</span><a href="Data.Vector.IxVector.html#vec"><span class="hs-identifier hs-var">IV.vec</span></a></span><span> </span><span class="annot"><span class="annottext">IxUVector (Int, Int) a
+</span><a href="#local-6989586621679290913"><span class="hs-identifier hs-var">mat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span></pre></body></html>

@@ -1,0 +1,859 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- TODO: rename methods</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- | Sliding window data structures. See also `Data.Algorithm.SlideMin`.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- = Typical Problems</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Slide</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">AtCoder.Internal.Queue</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Q</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">whenM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Primitive</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimMonad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">PrimState</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Generic.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GM</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">U</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector.Unboxed.Mutable</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">UM</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Stack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">HasCallStack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- | Stack-based sliding window folding, going from left to right only.</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- SWAG (sliding window aggregation).</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">data</span><span> </span><span id="StackSlidingFold"><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-var">StackSlidingFold</span></a></span></span><span> </span><span id="local-6989586621679281389"><span class="annot"><a href="#local-6989586621679281389"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679281390"><span class="annot"><a href="#local-6989586621679281390"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StackSlidingFold"><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-var">StackSlidingFold</span></a></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="hs-comment">-- | Stack of newly pushed elements, not yet moved to `dualScanrSSF`.</span></span><span>
+</span><span id="line-22"></span><span>    </span><span id="bufferSSF"><span class="annot"><span class="annottext">forall s a. StackSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#bufferSSF"><span class="hs-identifier hs-var hs-var">bufferSSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281389"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281390"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Fold of the elements in the buffer.</span></span><span>
+</span><span id="line-24"></span><span>    </span><span id="bufferFoldSSF"><span class="annot"><span class="annottext">forall s a. StackSlidingFold s a -&gt; MVector s a
+</span><a href="Data.Slide.html#bufferFoldSSF"><span class="hs-identifier hs-var hs-var">bufferFoldSSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UM.MVector</span></span><span> </span><span class="annot"><a href="#local-6989586621679281389"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281390"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Right dual scanning, up to the last popped point. Works great with pop operations.</span></span><span>
+</span><span id="line-26"></span><span>    </span><span id="dualScanrSSF"><span class="annot"><span class="annottext">forall s a. StackSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-identifier hs-var hs-var">dualScanrSSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281389"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281390"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-30"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#newSSF"><span class="hs-pragma hs-type">newSSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-31"></span><span id="local-6989586621679281400"><span id="local-6989586621679281402"><span class="annot"><a href="Data.Slide.html#newSSF"><span class="hs-identifier hs-type">newSSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281400"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281402"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281402"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281400"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281400"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281402"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-32"></span><span id="newSSF"><span class="annot"><span class="annottext">newSSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+Int -&gt; m (StackSlidingFold (PrimState m) a)
+</span><a href="Data.Slide.html#newSSF"><span class="hs-identifier hs-var hs-var">newSSF</span></a></span></span><span> </span><span id="local-6989586621679281551"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281551"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-33"></span><span>  </span><span id="local-6989586621679281552"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281552"><span class="hs-identifier hs-var">bufferSSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.new</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281551"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span id="local-6989586621679281554"><span class="annot"><span class="annottext">MVector (PrimState m) a
+</span><a href="#local-6989586621679281554"><span class="hs-identifier hs-var">bufferFoldSSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; a -&gt; m (MVector (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; a -&gt; m (MVector (PrimState m) a)
+</span><span class="hs-identifier hs-var">UM.replicate</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-35"></span><span>  </span><span id="local-6989586621679281556"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281556"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.new</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m (Queue (PrimState m) a))
+-&gt; Int -&gt; m (Queue (PrimState m) a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281551"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281556"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><span class="annottext">StackSlidingFold (PrimState m) a
+-&gt; m (StackSlidingFold (PrimState m) a)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">Queue (PrimState m) a
+MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-40"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#clearSSF"><span class="hs-pragma hs-type">clearSSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-41"></span><span id="local-6989586621679281424"><span id="local-6989586621679281425"><span class="annot"><a href="Data.Slide.html#clearSSF"><span class="hs-identifier hs-type">clearSSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281424"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281425"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281425"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281424"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281425"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281424"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-42"></span><span id="clearSSF"><span class="annot"><span class="annottext">clearSSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+StackSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#clearSSF"><span class="hs-identifier hs-var hs-var">clearSSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281581"><span id="local-6989586621679281582"><span id="local-6989586621679281583"><span class="annot"><span class="annottext">Queue (PrimState m) a
+MVector (PrimState m) a
+dualScanrSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferFoldSSF :: forall s a. StackSlidingFold s a -&gt; MVector s a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281581"><span class="hs-identifier hs-var">bufferSSF</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) a
+</span><a href="#local-6989586621679281582"><span class="hs-identifier hs-var">bufferFoldSSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281581"><span class="hs-identifier hs-var">bufferSSF</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281583"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-49"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#pushBackSSF"><span class="hs-pragma hs-type">pushBackSSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-50"></span><span id="local-6989586621679281435"><span id="local-6989586621679281436"><span class="annot"><a href="Data.Slide.html#pushBackSSF"><span class="hs-identifier hs-type">pushBackSSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281435"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679281436"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281436"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281435"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281436"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281436"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281435"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-51"></span><span id="pushBackSSF"><span class="annot"><span class="annottext">pushBackSSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Semigroup a, Unbox a) =&gt;
+StackSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+</span><a href="Data.Slide.html#pushBackSSF"><span class="hs-identifier hs-var hs-var">pushBackSSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281600"><span id="local-6989586621679281601"><span id="local-6989586621679281602"><span class="annot"><span class="annottext">Queue (PrimState m) a
+MVector (PrimState m) a
+dualScanrSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferFoldSSF :: forall s a. StackSlidingFold s a -&gt; MVector s a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679281603"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281603"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">MVector (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; (a -&gt; a) -&gt; Int -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.unsafeModify</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) a
+</span><a href="#local-6989586621679281601"><span class="hs-identifier hs-var">bufferFoldSSF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281603"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281600"><span class="hs-identifier hs-var">bufferSSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281603"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><span class="hs-comment">-- | Amortized \(O(1)\).</span></span><span>
+</span><span id="line-56"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#popFrontSSF"><span class="hs-pragma hs-type">popFrontSSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-57"></span><span id="local-6989586621679281606"><span id="local-6989586621679281607"><span class="annot"><a href="Data.Slide.html#popFrontSSF"><span class="hs-identifier hs-type">popFrontSSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281606"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281607"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281607"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281606"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281607"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281606"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-58"></span><span id="popFrontSSF"><span class="annot"><span class="annottext">popFrontSSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+StackSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#popFrontSSF"><span class="hs-identifier hs-var hs-var">popFrontSSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281658"><span id="local-6989586621679281659"><span id="local-6989586621679281660"><span class="annot"><span class="annottext">Queue (PrimState m) a
+MVector (PrimState m) a
+dualScanrSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferFoldSSF :: forall s a. StackSlidingFold s a -&gt; MVector s a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-comment">-- first element is at the end</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popBack_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><span class="annottext">m Bool -&gt; m () -&gt; m ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">whenM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Bool
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Bool
+</span><span class="hs-identifier hs-var">Q.null</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><span class="annottext">MVector (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">GM.unsafeWrite</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) a
+</span><a href="#local-6989586621679281659"><span class="hs-identifier hs-var">bufferFoldSSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-comment">-- create right dual scanning of the buffer (except the popped one):</span><span>
+</span><span id="line-66"></span><span>    </span><span id="local-6989586621679281663"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679281663"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.tail</span></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector a) -&gt; m (Vector a) -&gt; m (Vector a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m (Vector a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">Q.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281658"><span class="hs-identifier hs-var">bufferSSF</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-comment">-- TODO: foldrM can be faster?</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="annottext">Vector a -&gt; (a -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.reverse</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679281663"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((a -&gt; m ()) -&gt; m ()) -&gt; (a -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679281669"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281669"><span class="hs-identifier hs-var">fromBack</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-70"></span><span>      </span><span id="local-6989586621679281670"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281670"><span class="hs-identifier hs-var">end</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-71"></span><span>      </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281660"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m ()) -&gt; a -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281669"><span class="hs-identifier hs-var">fromBack</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281670"><span class="hs-identifier hs-var">end</span></a></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281658"><span class="hs-identifier hs-var">bufferSSF</span></a></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-76"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#foldSSF"><span class="hs-pragma hs-type">foldSSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-77"></span><span id="local-6989586621679281463"><span id="local-6989586621679281464"><span class="annot"><a href="Data.Slide.html#foldSSF"><span class="hs-identifier hs-type">foldSSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281463"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679281464"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281464"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281463"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281464"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281463"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281464"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-78"></span><span id="foldSSF"><span class="annot"><span class="annottext">foldSSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Semigroup a, Unbox a) =&gt;
+StackSlidingFold (PrimState m) a -&gt; m a
+</span><a href="Data.Slide.html#foldSSF"><span class="hs-identifier hs-var hs-var">foldSSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#StackSlidingFold"><span class="hs-identifier hs-type">StackSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281690"><span id="local-6989586621679281691"><span id="local-6989586621679281692"><span class="annot"><span class="annottext">Queue (PrimState m) a
+MVector (PrimState m) a
+dualScanrSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferSSF :: forall s a. StackSlidingFold s a -&gt; Queue s a
+bufferFoldSSF :: forall s a. StackSlidingFold s a -&gt; MVector s a
+bufferSSF :: Queue (PrimState m) a
+bufferFoldSSF :: MVector (PrimState m) a
+dualScanrSSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#dualScanrSSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679281693"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281693"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281692"><span class="hs-identifier hs-var">dualScanrSSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679281694"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281694"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) (v :: * -&gt; * -&gt; *) a.
+(PrimMonad m, MVector v a) =&gt;
+v (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">GM.unsafeRead</span></span><span> </span><span class="annot"><span class="annottext">MVector (PrimState m) a
+</span><a href="#local-6989586621679281691"><span class="hs-identifier hs-var">bufferFoldSSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">a -&gt; m a
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m a) -&gt; a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281693"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281694"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- | Dequeue-based sliding window folding. Prefer `StackSlidingFold` for (just a little) speed.</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- SWAG (sliding window aggregation).</span><span>
+</span><span id="line-85"></span><span class="hs-keyword">data</span><span> </span><span id="DequeSlidingFold"><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-var">DequeSlidingFold</span></a></span></span><span> </span><span id="local-6989586621679281470"><span class="annot"><a href="#local-6989586621679281470"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679281471"><span class="annot"><a href="#local-6989586621679281471"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DequeSlidingFold"><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-var">DequeSlidingFold</span></a></span></span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="frontBufferDSF"><span class="annot"><span class="annottext">forall s a. DequeSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-identifier hs-var hs-var">frontBufferDSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281470"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281471"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-87"></span><span>    </span><span id="frontScanDSF"><span class="annot"><span class="annottext">forall s a. DequeSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#frontScanDSF"><span class="hs-identifier hs-var hs-var">frontScanDSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281470"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281471"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-88"></span><span>    </span><span id="backBufferDSF"><span class="annot"><span class="annottext">forall s a. DequeSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#backBufferDSF"><span class="hs-identifier hs-var hs-var">backBufferDSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281470"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281471"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-89"></span><span>    </span><span id="backScanDSF"><span class="annot"><span class="annottext">forall s a. DequeSlidingFold s a -&gt; Queue s a
+</span><a href="Data.Slide.html#backScanDSF"><span class="hs-identifier hs-var hs-var">backScanDSF</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Q.Queue</span></span><span> </span><span class="annot"><a href="#local-6989586621679281470"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281471"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-93"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#newDSF"><span class="hs-pragma hs-type">newDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-94"></span><span id="local-6989586621679281481"><span id="local-6989586621679281482"><span class="annot"><a href="Data.Slide.html#newDSF"><span class="hs-identifier hs-type">newDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281481"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281482"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281482"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281481"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281481"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281482"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-95"></span><span id="newDSF"><span class="annot"><span class="annottext">newDSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+Int -&gt; m (DequeSlidingFold (PrimState m) a)
+</span><a href="Data.Slide.html#newDSF"><span class="hs-identifier hs-var hs-var">newDSF</span></a></span></span><span> </span><span id="local-6989586621679281736"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281736"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679281737"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281737"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.newDeque</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281736"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621679281739"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281739"><span class="hs-identifier hs-var">backBufferDSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.newDeque</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281736"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-98"></span><span>  </span><span id="local-6989586621679281740"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281740"><span class="hs-identifier hs-var">frontScanDSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.new</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m (Queue (PrimState m) a))
+-&gt; Int -&gt; m (Queue (PrimState m) a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281736"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679281741"><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281741"><span class="hs-identifier hs-var">backScanDSF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m (Queue (PrimState m) a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Int -&gt; m (Queue (PrimState m) a)
+</span><span class="hs-identifier hs-var">Q.new</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; m (Queue (PrimState m) a))
+-&gt; Int -&gt; m (Queue (PrimState m) a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281736"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281740"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281741"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-102"></span><span>  </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+-&gt; m (DequeSlidingFold (PrimState m) a)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+frontBufferDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-105"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#clearDSF"><span class="hs-pragma hs-type">clearDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-106"></span><span id="local-6989586621679281485"><span id="local-6989586621679281486"><span class="annot"><a href="Data.Slide.html#clearDSF"><span class="hs-identifier hs-type">clearDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281485"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281486"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281486"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281485"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281486"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281485"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-107"></span><span id="clearDSF"><span class="annot"><span class="annottext">clearDSF :: forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#clearDSF"><span class="hs-identifier hs-var hs-var">clearDSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281770"><span id="local-6989586621679281771"><span id="local-6989586621679281772"><span id="local-6989586621679281773"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-108"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281770"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span>
+</span><span id="line-109"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281772"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-110"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281771"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span>
+</span><span id="line-111"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.clear</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281773"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span>
+</span><span id="line-112"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281771"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-113"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281773"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-116"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#pushFrontDSF"><span class="hs-pragma hs-type">pushFrontDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-117"></span><span id="local-6989586621679281489"><span id="local-6989586621679281490"><span class="annot"><a href="Data.Slide.html#pushFrontDSF"><span class="hs-identifier hs-type">pushFrontDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281489"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679281490"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281490"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281489"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281490"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281490"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281489"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-118"></span><span id="pushFrontDSF"><span class="annot"><span class="annottext">pushFrontDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Semigroup a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+</span><a href="Data.Slide.html#pushFrontDSF"><span class="hs-identifier hs-var hs-var">pushFrontDSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281795"><span id="local-6989586621679281796"><span id="local-6989586621679281797"><span id="local-6989586621679281798"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679281799"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281799"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-119"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281795"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281799"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-120"></span><span>  </span><span id="local-6989586621679281800"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281800"><span class="hs-identifier hs-var">back</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281796"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-121"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281796"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m ()) -&gt; a -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281799"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281800"><span class="hs-identifier hs-var">back</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-124"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#pushBackDSF"><span class="hs-pragma hs-type">pushBackDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-125"></span><span id="local-6989586621679281802"><span id="local-6989586621679281803"><span class="annot"><a href="Data.Slide.html#pushBackDSF"><span class="hs-identifier hs-type">pushBackDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281802"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679281803"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281803"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281802"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281803"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281803"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281802"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-126"></span><span id="pushBackDSF"><span class="annot"><span class="annottext">pushBackDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Semigroup a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+</span><a href="Data.Slide.html#pushBackDSF"><span class="hs-identifier hs-var hs-var">pushBackDSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281824"><span id="local-6989586621679281825"><span id="local-6989586621679281826"><span id="local-6989586621679281827"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679281828"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281828"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281826"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281828"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-128"></span><span>  </span><span id="local-6989586621679281829"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281829"><span class="hs-identifier hs-var">back</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281827"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-129"></span><span>  </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.pushBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281827"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m ()) -&gt; a -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281829"><span class="hs-identifier hs-var">back</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281828"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="annot"><span class="hs-comment">-- | Amortized \(O(1)\).</span></span><span>
+</span><span id="line-132"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#popFrontDSF"><span class="hs-pragma hs-type">popFrontDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-133"></span><span id="local-6989586621679281495"><span id="local-6989586621679281496"><span class="annot"><a href="Data.Slide.html#popFrontDSF"><span class="hs-identifier hs-type">popFrontDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281495"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281496"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281496"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281495"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281496"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281495"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-134"></span><span id="popFrontDSF"><span class="annot"><span class="annottext">popFrontDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#popFrontDSF"><span class="hs-identifier hs-var hs-var">popFrontDSF</span></a></span></span><span> </span><span id="local-6989586621679281868"><span class="annot"><span class="annottext">window :: DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281868"><span class="hs-identifier hs-var">window</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281869"><span id="local-6989586621679281870"><span id="local-6989586621679281871"><span id="local-6989586621679281872"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-135"></span><span>  </span><span id="local-6989586621679281873"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281873"><span class="hs-identifier hs-var">size</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; m Int -&gt; m (Int -&gt; Int)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Int
+</span><span class="hs-identifier hs-var">Q.length</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281869"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span> </span><span class="annot"><span class="annottext">m (Int -&gt; Int) -&gt; m Int -&gt; m Int
+forall a b. m (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Int
+</span><span class="hs-identifier hs-var">Q.length</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281871"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-136"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281873"><span class="hs-identifier hs-var">size</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#clearDSF"><span class="hs-identifier hs-var">clearDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281868"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-139"></span><span>      </span><span id="local-6989586621679281875"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679281875"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Bool
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Bool
+</span><span class="hs-identifier hs-var">Q.null</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281869"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span>
+</span><span id="line-140"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679281875"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-141"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-142"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popFront_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281871"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-143"></span><span>          </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#balanceDSF"><span class="hs-identifier hs-var">balanceDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281868"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-144"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-145"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popBack_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281869"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span>
+</span><span id="line-146"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popBack_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281870"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="annot"><span class="hs-comment">-- | Amortized \(O(1)\).</span></span><span>
+</span><span id="line-149"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#popBackDSF"><span class="hs-pragma hs-type">popBackDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-150"></span><span id="local-6989586621679281879"><span id="local-6989586621679281880"><span class="annot"><a href="Data.Slide.html#popBackDSF"><span class="hs-identifier hs-type">popBackDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281879"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281880"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281880"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281879"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281880"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281879"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-151"></span><span id="popBackDSF"><span class="annot"><span class="annottext">popBackDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#popBackDSF"><span class="hs-identifier hs-var hs-var">popBackDSF</span></a></span></span><span> </span><span id="local-6989586621679281917"><span class="annot"><span class="annottext">window :: DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281917"><span class="hs-identifier hs-var">window</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281918"><span id="local-6989586621679281919"><span id="local-6989586621679281920"><span id="local-6989586621679281921"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-152"></span><span>  </span><span id="local-6989586621679281922"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281922"><span class="hs-identifier hs-var">size</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">(+)</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Int -&gt; Int) -&gt; m Int -&gt; m (Int -&gt; Int)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Int
+</span><span class="hs-identifier hs-var">Q.length</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281918"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span> </span><span class="annot"><span class="annottext">m (Int -&gt; Int) -&gt; m Int -&gt; m Int
+forall a b. m (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Int
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Int
+</span><span class="hs-identifier hs-var">Q.length</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281920"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-153"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679281922"><span class="hs-identifier hs-var">size</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#clearDSF"><span class="hs-identifier hs-var">clearDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281917"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-156"></span><span>      </span><span id="local-6989586621679281923"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679281923"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m Bool
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m Bool
+</span><span class="hs-identifier hs-var">Q.null</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281920"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-157"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679281923"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-158"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-159"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popFront_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281918"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span>
+</span><span id="line-160"></span><span>          </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#balanceDSF"><span class="hs-identifier hs-var">balanceDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281917"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-161"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-162"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popBack_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281920"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-163"></span><span>          </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m ()
+</span><span class="hs-identifier hs-var">Q.popBack_</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281921"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span class="annot"><span class="hs-comment">-- | \(O(1)\)</span></span><span>
+</span><span id="line-166"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#foldDSF"><span class="hs-pragma hs-type">foldDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-167"></span><span id="local-6989586621679281506"><span id="local-6989586621679281507"><span class="annot"><a href="Data.Slide.html#foldDSF"><span class="hs-identifier hs-type">foldDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281506"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679281507"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281507"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281506"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281507"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281506"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679281507"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-168"></span><span id="foldDSF"><span class="annot"><span class="annottext">foldDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Semigroup a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m a
+</span><a href="Data.Slide.html#foldDSF"><span class="hs-identifier hs-var hs-var">foldDSF</span></a></span></span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281943"><span id="local-6989586621679281944"><span id="local-6989586621679281945"><span id="local-6989586621679281946"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-169"></span><span>  </span><span id="local-6989586621679281947"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281947"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281944"><span class="hs-identifier hs-var">frontScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-170"></span><span>  </span><span id="local-6989586621679281948"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281948"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; Int -&gt; m a
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; Int -&gt; m a
+</span><span class="hs-identifier hs-var">Q.readBack</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281946"><span class="hs-identifier hs-var">backScanDSF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-171"></span><span>  </span><span class="annot"><span class="annottext">a -&gt; m a
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m a) -&gt; a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$!</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281947"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679281948"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="annot"><span class="hs-comment">-- | \(O(N)\)</span></span><span>
+</span><span id="line-174"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Slide.html#balanceDSF"><span class="hs-pragma hs-type">balanceDSF</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-175"></span><span id="local-6989586621679281949"><span id="local-6989586621679281950"><span class="annot"><a href="Data.Slide.html#balanceDSF"><span class="hs-identifier hs-type">balanceDSF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PrimMonad</span></span><span> </span><span class="annot"><a href="#local-6989586621679281949"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679281950"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">U.Unbox</span></span><span> </span><span class="annot"><a href="#local-6989586621679281950"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PrimState</span></span><span> </span><span class="annot"><a href="#local-6989586621679281949"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679281950"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679281949"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-176"></span><span id="balanceDSF"><span class="annot"><span class="annottext">balanceDSF :: forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#balanceDSF"><span class="hs-identifier hs-var hs-var">balanceDSF</span></a></span></span><span> </span><span id="local-6989586621679281992"><span class="annot"><span class="annottext">window :: DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281992"><span class="hs-identifier hs-var">window</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Slide.html#DequeSlidingFold"><span class="hs-identifier hs-type">DequeSlidingFold</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679281993"><span id="local-6989586621679281994"><span id="local-6989586621679281995"><span id="local-6989586621679281996"><span class="annot"><span class="annottext">Queue (PrimState m) a
+frontBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backBufferDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+backScanDSF :: forall s a. DequeSlidingFold s a -&gt; Queue s a
+frontBufferDSF :: Queue (PrimState m) a
+frontScanDSF :: Queue (PrimState m) a
+backBufferDSF :: Queue (PrimState m) a
+backScanDSF :: Queue (PrimState m) a
+</span><a href="Data.Slide.html#frontBufferDSF"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-177"></span><span>  </span><span class="hs-comment">-- be sure to revere!</span><span>
+</span><span id="line-178"></span><span>  </span><span id="local-6989586621679281997"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679281997"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Vector a -&gt; Vector a -&gt; Vector a
+</span><span class="hs-operator hs-var">(U.++)</span></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector a -&gt; Vector a)
+-&gt; m (Vector a) -&gt; m (Vector a -&gt; Vector a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.reverse</span></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; Vector a) -&gt; m (Vector a) -&gt; m (Vector a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m (Vector a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">Q.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281993"><span class="hs-identifier hs-var">frontBufferDSF</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Vector a -&gt; Vector a) -&gt; m (Vector a) -&gt; m (Vector a)
+forall a b. m (a -&gt; b) -&gt; m a -&gt; m b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a -&gt; m (Vector a)
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Unbox a) =&gt;
+Queue (PrimState m) a -&gt; m (Vector a)
+</span><span class="hs-identifier hs-var">Q.unsafeFreeze</span></span><span> </span><span class="annot"><span class="annottext">Queue (PrimState m) a
+</span><a href="#local-6989586621679281995"><span class="hs-identifier hs-var">backBufferDSF</span></a></span><span>
+</span><span id="line-179"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span id="local-6989586621679282008"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679282008"><span class="hs-identifier hs-var">xsL</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679282009"><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679282009"><span class="hs-identifier hs-var">xsR</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Vector a -&gt; (Vector a, Vector a)
+forall a. Unbox a =&gt; Int -&gt; Vector a -&gt; (Vector a, Vector a)
+</span><span class="hs-identifier hs-var">U.splitAt</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Int
+forall a. Unbox a =&gt; Vector a -&gt; Int
+</span><span class="hs-identifier hs-var">U.length</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679281997"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679281997"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-180"></span><span>  </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, Monoid a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; m ()
+</span><a href="Data.Slide.html#clearDSF"><span class="hs-identifier hs-var">clearDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281992"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-181"></span><span>  </span><span class="hs-comment">-- be sure to revere!</span><span>
+</span><span id="line-182"></span><span>  </span><span class="annot"><span class="annottext">Vector a -&gt; (a -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector a -&gt; Vector a
+forall a. Unbox a =&gt; Vector a -&gt; Vector a
+</span><span class="hs-identifier hs-var">U.reverse</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679282008"><span class="hs-identifier hs-var">xsL</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((a -&gt; m ()) -&gt; m ()) -&gt; (a -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Semigroup a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+</span><a href="Data.Slide.html#pushFrontDSF"><span class="hs-identifier hs-var">pushFrontDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281992"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-183"></span><span>  </span><span class="annot"><span class="annottext">Vector a -&gt; (a -&gt; m ()) -&gt; m ()
+forall (m :: * -&gt; *) a b.
+(Monad m, Unbox a) =&gt;
+Vector a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">U.forM_</span></span><span> </span><span class="annot"><span class="annottext">Vector a
+</span><a href="#local-6989586621679282009"><span class="hs-identifier hs-var">xsR</span></a></span><span> </span><span class="annot"><span class="annottext">((a -&gt; m ()) -&gt; m ()) -&gt; (a -&gt; m ()) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+forall (m :: * -&gt; *) a.
+(HasCallStack, PrimMonad m, Semigroup a, Unbox a) =&gt;
+DequeSlidingFold (PrimState m) a -&gt; a -&gt; m ()
+</span><a href="Data.Slide.html#pushBackDSF"><span class="hs-identifier hs-var">pushBackDSF</span></a></span><span> </span><span class="annot"><span class="annottext">DequeSlidingFold (PrimState m) a
+</span><a href="#local-6989586621679281992"><span class="hs-identifier hs-var">window</span></a></span><span>
+</span><span id="line-184"></span></pre></body></html>
